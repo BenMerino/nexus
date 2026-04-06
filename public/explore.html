@@ -34,6 +34,7 @@
 
   <nav>
     <span class="logo">Nexus</span>
+    <a href="/overview.html">Overview</a>
     <a href="/explore.html" class="active">Explore</a>
     <a href="/submit.html">Submit</a>
     <a href="/records.html">Records</a>
@@ -45,7 +46,6 @@
 
     <div class="section-tabs">
       <button class="active" onclick="showSection('search')">Search</button>
-      <button onclick="showSection('relationships')">Relationships</button>
       <button onclick="showSection('tags')">Tag Cloud</button>
     </div>
 
@@ -62,11 +62,6 @@
       </div>
       <div id="search-status" class="mt-8"></div>
       <div id="search-results" class="mt-16"></div>
-    </div>
-
-    <!-- RELATIONSHIPS SECTION -->
-    <div id="relationships" class="section">
-      <div id="relationships-root"></div>
     </div>
 
     <!-- TAG CLOUD SECTION -->
@@ -100,13 +95,6 @@
       document.getElementById(id).classList.add("active");
       document.querySelector(`.section-tabs button[onclick="showSection('${id}')"]`).classList.add("active");
 
-      if (id === "relationships" && !window.__relLoaded) {
-        window.__relLoaded = true;
-        const s = document.createElement("script");
-        s.type = "module";
-        s.src = "/relationships-bundle.js?v=" + Date.now();
-        document.body.appendChild(s);
-      }
       if (id === "tags") loadTags();
     }
 
