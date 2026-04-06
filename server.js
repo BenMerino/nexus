@@ -145,4 +145,4 @@ app.get("/api/tag-stats", (req, res) => {
   res.json(stats);
 });
 
-app.listen(PORT, () => { console.log(`DOI Checker running at http://localhost:${PORT}`); });
+app.listen(PORT, () => { console.log(`Nexus running at http://localhost:${PORT}`); });
