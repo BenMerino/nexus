@@ -11,18 +11,24 @@ export function adjacency(nodeIds: string[], edges: LeidenEdge[]) {
   const adj = new Map<string, { neighbor: string; weight: number }[]>();
   for (const id of nodeIds) adj.set(id, []);
   for (const e of edges) {
+    if (e.source === e.target) continue; // skip self-loops in adjacency
     adj.get(e.source)?.push({ neighbor: e.target, weight: e.weight });
     adj.get(e.target)?.push({ neighbor: e.source, weight: e.weight });
   }
   return adj;
 }
 
+/** Weighted degree including self-loop weight (counted twice per convention) */
 export function nodeDegrees(nodeIds: string[], edges: LeidenEdge[]): Map<string, number> {
   const deg = new Map<string, number>();
   for (const id of nodeIds) deg.set(id, 0);
   for (const e of edges) {
-    deg.set(e.source, (deg.get(e.source) || 0) + e.weight);
-    deg.set(e.target, (deg.get(e.target) || 0) + e.weight);
+    if (e.source === e.target) {
+      deg.set(e.source, (deg.get(e.source) || 0) + 2 * e.weight);
+    } else {
+      deg.set(e.source, (deg.get(e.source) || 0) + e.weight);
+      deg.set(e.target, (deg.get(e.target) || 0) + e.weight);
+    }
   }
   return deg;
 }
@@ -56,7 +62,6 @@ export function modularityGain(
   return kIn / m - res * (sigTot * ki) / (2 * m * m);
 }
 
-/** Build community degree-totals map */
 export function buildCommTotals(
   nodeIds: string[], comm: Community, deg: Map<string, number>,
 ): Map<number, number> {
@@ -68,7 +73,7 @@ export function buildCommTotals(
   return ct;
 }
 
-/** Phase 1: local moving — greedily move nodes to improve modularity */
+/** Phase 1: local moving */
 export function moveNodesFast(
   nodeIds: string[], comm: Community,
   adj: Map<string, { neighbor: string; weight: number }[]>,
@@ -103,7 +108,7 @@ export function moveNodesFast(
   return anyMoved;
 }
 
-/** Aggregate communities into super-graph */
+/** Aggregate with self-loops to preserve total weight across levels */
 export function aggregate(
   nodeIds: string[], edges: LeidenEdge[], comm: Community,
 ): { superIds: string[]; superEdges: LeidenEdge[]; members: Map<string, string[]> } {
@@ -119,8 +124,7 @@ export function aggregate(
   for (const e of edges) {
     const sc = String(comm.get(e.source)!);
     const tc = String(comm.get(e.target)!);
-    if (sc === tc) continue;
-    const key = sc < tc ? `${sc}|||${tc}` : `${tc}|||${sc}`;
+    const key = sc === tc ? `${sc}|||${sc}` : (sc < tc ? `${sc}|||${tc}` : `${tc}|||${sc}`);
     edgeMap.set(key, (edgeMap.get(key) || 0) + e.weight);
   }
   const superEdges: LeidenEdge[] = [...edgeMap.entries()].map(([key, weight]) => {
