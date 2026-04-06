@@ -2,6 +2,27 @@ document.getElementById("author-search").addEventListener("keydown", e => {
   if (e.key === "Enter") searchAuthor();
 });
 
+// Load author suggestions from existing DB tags
+(async function loadSuggestions() {
+  try {
+    const resp = await fetch("/api/tag-stats");
+    const tags = await resp.json();
+    const authors = tags.filter(t => t.category === "author").slice(0, 20);
+    if (!authors.length) return;
+    const el = document.getElementById("suggestions");
+    el.innerHTML = '<div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold; margin-bottom: 6px;">Authors in your database</div>' +
+      '<div style="display: flex; flex-wrap: wrap; gap: 4px;">' +
+      authors.map(a => `<span class="tag author" style="cursor: pointer;" onclick="pickSuggestion('${esc(a.value)}')">${esc(a.value)} (${a.count})</span>`).join("") +
+      '</div>';
+  } catch (e) {}
+})();
+
+function pickSuggestion(name) {
+  document.getElementById("author-search").value = name;
+  document.getElementById("suggestions").innerHTML = "";
+  searchAuthor();
+}
+
 async function searchAuthor() {
   const q = document.getElementById("author-search").value.trim();
   if (!q) return;
