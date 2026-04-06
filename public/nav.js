@@ -2,7 +2,7 @@
 (function () {
   if (!document.cookie.includes("nexus_logged_in=1")) return;
 
-  fetch("/api/me").then(r => r.json()).then(d => {
+  fetch("/api/auth?action=me").then(r => r.json()).then(d => {
     const slot = document.getElementById("nav-user");
     if (!slot) return;
 
@@ -12,7 +12,7 @@
     html += `<div style="font-size:13px;font-weight:bold;">${esc(d.user)}</div>`;
     html += `<div style="font-size:10px;color:#999;">${esc(d.tenant)}</div>`;
     html += `</div>`;
-    html += `<a href="/api/logout" style="font-size:12px;margin-left:8px;">Logout</a>`;
+    html += `<a href="/api/auth?action=logout" style="font-size:12px;margin-left:8px;">Logout</a>`;
     html += `</div>`;
     slot.innerHTML = html;
   }).catch(() => {});

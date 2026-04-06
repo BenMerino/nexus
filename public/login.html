@@ -48,7 +48,7 @@
       if (!user || !pass) { alert("Enter both username and password"); return; }
 
       try {
-        const resp = await fetch("/api/login", {
+        const resp = await fetch("/api/auth?action=login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ user, pass }),

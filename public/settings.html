@@ -14,7 +14,7 @@
     <a href="/explore.html">Explore</a>
     <a href="/submit.html">Submit</a>
     <a href="/records.html">Records</a>
-    <div id="nav-user" style="margin-left: auto;"><a href="/api/logout">Logout</a></div>
+    <div id="nav-user" style="margin-left: auto;"><a href="/api/auth?action=logout">Logout</a></div>
   </nav>
 
   <div class="page">
@@ -37,7 +37,7 @@
 
   <script>
     // Load current logo
-    fetch("/api/me").then(r => r.json()).then(d => {
+    fetch("/api/auth?action=me").then(r => r.json()).then(d => {
       if (d.logo) showPreview(d.logo);
     });
 
@@ -57,7 +57,7 @@
       const reader = new FileReader();
       reader.onload = async () => {
         try {
-          const resp = await fetch("/api/upload-logo", {
+          const resp = await fetch("/api/auth?action=upload-logo", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ data: reader.result }),
