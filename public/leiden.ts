@@ -50,20 +50,20 @@ function localMove(
 
 /** Leiden refinement: within each community, split into well-connected subcommunities */
 function refine(
-  nodeIds: string[], comm: Community, edges: LeidenEdge[],
+  nodeIds: string[], comm: Community,
   adj: Map<string, { neighbor: string; weight: number }[]>,
-  deg: Map<string, number>, m: number, res: number,
+  m: number, res: number,
 ): void {
-  // Start with each node in its own singleton
   const refined: Community = new Map();
   let nextId = 0;
   for (const id of nodeIds) refined.set(id, nextId++);
 
-  // For each original community, run a constrained local move
   const byCommunity = new Map<number, string[]>();
   for (const id of nodeIds) {
     const c = comm.get(id)!;
-    (byCommunity.get(c) || (() => { const a: string[] = []; byCommunity.set(c, a); return a; })()).push(id);
+    const arr = byCommunity.get(c) || [];
+    arr.push(id);
+    byCommunity.set(c, arr);
   }
 
   for (const [, members] of byCommunity) {
@@ -72,7 +72,6 @@ function refine(
       for (const id of members) refined.set(id, cid);
       continue;
     }
-    // Build sub-adjacency limited to this community
     const memberSet = new Set(members);
     const subAdj = new Map<string, { neighbor: string; weight: number }[]>();
     for (const id of members) {
@@ -87,13 +86,20 @@ function refine(
     localMove(members, refined, subAdj, subDeg, m, res);
   }
 
-  // Write refined assignments back
   for (const [id, c] of refined) comm.set(id, c);
+}
+
+/** Adaptive resolution: higher for denser graphs (bipartite projections are dense) */
+function adaptiveResolution(nodeCount: number, edgeCount: number): number {
+  if (nodeCount <= 2) return 1.0;
+  const maxEdges = (nodeCount * (nodeCount - 1)) / 2;
+  const density = edgeCount / maxEdges;
+  return Math.max(1.0, 1.0 + 4 * density);
 }
 
 /** Run Leiden. Returns nodeId → communityId (0-indexed). */
 export function leiden(
-  nodeIds: string[], edges: LeidenEdge[], resolution = 1.0, maxIter = 10,
+  nodeIds: string[], edges: LeidenEdge[], maxIter = 10,
 ): Map<string, number> {
   if (!nodeIds.length || !edges.length) {
     return new Map(nodeIds.map((id, i) => [id, i]));
@@ -101,7 +107,7 @@ export function leiden(
   const m = totalWeight(edges);
   if (m === 0) return new Map(nodeIds.map((id, i) => [id, i]));
 
-  // superToOrig tracks which original nodes each super-node represents
+  const resolution = adaptiveResolution(nodeIds.length, edges.length);
   let superToOrig = new Map<string, string[]>(nodeIds.map(id => [id, [id]]));
   let curIds = [...nodeIds];
   let curEdges = [...edges];
@@ -110,21 +116,18 @@ export function leiden(
     const comm: Community = new Map(curIds.map((id, i) => [id, i]));
     const adj = adjacency(curIds, curEdges);
     const deg = nodeDegrees(curIds, curEdges);
-    const curM = totalWeight(curEdges) || m;
 
-    if (!localMove(curIds, comm, adj, deg, curM, resolution)) break;
-    refine(curIds, comm, curEdges, adj, deg, curM, resolution);
+    // Always use original m — aggregation drops intra-community edges
+    if (!localMove(curIds, comm, adj, deg, m, resolution)) break;
+    refine(curIds, comm, adj, m, resolution);
 
     const { superIds, superEdges, members } = aggregate(curIds, curEdges, comm);
     if (superIds.length >= curIds.length) break;
 
-    // Rebuild superToOrig: new super-node → all original nodes it contains
     const newSTO = new Map<string, string[]>();
     for (const [superId, subNodes] of members) {
       const originals: string[] = [];
-      for (const sub of subNodes) {
-        originals.push(...(superToOrig.get(sub) || [sub]));
-      }
+      for (const sub of subNodes) originals.push(...(superToOrig.get(sub) || [sub]));
       newSTO.set(superId, originals);
     }
     superToOrig = newSTO;
@@ -132,7 +135,6 @@ export function leiden(
     curEdges = superEdges;
   }
 
-  // Assign compact community IDs
   const result = new Map<string, number>();
   let cid = 0;
   for (const [, originals] of superToOrig) {

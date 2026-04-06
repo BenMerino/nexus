@@ -12972,18 +12972,16 @@ function localMove(nodeIds, comm, adj, deg, m2, res) {
   }
   return anyMoved;
 }
-function refine(nodeIds, comm, edges, adj, deg, m2, res) {
+function refine(nodeIds, comm, adj, m2, res) {
   const refined = /* @__PURE__ */ new Map();
   let nextId = 0;
   for (const id of nodeIds) refined.set(id, nextId++);
   const byCommunity = /* @__PURE__ */ new Map();
   for (const id of nodeIds) {
     const c2 = comm.get(id);
-    (byCommunity.get(c2) || (() => {
-      const a2 = [];
-      byCommunity.set(c2, a2);
-      return a2;
-    })()).push(id);
+    const arr = byCommunity.get(c2) || [];
+    arr.push(id);
+    byCommunity.set(c2, arr);
   }
   for (const [, members] of byCommunity) {
     if (members.length <= 2) {
@@ -13006,12 +13004,19 @@ function refine(nodeIds, comm, edges, adj, deg, m2, res) {
   }
   for (const [id, c2] of refined) comm.set(id, c2);
 }
-function leiden(nodeIds, edges, resolution = 1, maxIter = 10) {
+function adaptiveResolution(nodeCount, edgeCount) {
+  if (nodeCount <= 2) return 1;
+  const maxEdges = nodeCount * (nodeCount - 1) / 2;
+  const density = edgeCount / maxEdges;
+  return Math.max(1, 1 + 4 * density);
+}
+function leiden(nodeIds, edges, maxIter = 10) {
   if (!nodeIds.length || !edges.length) {
     return new Map(nodeIds.map((id, i) => [id, i]));
   }
   const m2 = totalWeight(edges);
   if (m2 === 0) return new Map(nodeIds.map((id, i) => [id, i]));
+  const resolution = adaptiveResolution(nodeIds.length, edges.length);
   let superToOrig = new Map(nodeIds.map((id) => [id, [id]]));
   let curIds = [...nodeIds];
   let curEdges = [...edges];
@@ -13019,17 +13024,14 @@ function leiden(nodeIds, edges, resolution = 1, maxIter = 10) {
     const comm = new Map(curIds.map((id, i) => [id, i]));
     const adj = adjacency(curIds, curEdges);
     const deg = nodeDegrees(curIds, curEdges);
-    const curM = totalWeight(curEdges) || m2;
-    if (!localMove(curIds, comm, adj, deg, curM, resolution)) break;
-    refine(curIds, comm, curEdges, adj, deg, curM, resolution);
+    if (!localMove(curIds, comm, adj, deg, m2, resolution)) break;
+    refine(curIds, comm, adj, m2, resolution);
     const { superIds, superEdges, members } = aggregate(curIds, curEdges, comm);
     if (superIds.length >= curIds.length) break;
     const newSTO = /* @__PURE__ */ new Map();
     for (const [superId, subNodes] of members) {
       const originals = [];
-      for (const sub of subNodes) {
-        originals.push(...superToOrig.get(sub) || [sub]);
-      }
+      for (const sub of subNodes) originals.push(...superToOrig.get(sub) || [sub]);
       newSTO.set(superId, originals);
     }
     superToOrig = newSTO;
