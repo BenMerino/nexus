@@ -15734,23 +15734,30 @@ function RelationshipExplorer() {
   const pinnedSet = (0, import_react12.useMemo)(() => new Set(pinnedTags), [pinnedTags]);
   if (loading) return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 24, fontFamily: "monospace", color: "#999" }, children: "Loading graph data..." });
   if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 24, fontFamily: "monospace", color: "#999" }, children: "No data. Submit some DOIs first." });
+  const [filtersVisible, setFiltersVisible] = (0, import_react12.useState)(false);
   return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { ref: containerRef, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(CategoryStrip, { categories: categoryOrder, counts: categoryCounts, active: activeCategories, onToggle: toggleCategory, onReorder: reorderCategories }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { background: "#fafafa", border: "1px solid #eee", borderRadius: 6, padding: "8px 12px", marginBottom: 12 }, children: [
-      categoryOrder.map((cat) => {
-        if (!activeCategories.has(cat)) return null;
-        const tags = tagsByCategory[cat];
-        if (!tags?.length) return null;
-        return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(TagPicker, { category: cat, tags, pinnedTags: pinnedSet, pinnedOrder: pinnedTags, onToggleTag: toggleTag }, cat);
-      }),
-      pinnedTags.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { textAlign: "right", marginTop: 2 }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("button", { onClick: () => {
-        setPinnedTags([]);
-        setSelectedNodeId(null);
-      }, style: { background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#999", fontFamily: "monospace" }, children: [
-        "clear all filters (",
-        pinnedTags.length,
-        ")"
-      ] }) })
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("button", { onClick: () => setFiltersVisible(!filtersVisible), style: { background: "none", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", fontSize: 12, color: "#555", fontFamily: "monospace", padding: "4px 10px" }, children: [
+      filtersVisible ? "Hide Filters" : "Filters",
+      pinnedTags.length > 0 ? ` (${pinnedTags.length})` : ""
+    ] }) }),
+    filtersVisible && /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_jsx_runtime16.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(CategoryStrip, { categories: categoryOrder, counts: categoryCounts, active: activeCategories, onToggle: toggleCategory, onReorder: reorderCategories }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { background: "#fafafa", border: "1px solid #eee", borderRadius: 6, padding: "8px 12px", marginBottom: 12 }, children: [
+        categoryOrder.map((cat) => {
+          if (!activeCategories.has(cat)) return null;
+          const tags = tagsByCategory[cat];
+          if (!tags?.length) return null;
+          return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(TagPicker, { category: cat, tags, pinnedTags: pinnedSet, pinnedOrder: pinnedTags, onToggleTag: toggleTag }, cat);
+        }),
+        pinnedTags.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { textAlign: "right", marginTop: 2 }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("button", { onClick: () => {
+          setPinnedTags([]);
+          setSelectedNodeId(null);
+        }, style: { background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "#999", fontFamily: "monospace" }, children: [
+          "clear all filters (",
+          pinnedTags.length,
+          ")"
+        ] }) })
+      ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { position: "relative", border: "1px solid #ddd", borderRadius: 6, background: "#fff", overflow: "hidden" }, children: [
       projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#999", fontFamily: "monospace" }, children: "No connections for selected categories." }) : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(GraphCanvas, { dims, projectedEdges, layoutNodes, nodeMap, selectedNodeId, connectedIds, simMutableRef, d3SimRef, onSelect: setSelectedNodeId, categoryOrder: activeCatOrder }),

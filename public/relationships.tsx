@@ -120,13 +120,22 @@ function RelationshipExplorer() {
   if (loading) return <div style={{ padding: 24, fontFamily: 'monospace', color: '#999' }}>Loading graph data...</div>;
   if (!rawNodes.length) return <div style={{ padding: 24, fontFamily: 'monospace', color: '#999' }}>No data. Submit some DOIs first.</div>;
 
+  const [filtersVisible, setFiltersVisible] = useState(false);
+
   return (
     <div ref={containerRef}>
-      <CategoryStrip categories={categoryOrder} counts={categoryCounts} active={activeCategories} onToggle={toggleCategory} onReorder={reorderCategories} />
-      <div style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
-        {categoryOrder.map(cat => { if (!activeCategories.has(cat)) return null; const tags = tagsByCategory[cat]; if (!tags?.length) return null; return <TagPicker key={cat} category={cat} tags={tags} pinnedTags={pinnedSet} pinnedOrder={pinnedTags} onToggleTag={toggleTag} />; })}
-        {pinnedTags.length > 0 && <div style={{ textAlign: 'right', marginTop: 2 }}><button onClick={() => { setPinnedTags([]); setSelectedNodeId(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#999', fontFamily: 'monospace' }}>clear all filters ({pinnedTags.length})</button></div>}
+      <div style={{ marginBottom: 12 }}>
+        <button onClick={() => setFiltersVisible(!filtersVisible)} style={{ background: 'none', border: '1px solid #ddd', borderRadius: 4, cursor: 'pointer', fontSize: 12, color: '#555', fontFamily: 'monospace', padding: '4px 10px' }}>
+          {filtersVisible ? 'Hide Filters' : 'Filters'}{pinnedTags.length > 0 ? ` (${pinnedTags.length})` : ''}
+        </button>
       </div>
+      {filtersVisible && <>
+        <CategoryStrip categories={categoryOrder} counts={categoryCounts} active={activeCategories} onToggle={toggleCategory} onReorder={reorderCategories} />
+        <div style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
+          {categoryOrder.map(cat => { if (!activeCategories.has(cat)) return null; const tags = tagsByCategory[cat]; if (!tags?.length) return null; return <TagPicker key={cat} category={cat} tags={tags} pinnedTags={pinnedSet} pinnedOrder={pinnedTags} onToggleTag={toggleTag} />; })}
+          {pinnedTags.length > 0 && <div style={{ textAlign: 'right', marginTop: 2 }}><button onClick={() => { setPinnedTags([]); setSelectedNodeId(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#999', fontFamily: 'monospace' }}>clear all filters ({pinnedTags.length})</button></div>}
+        </div>
+      </>}
       <div style={{ position: 'relative', border: '1px solid #ddd', borderRadius: 6, background: '#fff', overflow: 'hidden' }}>
         {projectedNodes.length === 0
           ? <div style={{ padding: 40, textAlign: 'center', color: '#999', fontFamily: 'monospace' }}>No connections for selected categories.</div>
