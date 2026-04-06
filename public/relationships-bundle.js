@@ -12747,7 +12747,7 @@ var require_jsx_runtime = __commonJS({
 });
 
 // public/relationships.tsx
-var import_react12 = __toESM(require_react());
+var import_react14 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
 // public/relationship-types.ts
@@ -15870,21 +15870,84 @@ function GraphCanvas({
   );
 }
 
+// public/use-default-pins.ts
+var import_react12 = __toESM(require_react());
+function norm(s) {
+  return s.toLowerCase().replace(/[-]/g, " ").trim();
+}
+function findAuthorNode(name, nodes) {
+  const normalized = norm(name);
+  const surname = normalized.split(" ").pop() || "";
+  const firstName = name.split(" ")[0].toLowerCase();
+  return nodes.find((n) => {
+    if (n.group !== "author") return false;
+    const an = norm(n.label);
+    return an === normalized || an.includes(surname) && an.includes(firstName);
+  });
+}
+function findInstitutionNode(affiliation, nodes) {
+  const normalized = norm(affiliation);
+  return nodes.find((n) => n.group === "institution" && norm(n.label) === normalized);
+}
+function useDefaultPins(rawNodes) {
+  const [profile, setProfile] = (0, import_react12.useState)(null);
+  const [ready, setReady] = (0, import_react12.useState)(false);
+  (0, import_react12.useEffect)(() => {
+    fetch("/api/auth?action=me").then((r) => r.ok ? r.json() : null).then((d) => {
+      if (d?.profile) setProfile(d.profile);
+    }).catch(() => {
+    }).finally(() => setReady(true));
+  }, []);
+  if (!ready || !profile || !rawNodes.length) {
+    return { defaultPins: [], defaultSelected: null, ready };
+  }
+  const pins = [];
+  let selected = null;
+  const authorNode = findAuthorNode(profile.name, rawNodes);
+  if (authorNode) {
+    pins.push(authorNode.id);
+    selected = authorNode.id;
+  }
+  const instNode = findInstitutionNode(profile.affiliation, rawNodes);
+  if (instNode) pins.push(instNode.id);
+  return { defaultPins: pins, defaultSelected: selected, ready };
+}
+
+// public/use-tag-counts.ts
+var import_react13 = __toESM(require_react());
+function useTagCounts(rawNodes, rawEdges) {
+  return (0, import_react13.useMemo)(() => {
+    const counts = {};
+    const doiPerTag = /* @__PURE__ */ new Map();
+    for (const e of rawEdges) doiPerTag.set(e.target, (doiPerTag.get(e.target) || 0) + 1);
+    const byCategory = {};
+    for (const n of rawNodes) {
+      if (n.group === "doi") continue;
+      counts[n.group] = (counts[n.group] || 0) + 1;
+      (byCategory[n.group] ||= []).push({ id: n.id, label: n.label, doiCount: doiPerTag.get(n.id) || 0 });
+    }
+    for (const cat of Object.keys(byCategory)) byCategory[cat].sort((a2, b) => b.doiCount - a2.doiCount);
+    return { categoryCounts: counts, tagsByCategory: byCategory };
+  }, [rawNodes, rawEdges]);
+}
+
 // public/relationships.tsx
 var import_jsx_runtime16 = __toESM(require_jsx_runtime());
 function RelationshipExplorer() {
-  const [rawNodes, setRawNodes] = (0, import_react12.useState)([]);
-  const [rawEdges, setRawEdges] = (0, import_react12.useState)([]);
-  const [loading, setLoading] = (0, import_react12.useState)(true);
-  const [tagMeta, setTagMeta] = (0, import_react12.useState)({});
-  const [categoryOrder, setCategoryOrder] = (0, import_react12.useState)([...TAG_CATEGORIES]);
-  const [activeCategories, setActiveCategories] = (0, import_react12.useState)(() => new Set(TAG_CATEGORIES));
-  const [pinnedTags, setPinnedTags] = (0, import_react12.useState)([]);
-  const [selectedNodeId, setSelectedNodeId] = (0, import_react12.useState)(null);
-  const [filtersVisible, setFiltersVisible] = (0, import_react12.useState)(false);
-  const containerRef = (0, import_react12.useRef)(null);
-  const [dims, setDims] = (0, import_react12.useState)({ width: 1100, height: 600 });
-  (0, import_react12.useEffect)(() => {
+  const [rawNodes, setRawNodes] = (0, import_react14.useState)([]);
+  const [rawEdges, setRawEdges] = (0, import_react14.useState)([]);
+  const [loading, setLoading] = (0, import_react14.useState)(true);
+  const [tagMeta, setTagMeta] = (0, import_react14.useState)({});
+  const [categoryOrder, setCategoryOrder] = (0, import_react14.useState)([...TAG_CATEGORIES]);
+  const [activeCategories, setActiveCategories] = (0, import_react14.useState)(() => new Set(TAG_CATEGORIES));
+  const [pinnedTags, setPinnedTags] = (0, import_react14.useState)([]);
+  const [selectedNodeId, setSelectedNodeId] = (0, import_react14.useState)(null);
+  const [filtersVisible, setFiltersVisible] = (0, import_react14.useState)(false);
+  const containerRef = (0, import_react14.useRef)(null);
+  const [dims, setDims] = (0, import_react14.useState)({ width: 1100, height: 600 });
+  const appliedDefaults = (0, import_react14.useRef)(false);
+  const { defaultPins, defaultSelected, ready: profileReady } = useDefaultPins(rawNodes);
+  (0, import_react14.useEffect)(() => {
     fetch("/api/graph").then((r) => r.json()).then((d) => {
       setRawNodes(d.nodes);
       setRawEdges(d.edges);
@@ -15893,7 +15956,13 @@ function RelationshipExplorer() {
     fetch("/api/graph-metadata").then((r) => r.json()).then((d) => setTagMeta(d.tagMeta || {})).catch(() => {
     });
   }, []);
-  (0, import_react12.useEffect)(() => {
+  (0, import_react14.useEffect)(() => {
+    if (!profileReady || !rawNodes.length || appliedDefaults.current) return;
+    appliedDefaults.current = true;
+    if (defaultPins.length) setPinnedTags(defaultPins);
+    if (defaultSelected) setSelectedNodeId(defaultSelected);
+  }, [profileReady, rawNodes.length, defaultPins, defaultSelected]);
+  (0, import_react14.useEffect)(() => {
     const el = containerRef.current;
     if (!el) return;
     const obs = new ResizeObserver((entries) => {
@@ -15903,7 +15972,7 @@ function RelationshipExplorer() {
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
-  const toggleCategory = (0, import_react12.useCallback)((cat) => {
+  const toggleCategory = (0, import_react14.useCallback)((cat) => {
     setActiveCategories((prev) => {
       const next = new Set(prev);
       if (next.has(cat)) {
@@ -15918,11 +15987,11 @@ function RelationshipExplorer() {
     });
     setSelectedNodeId(null);
   }, []);
-  const toggleTag = (0, import_react12.useCallback)((id) => {
+  const toggleTag = (0, import_react14.useCallback)((id) => {
     setPinnedTags((prev) => prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]);
     setSelectedNodeId(null);
   }, []);
-  const reorderCategories = (0, import_react12.useCallback)((from, to) => {
+  const reorderCategories = (0, import_react14.useCallback)((from, to) => {
     setCategoryOrder((prev) => {
       const next = [...prev];
       const [moved] = next.splice(from, 1);
@@ -15930,15 +15999,15 @@ function RelationshipExplorer() {
       return next;
     });
   }, []);
-  const { nodes: projectedNodesRaw, edges: projectedEdges, matchingDois } = (0, import_react12.useMemo)(
+  const { nodes: projectedNodesRaw, edges: projectedEdges, matchingDois } = (0, import_react14.useMemo)(
     () => projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags),
     [rawNodes, rawEdges, activeCategories, pinnedTags]
   );
-  const projectedNodes = (0, import_react12.useMemo)(() => enrichWithMeta(projectedNodesRaw, tagMeta), [projectedNodesRaw, tagMeta]);
-  const doiCount = (0, import_react12.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
+  const projectedNodes = (0, import_react14.useMemo)(() => enrichWithMeta(projectedNodesRaw, tagMeta), [projectedNodesRaw, tagMeta]);
+  const doiCount = (0, import_react14.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
   const { simNodes: layoutNodes, nodesRef: simMutableRef, simRef: d3SimRef } = useForceLayout(projectedNodes, projectedEdges, dims.width, dims.height);
-  const nodeMap = (0, import_react12.useMemo)(() => new Map(layoutNodes.map((n) => [n.id, n])), [layoutNodes]);
-  const { connectedIds, edgesForNode } = (0, import_react12.useMemo)(() => {
+  const nodeMap = (0, import_react14.useMemo)(() => new Map(layoutNodes.map((n) => [n.id, n])), [layoutNodes]);
+  const { connectedIds, edgesForNode } = (0, import_react14.useMemo)(() => {
     if (!selectedNodeId) return { connectedIds: /* @__PURE__ */ new Set(), edgesForNode: [] };
     const ids = /* @__PURE__ */ new Set([selectedNodeId]);
     const matching = [];
@@ -15955,11 +16024,11 @@ function RelationshipExplorer() {
     return { connectedIds: ids, edgesForNode: matching };
   }, [selectedNodeId, projectedEdges]);
   const selectedNode = selectedNodeId ? nodeMap.get(selectedNodeId) : null;
-  const selectedConnections = (0, import_react12.useMemo)(() => {
+  const selectedConnections = (0, import_react14.useMemo)(() => {
     if (!selectedNodeId) return [];
     return [...connectedIds].filter((id) => id !== selectedNodeId).map((id) => nodeMap.get(id)).filter(Boolean);
   }, [selectedNodeId, connectedIds, nodeMap]);
-  const chartDois = (0, import_react12.useMemo)(() => {
+  const chartDois = (0, import_react14.useMemo)(() => {
     if (!selectedNodeId) return matchingDois;
     const nodeDois = /* @__PURE__ */ new Set();
     for (const e of rawEdges) if (e.target === selectedNodeId) {
@@ -15968,20 +16037,8 @@ function RelationshipExplorer() {
     }
     return nodeDois;
   }, [selectedNodeId, rawEdges, matchingDois]);
-  const { categoryCounts, tagsByCategory } = (0, import_react12.useMemo)(() => {
-    const counts = {};
-    const doiPerTag = /* @__PURE__ */ new Map();
-    for (const e of rawEdges) doiPerTag.set(e.target, (doiPerTag.get(e.target) || 0) + 1);
-    const byCategory = {};
-    for (const n of rawNodes) {
-      if (n.group === "doi") continue;
-      counts[n.group] = (counts[n.group] || 0) + 1;
-      (byCategory[n.group] ||= []).push({ id: n.id, label: n.label, doiCount: doiPerTag.get(n.id) || 0 });
-    }
-    for (const cat of Object.keys(byCategory)) byCategory[cat].sort((a2, b) => b.doiCount - a2.doiCount);
-    return { categoryCounts: counts, tagsByCategory: byCategory };
-  }, [rawNodes, rawEdges]);
-  const pinnedSet = (0, import_react12.useMemo)(() => new Set(pinnedTags), [pinnedTags]);
+  const { categoryCounts, tagsByCategory } = useTagCounts(rawNodes, rawEdges);
+  const pinnedSet = (0, import_react14.useMemo)(() => new Set(pinnedTags), [pinnedTags]);
   if (loading) return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 24, fontFamily: "monospace", color: "#999" }, children: "Loading graph data..." });
   if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 24, fontFamily: "monospace", color: "#999" }, children: "No data. Submit some DOIs first." });
   return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { ref: containerRef, children: [

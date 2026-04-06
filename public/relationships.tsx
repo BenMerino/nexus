@@ -9,6 +9,8 @@ import { CategoryStrip, TagPicker } from './graph-controls';
 import { DetailPanel } from './detail-panel';
 import { StatsBar, FilteredCharts } from './filtered-charts';
 import { GraphCanvas } from './graph-canvas';
+import { useDefaultPins } from './use-default-pins';
+import { useTagCounts } from './use-tag-counts';
 
 function RelationshipExplorer() {
   const [rawNodes, setRawNodes] = useState<RawNode[]>([]);
@@ -22,6 +24,8 @@ function RelationshipExplorer() {
   const [filtersVisible, setFiltersVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 1100, height: 600 });
+  const appliedDefaults = useRef(false);
+  const { defaultPins, defaultSelected, ready: profileReady } = useDefaultPins(rawNodes);
 
   useEffect(() => {
     fetch('/api/graph').then(r => r.json())
@@ -31,6 +35,13 @@ function RelationshipExplorer() {
       .then((d: { tagMeta: typeof tagMeta }) => setTagMeta(d.tagMeta || {}))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!profileReady || !rawNodes.length || appliedDefaults.current) return;
+    appliedDefaults.current = true;
+    if (defaultPins.length) setPinnedTags(defaultPins);
+    if (defaultSelected) setSelectedNodeId(defaultSelected);
+  }, [profileReady, rawNodes.length, defaultPins, defaultSelected]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -101,19 +112,7 @@ function RelationshipExplorer() {
     return nodeDois;
   }, [selectedNodeId, rawEdges, matchingDois]);
 
-  const { categoryCounts, tagsByCategory } = useMemo(() => {
-    const counts: Record<string, number> = {};
-    const doiPerTag = new Map<string, number>();
-    for (const e of rawEdges) doiPerTag.set(e.target, (doiPerTag.get(e.target) || 0) + 1);
-    const byCategory: Record<string, { id: string; label: string; doiCount: number }[]> = {};
-    for (const n of rawNodes) {
-      if (n.group === 'doi') continue;
-      counts[n.group] = (counts[n.group] || 0) + 1;
-      (byCategory[n.group] ||= []).push({ id: n.id, label: n.label, doiCount: doiPerTag.get(n.id) || 0 });
-    }
-    for (const cat of Object.keys(byCategory)) byCategory[cat].sort((a, b) => b.doiCount - a.doiCount);
-    return { categoryCounts: counts, tagsByCategory: byCategory };
-  }, [rawNodes, rawEdges]);
+  const { categoryCounts, tagsByCategory } = useTagCounts(rawNodes, rawEdges);
 
   const pinnedSet = useMemo(() => new Set(pinnedTags), [pinnedTags]);
 
