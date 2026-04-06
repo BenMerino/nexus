@@ -1,0 +1,107 @@
+import React from 'react';
+import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
+import { COLORS, BG_COLORS } from './relationship-types';
+
+function NodeHoverCard({ node, edges }: { node: EnrichedSimNode; edges: ProjectedEdge[] }) {
+  const topConns = edges
+    .map(e => ({ id: e.source === node.id ? e.target : e.source, weight: e.weight }))
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 3);
+
+  return (
+    <div style={{
+      background: '#fff', border: `1px solid ${COLORS[node.group]}`, borderRadius: 6,
+      padding: '8px 12px', fontFamily: 'monospace', fontSize: 11, minWidth: 160,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.12)', pointerEvents: 'none',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+        <span style={{
+          fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5,
+          color: COLORS[node.group], background: BG_COLORS[node.group],
+          padding: '1px 6px', borderRadius: 3,
+        }}>{node.role !== 'default' ? node.role : node.group}</span>
+        <strong style={{ fontSize: 12 }}>{node.label}</strong>
+      </div>
+      <div style={{ color: '#777', fontSize: 10, marginBottom: 4 }}>
+        {node.doiCount} paper{node.doiCount !== 1 ? 's' : ''} · {node.degree} connections
+      </div>
+      {node.topKeywords && node.topKeywords.length > 0 && (
+        <div style={{ color: '#555', fontSize: 10, marginBottom: 4, fontStyle: 'italic' }}>
+          {node.topKeywords.join(', ')}
+        </div>
+      )}
+      {topConns.length > 0 && (
+        <div style={{ borderTop: '1px solid #eee', paddingTop: 4, fontSize: 10 }}>
+          {topConns.map(c => (
+            <div key={c.id} style={{ color: '#555' }}>
+              {c.id.replace(/^[^:]+:/, '')} <span style={{ color: '#aaa' }}>({c.weight})</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EdgeHoverCard({ edge, nodeMap }: { edge: ProjectedEdge; nodeMap: Map<string, EnrichedSimNode> }) {
+  const s = nodeMap.get(edge.source);
+  const t = nodeMap.get(edge.target);
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #ccc', borderRadius: 6,
+      padding: '8px 12px', fontFamily: 'monospace', fontSize: 11, minWidth: 180,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.12)', pointerEvents: 'none',
+    }}>
+      <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 11 }}>
+        {s?.label || edge.source} ↔ {t?.label || edge.target}
+      </div>
+      <div style={{ color: '#777', fontSize: 10, marginBottom: 4 }}>
+        {edge.weight} shared paper{edge.weight !== 1 ? 's' : ''}
+      </div>
+      {edge.sharedDois.slice(0, 5).map((d, i) => (
+        <div key={i} style={{ fontSize: 10, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
+          {d}
+        </div>
+      ))}
+      {edge.sharedDois.length > 5 && (
+        <div style={{ fontSize: 10, color: '#999' }}>+{edge.sharedDois.length - 5} more</div>
+      )}
+    </div>
+  );
+}
+
+export function HoverCard({ hoveredNode, hoveredEdge, nodeMap, projectedEdges, dims }: {
+  hoveredNode: EnrichedSimNode | null | undefined;
+  hoveredEdge: ProjectedEdge | null;
+  nodeMap: Map<string, EnrichedSimNode>;
+  projectedEdges: ProjectedEdge[];
+  dims: { width: number; height: number };
+}) {
+  if (!hoveredNode && !hoveredEdge) return null;
+
+  let x = 0; let y = 0;
+  if (hoveredNode) {
+    x = hoveredNode.x + 20; y = hoveredNode.y - 10;
+  } else if (hoveredEdge) {
+    const s = nodeMap.get(hoveredEdge.source);
+    const t = nodeMap.get(hoveredEdge.target);
+    if (s && t) { x = (s.x + t.x) / 2 + 10; y = (s.y + t.y) / 2 - 10; }
+  }
+
+  // Clamp to viewport
+  x = Math.min(x, dims.width - 220);
+  y = Math.max(10, Math.min(y, dims.height - 120));
+
+  const nodeEdges = hoveredNode
+    ? projectedEdges.filter(e => e.source === hoveredNode.id || e.target === hoveredNode.id)
+    : [];
+
+  return (
+    <foreignObject x={x} y={y} width={260} height={200} style={{ overflow: 'visible', pointerEvents: 'none' }}>
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        {hoveredNode && <NodeHoverCard node={hoveredNode} edges={nodeEdges} />}
+        {hoveredEdge && !hoveredNode && <EdgeHoverCard edge={hoveredEdge} nodeMap={nodeMap} />}
+      </div>
+    </foreignObject>
+  );
+}

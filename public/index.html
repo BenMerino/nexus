@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>DOI Checker</title>
+  <link rel="stylesheet" href="/shared.css">
+</head>
+<body>
+  <nav>
+    <span class="logo">DOI Checker</span>
+    <a href="/" class="active">Submit</a>
+    <a href="/records.html">Records</a>
+    <a href="/explore.html">Explore</a>
+  </nav>
+
+  <div class="page">
+    <h1>Submit a DOI</h1>
+
+    <div class="card">
+      <div style="display: flex; flex-direction: column; gap: 12px; max-width: 600px;">
+        <div>
+          <label style="display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: bold;">Uploader</label>
+          <input id="uploader-input" type="text" placeholder="Your name" style="width: 100%;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: bold;">DOI</label>
+          <input id="doi-input" type="text" placeholder="e.g. 10.1038/nature12373" style="width: 100%;">
+        </div>
+        <div>
+          <button onclick="submit()">Check DOI</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="status"></div>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    document.getElementById("doi-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submit();
+    });
+
+    async function submit() {
+      const doi = document.getElementById("doi-input").value.trim();
+      const uploader = document.getElementById("uploader-input").value.trim();
+      if (!doi || !uploader) { alert("Enter both uploader name and DOI"); return; }
+
+      const status = document.getElementById("status");
+      const results = document.getElementById("results");
+      status.className = "status loading";
+      status.textContent = "Checking DOI across CrossRef, OpenAlex, Semantic Scholar, DataCite...";
+      results.innerHTML = "";
+
+      try {
+        const resp = await fetch("/api/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ doi, uploader }),
+        });
+        const data = await resp.json();
+        if (data.error) {
+          status.className = "status error";
+          status.textContent = "Error: " + data.error;
+          return;
+        }
+        status.className = "status success";
+        status.textContent = "Done. Record stored in database.";
+
+        // Show normalized record
+        let html = renderNormalized(data.record);
+        // Show tags
+        html += '<div class="card mt-16"><h3>Extracted Tags</h3><div class="mt-8">';
+        html += data.tags.map(t => `<span class="tag ${t.category}">${t.category}: ${t.value}</span>`).join(" ");
+        html += '</div></div>';
+        // Show raw per-source
+        html += '<h2 class="mt-16">Raw API Responses</h2>';
+        const sources = ["crossref", "openalex", "semanticScholar", "datacite"];
+        html += sources.map(s => renderSource(s, data.sources[s])).join("");
+        results.innerHTML = html;
+      } catch (err) {
+        status.className = "status error";
+        status.textContent = "Error: " + err.message;
+      }
+    }
+
+    function renderNormalized(r) {
+      const fields = [
+        ["doi", r.doi], ["title", r.title], ["authors", r.authors?.join(", ")],
+        ["published", r.published], ["journal", r.journal], ["publisher", r.publisher],
+        ["type", r.type], ["citations", r.citationCount], ["openAccess", r.openAccess],
+        ["openAccessUrl", r.openAccessUrl], ["venue", r.venue], ["url", r.url],
+      ];
+      const rows = fields
+        .filter(([, v]) => v != null && v !== "")
+        .map(([k, v]) => {
+          let val = v;
+          if (typeof val === "string" && val.startsWith("http"))
+            val = `<a href="${val}" target="_blank">${val}</a>`;
+          if (typeof val === "boolean") val = val ? "Yes" : "No";
+          return `<tr><td>${k}</td><td>${val}</td></tr>`;
+        }).join("");
+      return `<div class="normalized"><h3>Normalized Record</h3><table>${rows}</table></div>`;
+    }
+
+    function renderSource(name, d) {
+      if (!d || !d.found)
+        return `<div class="source"><h3>${name}</h3><span class="not-found">Not found</span></div>`;
+      const rows = Object.entries(d)
+        .filter(([k, v]) => k !== "found" && v != null && v !== "")
+        .map(([k, v]) => {
+          let val = Array.isArray(v) ? v.join(", ") : v;
+          if (typeof val === "string" && val.startsWith("http"))
+            val = `<a href="${val}" target="_blank">${val}</a>`;
+          if (typeof val === "boolean") val = val ? "Yes" : "No";
+          return `<tr><td>${k}</td><td>${val}</td></tr>`;
+        }).join("");
+      return `<div class="source"><h3>${name}</h3><table>${rows}</table></div>`;
+    }
+  </script>
+</body>
+</html>

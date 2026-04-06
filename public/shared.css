@@ -1,0 +1,108 @@
+/* Shared styles for all pages */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: monospace; font-size: 14px; color: #333; background: #fafafa; }
+a { color: #0366d6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Navigation */
+nav { background: #fff; border-bottom: 2px solid #333; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+nav .logo { font-weight: bold; font-size: 16px; letter-spacing: 1px; }
+nav a { padding: 4px 12px; border-radius: 3px; color: #555; font-size: 13px; }
+nav a:hover { background: #eee; text-decoration: none; }
+nav a.active { background: #333; color: #fff; }
+
+/* Layout */
+.page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+h1 { font-size: 20px; margin-bottom: 16px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+h2 { font-size: 16px; margin-bottom: 12px; }
+h3 { font-size: 14px; margin-bottom: 8px; }
+
+/* Form elements */
+input, select, textarea {
+  font-family: monospace; font-size: 14px; padding: 6px 10px;
+  border: 1px solid #ccc; border-radius: 3px; background: #fff;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: #333; }
+button {
+  font-family: monospace; font-size: 14px; padding: 6px 16px;
+  cursor: pointer; border: 1px solid #333; border-radius: 3px;
+  background: #333; color: #fff;
+}
+button:hover { background: #555; }
+button.secondary { background: #fff; color: #333; }
+button.secondary:hover { background: #eee; }
+
+/* Cards */
+.card {
+  background: #fff; border: 1px solid #ddd; border-radius: 4px;
+  padding: 16px; margin-bottom: 12px;
+}
+.card h4 { margin: 0 0 8px 0; font-size: 14px; }
+
+/* Tags */
+.tag {
+  display: inline-block; background: #eee; padding: 2px 8px;
+  margin: 2px 4px 2px 0; font-size: 12px; border-radius: 3px;
+}
+.tag.author { background: #fce4ec; color: #c62828; }
+.tag.journal { background: #e8f5e9; color: #2e7d32; }
+.tag.publisher { background: #e3f2fd; color: #1565c0; }
+.tag.type { background: #f3e5f5; color: #7b1fa2; }
+.tag.venue { background: #fff3e0; color: #e65100; }
+.tag.institution { background: #fff8e1; color: #f57f17; }
+.tag.year { background: #e0f2f1; color: #00695c; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; background: #fff; }
+table th { text-align: left; padding: 8px 12px; border-bottom: 2px solid #333; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+table td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: top; }
+table tr:hover td { background: #f5f5f5; }
+table tr.detail-row td { background: #f8f9fa; }
+table tr.detail-row:hover td { background: #f8f9fa; }
+table tr.record-row:hover td { background: #eef; }
+
+/* Status messages */
+.status { padding: 8px 12px; margin: 8px 0; border-radius: 3px; font-size: 13px; }
+.status.info { background: #e3f2fd; color: #1565c0; }
+.status.success { background: #e8f5e9; color: #2e7d32; }
+.status.error { background: #fce4ec; color: #c62828; }
+.status.loading { background: #fff3e0; color: #e65100; }
+
+/* Source blocks */
+.source { border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin: 8px 0; background: #fff; }
+.source h3 { margin: 0 0 8px 0; font-size: 13px; }
+.source .not-found { color: #999; font-style: italic; }
+.source table { margin: 0; }
+.source td { padding: 3px 10px 3px 0; }
+.source td:first-child { font-weight: bold; white-space: nowrap; }
+
+/* Normalized record */
+.normalized { border: 1px solid #333; border-radius: 4px; padding: 16px; margin: 12px 0; background: #fff; }
+.normalized h3 { margin: 0 0 8px 0; }
+.normalized td { padding: 4px 12px 4px 0; }
+.normalized td:first-child { font-weight: bold; white-space: nowrap; }
+
+/* Utility */
+.flex { display: flex; gap: 12px; align-items: center; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-8 { gap: 8px; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mb-16 { margin-bottom: 16px; }
+.text-muted { color: #999; }
+.text-small { font-size: 12px; }
+
+/* Grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* Graph container */
+#graph-container { width: 100%; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
+
+/* Search */
+.search-box { position: relative; }
+.search-box input { width: 100%; padding-right: 36px; }
+
+/* Filter bar */
+.filter-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 12px 0; }
+.filter-bar label { font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
