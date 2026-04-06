@@ -12833,6 +12833,8 @@ function classifyNodes(nodes, edges, allNodes) {
 }
 
 // public/project-graph.ts
+var MAX_NODES = 150;
+var MAX_EDGES = 600;
 function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags) {
   const pinnedSet = new Set(pinnedTags);
   const doiToTags = /* @__PURE__ */ new Map();
@@ -12901,7 +12903,7 @@ function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags) {
     weightMap.set(e.source, (weightMap.get(e.source) || 0) + e.weight);
     weightMap.set(e.target, (weightMap.get(e.target) || 0) + e.weight);
   }
-  const baseNodes = [...tagNodes.values()].map((n) => ({
+  let baseNodes = [...tagNodes.values()].map((n) => ({
     id: n.id,
     label: n.label,
     group: n.group,
@@ -12909,7 +12911,17 @@ function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags) {
     degree: degreeMap.get(n.id) || 0,
     weight: weightMap.get(n.id) || 0
   }));
-  const nodes = classifyNodes(baseNodes, edges, baseNodes);
+  if (baseNodes.length > MAX_NODES) {
+    baseNodes.sort((a2, b) => b.weight - a2.weight);
+    baseNodes = baseNodes.slice(0, MAX_NODES);
+  }
+  const keptIds = new Set(baseNodes.map((n) => n.id));
+  let cappedEdges = edges.filter((e) => keptIds.has(e.source) && keptIds.has(e.target));
+  if (cappedEdges.length > MAX_EDGES) {
+    cappedEdges.sort((a2, b) => b.weight - a2.weight);
+    cappedEdges = cappedEdges.slice(0, MAX_EDGES);
+  }
+  const nodes = classifyNodes(baseNodes, cappedEdges, baseNodes);
   const matchingDois = /* @__PURE__ */ new Set();
   const pinnedCats = [...pinnedByCategory.keys()];
   for (const [doiId, tags] of doiToTags) {
@@ -12925,7 +12937,7 @@ function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags) {
       matchingDois.add(doiId.replace("doi:", ""));
     }
   }
-  return { nodes, edges, matchingDois };
+  return { nodes, edges: cappedEdges, matchingDois };
 }
 
 // public/use-force-layout.ts
@@ -13864,11 +13876,24 @@ function buildCategoryXTargets(catOrder, width) {
   });
   return map;
 }
+function physicsParams(n) {
+  const large = n > 80;
+  return {
+    chargeStrength: large ? -300 : -600,
+    chargeMax: large ? 300 : 500,
+    collideIterations: large ? 1 : 3,
+    collidePad: large ? 15 : 35,
+    alphaDecay: large ? 0.04 : 0.015,
+    velocityDecay: large ? 0.5 : 0.4
+  };
+}
 function useForceLayout(inputNodes, edges, width, height, categoryOrder) {
   const simRef = (0, import_react.useRef)(null);
   const nodesRef = (0, import_react.useRef)([]);
   const [snapshot, setSnapshot] = (0, import_react.useState)([]);
   const inputKeyRef = (0, import_react.useRef)("");
+  const rafRef = (0, import_react.useRef)(0);
+  const dirtyRef = (0, import_react.useRef)(false);
   const inputKey = inputNodes.map((n) => n.id).join(",");
   const catKey = categoryOrder?.join(",") || "";
   (0, import_react.useEffect)(() => {
@@ -13882,6 +13907,7 @@ function useForceLayout(inputNodes, edges, width, height, categoryOrder) {
     }
     inputKeyRef.current = inputKey;
     if (simRef.current) simRef.current.stop();
+    cancelAnimationFrame(rafRef.current);
     const nodes = inputNodes.map((n) => ({
       ...n,
       x: catTargets.get(n.group) ?? width / 2 + (Math.random() - 0.5) * width * 0.5,
@@ -13894,16 +13920,26 @@ function useForceLayout(inputNodes, edges, width, height, categoryOrder) {
     nodesRef.current = nodes;
     const nodeIndex = new Map(nodes.map((n, i) => [n.id, i]));
     const links = edges.filter((e) => nodeIndex.has(e.source) && nodeIndex.has(e.target)).map((e) => ({ source: nodeIndex.get(e.source), target: nodeIndex.get(e.target), weight: e.weight }));
-    const sim = simulation_default(nodes).force("charge", manyBody_default().strength(-600).distanceMax(500)).force("link", link_default(links).distance(140).strength((l) => 0.15 + 0.05 * Math.min(l.weight, 5))).force("center", center_default(width / 2, height / 2).strength(0.02)).force("collide", collide_default().radius((n) => nodeRadius(n.weight || 0) + 35).strength(1).iterations(3)).force("x", x_default2(xTarget).strength(xStrength)).force("y", y_default2(height / 2).strength(0.01)).alphaDecay(0.015).velocityDecay(0.4).on("tick", () => {
+    const pp = physicsParams(nodes.length);
+    const flush = () => {
+      if (dirtyRef.current) {
+        dirtyRef.current = false;
+        setSnapshot(nodes.map((n) => ({ ...n })));
+      }
+      rafRef.current = requestAnimationFrame(flush);
+    };
+    rafRef.current = requestAnimationFrame(flush);
+    const sim = simulation_default(nodes).force("charge", manyBody_default().strength(pp.chargeStrength).distanceMax(pp.chargeMax)).force("link", link_default(links).distance(140).strength((l) => 0.15 + 0.05 * Math.min(l.weight, 5))).force("center", center_default(width / 2, height / 2).strength(0.02)).force("collide", collide_default().radius((n) => nodeRadius(n.weight || 0) + pp.collidePad).strength(1).iterations(pp.collideIterations)).force("x", x_default2(xTarget).strength(xStrength)).force("y", y_default2(height / 2).strength(0.01)).alphaDecay(pp.alphaDecay).velocityDecay(pp.velocityDecay).on("tick", () => {
       for (const n of nodes) {
         n.x = Math.max(60, Math.min(width - 60, n.x));
         n.y = Math.max(30, Math.min(height - 30, n.y));
       }
-      setSnapshot(nodes.map((n) => ({ ...n })));
+      dirtyRef.current = true;
     });
     simRef.current = sim;
     return () => {
       sim.stop();
+      cancelAnimationFrame(rafRef.current);
     };
   }, [inputKey, catKey, edges, width, height]);
   const reheat = (0, import_react.useCallback)(() => {
@@ -15103,6 +15139,7 @@ function NodeGlyph({
   dimmed,
   selected,
   hovered,
+  dense,
   pinIndex,
   onClick,
   onDragStart,
@@ -15114,6 +15151,7 @@ function NodeGlyph({
   const fontSize = r >= 10 ? 11 : 10;
   const isBridge = node.role === "bridge";
   const isHub = node.role === "hub";
+  const showDetail = !dense || selected || hovered;
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
     "g",
     {
@@ -15124,10 +15162,10 @@ function NodeGlyph({
       },
       onMouseEnter,
       onMouseLeave,
-      style: { cursor: "grab", transition: "opacity 200ms ease" },
+      style: { cursor: "grab" },
       opacity: dimmed ? 0.1 : 1,
       children: [
-        node.haloIntensity && node.haloIntensity > 0 && !dimmed && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+        showDetail && node.haloIntensity && node.haloIntensity > 0 && !dimmed && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
           "circle",
           {
             cx: node.x,
@@ -15150,8 +15188,8 @@ function NodeGlyph({
             strokeDasharray: hovered && !selected ? "3 2" : void 0
           }
         ),
-        !isBridge && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CategoryRing, { node, r }),
-        isHub && !dimmed && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+        showDetail && !isBridge && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CategoryRing, { node, r }),
+        showDetail && isHub && !dimmed && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
           "circle",
           {
             cx: node.x,
@@ -15174,7 +15212,7 @@ function NodeGlyph({
             strokeWidth: r >= 8 ? 2 : 1.5
           }
         ),
-        node.openAccess && !dimmed && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+        showDetail && node.openAccess && !dimmed && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
           "circle",
           {
             cx: node.x + r * 0.6,
@@ -15199,7 +15237,7 @@ function NodeGlyph({
             children: node.weight
           }
         ),
-        pinIndex !== null && !dimmed && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { children: [
+        showDetail && pinIndex !== null && !dimmed && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
             "circle",
             {
@@ -15555,6 +15593,23 @@ function GraphCanvas({
   const catIndexMap = (0, import_react11.useMemo)(() => new Map(categoryOrder.map((cat, i) => [cat, i])), [categoryOrder]);
   const hoveredNode = hoveredNodeId ? nodeMap.get(hoveredNodeId) : null;
   const hoveredEdge = hoveredEdgeIdx !== null ? projectedEdges[hoveredEdgeIdx] : null;
+  const nodeCount = layoutNodes.length;
+  const dense = nodeCount > 80;
+  const pad = 60;
+  const inView = (x3, y3) => x3 >= -pad && x3 <= dims.width + pad && y3 >= -pad && y3 <= dims.height + pad;
+  const visibleNodes = (0, import_react11.useMemo)(
+    () => layoutNodes.filter((n) => inView(n.x, n.y)),
+    [layoutNodes, dims.width, dims.height]
+  );
+  const visibleNodeIds = (0, import_react11.useMemo)(() => new Set(visibleNodes.map((n) => n.id)), [visibleNodes]);
+  const visibleEdges = (0, import_react11.useMemo)(
+    () => projectedEdges.filter((e) => {
+      const s = nodeMap.get(e.source);
+      const t = nodeMap.get(e.target);
+      return s && t && (inView(s.x, s.y) || inView(t.x, t.y));
+    }),
+    [projectedEdges, nodeMap, dims.width, dims.height]
+  );
   return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
     "svg",
     {
@@ -15571,9 +15626,9 @@ function GraphCanvas({
         if (e.target === e.currentTarget) onSelect(null);
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EdgeDefs, { edges: projectedEdges, nodeMap }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EdgeDefs, { edges: visibleEdges, nodeMap }),
         /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ClusterHulls, { layoutNodes }),
-        projectedEdges.map((e, i) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+        visibleEdges.map((e, i) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
           EdgeLine,
           {
             edge: e,
@@ -15584,9 +15639,9 @@ function GraphCanvas({
             onMouseEnter: () => setHoveredEdgeIdx(i),
             onMouseLeave: () => setHoveredEdgeIdx(null)
           },
-          i
+          `${e.source}-${e.target}`
         )),
-        layoutNodes.map((n) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+        visibleNodes.map((n) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
           NodeGlyph,
           {
             node: n,
@@ -15594,6 +15649,7 @@ function GraphCanvas({
             dimmed: !!selectedNodeId && !connectedIds.has(n.id),
             selected: n.id === selectedNodeId,
             hovered: hoveredNodeId === n.id,
+            dense,
             pinIndex: catIndexMap.has(n.group) ? catIndexMap.get(n.group) : null,
             onClick: () => onSelect(selectedNodeId === n.id ? null : n.id),
             onDragStart: (e) => {

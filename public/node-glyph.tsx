@@ -45,11 +45,12 @@ function DiamondShape({ node, r }: { node: EnrichedSimNode; r: number }) {
 }
 
 export function NodeGlyph({
-  node, highlighted, dimmed, selected, hovered, pinIndex,
+  node, highlighted, dimmed, selected, hovered, dense, pinIndex,
   onClick, onDragStart, onMouseEnter, onMouseLeave,
 }: {
   node: EnrichedSimNode;
   highlighted: boolean; dimmed: boolean; selected: boolean; hovered: boolean;
+  dense?: boolean;
   pinIndex: number | null;
   onClick: () => void;
   onDragStart: (e: React.MouseEvent) => void;
@@ -61,16 +62,17 @@ export function NodeGlyph({
   const fontSize = r >= 10 ? 11 : 10;
   const isBridge = node.role === 'bridge';
   const isHub = node.role === 'hub';
+  const showDetail = !dense || selected || hovered;
 
   return (
     <g onClick={onClick}
       onMouseDown={(e) => { e.stopPropagation(); onDragStart(e); }}
       onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
-      style={{ cursor: 'grab', transition: 'opacity 200ms ease' }}
+      style={{ cursor: 'grab' }}
       opacity={dimmed ? 0.1 : 1}>
 
-      {/* Halo for citation intensity */}
-      {node.haloIntensity && node.haloIntensity > 0 && !dimmed && (
+      {/* Halo for citation intensity — skip in dense mode */}
+      {showDetail && node.haloIntensity && node.haloIntensity > 0 && !dimmed && (
         <circle cx={node.x} cy={node.y} r={r + 8 + node.haloIntensity * 6}
           fill={COLORS[node.group]} opacity={0.06 + node.haloIntensity * 0.04} />
       )}
@@ -84,11 +86,11 @@ export function NodeGlyph({
           strokeDasharray={hovered && !selected ? '3 2' : undefined} />
       )}
 
-      {/* Category profile ring */}
-      {!isBridge && <CategoryRing node={node} r={r} />}
+      {/* Category profile ring — skip in dense mode */}
+      {showDetail && !isBridge && <CategoryRing node={node} r={r} />}
 
-      {/* Hub double ring */}
-      {isHub && !dimmed && (
+      {/* Hub double ring — skip in dense mode */}
+      {showDetail && isHub && !dimmed && (
         <circle cx={node.x} cy={node.y} r={r + 6}
           fill="none" stroke={COLORS[node.group]} strokeWidth={1} opacity={0.3} />
       )}
@@ -101,8 +103,8 @@ export function NodeGlyph({
             stroke={COLORS[node.group]} strokeWidth={r >= 8 ? 2 : 1.5} />
       }
 
-      {/* Open access indicator */}
-      {node.openAccess && !dimmed && (
+      {/* Open access indicator — skip in dense mode */}
+      {showDetail && node.openAccess && !dimmed && (
         <circle cx={node.x + r * 0.6} cy={node.y - r * 0.6} r={2.5}
           fill="#2e7d32" stroke="#fff" strokeWidth={0.5} />
       )}
@@ -116,8 +118,8 @@ export function NodeGlyph({
         </text>
       )}
 
-      {/* Pin order badge */}
-      {pinIndex !== null && !dimmed && (
+      {/* Pin order badge — skip in dense mode */}
+      {showDetail && pinIndex !== null && !dimmed && (
         <g>
           <circle cx={node.x - r * 0.5} cy={node.y - r - 4} r={7}
             fill={COLORS[node.group]} stroke="#fff" strokeWidth={1.5} />

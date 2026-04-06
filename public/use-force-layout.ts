@@ -15,6 +15,18 @@ function buildCategoryXTargets(catOrder: Category[], width: number): Map<string,
   return map;
 }
 
+function physicsParams(n: number) {
+  const large = n > 80;
+  return {
+    chargeStrength: large ? -300 : -600,
+    chargeMax: large ? 300 : 500,
+    collideIterations: large ? 1 : 3,
+    collidePad: large ? 15 : 35,
+    alphaDecay: large ? 0.04 : 0.015,
+    velocityDecay: large ? 0.5 : 0.4,
+  };
+}
+
 export function useForceLayout(
   inputNodes: EnrichedTagNode[], edges: ProjectedEdge[], width: number, height: number,
   categoryOrder?: Category[],
@@ -23,6 +35,8 @@ export function useForceLayout(
   const nodesRef = useRef<EnrichedSimNode[]>([]);
   const [snapshot, setSnapshot] = useState<EnrichedSimNode[]>([]);
   const inputKeyRef = useRef('');
+  const rafRef = useRef(0);
+  const dirtyRef = useRef(false);
 
   const inputKey = inputNodes.map(n => n.id).join(',');
   const catKey = categoryOrder?.join(',') || '';
@@ -33,13 +47,13 @@ export function useForceLayout(
     const xStrength = (n: EnrichedSimNode) => catTargets.has(n.group) ? 0.12 : 0.01;
 
     if (inputKey === inputKeyRef.current && simRef.current) {
-      // Only category order changed — update x force and reheat
       simRef.current.force('x', forceX<EnrichedSimNode>(xTarget).strength(xStrength));
       simRef.current.alpha(0.3).restart();
       return;
     }
     inputKeyRef.current = inputKey;
     if (simRef.current) simRef.current.stop();
+    cancelAnimationFrame(rafRef.current);
 
     const nodes: EnrichedSimNode[] = inputNodes.map(n => ({
       ...n,
@@ -54,26 +68,38 @@ export function useForceLayout(
       .filter(e => nodeIndex.has(e.source) && nodeIndex.has(e.target))
       .map(e => ({ source: nodeIndex.get(e.source)!, target: nodeIndex.get(e.target)!, weight: e.weight }));
 
+    const pp = physicsParams(nodes.length);
+
+    // Throttled rendering via rAF — only flush snapshots at display refresh rate
+    const flush = () => {
+      if (dirtyRef.current) {
+        dirtyRef.current = false;
+        setSnapshot(nodes.map(n => ({ ...n })));
+      }
+      rafRef.current = requestAnimationFrame(flush);
+    };
+    rafRef.current = requestAnimationFrame(flush);
+
     const sim = forceSimulation(nodes as any)
-      .force('charge', forceManyBody().strength(-600).distanceMax(500))
+      .force('charge', forceManyBody().strength(pp.chargeStrength).distanceMax(pp.chargeMax))
       .force('link', forceLink(links).distance(140).strength((l: any) => 0.15 + 0.05 * Math.min(l.weight, 5)))
       .force('center', forceCenter(width / 2, height / 2).strength(0.02))
       .force('collide', forceCollide<EnrichedSimNode>()
-        .radius(n => nodeRadius(n.weight || 0) + 35).strength(1).iterations(3))
+        .radius(n => nodeRadius(n.weight || 0) + pp.collidePad).strength(1).iterations(pp.collideIterations))
       .force('x', forceX<EnrichedSimNode>(xTarget).strength(xStrength))
       .force('y', forceY(height / 2).strength(0.01))
-      .alphaDecay(0.015)
-      .velocityDecay(0.4)
+      .alphaDecay(pp.alphaDecay)
+      .velocityDecay(pp.velocityDecay)
       .on('tick', () => {
         for (const n of nodes) {
           n.x = Math.max(60, Math.min(width - 60, n.x));
           n.y = Math.max(30, Math.min(height - 30, n.y));
         }
-        setSnapshot(nodes.map(n => ({ ...n })));
+        dirtyRef.current = true;
       });
 
     simRef.current = sim;
-    return () => { sim.stop(); };
+    return () => { sim.stop(); cancelAnimationFrame(rafRef.current); };
   }, [inputKey, catKey, edges, width, height]);
 
   const reheat = useCallback(() => {

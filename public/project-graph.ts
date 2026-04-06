@@ -1,6 +1,9 @@
 import type { RawNode, RawEdge, TagNode, ProjectedEdge, Category, EnrichedTagNode } from './relationship-types';
 import { classifyNodes } from './node-classify';
 
+const MAX_NODES = 150;
+const MAX_EDGES = 600;
+
 export function projectGraph(
   rawNodes: RawNode[],
   rawEdges: RawEdge[],
@@ -80,13 +83,29 @@ export function projectGraph(
     weightMap.set(e.target, (weightMap.get(e.target) || 0) + e.weight);
   }
 
-  const baseNodes: TagNode[] = [...tagNodes.values()].map(n => ({
+  let baseNodes: TagNode[] = [...tagNodes.values()].map(n => ({
     id: n.id, label: n.label, group: n.group,
     doiCount: doiCountMap.get(n.id) || 0,
     degree: degreeMap.get(n.id) || 0,
     weight: weightMap.get(n.id) || 0,
   }));
-  const nodes = classifyNodes(baseNodes, edges, baseNodes);
+
+  // Cap nodes: keep top N by weight
+  if (baseNodes.length > MAX_NODES) {
+    baseNodes.sort((a, b) => b.weight - a.weight);
+    baseNodes = baseNodes.slice(0, MAX_NODES);
+  }
+
+  const keptIds = new Set(baseNodes.map(n => n.id));
+  let cappedEdges = edges.filter(e => keptIds.has(e.source) && keptIds.has(e.target));
+
+  // Cap edges: keep top N by weight
+  if (cappedEdges.length > MAX_EDGES) {
+    cappedEdges.sort((a, b) => b.weight - a.weight);
+    cappedEdges = cappedEdges.slice(0, MAX_EDGES);
+  }
+
+  const nodes = classifyNodes(baseNodes, cappedEdges, baseNodes);
 
   // Collect matching DOIs
   const matchingDois = new Set<string>();
@@ -102,5 +121,5 @@ export function projectGraph(
     }
   }
 
-  return { nodes, edges, matchingDois };
+  return { nodes, edges: cappedEdges, matchingDois };
 }

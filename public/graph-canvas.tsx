@@ -51,6 +51,28 @@ export function GraphCanvas({
   const catIndexMap = useMemo(() => new Map(categoryOrder.map((cat, i) => [cat, i])), [categoryOrder]);
   const hoveredNode = hoveredNodeId ? nodeMap.get(hoveredNodeId) : null;
   const hoveredEdge = hoveredEdgeIdx !== null ? projectedEdges[hoveredEdgeIdx] : null;
+  const nodeCount = layoutNodes.length;
+  const dense = nodeCount > 80;
+
+  // Viewport culling: skip nodes/edges fully outside visible area
+  const pad = 60;
+  const inView = (x: number, y: number) =>
+    x >= -pad && x <= dims.width + pad && y >= -pad && y <= dims.height + pad;
+
+  const visibleNodes = useMemo(
+    () => layoutNodes.filter(n => inView(n.x, n.y)),
+    [layoutNodes, dims.width, dims.height],
+  );
+  const visibleNodeIds = useMemo(() => new Set(visibleNodes.map(n => n.id)), [visibleNodes]);
+
+  const visibleEdges = useMemo(
+    () => projectedEdges.filter(e => {
+      const s = nodeMap.get(e.source);
+      const t = nodeMap.get(e.target);
+      return s && t && (inView(s.x, s.y) || inView(t.x, t.y));
+    }),
+    [projectedEdges, nodeMap, dims.width, dims.height],
+  );
 
   return (
     <svg width={dims.width} height={dims.height} viewBox={`0 0 ${dims.width} ${dims.height}`}
@@ -58,19 +80,20 @@ export function GraphCanvas({
       onMouseMove={(e) => { if (dragRef.current) onNodeDrag(e.clientX, e.clientY, e.currentTarget as unknown as SVGSVGElement); }}
       onMouseUp={() => onNodeDragEnd()} onMouseLeave={() => onNodeDragEnd()}
       onClick={(e) => { if (e.target === e.currentTarget) onSelect(null); }}>
-      <EdgeDefs edges={projectedEdges} nodeMap={nodeMap} />
+      <EdgeDefs edges={visibleEdges} nodeMap={nodeMap} />
       <ClusterHulls layoutNodes={layoutNodes} />
-      {projectedEdges.map((e, i) => (
-        <EdgeLine key={i} edge={e} nodeMap={nodeMap} selectedNodeId={selectedNodeId}
+      {visibleEdges.map((e, i) => (
+        <EdgeLine key={`${e.source}-${e.target}`} edge={e} nodeMap={nodeMap} selectedNodeId={selectedNodeId}
           connectedIds={connectedIds} hovered={hoveredEdgeIdx === i}
           onMouseEnter={() => setHoveredEdgeIdx(i)} onMouseLeave={() => setHoveredEdgeIdx(null)} />
       ))}
-      {layoutNodes.map(n => (
+      {visibleNodes.map(n => (
         <NodeGlyph key={n.id} node={n}
           highlighted={connectedIds.has(n.id) && n.id !== selectedNodeId}
           dimmed={!!selectedNodeId && !connectedIds.has(n.id)}
           selected={n.id === selectedNodeId}
           hovered={hoveredNodeId === n.id}
+          dense={dense}
           pinIndex={catIndexMap.has(n.group) ? catIndexMap.get(n.group)! : null}
           onClick={() => onSelect(selectedNodeId === n.id ? null : n.id)}
           onDragStart={(e) => { const svg = (e.target as SVGElement).ownerSVGElement; if (svg) onNodeDragStart(n.id, e.clientX, e.clientY, svg); }}
