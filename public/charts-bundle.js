@@ -14071,6 +14071,112 @@ function AxesToggle({ current, onToggle }) {
   }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(BaseText, { variant: "detail", style: { fontSize: "9px", fontWeight: 600 }, children: "\u03A3" }) });
 }
 
+// public/chart-builders.ts
+function calculateHIndex(citations) {
+  const sorted = citations.slice().sort((a, b) => b - a);
+  let h = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    if (sorted[i] >= i + 1) h = i + 1;
+    else break;
+  }
+  return h;
+}
+function buildHIndexChart(records) {
+  const authorPapers = /* @__PURE__ */ new Map();
+  for (const r of records) {
+    if (!r.authors) continue;
+    for (const a of r.authors) {
+      if (!authorPapers.has(a)) authorPapers.set(a, []);
+      authorPapers.get(a).push(r.citation_count || 0);
+    }
+  }
+  const hIndexes = Array.from(authorPapers.entries()).map(([name, papers]) => ({ name, h: calculateHIndex(papers) })).filter((a) => a.h > 0).sort((a, b) => b.h - a.h).slice(0, 20);
+  if (!hIndexes.length) return null;
+  return {
+    type: "bar",
+    title: "Author H-Index",
+    yLabel: "H-Index",
+    data: hIndexes.map((a) => ({
+      label: a.name.substring(0, 20),
+      value: a.h
+    }))
+  };
+}
+function buildCitationsChart(records) {
+  const withCitations = records.filter((r) => r.citation_count > 0).sort((a, b) => b.citation_count - a.citation_count).slice(0, 20);
+  if (!withCitations.length) return null;
+  return {
+    type: "bar",
+    title: "Citations by Paper",
+    yLabel: "Citations",
+    data: withCitations.map((r) => ({
+      label: (r.title || r.doi).substring(0, 25),
+      value: r.citation_count
+    }))
+  };
+}
+function buildTypeChart(records) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const r of records) counts.set(r.type || "unknown", (counts.get(r.type || "unknown") || 0) + 1);
+  if (!counts.size) return null;
+  return {
+    type: "donut",
+    title: "Papers by Type",
+    data: Array.from(counts.entries()).map(([label, value]) => ({ label, value }))
+  };
+}
+function buildJournalChart(records) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const r of records) if (r.journal) counts.set(r.journal, (counts.get(r.journal) || 0) + 1);
+  if (!counts.size) return null;
+  return {
+    type: "bar",
+    title: "Papers by Journal",
+    yLabel: "Count",
+    data: Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([label, value]) => ({ label: label.substring(0, 25), value }))
+  };
+}
+function buildTimelineChart(records) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const r of records) {
+    if (!r.published) continue;
+    const year = r.published.substring(0, 4);
+    if (/^\d{4}$/.test(year)) counts.set(year, (counts.get(year) || 0) + 1);
+  }
+  if (counts.size <= 1) return null;
+  return {
+    type: "line",
+    title: "Publications by Year",
+    yLabel: "Papers",
+    data: Array.from(counts.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([label, value]) => ({ label, value }))
+  };
+}
+function buildAuthorsChart(records) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const r of records) {
+    if (r.authors) for (const a of r.authors) counts.set(a, (counts.get(a) || 0) + 1);
+  }
+  const top = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 1).slice(0, 15);
+  if (!top.length) return null;
+  return {
+    type: "bar",
+    title: "Authors with Multiple Papers",
+    yLabel: "Papers",
+    data: top.map(([label, value]) => ({ label: label.substring(0, 20), value }))
+  };
+}
+function buildCharts(records) {
+  const builders = [
+    buildCitationsChart,
+    buildTypeChart,
+    buildJournalChart,
+    buildTimelineChart,
+    buildAuthorsChart,
+    buildHIndexChart
+  ];
+  return builders.map((fn) => fn(records)).filter((c) => c !== null);
+}
+
 // public/charts.tsx
 var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 function App() {
@@ -14086,78 +14192,6 @@ function App() {
   if (!records.length) return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { children: "No records. Submit some DOIs first." });
   const charts = buildCharts(records);
   return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { marginBottom: "1rem" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(GraphRender, { chart }) }, i)) });
-}
-function buildCharts(records) {
-  const charts = [];
-  const withCitations = records.filter((r) => r.citation_count > 0).sort((a, b) => b.citation_count - a.citation_count).slice(0, 20);
-  if (withCitations.length > 0) {
-    charts.push({
-      type: "bar",
-      title: "Citations by Paper",
-      yLabel: "Citations",
-      data: withCitations.map((r) => ({
-        label: (r.title || r.doi).substring(0, 25),
-        value: r.citation_count
-      }))
-    });
-  }
-  const typeCounts = /* @__PURE__ */ new Map();
-  for (const r of records) {
-    const t = r.type || "unknown";
-    typeCounts.set(t, (typeCounts.get(t) || 0) + 1);
-  }
-  if (typeCounts.size > 0) {
-    charts.push({
-      type: "donut",
-      title: "Papers by Type",
-      data: Array.from(typeCounts.entries()).map(([label, value]) => ({ label, value }))
-    });
-  }
-  const journalCounts = /* @__PURE__ */ new Map();
-  for (const r of records) {
-    if (r.journal) journalCounts.set(r.journal, (journalCounts.get(r.journal) || 0) + 1);
-  }
-  if (journalCounts.size > 0) {
-    charts.push({
-      type: "bar",
-      title: "Papers by Journal",
-      yLabel: "Count",
-      data: Array.from(journalCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([label, value]) => ({ label: label.substring(0, 25), value }))
-    });
-  }
-  const yearCounts = /* @__PURE__ */ new Map();
-  for (const r of records) {
-    if (r.published) {
-      const year = r.published.substring(0, 4);
-      if (/^\d{4}$/.test(year)) yearCounts.set(year, (yearCounts.get(year) || 0) + 1);
-    }
-  }
-  if (yearCounts.size > 1) {
-    charts.push({
-      type: "line",
-      title: "Publications by Year",
-      yLabel: "Papers",
-      data: Array.from(yearCounts.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([label, value]) => ({ label, value }))
-    });
-  }
-  const authorCounts = /* @__PURE__ */ new Map();
-  for (const r of records) {
-    if (r.authors) {
-      for (const a of r.authors) {
-        authorCounts.set(a, (authorCounts.get(a) || 0) + 1);
-      }
-    }
-  }
-  const topAuthors = Array.from(authorCounts.entries()).sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 1).slice(0, 15);
-  if (topAuthors.length > 0) {
-    charts.push({
-      type: "bar",
-      title: "Authors with Multiple Papers",
-      yLabel: "Papers",
-      data: topAuthors.map(([label, value]) => ({ label: label.substring(0, 20), value }))
-    });
-  }
-  return charts;
 }
 var root = (0, import_client.createRoot)(document.getElementById("chart-root"));
 root.render(/* @__PURE__ */ (0, import_jsx_runtime14.jsx)(App, {}));

@@ -16,6 +16,9 @@
     html += '<div style="text-align:right;line-height:1.2;">';
     html += '<div style="font-size:13px;font-weight:bold;">' + esc(d.user) + '</div>';
     html += '<div style="font-size:10px;color:#999;">' + esc(d.tenant) + '</div>';
+    if (d.hIndex != null) {
+      html += '<div style="font-size:10px;color:#1565c0;font-weight:bold;">H-index: ' + d.hIndex + '</div>';
+    }
     html += '</div>';
     html += '<a href="/api/auth?action=logout" style="font-size:12px;margin-left:8px;">Logout</a>';
     html += '</div>';
@@ -27,7 +30,12 @@
   if (cached) { try { render(JSON.parse(cached)); } catch (e) {} }
 
   // Then refresh from API and update cache
-  fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
+  Promise.all([
+    fetch("/api/auth?action=me").then(function (r) { return r.json(); }),
+    fetch("/api/h-index").then(function (r) { return r.json(); }).catch(function () { return {}; }),
+  ]).then(function (results) {
+    var d = results[0];
+    if (results[1].collectionHIndex != null) d.hIndex = results[1].collectionHIndex;
     localStorage.setItem("nexus_nav", JSON.stringify(d));
     render(d);
   }).catch(function () {});
