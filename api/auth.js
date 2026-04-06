@@ -1,4 +1,5 @@
-const { ensureSchema, getSetting, setSetting } = require("../lib/db");
+const { ensureSchema, getSetting, setSetting, getAllRecords } = require("../lib/db");
+const { getAuthorHIndexes } = require("../lib/h-index");
 const { getUser } = require("../lib/auth");
 
 const VALID_USER = "hquinteros";
@@ -22,7 +23,14 @@ module.exports = async function handler(req, res) {
     if (!user) return res.status(401).json({ error: "Not authenticated" });
     await ensureSchema();
     const logo = await getSetting("tenant_logo");
-    return res.json({ user, tenant: TENANT_NAME, logo, profile: USER_PROFILE });
+    const records = await getAllRecords();
+    const authors = getAuthorHIndexes(records);
+    const nameLower = USER_PROFILE.name.toLowerCase();
+    const match = authors.find(function (a) {
+      return a.author.toLowerCase() === nameLower;
+    });
+    var hIndex = match ? match.hIndex : null;
+    return res.json({ user, tenant: TENANT_NAME, logo, profile: USER_PROFILE, hIndex });
   }
 
   // GET /api/auth?action=logout

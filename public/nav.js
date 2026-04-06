@@ -72,13 +72,10 @@
   if (cached) { try { render(JSON.parse(cached)); } catch (e) {} }
 
   // Then refresh from API and update cache
-  Promise.all([
-    fetch("/api/auth?action=me").then(function (r) { return r.json(); }),
-    fetch("/api/h-index").then(function (r) { return r.json(); }).catch(function () { return {}; }),
-  ]).then(function (results) {
-    var d = results[0];
-    if (results[1].collectionHIndex != null) d.hIndex = results[1].collectionHIndex;
-    localStorage.setItem("nexus_nav", JSON.stringify(d));
-    render(d);
-  }).catch(function () {});
+  fetch("/api/auth?action=me")
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      localStorage.setItem("nexus_nav", JSON.stringify(d));
+      render(d);
+    }).catch(function () {});
 })();
