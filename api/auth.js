@@ -25,9 +25,10 @@ module.exports = async function handler(req, res) {
     const logo = await getSetting("tenant_logo");
     const records = await getAllRecords();
     const authors = getAuthorHIndexes(records);
-    const nameLower = USER_PROFILE.name.toLowerCase();
+    const norm = function (s) { return s.toLowerCase().replace(/[-]/g, " ").trim(); };
+    const surname = norm(USER_PROFILE.name).split(" ").pop();
     const match = authors.find(function (a) {
-      return a.author.toLowerCase() === nameLower;
+      return norm(a.author) === norm(USER_PROFILE.name) || (a.author.toLowerCase().includes(surname) && a.author.toLowerCase().includes(USER_PROFILE.name.split(" ")[0].toLowerCase()));
     });
     var hIndex = match ? match.hIndex : null;
     return res.json({ user, tenant: TENANT_NAME, logo, profile: USER_PROFILE, hIndex });
