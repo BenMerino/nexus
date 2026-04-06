@@ -106,3 +106,25 @@ table tr.record-row:hover td { background: #eef; }
 /* Filter bar */
 .filter-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 12px 0; }
 .filter-bar label { font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Profile popup */
+.profile-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.profile-card {
+  background: #fff; border: 1px solid #333; border-radius: 6px;
+  padding: 24px; min-width: 320px; max-width: 400px;
+}
+.profile-header { text-align: center; margin-bottom: 16px; }
+.profile-logo { height: 48px; width: 48px; object-fit: contain; border-radius: 4px; margin-bottom: 8px; }
+.profile-name { font-size: 16px; font-weight: bold; }
+.profile-titles { font-size: 12px; color: #999; margin-top: 2px; }
+.profile-table { width: 100%; margin-bottom: 16px; }
+.profile-table td { padding: 6px 8px; font-size: 13px; border-bottom: 1px solid #eee; }
+.profile-table td:first-child { font-weight: bold; white-space: nowrap; width: 100px; color: #666; }
+.profile-close {
+  display: block; width: 100%; margin-top: 8px;
+  background: #fff; color: #333; border: 1px solid #ccc;
+}
+.profile-close:hover { background: #eee; }

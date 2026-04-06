@@ -5,6 +5,14 @@ const VALID_USER = "hquinteros";
 const VALID_PASS = "hectorben2026";
 const TENANT_NAME = "Universidad de Talca";
 
+const USER_PROFILE = {
+  name: "Héctor Quinteros Lama",
+  position: "Vicerrector",
+  faculty: "Facultad de Ingeniería",
+  affiliation: TENANT_NAME,
+  titles: ["Dr.", "Prof."],
+};
+
 module.exports = async function handler(req, res) {
   const action = req.query.action;
 
@@ -14,7 +22,7 @@ module.exports = async function handler(req, res) {
     if (!user) return res.status(401).json({ error: "Not authenticated" });
     await ensureSchema();
     const logo = await getSetting("tenant_logo");
-    return res.json({ user, tenant: TENANT_NAME, logo });
+    return res.json({ user, tenant: TENANT_NAME, logo, profile: USER_PROFILE });
   }
 
   // GET /api/auth?action=logout
