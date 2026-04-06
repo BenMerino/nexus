@@ -15,18 +15,12 @@
     .section-tabs button.active { color: #333; border-bottom-color: #333; font-weight: bold; }
     .section { display: none; }
     .section.active { display: block; }
-
-    /* Tag cloud */
     .tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
     .tag-cloud .tag { cursor: pointer; transition: transform 0.1s; }
     .tag-cloud .tag:hover { transform: scale(1.1); }
-
-    /* Search results */
     .search-result { border-left: 3px solid #333; padding-left: 12px; margin-bottom: 12px; }
     .search-result h4 { margin-bottom: 4px; }
     .search-result .meta { font-size: 12px; color: #666; }
-
-
   </style>
 </head>
 <body>
@@ -37,7 +31,6 @@
     <a href="/overview.html">Overview</a>
     <a href="/explore.html" class="active">Explore</a>
     <a href="/submit.html">Submit</a>
-    <a href="/records.html">Records</a>
     <div id="nav-user" style="margin-left: auto;"><a href="/api/auth?action=logout">Logout</a></div>
   </nav>
 
@@ -45,12 +38,47 @@
     <h1>Explore</h1>
 
     <div class="section-tabs">
-      <button class="active" onclick="showSection('search')">Search</button>
+      <button class="active" onclick="showSection('records')">Records</button>
+      <button onclick="showSection('search')">Search</button>
       <button onclick="showSection('tags')">Tag Cloud</button>
     </div>
 
+    <!-- RECORDS SECTION -->
+    <div id="records" class="section active">
+      <div class="flex mb-16" style="justify-content: space-between; align-items: center;">
+        <div class="search-box" style="flex: 1; max-width: 400px;">
+          <input id="rec-search" type="text" placeholder="Filter by title, author, journal, DOI..." style="width: 100%;">
+        </div>
+        <div class="flex gap-8">
+          <label style="font-size: 12px;">Sort by:</label>
+          <select id="sort-select">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="citations">Most cited</option>
+            <option value="title">Title A-Z</option>
+          </select>
+        </div>
+      </div>
+      <div id="record-count" class="text-muted text-small mb-16"></div>
+      <div style="overflow-x: auto;">
+        <table id="records-table">
+          <thead>
+            <tr>
+              <th>Title</th><th>Authors</th><th>Journal</th>
+              <th>Published</th><th>Citations</th><th>Type</th><th>Open Access</th>
+            </tr>
+          </thead>
+          <tbody id="records-body"></tbody>
+        </table>
+      </div>
+      <div id="empty-state" style="display: none; text-align: center; padding: 40px;">
+        <p class="text-muted">No records found.</p>
+        <p class="text-small text-muted mt-8">Submit some DOIs from the <a href="/submit.html">Submit page</a>.</p>
+      </div>
+    </div>
+
     <!-- SEARCH SECTION -->
-    <div id="search" class="section active">
+    <div id="search" class="section">
       <div class="card">
         <div style="max-width: 500px;">
           <label style="display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: bold;">Search Records</label>
@@ -88,130 +116,22 @@
   </div>
 
   <script>
-    // --- Section tabs ---
     function showSection(id) {
       document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
       document.querySelectorAll(".section-tabs button").forEach(b => b.classList.remove("active"));
       document.getElementById(id).classList.add("active");
       document.querySelector(`.section-tabs button[onclick="showSection('${id}')"]`).classList.add("active");
-
       if (id === "tags") loadTags();
     }
-
-    // --- Search ---
-    document.getElementById("search-input").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") doSearch();
-    });
-
-    async function doSearch() {
-      const q = document.getElementById("search-input").value.trim();
-      const statusEl = document.getElementById("search-status");
-      const resultsEl = document.getElementById("search-results");
-
-      if (!q) { statusEl.innerHTML = ""; resultsEl.innerHTML = ""; return; }
-
-      statusEl.innerHTML = '<div class="status loading">Searching...</div>';
-      try {
-        const resp = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-        const records = await resp.json();
-
-        if (!records.length) {
-          statusEl.innerHTML = '<div class="status info">No results found.</div>';
-          resultsEl.innerHTML = "";
-          return;
-        }
-
-        statusEl.innerHTML = `<div class="status success">${records.length} result${records.length !== 1 ? "s" : ""} found</div>`;
-        resultsEl.innerHTML = records.map(r => `
-          <div class="search-result">
-            <h4>${escHtml(r.title || r.doi)}</h4>
-            <div class="meta">
-              ${escHtml(r.doi)}
-              ${r.authors?.length ? " &mdash; " + escHtml(r.authors.slice(0, 3).join(", ")) : ""}
-              ${r.journal ? " &mdash; " + escHtml(r.journal) : ""}
-              ${r.published ? " (" + escHtml(r.published) + ")" : ""}
-            </div>
-            <div class="mt-8">
-              ${r.citation_count != null ? `<span class="tag">Citations: ${r.citation_count}</span>` : ""}
-              ${r.type ? `<span class="tag ${r.type}">${escHtml(r.type)}</span>` : ""}
-              ${r.open_access ? '<span class="tag journal">Open Access</span>' : ""}
-              ${r.open_access_url ? `<a href="${escHtml(r.open_access_url)}" target="_blank" class="text-small">PDF</a>` : ""}
-            </div>
-            ${r.abstract ? `<p class="text-small mt-8" style="color: #666; max-width: 700px;">${escHtml(r.abstract).substring(0, 250)}${r.abstract.length > 250 ? "..." : ""}</p>` : ""}
-          </div>
-        `).join("");
-      } catch (err) {
-        statusEl.innerHTML = `<div class="status error">Error: ${err.message}</div>`;
-      }
-    }
-
-    // --- Tag Cloud ---
-    let tagStats = [];
-
-    async function loadTags() {
-      if (tagStats.length) { renderTagCloud(); return; }
-      const resp = await fetch("/api/tag-stats");
-      tagStats = await resp.json();
-      renderTagCloud();
-    }
-
-    function renderTagCloud(category = "all") {
-      const cloud = document.getElementById("tag-cloud");
-      let tags = tagStats;
-      if (category !== "all") tags = tags.filter(t => t.category === category);
-
-      if (!tags.length) {
-        cloud.innerHTML = '<span class="text-muted">No tags yet. Submit some DOIs first.</span>';
-        return;
-      }
-
-      const maxCount = Math.max(...tags.map(t => t.count));
-      cloud.innerHTML = tags.map(t => {
-        const size = 12 + Math.round((t.count / maxCount) * 14);
-        return `<span class="tag ${t.category}" style="font-size: ${size}px; padding: 4px 10px;" onclick="showTagDetail('${escAttr(t.category)}', '${escAttr(t.value)}')" title="${t.count} record${t.count !== 1 ? 's' : ''}">${escHtml(t.value)} (${t.count})</span>`;
-      }).join("");
-    }
-
-    function filterTags(cat, btn) {
-      document.querySelectorAll(".tag-filter").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderTagCloud(cat);
-    }
-
-    async function showTagDetail(category, value) {
-      const detailEl = document.getElementById("tag-detail");
-      const titleEl = document.getElementById("tag-detail-title");
-      const recordsEl = document.getElementById("tag-detail-records");
-
-      detailEl.style.display = "block";
-      titleEl.textContent = `${category}: ${value}`;
-
-      // Search for records matching this tag
-      const resp = await fetch(`/api/search?q=${encodeURIComponent(value)}`);
-      const records = await resp.json();
-
-      if (!records.length) {
-        recordsEl.innerHTML = '<span class="text-muted">No records found.</span>';
-        return;
-      }
-
-      recordsEl.innerHTML = records.map(r => `
-        <div style="padding: 6px 0; border-bottom: 1px solid #eee;">
-          <strong>${escHtml(r.title || r.doi)}</strong>
-          <span class="text-small text-muted">${escHtml(r.published || "")}</span>
-        </div>
-      `).join("");
-    }
-
-    // --- Utilities ---
     function escHtml(s) {
       if (!s) return "";
       return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
-    function escAttr(s) {
-      return escHtml(s).replace(/'/g, "&#39;");
-    }
+    function escAttr(s) { return escHtml(s).replace(/'/g, "&#39;"); }
   </script>
+  <script src="/explore-records.js"></script>
+  <script src="/explore-search.js"></script>
+  <script src="/explore-tags.js"></script>
   <script src="/nav.js"></script>
 </body>
 </html>
