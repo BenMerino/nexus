@@ -15281,41 +15281,6 @@ var import_react11 = __toESM(require_react());
 
 // public/node-glyph.tsx
 var import_jsx_runtime11 = __toESM(require_jsx_runtime());
-function arcPath2(cx, cy, r, startAngle, endAngle) {
-  const start = { x: cx + r * Math.cos(startAngle), y: cy + r * Math.sin(startAngle) };
-  const end = { x: cx + r * Math.cos(endAngle), y: cy + r * Math.sin(endAngle) };
-  const large = endAngle - startAngle > Math.PI ? 1 : 0;
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${large} 1 ${end.x} ${end.y}`;
-}
-function CategoryRing({ node, r }) {
-  const profile = node.categoryProfile;
-  if (!profile.length || r < 6) return null;
-  const total = profile.reduce((s, p) => s + p.weight, 0);
-  if (total === 0) return null;
-  const ringR = r + 3;
-  let angle = -Math.PI / 2;
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("g", { children: profile.map((p, i) => {
-    const sweep = p.weight / total * Math.PI * 2;
-    if (sweep < 0.05) {
-      angle += sweep;
-      return null;
-    }
-    const start = angle;
-    angle += sweep;
-    return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
-      "path",
-      {
-        d: arcPath2(node.x, node.y, ringR, start, angle),
-        fill: "none",
-        stroke: COLORS[p.category] || "#999",
-        strokeWidth: 2.5,
-        opacity: 0.7,
-        strokeLinecap: "round"
-      },
-      i
-    );
-  }) });
-}
 function DiamondShape({ node, r, color, bg }) {
   const d = r * 1.2;
   const points = `${node.x},${node.y - d} ${node.x + d},${node.y} ${node.x},${node.y + d} ${node.x - d},${node.y}`;
@@ -15376,19 +15341,6 @@ function NodeGlyph({
             strokeWidth: selected ? 2.5 : hovered ? 2 : 1.5,
             opacity: 0.5,
             strokeDasharray: hovered && !selected ? "3 2" : void 0
-          }
-        ),
-        showDetail && !isBridge && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CategoryRing, { node, r }),
-        showDetail && isHub && !dimmed && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
-          "circle",
-          {
-            cx: node.x,
-            cy: node.y,
-            r: r + 6,
-            fill: "none",
-            stroke: cColor,
-            strokeWidth: 1,
-            opacity: 0.3
           }
         ),
         isBridge ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(DiamondShape, { node, r, color: cColor, bg: cBg }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(

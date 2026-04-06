@@ -1,38 +1,6 @@
 import React from 'react';
 import type { EnrichedSimNode } from './relationship-types';
-import { COLORS, BG_COLORS, nodeRadius, communityColor, communityBg } from './relationship-types';
-
-function arcPath(cx: number, cy: number, r: number, startAngle: number, endAngle: number): string {
-  const start = { x: cx + r * Math.cos(startAngle), y: cy + r * Math.sin(startAngle) };
-  const end = { x: cx + r * Math.cos(endAngle), y: cy + r * Math.sin(endAngle) };
-  const large = endAngle - startAngle > Math.PI ? 1 : 0;
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${large} 1 ${end.x} ${end.y}`;
-}
-
-function CategoryRing({ node, r }: { node: EnrichedSimNode; r: number }) {
-  const profile = node.categoryProfile;
-  if (!profile.length || r < 6) return null;
-  const total = profile.reduce((s, p) => s + p.weight, 0);
-  if (total === 0) return null;
-
-  const ringR = r + 3;
-  let angle = -Math.PI / 2;
-  return (
-    <g>
-      {profile.map((p, i) => {
-        const sweep = (p.weight / total) * Math.PI * 2;
-        if (sweep < 0.05) { angle += sweep; return null; }
-        const start = angle;
-        angle += sweep;
-        return (
-          <path key={i} d={arcPath(node.x, node.y, ringR, start, angle)}
-            fill="none" stroke={COLORS[p.category] || '#999'}
-            strokeWidth={2.5} opacity={0.7} strokeLinecap="round" />
-        );
-      })}
-    </g>
-  );
-}
+import { nodeRadius, communityColor, communityBg } from './relationship-types';
 
 function DiamondShape({ node, r, color, bg }: { node: EnrichedSimNode; r: number; color: string; bg: string }) {
   const d = r * 1.2;
@@ -84,15 +52,6 @@ export function NodeGlyph({
           strokeWidth={selected ? 2.5 : hovered ? 2 : 1.5}
           opacity={0.5}
           strokeDasharray={hovered && !selected ? '3 2' : undefined} />
-      )}
-
-      {/* Category profile ring — skip in dense mode */}
-      {showDetail && !isBridge && <CategoryRing node={node} r={r} />}
-
-      {/* Hub double ring — skip in dense mode */}
-      {showDetail && isHub && !dimmed && (
-        <circle cx={node.x} cy={node.y} r={r + 6}
-          fill="none" stroke={cColor} strokeWidth={1} opacity={0.3} />
       )}
 
       {/* Main shape — colored by community */}
