@@ -1,7 +1,7 @@
-/** Graph primitives used by the Leiden community detection algorithm. */
+/** Graph primitives for the Leiden community detection algorithm. */
 
 export interface LeidenEdge { source: string; target: string; weight: number }
-export type Community = Map<string, number>; // nodeId → communityId
+export type Community = Map<string, number>;
 
 export function totalWeight(edges: LeidenEdge[]): number {
   return edges.reduce((s, e) => s + e.weight, 0);
@@ -27,6 +27,20 @@ export function nodeDegrees(nodeIds: string[], edges: LeidenEdge[]): Map<string,
   return deg;
 }
 
+/** Deterministic shuffle using seed derived from node IDs */
+export function deterministicShuffle(arr: string[]): string[] {
+  const out = [...arr];
+  let seed = 0;
+  for (const s of out) for (let i = 0; i < s.length; i++) seed = (seed * 31 + s.charCodeAt(i)) | 0;
+  for (let i = out.length - 1; i > 0; i--) {
+    seed = (seed * 1103515245 + 12345) | 0;
+    const j = ((seed >>> 0) % (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Modularity gain of moving nodeId into targetComm (node already removed from its comm) */
 export function modularityGain(
   nodeId: string, targetComm: number, comm: Community,
   adj: Map<string, { neighbor: string; weight: number }[]>,
@@ -42,49 +56,10 @@ export function modularityGain(
   return kIn / m - resolution * (sigTot * ki) / (2 * m * m);
 }
 
-/** Local moving phase: greedily move nodes to best neighbor community */
-export function localMove(
-  nodeIds: string[], comm: Community,
-  adj: Map<string, { neighbor: string; weight: number }[]>,
-  deg: Map<string, number>, m: number, resolution: number,
-): boolean {
-  const commTotals = new Map<number, number>();
-  for (const id of nodeIds) {
-    const c = comm.get(id)!;
-    commTotals.set(c, (commTotals.get(c) || 0) + (deg.get(id) || 0));
-  }
-
-  let improved = false;
-  const shuffled = [...nodeIds].sort(() => Math.random() - 0.5);
-
-  for (const nodeId of shuffled) {
-    const currentComm = comm.get(nodeId)!;
-    const ki = deg.get(nodeId) || 0;
-    commTotals.set(currentComm, (commTotals.get(currentComm) || 0) - ki);
-
-    const loss = -modularityGain(nodeId, currentComm, comm, adj, deg, commTotals, m, resolution);
-    let bestComm = currentComm;
-    let bestGain = 0;
-    const neighborComms = new Set<number>();
-    for (const { neighbor } of adj.get(nodeId) || []) neighborComms.add(comm.get(neighbor)!);
-
-    for (const nc of neighborComms) {
-      if (nc === currentComm) continue;
-      const gain = modularityGain(nodeId, nc, comm, adj, deg, commTotals, m, resolution) + loss;
-      if (gain > bestGain) { bestGain = gain; bestComm = nc; }
-    }
-
-    comm.set(nodeId, bestComm);
-    commTotals.set(bestComm, (commTotals.get(bestComm) || 0) + ki);
-    if (bestComm !== currentComm) improved = true;
-  }
-  return improved;
-}
-
-/** Aggregate graph: merge communities into super-nodes */
+/** Aggregate communities into a super-graph. Returns super-node → original members. */
 export function aggregate(
   nodeIds: string[], edges: LeidenEdge[], comm: Community,
-): { nodeIds: string[]; edges: LeidenEdge[]; mapping: Map<string, string[]> } {
+): { superIds: string[]; superEdges: LeidenEdge[]; members: Map<string, string[]> } {
   const commNodes = new Map<number, string[]>();
   for (const id of nodeIds) {
     const c = comm.get(id)!;
@@ -102,13 +77,12 @@ export function aggregate(
     const key = sc < tc ? `${sc}|||${tc}` : `${tc}|||${sc}`;
     edgeMap.set(key, (edgeMap.get(key) || 0) + e.weight);
   }
-
   const superEdges: LeidenEdge[] = [...edgeMap.entries()].map(([key, weight]) => {
     const [source, target] = key.split('|||');
     return { source, target, weight };
   });
 
-  const mapping = new Map<string, string[]>();
-  for (const [c, ids] of commNodes) mapping.set(String(c), ids);
-  return { nodeIds: superIds, edges: superEdges, mapping };
+  const members = new Map<string, string[]>();
+  for (const [c, ids] of commNodes) members.set(String(c), ids);
+  return { superIds, superEdges, members };
 }

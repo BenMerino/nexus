@@ -12889,6 +12889,17 @@ function nodeDegrees(nodeIds, edges) {
   }
   return deg;
 }
+function deterministicShuffle(arr) {
+  const out = [...arr];
+  let seed = 0;
+  for (const s of out) for (let i = 0; i < s.length; i++) seed = seed * 31 + s.charCodeAt(i) | 0;
+  for (let i = out.length - 1; i > 0; i--) {
+    seed = seed * 1103515245 + 12345 | 0;
+    const j = (seed >>> 0) % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
 function modularityGain(nodeId, targetComm, comm, adj, deg, commTotals, m2, resolution) {
   let kIn = 0;
   for (const { neighbor, weight } of adj.get(nodeId) || []) {
@@ -12897,37 +12908,6 @@ function modularityGain(nodeId, targetComm, comm, adj, deg, commTotals, m2, reso
   const ki = deg.get(nodeId) || 0;
   const sigTot = commTotals.get(targetComm) || 0;
   return kIn / m2 - resolution * (sigTot * ki) / (2 * m2 * m2);
-}
-function localMove(nodeIds, comm, adj, deg, m2, resolution) {
-  const commTotals = /* @__PURE__ */ new Map();
-  for (const id of nodeIds) {
-    const c2 = comm.get(id);
-    commTotals.set(c2, (commTotals.get(c2) || 0) + (deg.get(id) || 0));
-  }
-  let improved = false;
-  const shuffled = [...nodeIds].sort(() => Math.random() - 0.5);
-  for (const nodeId of shuffled) {
-    const currentComm = comm.get(nodeId);
-    const ki = deg.get(nodeId) || 0;
-    commTotals.set(currentComm, (commTotals.get(currentComm) || 0) - ki);
-    const loss = -modularityGain(nodeId, currentComm, comm, adj, deg, commTotals, m2, resolution);
-    let bestComm = currentComm;
-    let bestGain = 0;
-    const neighborComms = /* @__PURE__ */ new Set();
-    for (const { neighbor } of adj.get(nodeId) || []) neighborComms.add(comm.get(neighbor));
-    for (const nc of neighborComms) {
-      if (nc === currentComm) continue;
-      const gain = modularityGain(nodeId, nc, comm, adj, deg, commTotals, m2, resolution) + loss;
-      if (gain > bestGain) {
-        bestGain = gain;
-        bestComm = nc;
-      }
-    }
-    comm.set(nodeId, bestComm);
-    commTotals.set(bestComm, (commTotals.get(bestComm) || 0) + ki);
-    if (bestComm !== currentComm) improved = true;
-  }
-  return improved;
 }
 function aggregate(nodeIds, edges, comm) {
   const commNodes = /* @__PURE__ */ new Map();
@@ -12950,58 +12930,118 @@ function aggregate(nodeIds, edges, comm) {
     const [source, target] = key.split("|||");
     return { source, target, weight };
   });
-  const mapping = /* @__PURE__ */ new Map();
-  for (const [c2, ids] of commNodes) mapping.set(String(c2), ids);
-  return { nodeIds: superIds, edges: superEdges, mapping };
+  const members = /* @__PURE__ */ new Map();
+  for (const [c2, ids] of commNodes) members.set(String(c2), ids);
+  return { superIds, superEdges, members };
 }
 
 // public/leiden.ts
-function leiden(nodeIds, edges, resolution = 1, maxIterations = 10) {
-  if (!nodeIds.length || !edges.length) {
-    const result2 = /* @__PURE__ */ new Map();
-    nodeIds.forEach((id, i) => result2.set(id, i));
-    return result2;
+function localMove(nodeIds, comm, adj, deg, m2, res) {
+  const commTotals = /* @__PURE__ */ new Map();
+  for (const id of nodeIds) {
+    const c2 = comm.get(id);
+    commTotals.set(c2, (commTotals.get(c2) || 0) + (deg.get(id) || 0));
   }
-  const m2 = totalWeight(edges);
-  if (m2 === 0) {
-    const result2 = /* @__PURE__ */ new Map();
-    nodeIds.forEach((id, i) => result2.set(id, i));
-    return result2;
-  }
-  let currentIds = [...nodeIds];
-  let currentEdges = [...edges];
-  const globalComm = /* @__PURE__ */ new Map();
-  nodeIds.forEach((id, i) => globalComm.set(id, i));
-  let nextCommId = nodeIds.length;
-  for (let iter = 0; iter < maxIterations; iter++) {
-    const comm = /* @__PURE__ */ new Map();
-    currentIds.forEach((id, i) => comm.set(id, i));
-    const adj = adjacency(currentIds, currentEdges);
-    const deg = nodeDegrees(currentIds, currentEdges);
-    const currentM = totalWeight(currentEdges) || m2;
-    const moved = localMove(currentIds, comm, adj, deg, currentM, resolution);
-    if (!moved) break;
-    const { nodeIds: superIds, edges: superEdges, mapping } = aggregate(currentIds, currentEdges, comm);
-    if (superIds.length === currentIds.length) break;
-    for (const [, members] of mapping) {
-      const cid = nextCommId++;
-      for (const member of members) {
-        if (globalComm.has(member)) {
-          globalComm.set(member, cid);
-        } else {
-          for (const [origId, origComm] of globalComm) {
-            if (String(origComm) === member) globalComm.set(origId, cid);
-          }
+  let anyMoved = false;
+  const order = deterministicShuffle(nodeIds);
+  for (let pass = 0; pass < 10; pass++) {
+    let moved = false;
+    for (const nodeId of order) {
+      const cur = comm.get(nodeId);
+      const ki = deg.get(nodeId) || 0;
+      commTotals.set(cur, (commTotals.get(cur) || 0) - ki);
+      const loss = -modularityGain(nodeId, cur, comm, adj, deg, commTotals, m2, res);
+      let bestComm = cur, bestGain = 0;
+      const seen = /* @__PURE__ */ new Set();
+      for (const { neighbor } of adj.get(nodeId) || []) {
+        const nc = comm.get(neighbor);
+        if (nc === cur || seen.has(nc)) continue;
+        seen.add(nc);
+        const g = modularityGain(nodeId, nc, comm, adj, deg, commTotals, m2, res) + loss;
+        if (g > bestGain) {
+          bestGain = g;
+          bestComm = nc;
         }
       }
+      comm.set(nodeId, bestComm);
+      commTotals.set(bestComm, (commTotals.get(bestComm) || 0) + ki);
+      if (bestComm !== cur) moved = true;
     }
-    currentIds = superIds;
-    currentEdges = superEdges;
+    if (!moved) break;
+    anyMoved = true;
   }
-  const uniqueComms = [...new Set(globalComm.values())];
-  const remap = new Map(uniqueComms.map((c2, i) => [c2, i]));
+  return anyMoved;
+}
+function refine(nodeIds, comm, edges, adj, deg, m2, res) {
+  const refined = /* @__PURE__ */ new Map();
+  let nextId = 0;
+  for (const id of nodeIds) refined.set(id, nextId++);
+  const byCommunity = /* @__PURE__ */ new Map();
+  for (const id of nodeIds) {
+    const c2 = comm.get(id);
+    (byCommunity.get(c2) || (() => {
+      const a2 = [];
+      byCommunity.set(c2, a2);
+      return a2;
+    })()).push(id);
+  }
+  for (const [, members] of byCommunity) {
+    if (members.length <= 2) {
+      const cid = refined.get(members[0]);
+      for (const id of members) refined.set(id, cid);
+      continue;
+    }
+    const memberSet = new Set(members);
+    const subAdj = /* @__PURE__ */ new Map();
+    for (const id of members) {
+      subAdj.set(id, (adj.get(id) || []).filter((e) => memberSet.has(e.neighbor)));
+    }
+    const subDeg = /* @__PURE__ */ new Map();
+    for (const id of members) {
+      let d = 0;
+      for (const { weight } of subAdj.get(id) || []) d += weight;
+      subDeg.set(id, d);
+    }
+    localMove(members, refined, subAdj, subDeg, m2, res);
+  }
+  for (const [id, c2] of refined) comm.set(id, c2);
+}
+function leiden(nodeIds, edges, resolution = 1, maxIter = 10) {
+  if (!nodeIds.length || !edges.length) {
+    return new Map(nodeIds.map((id, i) => [id, i]));
+  }
+  const m2 = totalWeight(edges);
+  if (m2 === 0) return new Map(nodeIds.map((id, i) => [id, i]));
+  let superToOrig = new Map(nodeIds.map((id) => [id, [id]]));
+  let curIds = [...nodeIds];
+  let curEdges = [...edges];
+  for (let iter = 0; iter < maxIter; iter++) {
+    const comm = new Map(curIds.map((id, i) => [id, i]));
+    const adj = adjacency(curIds, curEdges);
+    const deg = nodeDegrees(curIds, curEdges);
+    const curM = totalWeight(curEdges) || m2;
+    if (!localMove(curIds, comm, adj, deg, curM, resolution)) break;
+    refine(curIds, comm, curEdges, adj, deg, curM, resolution);
+    const { superIds, superEdges, members } = aggregate(curIds, curEdges, comm);
+    if (superIds.length >= curIds.length) break;
+    const newSTO = /* @__PURE__ */ new Map();
+    for (const [superId, subNodes] of members) {
+      const originals = [];
+      for (const sub of subNodes) {
+        originals.push(...superToOrig.get(sub) || [sub]);
+      }
+      newSTO.set(superId, originals);
+    }
+    superToOrig = newSTO;
+    curIds = superIds;
+    curEdges = superEdges;
+  }
   const result = /* @__PURE__ */ new Map();
-  for (const [id, c2] of globalComm) result.set(id, remap.get(c2));
+  let cid = 0;
+  for (const [, originals] of superToOrig) {
+    const id = cid++;
+    for (const orig of originals) result.set(orig, id);
+  }
   return result;
 }
 
