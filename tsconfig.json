@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": false,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules"]
+}
