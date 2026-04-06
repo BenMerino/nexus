@@ -74,8 +74,7 @@ function RelationshipExplorer() {
 
   const projectedNodes = useMemo(() => enrichWithMeta(projectedNodesRaw, tagMeta), [projectedNodesRaw, tagMeta]);
   const doiCount = useMemo(() => rawNodes.filter(n => n.group === 'doi').length, [rawNodes]);
-  const activeCatOrder = useMemo(() => categoryOrder.filter(c => activeCategories.has(c)), [categoryOrder, activeCategories]);
-  const { simNodes: layoutNodes, nodesRef: simMutableRef, simRef: d3SimRef } = useForceLayout(projectedNodes, projectedEdges, dims.width, dims.height, activeCatOrder);
+  const { simNodes: layoutNodes, nodesRef: simMutableRef, simRef: d3SimRef } = useForceLayout(projectedNodes, projectedEdges, dims.width, dims.height);
   const nodeMap = useMemo(() => new Map(layoutNodes.map(n => [n.id, n])), [layoutNodes]);
 
   const { connectedIds, edgesForNode } = useMemo(() => {
@@ -138,7 +137,7 @@ function RelationshipExplorer() {
       <div style={{ position: 'relative', border: '1px solid #ddd', borderRadius: 6, background: '#fff', overflow: 'hidden' }}>
         {projectedNodes.length === 0
           ? <div style={{ padding: 40, textAlign: 'center', color: '#999', fontFamily: 'monospace' }}>No connections for selected categories.</div>
-          : <GraphCanvas dims={dims} projectedEdges={projectedEdges} layoutNodes={layoutNodes} nodeMap={nodeMap} selectedNodeId={selectedNodeId} connectedIds={connectedIds} simMutableRef={simMutableRef} d3SimRef={d3SimRef} onSelect={setSelectedNodeId} categoryOrder={activeCatOrder} />}
+          : <GraphCanvas dims={dims} projectedEdges={projectedEdges} layoutNodes={layoutNodes} nodeMap={nodeMap} selectedNodeId={selectedNodeId} connectedIds={connectedIds} simMutableRef={simMutableRef} d3SimRef={d3SimRef} onSelect={setSelectedNodeId} categoryOrder={categoryOrder.filter(c => activeCategories.has(c))} />}
         {selectedNode && <DetailPanel node={selectedNode} connections={selectedConnections} edgesForNode={edgesForNode} onClose={() => setSelectedNodeId(null)} onSelectNode={id => setSelectedNodeId(id)} />}
       </div>
       <StatsBar nodes={projectedNodes} edges={projectedEdges} doiCount={doiCount} />

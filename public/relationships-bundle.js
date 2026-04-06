@@ -12770,6 +12770,40 @@ var BG_COLORS = {
   venue: "#fff3e0",
   year: "#e0f2f1"
 };
+var COMMUNITY_COLORS = [
+  "#e6194b",
+  "#3cb44b",
+  "#4363d8",
+  "#f58231",
+  "#911eb4",
+  "#42d4f4",
+  "#f032e6",
+  "#bfef45",
+  "#fabebe",
+  "#469990",
+  "#dcbeff",
+  "#9A6324"
+];
+var COMMUNITY_BG = [
+  "#fde0e6",
+  "#e4f5e4",
+  "#dfe6f8",
+  "#fde9d4",
+  "#ecdaf5",
+  "#d8f4fb",
+  "#f8d6f6",
+  "#f2fad6",
+  "#fde8e8",
+  "#d6edea",
+  "#f0e6ff",
+  "#f0e4d0"
+];
+function communityColor(id) {
+  return COMMUNITY_COLORS[id % COMMUNITY_COLORS.length];
+}
+function communityBg(id) {
+  return COMMUNITY_BG[id % COMMUNITY_BG.length];
+}
 function nodeRadius(weight, role) {
   const base = Math.max(4, Math.min(18, 4 + Math.sqrt(weight) * 2));
   if (role === "hub") return Math.min(22, base * 1.3);
@@ -12796,7 +12830,7 @@ function percentile(sorted, p) {
   const idx = Math.ceil(p * sorted.length) - 1;
   return sorted[Math.max(0, idx)];
 }
-function classifyNodes(nodes, edges, allNodes) {
+function classifyNodes(nodes, edges, allNodes, communityMap) {
   const nodeById = new Map(allNodes.map((n) => [n.id, n]));
   const profileMap = /* @__PURE__ */ new Map();
   for (const e of edges) {
@@ -12828,8 +12862,147 @@ function classifyNodes(nodes, edges, allNodes) {
     }
     const catMap = profileMap.get(n.id) || /* @__PURE__ */ new Map();
     const categoryProfile = [...catMap.entries()].map(([category, weight]) => ({ category, weight })).sort((a2, b) => b.weight - a2.weight);
-    return { ...n, role, categoryProfile };
+    const community = communityMap?.get(n.id) ?? 0;
+    return { ...n, role, community, categoryProfile };
   });
+}
+
+// public/leiden-graph.ts
+function totalWeight(edges) {
+  return edges.reduce((s, e) => s + e.weight, 0);
+}
+function adjacency(nodeIds, edges) {
+  const adj = /* @__PURE__ */ new Map();
+  for (const id of nodeIds) adj.set(id, []);
+  for (const e of edges) {
+    adj.get(e.source)?.push({ neighbor: e.target, weight: e.weight });
+    adj.get(e.target)?.push({ neighbor: e.source, weight: e.weight });
+  }
+  return adj;
+}
+function nodeDegrees(nodeIds, edges) {
+  const deg = /* @__PURE__ */ new Map();
+  for (const id of nodeIds) deg.set(id, 0);
+  for (const e of edges) {
+    deg.set(e.source, (deg.get(e.source) || 0) + e.weight);
+    deg.set(e.target, (deg.get(e.target) || 0) + e.weight);
+  }
+  return deg;
+}
+function modularityGain(nodeId, targetComm, comm, adj, deg, commTotals, m2, resolution) {
+  let kIn = 0;
+  for (const { neighbor, weight } of adj.get(nodeId) || []) {
+    if (comm.get(neighbor) === targetComm) kIn += weight;
+  }
+  const ki = deg.get(nodeId) || 0;
+  const sigTot = commTotals.get(targetComm) || 0;
+  return kIn / m2 - resolution * (sigTot * ki) / (2 * m2 * m2);
+}
+function localMove(nodeIds, comm, adj, deg, m2, resolution) {
+  const commTotals = /* @__PURE__ */ new Map();
+  for (const id of nodeIds) {
+    const c2 = comm.get(id);
+    commTotals.set(c2, (commTotals.get(c2) || 0) + (deg.get(id) || 0));
+  }
+  let improved = false;
+  const shuffled = [...nodeIds].sort(() => Math.random() - 0.5);
+  for (const nodeId of shuffled) {
+    const currentComm = comm.get(nodeId);
+    const ki = deg.get(nodeId) || 0;
+    commTotals.set(currentComm, (commTotals.get(currentComm) || 0) - ki);
+    const loss = -modularityGain(nodeId, currentComm, comm, adj, deg, commTotals, m2, resolution);
+    let bestComm = currentComm;
+    let bestGain = 0;
+    const neighborComms = /* @__PURE__ */ new Set();
+    for (const { neighbor } of adj.get(nodeId) || []) neighborComms.add(comm.get(neighbor));
+    for (const nc of neighborComms) {
+      if (nc === currentComm) continue;
+      const gain = modularityGain(nodeId, nc, comm, adj, deg, commTotals, m2, resolution) + loss;
+      if (gain > bestGain) {
+        bestGain = gain;
+        bestComm = nc;
+      }
+    }
+    comm.set(nodeId, bestComm);
+    commTotals.set(bestComm, (commTotals.get(bestComm) || 0) + ki);
+    if (bestComm !== currentComm) improved = true;
+  }
+  return improved;
+}
+function aggregate(nodeIds, edges, comm) {
+  const commNodes = /* @__PURE__ */ new Map();
+  for (const id of nodeIds) {
+    const c2 = comm.get(id);
+    const arr = commNodes.get(c2) || [];
+    arr.push(id);
+    commNodes.set(c2, arr);
+  }
+  const superIds = [...commNodes.keys()].map(String);
+  const edgeMap = /* @__PURE__ */ new Map();
+  for (const e of edges) {
+    const sc = String(comm.get(e.source));
+    const tc = String(comm.get(e.target));
+    if (sc === tc) continue;
+    const key = sc < tc ? `${sc}|||${tc}` : `${tc}|||${sc}`;
+    edgeMap.set(key, (edgeMap.get(key) || 0) + e.weight);
+  }
+  const superEdges = [...edgeMap.entries()].map(([key, weight]) => {
+    const [source, target] = key.split("|||");
+    return { source, target, weight };
+  });
+  const mapping = /* @__PURE__ */ new Map();
+  for (const [c2, ids] of commNodes) mapping.set(String(c2), ids);
+  return { nodeIds: superIds, edges: superEdges, mapping };
+}
+
+// public/leiden.ts
+function leiden(nodeIds, edges, resolution = 1, maxIterations = 10) {
+  if (!nodeIds.length || !edges.length) {
+    const result2 = /* @__PURE__ */ new Map();
+    nodeIds.forEach((id, i) => result2.set(id, i));
+    return result2;
+  }
+  const m2 = totalWeight(edges);
+  if (m2 === 0) {
+    const result2 = /* @__PURE__ */ new Map();
+    nodeIds.forEach((id, i) => result2.set(id, i));
+    return result2;
+  }
+  let currentIds = [...nodeIds];
+  let currentEdges = [...edges];
+  const globalComm = /* @__PURE__ */ new Map();
+  nodeIds.forEach((id, i) => globalComm.set(id, i));
+  let nextCommId = nodeIds.length;
+  for (let iter = 0; iter < maxIterations; iter++) {
+    const comm = /* @__PURE__ */ new Map();
+    currentIds.forEach((id, i) => comm.set(id, i));
+    const adj = adjacency(currentIds, currentEdges);
+    const deg = nodeDegrees(currentIds, currentEdges);
+    const currentM = totalWeight(currentEdges) || m2;
+    const moved = localMove(currentIds, comm, adj, deg, currentM, resolution);
+    if (!moved) break;
+    const { nodeIds: superIds, edges: superEdges, mapping } = aggregate(currentIds, currentEdges, comm);
+    if (superIds.length === currentIds.length) break;
+    for (const [, members] of mapping) {
+      const cid = nextCommId++;
+      for (const member of members) {
+        if (globalComm.has(member)) {
+          globalComm.set(member, cid);
+        } else {
+          for (const [origId, origComm] of globalComm) {
+            if (String(origComm) === member) globalComm.set(origId, cid);
+          }
+        }
+      }
+    }
+    currentIds = superIds;
+    currentEdges = superEdges;
+  }
+  const uniqueComms = [...new Set(globalComm.values())];
+  const remap = new Map(uniqueComms.map((c2, i) => [c2, i]));
+  const result = /* @__PURE__ */ new Map();
+  for (const [id, c2] of globalComm) result.set(id, remap.get(c2));
+  return result;
 }
 
 // public/project-graph.ts
@@ -12921,7 +13094,11 @@ function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags) {
     cappedEdges.sort((a2, b) => b.weight - a2.weight);
     cappedEdges = cappedEdges.slice(0, MAX_EDGES);
   }
-  const nodes = classifyNodes(baseNodes, cappedEdges, baseNodes);
+  const communityMap = leiden(
+    baseNodes.map((n) => n.id),
+    cappedEdges.map((e) => ({ source: e.source, target: e.target, weight: e.weight }))
+  );
+  const nodes = classifyNodes(baseNodes, cappedEdges, baseNodes, communityMap);
   const matchingDois = /* @__PURE__ */ new Set();
   const pinnedCats = [...pinnedByCategory.keys()];
   for (const [doiId, tags] of doiToTags) {
@@ -13866,13 +14043,17 @@ function y_default2(y3) {
 }
 
 // public/use-force-layout.ts
-function buildCategoryXTargets(catOrder, width) {
+function buildCommunityTargets(nodes, width, height) {
+  const communities = [...new Set(nodes.map((n) => n.community))].sort((a2, b) => a2 - b);
   const map = /* @__PURE__ */ new Map();
-  if (catOrder.length <= 1) return map;
-  const margin = 100;
-  const usable = width - margin * 2;
-  catOrder.forEach((cat, i) => {
-    map.set(cat, margin + i / (catOrder.length - 1) * usable);
+  if (communities.length <= 1) return map;
+  const cx = width / 2;
+  const cy = height / 2;
+  const rx = (width - 200) / 2 * 0.6;
+  const ry = (height - 100) / 2 * 0.6;
+  communities.forEach((comm, i) => {
+    const angle = 2 * Math.PI * i / communities.length - Math.PI / 2;
+    map.set(comm, { x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle) });
   });
   return map;
 }
@@ -13887,7 +14068,7 @@ function physicsParams(n) {
     velocityDecay: large ? 0.5 : 0.4
   };
 }
-function useForceLayout(inputNodes, edges, width, height, categoryOrder) {
+function useForceLayout(inputNodes, edges, width, height) {
   const simRef = (0, import_react.useRef)(null);
   const nodesRef = (0, import_react.useRef)([]);
   const [snapshot, setSnapshot] = (0, import_react.useState)([]);
@@ -13895,13 +14076,14 @@ function useForceLayout(inputNodes, edges, width, height, categoryOrder) {
   const rafRef = (0, import_react.useRef)(0);
   const dirtyRef = (0, import_react.useRef)(false);
   const inputKey = inputNodes.map((n) => n.id).join(",");
-  const catKey = categoryOrder?.join(",") || "";
+  const commKey = inputNodes.map((n) => n.community).join(",");
   (0, import_react.useEffect)(() => {
-    const catTargets = buildCategoryXTargets(categoryOrder || [], width);
-    const xTarget = (n) => catTargets.get(n.group) ?? width / 2;
-    const xStrength = (n) => catTargets.has(n.group) ? 0.12 : 0.01;
+    const commTargets = buildCommunityTargets(inputNodes, width, height);
+    const xTarget = (n) => commTargets.get(n.community)?.x ?? width / 2;
+    const yTarget = (n) => commTargets.get(n.community)?.y ?? height / 2;
+    const xyStrength = (n) => commTargets.has(n.community) ? 0.12 : 0.01;
     if (inputKey === inputKeyRef.current && simRef.current) {
-      simRef.current.force("x", x_default2(xTarget).strength(xStrength));
+      simRef.current.force("x", x_default2(xTarget).strength(xyStrength)).force("y", y_default2(yTarget).strength(xyStrength));
       simRef.current.alpha(0.3).restart();
       return;
     }
@@ -13910,8 +14092,8 @@ function useForceLayout(inputNodes, edges, width, height, categoryOrder) {
     cancelAnimationFrame(rafRef.current);
     const nodes = inputNodes.map((n) => ({
       ...n,
-      x: catTargets.get(n.group) ?? width / 2 + (Math.random() - 0.5) * width * 0.5,
-      y: height / 2 + (Math.random() - 0.5) * height * 0.5,
+      x: commTargets.get(n.community)?.x ?? width / 2 + (Math.random() - 0.5) * width * 0.5,
+      y: commTargets.get(n.community)?.y ?? height / 2 + (Math.random() - 0.5) * height * 0.5,
       vx: 0,
       vy: 0,
       fx: null,
@@ -13929,7 +14111,7 @@ function useForceLayout(inputNodes, edges, width, height, categoryOrder) {
       rafRef.current = requestAnimationFrame(flush);
     };
     rafRef.current = requestAnimationFrame(flush);
-    const sim = simulation_default(nodes).force("charge", manyBody_default().strength(pp.chargeStrength).distanceMax(pp.chargeMax)).force("link", link_default(links).distance(140).strength((l) => 0.15 + 0.05 * Math.min(l.weight, 5))).force("center", center_default(width / 2, height / 2).strength(0.02)).force("collide", collide_default().radius((n) => nodeRadius(n.weight || 0) + pp.collidePad).strength(1).iterations(pp.collideIterations)).force("x", x_default2(xTarget).strength(xStrength)).force("y", y_default2(height / 2).strength(0.01)).alphaDecay(pp.alphaDecay).velocityDecay(pp.velocityDecay).on("tick", () => {
+    const sim = simulation_default(nodes).force("charge", manyBody_default().strength(pp.chargeStrength).distanceMax(pp.chargeMax)).force("link", link_default(links).distance(140).strength((l) => 0.15 + 0.05 * Math.min(l.weight, 5))).force("center", center_default(width / 2, height / 2).strength(0.02)).force("collide", collide_default().radius((n) => nodeRadius(n.weight || 0) + pp.collidePad).strength(1).iterations(pp.collideIterations)).force("x", x_default2(xTarget).strength(xyStrength)).force("y", y_default2(yTarget).strength(xyStrength)).alphaDecay(pp.alphaDecay).velocityDecay(pp.velocityDecay).on("tick", () => {
       for (const n of nodes) {
         n.x = Math.max(60, Math.min(width - 60, n.x));
         n.y = Math.max(30, Math.min(height - 30, n.y));
@@ -13941,7 +14123,7 @@ function useForceLayout(inputNodes, edges, width, height, categoryOrder) {
       sim.stop();
       cancelAnimationFrame(rafRef.current);
     };
-  }, [inputKey, catKey, edges, width, height]);
+  }, [inputKey, commKey, edges, width, height]);
   const reheat = (0, import_react.useCallback)(() => {
     if (simRef.current) simRef.current.alpha(0.3).restart();
   }, []);
@@ -14169,6 +14351,20 @@ function DetailPanel({
           borderRadius: 3,
           marginBottom: 4
         }, children: node.group }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: {
+          display: "inline-block",
+          fontSize: 10,
+          letterSpacing: 0.5,
+          marginLeft: 4,
+          color: communityColor(node.community),
+          background: communityBg(node.community),
+          padding: "2px 8px",
+          borderRadius: 3,
+          marginBottom: 4
+        }, children: [
+          "Community ",
+          node.community + 1
+        ] }),
         /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontWeight: 700, fontSize: 14, marginTop: 4, wordBreak: "break-word" }, children: node.label }),
         /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: 11, color: "#999", marginTop: 4, display: "flex", gap: 8, flexWrap: "wrap" }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { children: [
@@ -15120,18 +15316,10 @@ function CategoryRing({ node, r }) {
     );
   }) });
 }
-function DiamondShape({ node, r }) {
+function DiamondShape({ node, r, color, bg }) {
   const d = r * 1.2;
   const points = `${node.x},${node.y - d} ${node.x + d},${node.y} ${node.x},${node.y + d} ${node.x - d},${node.y}`;
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
-    "polygon",
-    {
-      points,
-      fill: BG_COLORS[node.group] || "#eee",
-      stroke: COLORS[node.group],
-      strokeWidth: 2
-    }
-  );
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("polygon", { points, fill: bg, stroke: color, strokeWidth: 2 });
 }
 function NodeGlyph({
   node,
@@ -15152,6 +15340,8 @@ function NodeGlyph({
   const isBridge = node.role === "bridge";
   const isHub = node.role === "hub";
   const showDetail = !dense || selected || hovered;
+  const cColor = communityColor(node.community);
+  const cBg = communityBg(node.community);
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
     "g",
     {
@@ -15171,7 +15361,7 @@ function NodeGlyph({
             cx: node.x,
             cy: node.y,
             r: r + 8 + node.haloIntensity * 6,
-            fill: COLORS[node.group],
+            fill: cColor,
             opacity: 0.06 + node.haloIntensity * 0.04
           }
         ),
@@ -15182,7 +15372,7 @@ function NodeGlyph({
             cy: node.y,
             r: r + 5,
             fill: "none",
-            stroke: COLORS[node.group],
+            stroke: cColor,
             strokeWidth: selected ? 2.5 : hovered ? 2 : 1.5,
             opacity: 0.5,
             strokeDasharray: hovered && !selected ? "3 2" : void 0
@@ -15196,19 +15386,19 @@ function NodeGlyph({
             cy: node.y,
             r: r + 6,
             fill: "none",
-            stroke: COLORS[node.group],
+            stroke: cColor,
             strokeWidth: 1,
             opacity: 0.3
           }
         ),
-        isBridge ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(DiamondShape, { node, r }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+        isBridge ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(DiamondShape, { node, r, color: cColor, bg: cBg }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
           "circle",
           {
             cx: node.x,
             cy: node.y,
             r,
-            fill: selected ? COLORS[node.group] : BG_COLORS[node.group] || "#eee",
-            stroke: COLORS[node.group],
+            fill: selected ? cColor : cBg,
+            stroke: cColor,
             strokeWidth: r >= 8 ? 2 : 1.5
           }
         ),
@@ -15232,7 +15422,7 @@ function NodeGlyph({
             fontSize: Math.max(7, Math.min(10, r)),
             fontFamily: "monospace",
             fontWeight: 700,
-            fill: selected ? "#fff" : COLORS[node.group],
+            fill: selected ? "#fff" : cColor,
             opacity: 0.8,
             children: node.weight
           }
@@ -15244,7 +15434,7 @@ function NodeGlyph({
               cx: node.x - r * 0.5,
               cy: node.y - r - 4,
               r: 7,
-              fill: COLORS[node.group],
+              fill: cColor,
               stroke: "#fff",
               strokeWidth: 1.5
             }
@@ -15271,7 +15461,7 @@ function NodeGlyph({
             fontSize,
             fontFamily: "monospace",
             fontWeight: selected || isHub ? 700 : (node.weight || 0) >= 5 ? 600 : 400,
-            fill: selected ? COLORS[node.group] : "#333",
+            fill: selected ? cColor : "#333",
             children: label
           }
         )
@@ -15326,8 +15516,9 @@ function EdgeLine({ edge, nodeMap, selectedNodeId, connectedIds, hovered, onMous
   const w = edge.weight;
   const sw = edgeStrokeWidth(w) + (hovered ? 2 : 0);
   const op = hovered ? 0.9 : edgeOpacity(w, isConn, !!selectedNodeId);
-  const gradKey = s.group !== t.group ? `eg-${s.group < t.group ? `${s.group}-${t.group}` : `${t.group}-${s.group}`}` : null;
-  const stroke = gradKey ? `url(#${gradKey})` : isConn && selectedNodeId ? COLORS[t.group] || "#ccc" : "#bbb";
+  const sameComm = s.community === t.community;
+  const gradKey = !sameComm && s.group !== t.group ? `eg-${s.group < t.group ? `${s.group}-${t.group}` : `${t.group}-${s.group}`}` : null;
+  const stroke = sameComm ? communityColor(s.community) : gradKey ? `url(#${gradKey})` : isConn && selectedNodeId ? COLORS[t.group] || "#ccc" : "#bbb";
   if (w >= 3) {
     const offset = Math.min(20, w * 3);
     const { cx, cy } = bezierControlPoint(s.x, s.y, t.x, t.y, offset);
@@ -15417,32 +15608,32 @@ function paddedHullPath(hull, pad) {
 }
 function ClusterHulls({ layoutNodes }) {
   const paths = (0, import_react10.useMemo)(() => {
-    const byGroup = /* @__PURE__ */ new Map();
+    const byCommunity = /* @__PURE__ */ new Map();
     for (const n of layoutNodes) {
-      const pts = byGroup.get(n.group) || [];
+      const pts = byCommunity.get(n.community) || [];
       pts.push({ x: n.x, y: n.y });
-      byGroup.set(n.group, pts);
+      byCommunity.set(n.community, pts);
     }
     const result = [];
-    for (const [group, points] of byGroup) {
+    for (const [community, points] of byCommunity) {
       if (points.length < 3) continue;
       const hull = convexHull(points);
       const d = paddedHullPath(hull, 30);
-      if (d) result.push({ group, d });
+      if (d) result.push({ community, d });
     }
     return result;
   }, [layoutNodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("g", { children: paths.map(({ group, d }) => /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("g", { children: paths.map(({ community, d }) => /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
     "path",
     {
       d,
-      fill: BG_COLORS[group] || "#eee",
-      opacity: 0.08,
-      stroke: BG_COLORS[group] || "#eee",
+      fill: communityBg(community),
+      opacity: 0.12,
+      stroke: communityColor(community),
       strokeWidth: 1,
-      strokeOpacity: 0.15
+      strokeOpacity: 0.2
     },
-    group
+    community
   )) });
 }
 
@@ -15470,7 +15661,18 @@ function NodeHoverCard({ node, edges }) {
         background: BG_COLORS[node.group],
         padding: "1px 6px",
         borderRadius: 3
-      }, children: node.role !== "default" ? node.role : node.group }),
+      }, children: node.group }),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: {
+        fontSize: 9,
+        letterSpacing: 0.5,
+        color: communityColor(node.community),
+        background: communityBg(node.community),
+        padding: "1px 6px",
+        borderRadius: 3
+      }, children: [
+        "C",
+        node.community + 1
+      ] }),
       /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("strong", { style: { fontSize: 12 }, children: node.label })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { color: "#777", fontSize: 10, marginBottom: 4 }, children: [
@@ -15742,8 +15944,7 @@ function RelationshipExplorer() {
   );
   const projectedNodes = (0, import_react12.useMemo)(() => enrichWithMeta(projectedNodesRaw, tagMeta), [projectedNodesRaw, tagMeta]);
   const doiCount = (0, import_react12.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
-  const activeCatOrder = (0, import_react12.useMemo)(() => categoryOrder.filter((c2) => activeCategories.has(c2)), [categoryOrder, activeCategories]);
-  const { simNodes: layoutNodes, nodesRef: simMutableRef, simRef: d3SimRef } = useForceLayout(projectedNodes, projectedEdges, dims.width, dims.height, activeCatOrder);
+  const { simNodes: layoutNodes, nodesRef: simMutableRef, simRef: d3SimRef } = useForceLayout(projectedNodes, projectedEdges, dims.width, dims.height);
   const nodeMap = (0, import_react12.useMemo)(() => new Map(layoutNodes.map((n) => [n.id, n])), [layoutNodes]);
   const { connectedIds, edgesForNode } = (0, import_react12.useMemo)(() => {
     if (!selectedNodeId) return { connectedIds: /* @__PURE__ */ new Set(), edgesForNode: [] };
@@ -15816,7 +16017,7 @@ function RelationshipExplorer() {
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { position: "relative", border: "1px solid #ddd", borderRadius: 6, background: "#fff", overflow: "hidden" }, children: [
-      projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#999", fontFamily: "monospace" }, children: "No connections for selected categories." }) : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(GraphCanvas, { dims, projectedEdges, layoutNodes, nodeMap, selectedNodeId, connectedIds, simMutableRef, d3SimRef, onSelect: setSelectedNodeId, categoryOrder: activeCatOrder }),
+      projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#999", fontFamily: "monospace" }, children: "No connections for selected categories." }) : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(GraphCanvas, { dims, projectedEdges, layoutNodes, nodeMap, selectedNodeId, connectedIds, simMutableRef, d3SimRef, onSelect: setSelectedNodeId, categoryOrder: categoryOrder.filter((c2) => activeCategories.has(c2)) }),
       selectedNode && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(DetailPanel, { node: selectedNode, connections: selectedConnections, edgesForNode, onClose: () => setSelectedNodeId(null), onSelectNode: (id) => setSelectedNodeId(id) })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(StatsBar, { nodes: projectedNodes, edges: projectedEdges, doiCount }),

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import type { EnrichedSimNode } from './relationship-types';
-import { BG_COLORS } from './relationship-types';
+import { communityColor, communityBg } from './relationship-types';
 
 function convexHull(points: { x: number; y: number }[]): { x: number; y: number }[] {
   if (points.length < 3) return points;
@@ -53,28 +53,28 @@ function paddedHullPath(hull: { x: number; y: number }[], pad: number): string {
 
 export function ClusterHulls({ layoutNodes }: { layoutNodes: EnrichedSimNode[] }) {
   const paths = useMemo(() => {
-    const byGroup = new Map<string, { x: number; y: number }[]>();
+    const byCommunity = new Map<number, { x: number; y: number }[]>();
     for (const n of layoutNodes) {
-      const pts = byGroup.get(n.group) || [];
+      const pts = byCommunity.get(n.community) || [];
       pts.push({ x: n.x, y: n.y });
-      byGroup.set(n.group, pts);
+      byCommunity.set(n.community, pts);
     }
 
-    const result: { group: string; d: string }[] = [];
-    for (const [group, points] of byGroup) {
+    const result: { community: number; d: string }[] = [];
+    for (const [community, points] of byCommunity) {
       if (points.length < 3) continue;
       const hull = convexHull(points);
       const d = paddedHullPath(hull, 30);
-      if (d) result.push({ group, d });
+      if (d) result.push({ community, d });
     }
     return result;
   }, [layoutNodes]);
 
   return (
     <g>
-      {paths.map(({ group, d }) => (
-        <path key={group} d={d} fill={BG_COLORS[group] || '#eee'} opacity={0.08}
-          stroke={BG_COLORS[group] || '#eee'} strokeWidth={1} strokeOpacity={0.15} />
+      {paths.map(({ community, d }) => (
+        <path key={community} d={d} fill={communityBg(community)} opacity={0.12}
+          stroke={communityColor(community)} strokeWidth={1} strokeOpacity={0.2} />
       ))}
     </g>
   );

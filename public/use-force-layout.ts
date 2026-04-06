@@ -1,16 +1,23 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, forceX, forceY } from 'd3-force';
-import type { EnrichedTagNode, EnrichedSimNode, Category } from './relationship-types';
+import type { EnrichedTagNode, EnrichedSimNode } from './relationship-types';
 import type { ProjectedEdge } from './relationship-types';
 import { nodeRadius } from './relationship-types';
 
-function buildCategoryXTargets(catOrder: Category[], width: number): Map<string, number> {
-  const map = new Map<string, number>();
-  if (catOrder.length <= 1) return map;
-  const margin = 100;
-  const usable = width - margin * 2;
-  catOrder.forEach((cat, i) => {
-    map.set(cat, margin + (i / (catOrder.length - 1)) * usable);
+/** Build community-based spatial targets arranged in a circle */
+function buildCommunityTargets(
+  nodes: EnrichedTagNode[], width: number, height: number,
+): Map<number, { x: number; y: number }> {
+  const communities = [...new Set(nodes.map(n => n.community))].sort((a, b) => a - b);
+  const map = new Map<number, { x: number; y: number }>();
+  if (communities.length <= 1) return map;
+  const cx = width / 2;
+  const cy = height / 2;
+  const rx = (width - 200) / 2 * 0.6;
+  const ry = (height - 100) / 2 * 0.6;
+  communities.forEach((comm, i) => {
+    const angle = (2 * Math.PI * i) / communities.length - Math.PI / 2;
+    map.set(comm, { x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle) });
   });
   return map;
 }
@@ -29,7 +36,6 @@ function physicsParams(n: number) {
 
 export function useForceLayout(
   inputNodes: EnrichedTagNode[], edges: ProjectedEdge[], width: number, height: number,
-  categoryOrder?: Category[],
 ) {
   const simRef = useRef<any>(null);
   const nodesRef = useRef<EnrichedSimNode[]>([]);
@@ -39,15 +45,18 @@ export function useForceLayout(
   const dirtyRef = useRef(false);
 
   const inputKey = inputNodes.map(n => n.id).join(',');
-  const catKey = categoryOrder?.join(',') || '';
+  const commKey = inputNodes.map(n => n.community).join(',');
 
   useEffect(() => {
-    const catTargets = buildCategoryXTargets(categoryOrder || [], width);
-    const xTarget = (n: EnrichedSimNode) => catTargets.get(n.group) ?? width / 2;
-    const xStrength = (n: EnrichedSimNode) => catTargets.has(n.group) ? 0.12 : 0.01;
+    const commTargets = buildCommunityTargets(inputNodes, width, height);
+    const xTarget = (n: EnrichedSimNode) => commTargets.get(n.community)?.x ?? width / 2;
+    const yTarget = (n: EnrichedSimNode) => commTargets.get(n.community)?.y ?? height / 2;
+    const xyStrength = (n: EnrichedSimNode) => commTargets.has(n.community) ? 0.12 : 0.01;
 
     if (inputKey === inputKeyRef.current && simRef.current) {
-      simRef.current.force('x', forceX<EnrichedSimNode>(xTarget).strength(xStrength));
+      simRef.current
+        .force('x', forceX<EnrichedSimNode>(xTarget).strength(xyStrength))
+        .force('y', forceY<EnrichedSimNode>(yTarget).strength(xyStrength));
       simRef.current.alpha(0.3).restart();
       return;
     }
@@ -57,8 +66,8 @@ export function useForceLayout(
 
     const nodes: EnrichedSimNode[] = inputNodes.map(n => ({
       ...n,
-      x: catTargets.get(n.group) ?? width / 2 + (Math.random() - 0.5) * width * 0.5,
-      y: height / 2 + (Math.random() - 0.5) * height * 0.5,
+      x: commTargets.get(n.community)?.x ?? width / 2 + (Math.random() - 0.5) * width * 0.5,
+      y: commTargets.get(n.community)?.y ?? height / 2 + (Math.random() - 0.5) * height * 0.5,
       vx: 0, vy: 0, fx: null, fy: null,
     }));
     nodesRef.current = nodes;
@@ -86,8 +95,8 @@ export function useForceLayout(
       .force('center', forceCenter(width / 2, height / 2).strength(0.02))
       .force('collide', forceCollide<EnrichedSimNode>()
         .radius(n => nodeRadius(n.weight || 0) + pp.collidePad).strength(1).iterations(pp.collideIterations))
-      .force('x', forceX<EnrichedSimNode>(xTarget).strength(xStrength))
-      .force('y', forceY(height / 2).strength(0.01))
+      .force('x', forceX<EnrichedSimNode>(xTarget).strength(xyStrength))
+      .force('y', forceY<EnrichedSimNode>(yTarget).strength(xyStrength))
       .alphaDecay(pp.alphaDecay)
       .velocityDecay(pp.velocityDecay)
       .on('tick', () => {
@@ -100,7 +109,7 @@ export function useForceLayout(
 
     simRef.current = sim;
     return () => { sim.stop(); cancelAnimationFrame(rafRef.current); };
-  }, [inputKey, catKey, edges, width, height]);
+  }, [inputKey, commKey, edges, width, height]);
 
   const reheat = useCallback(() => {
     if (simRef.current) simRef.current.alpha(0.3).restart();

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { EnrichedSimNode } from './relationship-types';
-import { COLORS, BG_COLORS, nodeRadius } from './relationship-types';
+import { COLORS, BG_COLORS, nodeRadius, communityColor, communityBg } from './relationship-types';
 
 function arcPath(cx: number, cy: number, r: number, startAngle: number, endAngle: number): string {
   const start = { x: cx + r * Math.cos(startAngle), y: cy + r * Math.sin(startAngle) };
@@ -34,13 +34,11 @@ function CategoryRing({ node, r }: { node: EnrichedSimNode; r: number }) {
   );
 }
 
-function DiamondShape({ node, r }: { node: EnrichedSimNode; r: number }) {
+function DiamondShape({ node, r, color, bg }: { node: EnrichedSimNode; r: number; color: string; bg: string }) {
   const d = r * 1.2;
   const points = `${node.x},${node.y - d} ${node.x + d},${node.y} ${node.x},${node.y + d} ${node.x - d},${node.y}`;
   return (
-    <polygon points={points}
-      fill={BG_COLORS[node.group] || '#eee'}
-      stroke={COLORS[node.group]} strokeWidth={2} />
+    <polygon points={points} fill={bg} stroke={color} strokeWidth={2} />
   );
 }
 
@@ -63,6 +61,8 @@ export function NodeGlyph({
   const isBridge = node.role === 'bridge';
   const isHub = node.role === 'hub';
   const showDetail = !dense || selected || hovered;
+  const cColor = communityColor(node.community);
+  const cBg = communityBg(node.community);
 
   return (
     <g onClick={onClick}
@@ -74,13 +74,13 @@ export function NodeGlyph({
       {/* Halo for citation intensity — skip in dense mode */}
       {showDetail && node.haloIntensity && node.haloIntensity > 0 && !dimmed && (
         <circle cx={node.x} cy={node.y} r={r + 8 + node.haloIntensity * 6}
-          fill={COLORS[node.group]} opacity={0.06 + node.haloIntensity * 0.04} />
+          fill={cColor} opacity={0.06 + node.haloIntensity * 0.04} />
       )}
 
       {/* Selection / highlight ring */}
       {(selected || highlighted || hovered) && (
         <circle cx={node.x} cy={node.y} r={r + 5}
-          fill="none" stroke={COLORS[node.group]}
+          fill="none" stroke={cColor}
           strokeWidth={selected ? 2.5 : hovered ? 2 : 1.5}
           opacity={0.5}
           strokeDasharray={hovered && !selected ? '3 2' : undefined} />
@@ -92,15 +92,15 @@ export function NodeGlyph({
       {/* Hub double ring — skip in dense mode */}
       {showDetail && isHub && !dimmed && (
         <circle cx={node.x} cy={node.y} r={r + 6}
-          fill="none" stroke={COLORS[node.group]} strokeWidth={1} opacity={0.3} />
+          fill="none" stroke={cColor} strokeWidth={1} opacity={0.3} />
       )}
 
-      {/* Main shape */}
+      {/* Main shape — colored by community */}
       {isBridge
-        ? <DiamondShape node={node} r={r} />
+        ? <DiamondShape node={node} r={r} color={cColor} bg={cBg} />
         : <circle cx={node.x} cy={node.y} r={r}
-            fill={selected ? COLORS[node.group] : BG_COLORS[node.group] || '#eee'}
-            stroke={COLORS[node.group]} strokeWidth={r >= 8 ? 2 : 1.5} />
+            fill={selected ? cColor : cBg}
+            stroke={cColor} strokeWidth={r >= 8 ? 2 : 1.5} />
       }
 
       {/* Open access indicator — skip in dense mode */}
@@ -113,7 +113,7 @@ export function NodeGlyph({
       {(node.weight || 0) > 1 && !dimmed && (
         <text x={node.x} y={node.y + 3.5} textAnchor="middle"
           fontSize={Math.max(7, Math.min(10, r))} fontFamily="monospace" fontWeight={700}
-          fill={selected ? '#fff' : COLORS[node.group]} opacity={0.8}>
+          fill={selected ? '#fff' : cColor} opacity={0.8}>
           {node.weight}
         </text>
       )}
@@ -122,7 +122,7 @@ export function NodeGlyph({
       {showDetail && pinIndex !== null && !dimmed && (
         <g>
           <circle cx={node.x - r * 0.5} cy={node.y - r - 4} r={7}
-            fill={COLORS[node.group]} stroke="#fff" strokeWidth={1.5} />
+            fill={cColor} stroke="#fff" strokeWidth={1.5} />
           <text x={node.x - r * 0.5} y={node.y - r - 0.5} textAnchor="middle"
             fontSize={8} fontFamily="monospace" fontWeight={700} fill="#fff">
             {pinIndex + 1}
@@ -134,7 +134,7 @@ export function NodeGlyph({
       {!dimmed && (
         <text x={node.x + r + 4} y={node.y + 3.5} fontSize={fontSize} fontFamily="monospace"
           fontWeight={selected || isHub ? 700 : (node.weight || 0) >= 5 ? 600 : 400}
-          fill={selected ? COLORS[node.group] : '#333'}>
+          fill={selected ? cColor : '#333'}>
           {label}
         </text>
       )}

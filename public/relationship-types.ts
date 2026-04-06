@@ -71,6 +71,20 @@ export const BG_COLORS: Record<string, string> = {
   year: '#e0f2f1',
 };
 
+/** 12 visually distinct community colors (stroke / fill) */
+export const COMMUNITY_COLORS = [
+  '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4',
+  '#42d4f4', '#f032e6', '#bfef45', '#fabebe', '#469990',
+  '#dcbeff', '#9A6324',
+];
+export const COMMUNITY_BG = [
+  '#fde0e6', '#e4f5e4', '#dfe6f8', '#fde9d4', '#ecdaf5',
+  '#d8f4fb', '#f8d6f6', '#f2fad6', '#fde8e8', '#d6edea',
+  '#f0e6ff', '#f0e4d0',
+];
+export function communityColor(id: number): string { return COMMUNITY_COLORS[id % COMMUNITY_COLORS.length]; }
+export function communityBg(id: number): string { return COMMUNITY_BG[id % COMMUNITY_BG.length]; }
+
 export type NodeRole = 'hub' | 'bridge' | 'leaf' | 'default';
 
 export interface CategoryProfileEntry {
@@ -80,6 +94,7 @@ export interface CategoryProfileEntry {
 
 export interface EnrichedTagNode extends TagNode {
   role: NodeRole;
+  community: number;
   categoryProfile: CategoryProfileEntry[];
   haloIntensity?: number;
   openAccess?: boolean;

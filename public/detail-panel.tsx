@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { EnrichedTagNode, ProjectedEdge } from './relationship-types';
 type TagNode = EnrichedTagNode;
-import { COLORS, BG_COLORS } from './relationship-types';
+import { COLORS, BG_COLORS, communityColor, communityBg } from './relationship-types';
 
 export function DetailPanel({
   node, connections, edgesForNode, onClose, onSelectNode,
@@ -40,6 +40,11 @@ export function DetailPanel({
             display: 'inline-block', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5,
             color: COLORS[node.group], background: BG_COLORS[node.group], padding: '2px 8px', borderRadius: 3, marginBottom: 4,
           }}>{node.group}</span>
+          <span style={{
+            display: 'inline-block', fontSize: 10, letterSpacing: 0.5, marginLeft: 4,
+            color: communityColor(node.community), background: communityBg(node.community),
+            padding: '2px 8px', borderRadius: 3, marginBottom: 4,
+          }}>Community {node.community + 1}</span>
           <div style={{ fontWeight: 700, fontSize: 14, marginTop: 4, wordBreak: 'break-word' }}>{node.label}</div>
           <div style={{ fontSize: 11, color: '#999', marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <span>weight: <strong style={{ color: COLORS[node.group] }}>{node.weight}</strong></span>

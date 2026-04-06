@@ -1,5 +1,6 @@
 import type { RawNode, RawEdge, TagNode, ProjectedEdge, Category, EnrichedTagNode } from './relationship-types';
 import { classifyNodes } from './node-classify';
+import { leiden } from './leiden';
 
 const MAX_NODES = 150;
 const MAX_EDGES = 600;
@@ -105,7 +106,13 @@ export function projectGraph(
     cappedEdges = cappedEdges.slice(0, MAX_EDGES);
   }
 
-  const nodes = classifyNodes(baseNodes, cappedEdges, baseNodes);
+  // Run Leiden community detection
+  const communityMap = leiden(
+    baseNodes.map(n => n.id),
+    cappedEdges.map(e => ({ source: e.source, target: e.target, weight: e.weight })),
+  );
+
+  const nodes = classifyNodes(baseNodes, cappedEdges, baseNodes, communityMap);
 
   // Collect matching DOIs
   const matchingDois = new Set<string>();

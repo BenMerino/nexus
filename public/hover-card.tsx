@@ -1,6 +1,6 @@
 import React from 'react';
 import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
-import { COLORS, BG_COLORS } from './relationship-types';
+import { COLORS, BG_COLORS, communityColor, communityBg } from './relationship-types';
 
 function NodeHoverCard({ node, edges }: { node: EnrichedSimNode; edges: ProjectedEdge[] }) {
   const topConns = edges
@@ -19,7 +19,12 @@ function NodeHoverCard({ node, edges }: { node: EnrichedSimNode; edges: Projecte
           fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5,
           color: COLORS[node.group], background: BG_COLORS[node.group],
           padding: '1px 6px', borderRadius: 3,
-        }}>{node.role !== 'default' ? node.role : node.group}</span>
+        }}>{node.group}</span>
+        <span style={{
+          fontSize: 9, letterSpacing: 0.5,
+          color: communityColor(node.community), background: communityBg(node.community),
+          padding: '1px 6px', borderRadius: 3,
+        }}>C{node.community + 1}</span>
         <strong style={{ fontSize: 12 }}>{node.label}</strong>
       </div>
       <div style={{ color: '#777', fontSize: 10, marginBottom: 4 }}>

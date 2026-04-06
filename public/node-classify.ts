@@ -10,6 +10,7 @@ export function classifyNodes(
   nodes: TagNode[],
   edges: ProjectedEdge[],
   allNodes: TagNode[],
+  communityMap?: Map<string, number>,
 ): EnrichedTagNode[] {
   const nodeById = new Map(allNodes.map(n => [n.id, n]));
 
@@ -58,6 +59,7 @@ export function classifyNodes(
       .map(([category, weight]) => ({ category, weight }))
       .sort((a, b) => b.weight - a.weight);
 
-    return { ...n, role, categoryProfile };
+    const community = communityMap?.get(n.id) ?? 0;
+    return { ...n, role, community, categoryProfile };
   });
 }
