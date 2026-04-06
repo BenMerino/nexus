@@ -38,7 +38,7 @@
     <a href="/explore.html" class="active">Explore</a>
     <a href="/submit.html">Submit</a>
     <a href="/records.html">Records</a>
-    <a href="/api/logout" style="margin-left: auto;">Logout</a>
+    <div id="nav-user" style="margin-left: auto;"><a href="/api/logout">Logout</a></div>
   </nav>
 
   <div class="page">
@@ -212,5 +212,6 @@
       return escHtml(s).replace(/'/g, "&#39;");
     }
   </script>
+  <script src="/nav.js"></script>
 </body>
 </html>
