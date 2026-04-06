@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ProjectedEdge, EnrichedSimNode } from './relationship-types';
-import { COLORS, communityColor } from './relationship-types';
+import { COLORS } from './relationship-types';
 
 function edgeStrokeWidth(weight: number): number {
   return Math.min(6, 0.3 + Math.log2(weight + 1) * 1.5);
@@ -66,14 +66,11 @@ export function EdgeLine({ edge, nodeMap, selectedNodeId, connectedIds, hovered,
   const sw = edgeStrokeWidth(w) + (hovered ? 2 : 0);
   const op = hovered ? 0.9 : edgeOpacity(w, isConn, !!selectedNodeId);
 
-  // Use community color for intra-community edges, gradient for cross-community
-  const sameComm = s.community === t.community;
-  const gradKey = !sameComm && s.group !== t.group
+  // Gradient for cross-category edges, solid for same-category
+  const gradKey = s.group !== t.group
     ? `eg-${s.group < t.group ? `${s.group}-${t.group}` : `${t.group}-${s.group}`}`
     : null;
-  const stroke = sameComm
-    ? communityColor(s.community)
-    : gradKey ? `url(#${gradKey})` : (isConn && selectedNodeId ? COLORS[t.group] || '#ccc' : '#bbb');
+  const stroke = gradKey ? `url(#${gradKey})` : (isConn && selectedNodeId ? COLORS[t.group] || '#ccc' : '#bbb');
 
   // Use bezier curve for strong edges
   if (w >= 3) {

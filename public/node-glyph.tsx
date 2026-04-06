@@ -1,6 +1,6 @@
 import React from 'react';
 import type { EnrichedSimNode } from './relationship-types';
-import { nodeRadius, communityColor, communityBg } from './relationship-types';
+import { COLORS, BG_COLORS, nodeRadius } from './relationship-types';
 
 function DiamondShape({ node, r, color, bg }: { node: EnrichedSimNode; r: number; color: string; bg: string }) {
   const d = r * 1.2;
@@ -29,8 +29,8 @@ export function NodeGlyph({
   const isBridge = node.role === 'bridge';
   const isHub = node.role === 'hub';
   const showDetail = !dense || selected || hovered;
-  const cColor = communityColor(node.community);
-  const cBg = communityBg(node.community);
+  const cColor = COLORS[node.group] || '#666';
+  const cBg = BG_COLORS[node.group] || '#eee';
 
   return (
     <g onClick={onClick}
@@ -54,7 +54,7 @@ export function NodeGlyph({
           strokeDasharray={hovered && !selected ? '3 2' : undefined} />
       )}
 
-      {/* Main shape — colored by community */}
+      {/* Main shape — colored by category */}
       {isBridge
         ? <DiamondShape node={node} r={r} color={cColor} bg={cBg} />
         : <circle cx={node.x} cy={node.y} r={r}

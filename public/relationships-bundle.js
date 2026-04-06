@@ -15345,8 +15345,8 @@ function NodeGlyph({
   const isBridge = node.role === "bridge";
   const isHub = node.role === "hub";
   const showDetail = !dense || selected || hovered;
-  const cColor = communityColor(node.community);
-  const cBg = communityBg(node.community);
+  const cColor = COLORS[node.group] || "#666";
+  const cBg = BG_COLORS[node.group] || "#eee";
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
     "g",
     {
@@ -15508,9 +15508,8 @@ function EdgeLine({ edge, nodeMap, selectedNodeId, connectedIds, hovered, onMous
   const w = edge.weight;
   const sw = edgeStrokeWidth(w) + (hovered ? 2 : 0);
   const op = hovered ? 0.9 : edgeOpacity(w, isConn, !!selectedNodeId);
-  const sameComm = s.community === t.community;
-  const gradKey = !sameComm && s.group !== t.group ? `eg-${s.group < t.group ? `${s.group}-${t.group}` : `${t.group}-${s.group}`}` : null;
-  const stroke = sameComm ? communityColor(s.community) : gradKey ? `url(#${gradKey})` : isConn && selectedNodeId ? COLORS[t.group] || "#ccc" : "#bbb";
+  const gradKey = s.group !== t.group ? `eg-${s.group < t.group ? `${s.group}-${t.group}` : `${t.group}-${s.group}`}` : null;
+  const stroke = gradKey ? `url(#${gradKey})` : isConn && selectedNodeId ? COLORS[t.group] || "#ccc" : "#bbb";
   if (w >= 3) {
     const offset = Math.min(20, w * 3);
     const { cx, cy } = bezierControlPoint(s.x, s.y, t.x, t.y, offset);
