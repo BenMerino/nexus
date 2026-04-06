@@ -12889,9 +12889,9 @@ function nodeDegrees(nodeIds, edges) {
   }
   return deg;
 }
-function deterministicShuffle(arr) {
+function deterministicShuffle(arr, salt = 0) {
   const out = [...arr];
-  let seed = 0;
+  let seed = salt;
   for (const s of out) for (let i = 0; i < s.length; i++) seed = seed * 31 + s.charCodeAt(i) | 0;
   for (let i = out.length - 1; i > 0; i--) {
     seed = seed * 1103515245 + 12345 | 0;
@@ -12900,14 +12900,54 @@ function deterministicShuffle(arr) {
   }
   return out;
 }
-function modularityGain(nodeId, targetComm, comm, adj, deg, commTotals, m2, resolution) {
+function modularityGain(nodeId, targetComm, comm, adj, deg, ct, m2, res) {
   let kIn = 0;
   for (const { neighbor, weight } of adj.get(nodeId) || []) {
     if (comm.get(neighbor) === targetComm) kIn += weight;
   }
   const ki = deg.get(nodeId) || 0;
-  const sigTot = commTotals.get(targetComm) || 0;
-  return kIn / m2 - resolution * (sigTot * ki) / (2 * m2 * m2);
+  const sigTot = ct.get(targetComm) || 0;
+  return kIn / m2 - res * (sigTot * ki) / (2 * m2 * m2);
+}
+function buildCommTotals(nodeIds, comm, deg) {
+  const ct = /* @__PURE__ */ new Map();
+  for (const id of nodeIds) {
+    const c2 = comm.get(id);
+    ct.set(c2, (ct.get(c2) || 0) + (deg.get(id) || 0));
+  }
+  return ct;
+}
+function moveNodesFast(nodeIds, comm, adj, deg, m2, res) {
+  const ct = buildCommTotals(nodeIds, comm, deg);
+  let anyMoved = false;
+  const order = deterministicShuffle(nodeIds, 42);
+  for (let pass = 0; pass < 10; pass++) {
+    let moved = false;
+    for (const v of order) {
+      const cur = comm.get(v);
+      const kv = deg.get(v) || 0;
+      ct.set(cur, (ct.get(cur) || 0) - kv);
+      const loss = -modularityGain(v, cur, comm, adj, deg, ct, m2, res);
+      let best = cur, bestG = 0;
+      const seen = /* @__PURE__ */ new Set();
+      for (const { neighbor } of adj.get(v) || []) {
+        const nc = comm.get(neighbor);
+        if (nc === cur || seen.has(nc)) continue;
+        seen.add(nc);
+        const g = modularityGain(v, nc, comm, adj, deg, ct, m2, res) + loss;
+        if (g > bestG) {
+          bestG = g;
+          best = nc;
+        }
+      }
+      comm.set(v, best);
+      ct.set(best, (ct.get(best) || 0) + kv);
+      if (best !== cur) moved = true;
+    }
+    if (!moved) break;
+    anyMoved = true;
+  }
+  return anyMoved;
 }
 function aggregate(nodeIds, edges, comm) {
   const commNodes = /* @__PURE__ */ new Map();
@@ -12936,97 +12976,65 @@ function aggregate(nodeIds, edges, comm) {
 }
 
 // public/leiden.ts
-function localMove(nodeIds, comm, adj, deg, m2, res) {
-  const commTotals = /* @__PURE__ */ new Map();
+function refinePartition(nodeIds, flat, adj, deg, m2, res) {
+  const refined = /* @__PURE__ */ new Map();
+  let nextId = 0;
+  for (const id of nodeIds) refined.set(id, nextId++);
+  const byFlat = /* @__PURE__ */ new Map();
   for (const id of nodeIds) {
-    const c2 = comm.get(id);
-    commTotals.set(c2, (commTotals.get(c2) || 0) + (deg.get(id) || 0));
+    const c2 = flat.get(id);
+    const arr = byFlat.get(c2) || [];
+    arr.push(id);
+    byFlat.set(c2, arr);
   }
-  let anyMoved = false;
-  const order = deterministicShuffle(nodeIds);
-  for (let pass = 0; pass < 10; pass++) {
-    let moved = false;
-    for (const nodeId of order) {
-      const cur = comm.get(nodeId);
-      const ki = deg.get(nodeId) || 0;
-      commTotals.set(cur, (commTotals.get(cur) || 0) - ki);
-      const loss = -modularityGain(nodeId, cur, comm, adj, deg, commTotals, m2, res);
-      let bestComm = cur, bestGain = 0;
+  for (const [, members] of byFlat) {
+    if (members.length <= 1) continue;
+    const mSet = new Set(members);
+    for (const v of deterministicShuffle(members, 7)) {
+      const vComm = refined.get(v);
+      if (members.some((u) => u !== v && refined.get(u) === vComm)) continue;
+      let intW = 0;
+      for (const { neighbor, weight } of adj.get(v) || []) {
+        if (mSet.has(neighbor)) intW += weight;
+      }
+      const kv = deg.get(v) || 0;
+      if (intW < res * kv * (members.length - 1) / (2 * m2)) continue;
+      const ct = buildCommTotals(members, refined, deg);
+      ct.set(vComm, (ct.get(vComm) || 0) - kv);
+      let bestComm = vComm, bestGain = 0;
       const seen = /* @__PURE__ */ new Set();
-      for (const { neighbor } of adj.get(nodeId) || []) {
-        const nc = comm.get(neighbor);
-        if (nc === cur || seen.has(nc)) continue;
+      for (const { neighbor } of adj.get(v) || []) {
+        if (!mSet.has(neighbor)) continue;
+        const nc = refined.get(neighbor);
+        if (nc === vComm || seen.has(nc)) continue;
         seen.add(nc);
-        const g = modularityGain(nodeId, nc, comm, adj, deg, commTotals, m2, res) + loss;
+        const g = modularityGain(v, nc, refined, adj, deg, ct, m2, res);
         if (g > bestGain) {
           bestGain = g;
           bestComm = nc;
         }
       }
-      comm.set(nodeId, bestComm);
-      commTotals.set(bestComm, (commTotals.get(bestComm) || 0) + ki);
-      if (bestComm !== cur) moved = true;
+      if (bestComm !== vComm) refined.set(v, bestComm);
     }
-    if (!moved) break;
-    anyMoved = true;
   }
-  return anyMoved;
+  return refined;
 }
-function refine(nodeIds, comm, adj, m2, res) {
-  const refined = /* @__PURE__ */ new Map();
-  let nextId = 0;
-  for (const id of nodeIds) refined.set(id, nextId++);
-  const byCommunity = /* @__PURE__ */ new Map();
-  for (const id of nodeIds) {
-    const c2 = comm.get(id);
-    const arr = byCommunity.get(c2) || [];
-    arr.push(id);
-    byCommunity.set(c2, arr);
-  }
-  for (const [, members] of byCommunity) {
-    if (members.length <= 2) {
-      const cid = refined.get(members[0]);
-      for (const id of members) refined.set(id, cid);
-      continue;
-    }
-    const memberSet = new Set(members);
-    const subAdj = /* @__PURE__ */ new Map();
-    for (const id of members) {
-      subAdj.set(id, (adj.get(id) || []).filter((e) => memberSet.has(e.neighbor)));
-    }
-    const subDeg = /* @__PURE__ */ new Map();
-    for (const id of members) {
-      let d = 0;
-      for (const { weight } of subAdj.get(id) || []) d += weight;
-      subDeg.set(id, d);
-    }
-    localMove(members, refined, subAdj, subDeg, m2, res);
-  }
-  for (const [id, c2] of refined) comm.set(id, c2);
-}
-function adaptiveResolution(nodeCount, edgeCount) {
-  if (nodeCount <= 2) return 1;
-  const maxEdges = nodeCount * (nodeCount - 1) / 2;
-  const density = edgeCount / maxEdges;
-  return Math.max(1, 1 + 4 * density);
-}
-function leiden(nodeIds, edges, maxIter = 10) {
+function leiden(nodeIds, edges, resolution = 1, maxIter = 10) {
   if (!nodeIds.length || !edges.length) {
     return new Map(nodeIds.map((id, i) => [id, i]));
   }
   const m2 = totalWeight(edges);
   if (m2 === 0) return new Map(nodeIds.map((id, i) => [id, i]));
-  const resolution = adaptiveResolution(nodeIds.length, edges.length);
   let superToOrig = new Map(nodeIds.map((id) => [id, [id]]));
   let curIds = [...nodeIds];
   let curEdges = [...edges];
   for (let iter = 0; iter < maxIter; iter++) {
-    const comm = new Map(curIds.map((id, i) => [id, i]));
+    const flat = new Map(curIds.map((id, i) => [id, i]));
     const adj = adjacency(curIds, curEdges);
     const deg = nodeDegrees(curIds, curEdges);
-    if (!localMove(curIds, comm, adj, deg, m2, resolution)) break;
-    refine(curIds, comm, adj, m2, resolution);
-    const { superIds, superEdges, members } = aggregate(curIds, curEdges, comm);
+    if (!moveNodesFast(curIds, flat, adj, deg, m2, resolution)) break;
+    const refined = refinePartition(curIds, flat, adj, deg, m2, resolution);
+    const { superIds, superEdges, members } = aggregate(curIds, curEdges, refined);
     if (superIds.length >= curIds.length) break;
     const newSTO = /* @__PURE__ */ new Map();
     for (const [superId, subNodes] of members) {
@@ -13041,8 +13049,8 @@ function leiden(nodeIds, edges, maxIter = 10) {
   const result = /* @__PURE__ */ new Map();
   let cid = 0;
   for (const [, originals] of superToOrig) {
-    const id = cid++;
-    for (const orig of originals) result.set(orig, id);
+    for (const orig of originals) result.set(orig, cid);
+    cid++;
   }
   return result;
 }
