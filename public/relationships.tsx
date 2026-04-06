@@ -19,6 +19,7 @@ function RelationshipExplorer() {
   const [activeCategories, setActiveCategories] = useState<Set<Category>>(() => new Set(TAG_CATEGORIES));
   const [pinnedTags, setPinnedTags] = useState<string[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 1100, height: 600 });
 
@@ -119,8 +120,6 @@ function RelationshipExplorer() {
 
   if (loading) return <div style={{ padding: 24, fontFamily: 'monospace', color: '#999' }}>Loading graph data...</div>;
   if (!rawNodes.length) return <div style={{ padding: 24, fontFamily: 'monospace', color: '#999' }}>No data. Submit some DOIs first.</div>;
-
-  const [filtersVisible, setFiltersVisible] = useState(false);
 
   return (
     <div ref={containerRef}>

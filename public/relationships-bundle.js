@@ -15631,6 +15631,7 @@ function RelationshipExplorer() {
   const [activeCategories, setActiveCategories] = (0, import_react12.useState)(() => new Set(TAG_CATEGORIES));
   const [pinnedTags, setPinnedTags] = (0, import_react12.useState)([]);
   const [selectedNodeId, setSelectedNodeId] = (0, import_react12.useState)(null);
+  const [filtersVisible, setFiltersVisible] = (0, import_react12.useState)(false);
   const containerRef = (0, import_react12.useRef)(null);
   const [dims, setDims] = (0, import_react12.useState)({ width: 1100, height: 600 });
   (0, import_react12.useEffect)(() => {
@@ -15734,7 +15735,6 @@ function RelationshipExplorer() {
   const pinnedSet = (0, import_react12.useMemo)(() => new Set(pinnedTags), [pinnedTags]);
   if (loading) return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 24, fontFamily: "monospace", color: "#999" }, children: "Loading graph data..." });
   if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 24, fontFamily: "monospace", color: "#999" }, children: "No data. Submit some DOIs first." });
-  const [filtersVisible, setFiltersVisible] = (0, import_react12.useState)(false);
   return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { ref: containerRef, children: [
     /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("button", { onClick: () => setFiltersVisible(!filtersVisible), style: { background: "none", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", fontSize: 12, color: "#555", fontFamily: "monospace", padding: "4px 10px" }, children: [
       filtersVisible ? "Hide Filters" : "Filters",
