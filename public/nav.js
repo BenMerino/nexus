@@ -14,7 +14,11 @@
 
   function renderLogo(d) {
     var logoSlot = document.querySelector("nav .logo");
-    if (!logoSlot || !d.logo) return;
+    if (!logoSlot) return;
+    if (!d.logo) {
+      logoSlot.textContent = "Nexus";
+      return;
+    }
     logoSlot.innerHTML = '<img src="' + d.logo + '" style="height:36px;object-fit:contain;">';
   }
 

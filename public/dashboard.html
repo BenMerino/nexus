@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    .import-section { margin-bottom: 2rem; padding: 16px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; }
+    .import-section h3 { margin: 0 0 8px; font-size: 14px; }
+    .import-btn { font-family: monospace; padding: 6px 14px; cursor: pointer; background: #333; color: #fff; border: none; border-radius: 4px; }
+    .import-btn:disabled { opacity: 0.5; cursor: default; }
+    .import-progress { margin-top: 8px; font-size: 12px; color: #666; font-family: monospace; }
+    .progress-bar { height: 4px; background: #e0e0e0; border-radius: 2px; margin-top: 6px; }
+    .progress-fill { height: 100%; background: #333; border-radius: 2px; transition: width 0.3s; }
+  </style>
+</head>
+<body>
+  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+
+  <nav>
+    <span class="logo">Nexus</span>
+    <a href="/dashboard.html" class="active">Dashboard</a>
+    <a href="/overview.html">Overview</a>
+    <a href="/explore.html">Explore</a>
+    <a href="/submit.html">Submit</a>
+    <a href="/author-import.html">Author Import</a>
+    <a href="/tag-manager.html">Tags</a>
+    <div id="nav-user" style="margin-left: auto; min-height: 28px;"><a href="/api/auth?action=logout">Logout</a></div>
+  </nav>
+
+  <div class="page">
+    <h1>Institutional Dashboard</h1>
+
+    <div class="import-section">
+      <h3>Bulk Import from OpenAlex</h3>
+      <p style="font-size:12px;color:#666;margin:0 0 8px;">Import all publications affiliated with your institution.</p>
+      <button class="import-btn" id="import-btn" onclick="startImport()">Import Publications</button>
+      <div class="import-progress" id="import-status"></div>
+      <div class="progress-bar" id="progress-bar" style="display:none;"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <div id="dashboard-root"></div>
+  </div>
+
+  <script src="/nav.js"></script>
+  <script src="/dashboard-import.js"></script>
+  <script type="module" src="/dashboard-bundle.js"></script>
+</body>
+</html>
