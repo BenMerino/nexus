@@ -15,7 +15,7 @@
   function renderLogo(d) {
     var logoSlot = document.querySelector("nav .logo");
     if (!logoSlot) return;
-    if (!d.logo) {
+    if (!d.logo || d.role === "superadmin") {
       logoSlot.textContent = "Nexus";
       return;
     }
@@ -27,7 +27,7 @@
     renderLogo(d);
     var html = '<div style="display:flex;align-items:center;gap:8px;">';
     html += '<div id="nav-avatar" style="display:flex;align-items:center;gap:8px;cursor:pointer;">';
-    if (d.logo) html += '<img src="' + d.logo + '" style="height:24px;width:24px;object-fit:contain;border-radius:3px;">';
+    if (d.logo && d.role !== "superadmin") html += '<img src="' + d.logo + '" style="height:24px;width:24px;object-fit:contain;border-radius:3px;">';
     var p = d.profile || {};
     var displayName = p.name || d.user;
     var subParts = [p.position, p.faculty, d.tenant].filter(Boolean);

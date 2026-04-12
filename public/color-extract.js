@@ -2,6 +2,7 @@
 function extractColors(dataUrl, callback) {
   if (!dataUrl) { callback([]); return; }
   var img = new Image();
+  img.crossOrigin = "anonymous";
   img.onerror = function () { callback([]); };
   img.onload = function () {
     var canvas = document.createElement("canvas");
@@ -12,7 +13,7 @@ function extractColors(dataUrl, callback) {
     ctx.drawImage(img, 0, 0, size, size);
     var pixels;
     try { pixels = ctx.getImageData(0, 0, size, size).data; }
-    catch (e) { callback([]); return; }
+    catch (e) { console.warn("color-extract: canvas tainted", e); callback([]); return; }
 
     var buckets = {};
     for (var i = 0; i < pixels.length; i += 4) {
