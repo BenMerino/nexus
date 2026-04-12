@@ -12,8 +12,15 @@
 
   var currentData = null;
 
+  function renderLogo(d) {
+    var logoSlot = document.querySelector("nav .logo");
+    if (!logoSlot || !d.logo) return;
+    logoSlot.innerHTML = '<img src="' + d.logo + '" style="height:36px;object-fit:contain;">';
+  }
+
   function render(d) {
     currentData = d;
+    renderLogo(d);
     var html = '<div style="display:flex;align-items:center;gap:8px;">';
     html += '<div id="nav-avatar" style="display:flex;align-items:center;gap:8px;cursor:pointer;">';
     if (d.logo) html += '<img src="' + d.logo + '" style="height:24px;width:24px;object-fit:contain;border-radius:3px;">';
@@ -69,7 +76,7 @@
 
   // Render immediately from cache to prevent jitter
   var cached = localStorage.getItem("nexus_nav");
-  if (cached) { try { render(JSON.parse(cached)); } catch (e) {} }
+  if (cached) { try { var c = JSON.parse(cached); renderLogo(c); render(c); } catch (e) {} }
 
   // Then refresh from API and update cache
   fetch("/api/auth?action=me")
@@ -77,5 +84,24 @@
     .then(function (d) {
       localStorage.setItem("nexus_nav", JSON.stringify(d));
       render(d);
+      showAdminLink(d.role);
     }).catch(function () {});
+
+  function showAdminLink(role) {
+    if (role !== "superadmin" && role !== "director") return;
+    var nav = document.querySelector("nav");
+    var userSlot = document.getElementById("nav-user");
+    if (!nav || !userSlot) return;
+    addNavLink(nav, userSlot, "/settings.html", "Settings");
+    addNavLink(nav, userSlot, "/admin.html", "Admin");
+  }
+
+  function addNavLink(nav, before, href, text) {
+    if (nav.querySelector('a[href="' + href + '"]')) return;
+    var link = document.createElement("a");
+    link.href = href;
+    link.textContent = text;
+    if (location.pathname === href) link.className = "active";
+    nav.insertBefore(link, before);
+  }
 })();

@@ -6,7 +6,8 @@ a:hover { text-decoration: underline; }
 
 /* Navigation */
 nav { background: #fff; border-bottom: 2px solid #333; padding: 12px 24px; display: flex; align-items: center; gap: 24px; min-height: 52px; }
-nav .logo { font-weight: bold; font-size: 16px; letter-spacing: 1px; }
+nav .logo { font-weight: bold; font-size: 16px; letter-spacing: 1px; display: flex; align-items: center; }
+nav .logo img { height: 36px; object-fit: contain; }
 nav a { padding: 4px 12px; border-radius: 3px; color: #555; font-size: 13px; }
 nav a:hover { background: #eee; text-decoration: none; }
 nav a.active { background: #333; color: #fff; }
