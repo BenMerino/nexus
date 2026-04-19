@@ -3,41 +3,47 @@ import { createRoot } from 'react-dom/client';
 import { Shell } from './shell';
 import { useCurrentUser } from './shell-helpers';
 import { Stat, Tag } from './ui-primitives';
-import { GraphRender } from '../graph-engine/index.js';
-import { buildDashboardCharts, type DashboardData } from './dashboard-builders.js';
-import { yearlyCounts, sourceBreakdown, BarChart, RankedInstitutions, RankedCountries, SourceList } from './dashboard-panels';
+import type { DashboardData } from './dashboard-builders.js';
+import { yearlyCounts, greeting, BarChart, TopJournals, PartnerInstitutions, RecentlyIndexed } from './dashboard-panels';
 
 function DashboardContent({ data }: { data: DashboardData }) {
   const { me } = useCurrentUser();
-  const oaPct = data.totalPubs > 0 ? Math.round((data.oaCount / data.totalPubs) * 100) : 0;
   const years = yearlyCounts(data);
-  const sources = sourceBreakdown(data);
-  const charts = buildDashboardCharts(data);
-
   const tenantName = me?.tenant || 'Institution';
   const displayName = me?.profile.name || me?.user || '';
   const firstName = displayName.split(' ')[0];
+  const isPersonal = !!me?.profile.orcid;
 
-  const heroStats = [
-    { label: 'Publications',    value: data.totalPubs.toLocaleString() },
-    { label: 'Citations',       value: data.totalCitations.toLocaleString() },
-    { label: 'Open access',     value: `${oaPct}%`, accent: true },
-    { label: 'Authors indexed', value: data.authorCount.toLocaleString() },
+  const heroStats = isPersonal ? [
+    { label: 'Publications', value: data.totalPubs.toLocaleString(), sub: 'indexed via ORCID' },
+    { label: 'Citations',    value: data.totalCitations.toLocaleString(), sub: 'OpenAlex · last sync' },
+    { label: 'h-index',      value: me?.hIndex ?? '—', sub: 'computed · real-time', accent: true },
+    { label: 'Co-authors',   value: data.authorCount.toLocaleString(), sub: 'unique, all years' },
+  ] : [
+    { label: 'Publications',    value: data.totalPubs.toLocaleString(), sub: 'indexed records' },
+    { label: 'Citations',       value: data.totalCitations.toLocaleString(), sub: 'sum across papers' },
+    { label: 'Open access',     value: data.totalPubs > 0 ? `${Math.round((data.oaCount / data.totalPubs) * 100)}%` : '—', sub: 'of total output', accent: true },
+    { label: 'Authors indexed', value: data.authorCount.toLocaleString(), sub: 'ORCID-verified' },
   ];
+
+  const title = isPersonal && firstName
+    ? <>{greeting()}, <em>{firstName}</em>.</>
+    : <><em>{tenantName}</em>.</>;
+  const sub = isPersonal
+    ? `Your research, pulled from 4 scholarly sources. No forms.`
+    : `A living map of ${tenantName}'s scholarly output.`;
 
   return (
     <div className="view dashboard">
       <header className="view-head">
         <div>
-          <div className="eyebrow">Institutional overview</div>
-          <h1 className="view-title">
-            {firstName ? <>Good work, <em>{firstName}</em>.</> : <><em>{tenantName}</em>.</>}
-          </h1>
-          <div className="view-sub">A living map of {tenantName}&rsquo;s scholarly output — pulled from CrossRef, OpenAlex, Semantic Scholar, and DataCite.</div>
+          <div className="eyebrow">{isPersonal ? 'Researcher' : 'Institutional overview'}</div>
+          <h1 className="view-title">{title}</h1>
+          <div className="view-sub">{sub}</div>
         </div>
         <div className="view-meta">
-          <Tag mono>CROSSREF · OPENALEX · S2 · DATACITE</Tag>
-          {me?.hIndex != null && <Tag mono tone="muted">H-INDEX · {me.hIndex}</Tag>}
+          <Tag mono>LAST SYNC · LIVE</Tag>
+          <Tag mono tone="muted">OPENALEX · CROSSREF · S2 · DATACITE</Tag>
         </div>
       </header>
 
@@ -46,13 +52,10 @@ function DashboardContent({ data }: { data: DashboardData }) {
       </div>
 
       <div className="dash-grid">
-        {years.length > 0 ? <BarChart rows={years} title="Publications per year" /> : <div className="card card-chart"><div className="muted">No year data.</div></div>}
-        <RankedInstitutions data={data} />
-        <RankedCountries data={data} />
-        {sources.length > 0 && <SourceList sources={sources} />}
-        {charts.slice(1).map((chart, i) => (
-          <section key={i} className="card card-span-2"><GraphRender chart={chart} /></section>
-        ))}
+        {years.length > 0 ? <BarChart rows={years} title={isPersonal ? 'Your publications per year' : 'Publications per year'} /> : <div className="card card-chart"><div className="muted">No year data.</div></div>}
+        <TopJournals data={data} />
+        <PartnerInstitutions data={data} />
+        <RecentlyIndexed data={data} />
       </div>
       <div id="import-slot" />
     </div>

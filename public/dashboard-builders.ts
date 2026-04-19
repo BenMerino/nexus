@@ -4,6 +4,9 @@ interface YearSource { year: string; source: string; count: string; }
 interface Collab { value: string; count: string; }
 interface Country { country: string; count: string; }
 
+export interface TopJournal { value: string; key: string; count: string }
+export interface RecentPaper { doi: string; title: string | null; published: string | null; citation_count: number | null; journal: string | null }
+
 interface DashboardData {
   totalPubs: number;
   totalCitations: number;
@@ -12,6 +15,8 @@ interface DashboardData {
   yearSource: YearSource[];
   collabs: Collab[];
   countries: Country[];
+  topJournals?: TopJournal[];
+  recentPapers?: RecentPaper[];
 }
 
 function buildYearSourceChart(data: DashboardData): GraphDirective | null {

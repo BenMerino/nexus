@@ -1,7 +1,7 @@
 const { requireRole } = require("../lib/auth");
 const { ensureSchema } = require("../lib/db");
 const { requireScope } = require("../lib/scope");
-const { getSummary, getByYearAndSource, getCollaborations, getCountries } = require("../lib/dashboard-stats");
+const { getSummary, getByYearAndSource, getCollaborations, getCountries, getTopJournals, getRecentPapers } = require("../lib/dashboard-stats");
 const { fetchInstitutionWorks, fetchInstitutionInfo } = require("../lib/fetchers-institution");
 const { importWorksBatch } = require("../lib/store-openalex");
 
@@ -12,10 +12,11 @@ module.exports = async function handler(req, res) {
   const action = req.query.action || "stats";
 
   if (action === "stats") {
-    const [totals, yearSource, collabs, countries] = await Promise.all([
+    const [totals, yearSource, collabs, countries, topJournals, recentPapers] = await Promise.all([
       getSummary(scope), getByYearAndSource(scope), getCollaborations(scope), getCountries(scope),
+      getTopJournals(scope), getRecentPapers(scope),
     ]);
-    return res.json({ ...totals, yearSource, collabs, countries });
+    return res.json({ ...totals, yearSource, collabs, countries, topJournals, recentPapers });
   }
 
   if (action === "institution-info") {

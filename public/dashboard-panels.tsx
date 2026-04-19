@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tag, SectionHead } from './ui-primitives';
+import { Tag, SectionHead, Ico } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders.js';
 
 export function yearlyCounts(data: DashboardData): { year: string; count: number }[] {
@@ -12,13 +12,11 @@ export function yearlyCounts(data: DashboardData): { year: string; count: number
   return [...byYear.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-6).map(([year, count]) => ({ year, count }));
 }
 
-export function sourceBreakdown(data: DashboardData): { source: string; count: number }[] {
-  const m = new Map<string, number>();
-  for (const r of data.yearSource) {
-    const s = r.source || 'Other';
-    m.set(s, (m.get(s) || 0) + parseInt(r.count));
-  }
-  return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([source, count]) => ({ source, count }));
+export function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
 }
 
 export function BarChart({ rows, title }: { rows: { year: string; count: number }[]; title: string }) {
@@ -42,8 +40,30 @@ export function BarChart({ rows, title }: { rows: { year: string; count: number 
   );
 }
 
-export function RankedInstitutions({ data }: { data: DashboardData }) {
-  const top = data.collabs.slice(0, 8);
+export function TopJournals({ data }: { data: DashboardData }) {
+  const top = (data.topJournals || []).slice(0, 5);
+  return (
+    <section className="card">
+      <SectionHead eyebrow="Venues" title="Top journals" />
+      <ul className="ranked-list">
+        {top.length === 0 && <li className="empty">No journal data yet.</li>}
+        {top.map((j, i) => (
+          <li key={j.key}>
+            <span className="rank">{String(i + 1).padStart(2, '0')}</span>
+            <span className="rank-label">
+              <span className="rank-title">{j.value}</span>
+              <span className="rank-meta mono">{j.key !== j.value ? j.key : ''}</span>
+            </span>
+            <span className="rank-count">{j.count}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+export function PartnerInstitutions({ data }: { data: DashboardData }) {
+  const top = data.collabs.slice(0, 6);
   return (
     <section className="card">
       <SectionHead eyebrow="Collaborations" title="Partner institutions" />
@@ -61,38 +81,26 @@ export function RankedInstitutions({ data }: { data: DashboardData }) {
   );
 }
 
-export function RankedCountries({ data }: { data: DashboardData }) {
-  const top = data.countries.slice(0, 8);
-  return (
-    <section className="card">
-      <SectionHead eyebrow="Reach" title="Top countries" />
-      <ul className="ranked-list">
-        {top.length === 0 && <li className="empty">No country data yet.</li>}
-        {top.map((c, i) => (
-          <li key={i}>
-            <span className="rank">{String(i + 1).padStart(2, '0')}</span>
-            <span className="rank-label"><span className="rank-title">{c.country}</span></span>
-            <span className="rank-count">{c.count}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-export function SourceList({ sources }: { sources: { source: string; count: number }[] }) {
+export function RecentlyIndexed({ data }: { data: DashboardData }) {
+  const papers = data.recentPapers || [];
   return (
     <section className="card card-span-2">
-      <SectionHead eyebrow="Ingestion" title="By source index" />
-      <ul className="ranked-list">
-        {sources.map((s, i) => (
-          <li key={s.source}>
-            <span className="rank">{String(i + 1).padStart(2, '0')}</span>
-            <span className="rank-label"><span className="rank-title">{s.source}</span></span>
-            <span className="rank-count">{s.count}</span>
-          </li>
-        ))}
-      </ul>
+      <SectionHead eyebrow="Ledger" title="Recently indexed" right={<a className="link-btn" href="/explore.html">All papers {Ico.arrow}</a>} />
+      {papers.length === 0 ? <div className="muted">No papers yet.</div> : (
+        <table className="paper-table">
+          <thead><tr><th>Title</th><th>Journal</th><th>Published</th><th>Cites</th></tr></thead>
+          <tbody>
+            {papers.map(p => (
+              <tr key={p.doi}>
+                <td className="paper-title">{p.title || '(untitled)'}<div className="mono paper-doi">{p.doi}</div></td>
+                <td>{p.journal || '—'}</td>
+                <td>{p.published?.slice(0, 4) || '—'}</td>
+                <td>{p.citation_count ?? 0}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </section>
   );
 }

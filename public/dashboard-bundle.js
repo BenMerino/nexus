@@ -766,7 +766,7 @@ var require_scheduler = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React12 = require_react();
+    var React5 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React12.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React5.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React12 = require_react();
+    var React5 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React12.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React5.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React12.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React5.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12747,7 +12747,7 @@ var require_jsx_runtime = __commonJS({
 });
 
 // public/dashboard-charts.tsx
-var import_react15 = __toESM(require_react());
+var import_react5 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
 // public/shell.tsx
@@ -13108,1386 +13108,8 @@ function Shell({ children, scroll = false, currentPath, tweaks = false }) {
   ] });
 }
 
-// graph-engine/GraphRender.tsx
-var import_react14 = __toESM(require_react());
-
-// primitives/BaseBox.tsx
-var import_react5 = __toESM(require_react());
-var import_jsx_runtime6 = __toESM(require_jsx_runtime());
-var BaseBox = import_react5.default.forwardRef(
-  ({ children, direction, gap, px, py, surfaceRadius, shadow, style, ...rest }, ref) => {
-    const s = {
-      display: direction === "row" ? "flex" : void 0,
-      flexDirection: direction === "row" ? "row" : void 0,
-      gap: gap ? `${Number(gap) * 0.25}rem` : void 0,
-      ...style
-    };
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { ref, style: s, ...rest, children });
-  }
-);
-
-// primitives/BaseText.tsx
-var import_jsx_runtime7 = __toESM(require_jsx_runtime());
-function BaseText({ children, variant, weight, color, style, ...rest }) {
-  const s = {
-    fontWeight: weight === "semibold" ? 600 : void 0,
-    color: color === "muted" ? "#888" : void 0,
-    ...style
-  };
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: s, ...rest, children });
-}
-
-// primitives/BaseAction.tsx
-var import_jsx_runtime8 = __toESM(require_jsx_runtime());
-function BaseAction({ children, onClick, style, ...rest }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("button", { onClick, style: { background: "none", border: "none", cursor: "pointer", ...style }, ...rest, children });
-}
-
-// graph-engine/cartesian-render.tsx
-var import_react8 = __toESM(require_react());
-
-// graph-engine/scales.ts
-function linearScale(domain, range) {
-  const [d0, d1] = domain;
-  const [r0, r1] = range;
-  const span = d1 - d0 || 1;
-  return (value) => r0 + (value - d0) / span * (r1 - r0);
-}
-function bandScale(labels, range, padding = 0.2) {
-  const [r0, r1] = range;
-  const total = r1 - r0;
-  const step = total / labels.length;
-  const bandW = step * (1 - padding);
-  const offset = step * padding * 0.5;
-  const map = new Map(labels.map((l, i) => [l, { x: r0 + i * step + offset, width: bandW }]));
-  return (label) => map.get(label) ?? { x: r0, width: bandW };
-}
-function arcScale(values, startAngle = 0, endAngle = Math.PI * 2) {
-  const total = values.reduce((s, v) => s + v, 0) || 1;
-  const span = endAngle - startAngle;
-  let cursor = startAngle;
-  return values.map((v) => {
-    const sweep = v / total * span;
-    const arc = { startAngle: cursor, endAngle: cursor + sweep };
-    cursor += sweep;
-    return arc;
-  });
-}
-function niceDomain(min, max, ticks2 = 5) {
-  if (min === max) return { min: 0, max: max || 1, step: (max || 1) / ticks2 };
-  const rawStep = (max - min) / ticks2;
-  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const residual = rawStep / mag;
-  const niceStep = residual <= 1.5 ? 1 : residual <= 3 ? 2 : residual <= 7 ? 5 : 10;
-  const step = niceStep * mag;
-  return { min: Math.floor(min / step) * step, max: Math.ceil(max / step) * step, step };
-}
-function ticks(domain) {
-  const result = [];
-  for (let v = domain.min; v <= domain.max + domain.step * 1e-3; v += domain.step) {
-    result.push(Math.round(v * 1e6) / 1e6);
-  }
-  return result;
-}
-function arcPath(cx, cy, r, start, end) {
-  const s = { x: cx + r * Math.cos(start), y: cy + r * Math.sin(start) };
-  const e = { x: cx + r * Math.cos(end), y: cy + r * Math.sin(end) };
-  const large = end - start > Math.PI ? 1 : 0;
-  return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
-}
-function donutArc(cx, cy, outer, inner, start, end) {
-  const os = { x: cx + outer * Math.cos(start), y: cy + outer * Math.sin(start) };
-  const oe = { x: cx + outer * Math.cos(end), y: cy + outer * Math.sin(end) };
-  const ie = { x: cx + inner * Math.cos(end), y: cy + inner * Math.sin(end) };
-  const is_ = { x: cx + inner * Math.cos(start), y: cy + inner * Math.sin(start) };
-  const large = end - start > Math.PI ? 1 : 0;
-  return `M ${os.x} ${os.y} A ${outer} ${outer} 0 ${large} 1 ${oe.x} ${oe.y} L ${ie.x} ${ie.y} A ${inner} ${inner} 0 ${large} 0 ${is_.x} ${is_.y} Z`;
-}
-function linePath(points) {
-  const n = points.length;
-  if (n === 0) return "";
-  if (n === 1) return `M ${points[0].x} ${points[0].y}`;
-  if (n === 2) return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
-  const ms = monotoneSlopes(points);
-  let d = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 0; i < n - 1; i++) {
-    const dx = (points[i + 1].x - points[i].x) / 3;
-    d += ` C ${points[i].x + dx} ${points[i].y + ms[i] * dx}, ${points[i + 1].x - dx} ${points[i + 1].y - ms[i + 1] * dx}, ${points[i + 1].x} ${points[i + 1].y}`;
-  }
-  return d;
-}
-function monotoneSlopes(pts) {
-  const n = pts.length;
-  const d = [];
-  const m = [];
-  for (let i = 0; i < n - 1; i++) {
-    const dx = pts[i + 1].x - pts[i].x;
-    d.push(dx === 0 ? 0 : (pts[i + 1].y - pts[i].y) / dx);
-  }
-  m.push(d[0]);
-  for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2);
-  m.push(d[n - 2]);
-  for (let i = 0; i < n - 1; i++) {
-    if (d[i] === 0) {
-      m[i] = 0;
-      m[i + 1] = 0;
-      continue;
-    }
-    const a = m[i] / d[i], b = m[i + 1] / d[i];
-    const s = a * a + b * b;
-    if (s > 9) {
-      const t = 3 / Math.sqrt(s);
-      m[i] = t * a * d[i];
-      m[i + 1] = t * b * d[i];
-    }
-  }
-  return m;
-}
-function areaPath(points, baseline) {
-  if (!points.length) return "";
-  const last = points[points.length - 1], first = points[0];
-  return `${linePath(points)} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`;
-}
-
-// graph-engine/svg-parts.tsx
-var import_react6 = __toESM(require_react());
-
-// graph-engine/svg-color-schemes.ts
-var CTX_S = [
-  "var(--chart-5, #06b6d4)",
-  "var(--chart-3, #8b5cf6)",
-  "var(--status-success, #10b981)",
-  "var(--chart-4, #f59e0b)",
-  "var(--chart-6, #ec4899)",
-  "var(--chart-7, #14b8a6)",
-  "var(--chart-8, #6366f1)",
-  "var(--status-info, #3b82f6)"
-];
-var N = (p, s) => ({ sentiment: "neutral", primary: p, fill: p, seriesColors: s });
-var INFO_G = { sentiment: "neutral", primary: "var(--status-info, #3b82f6)", fill: "var(--status-info, #3b82f6)", gradient: ["#3b82f6", "#06b6d4"] };
-var OK = { sentiment: "positive", primary: "var(--status-success, #10b981)", fill: "var(--status-success, #10b981)" };
-var TYPE_SCHEME = {
-  heatmap: { sentiment: "neutral", primary: CTX_S[0], fill: CTX_S[0], gradient: ["#6366f1", "#a855f7", "#ec4899", "#f97316"] },
-  bubble: N(CTX_S[1], CTX_S),
-  scatter: N(CTX_S[1], CTX_S),
-  bar: INFO_G,
-  line: INFO_G,
-  area: INFO_G,
-  pie: N(CTX_S[0], CTX_S),
-  donut: N(CTX_S[0], CTX_S),
-  funnel: N(CTX_S[0], CTX_S),
-  treemap: N(CTX_S[0], CTX_S),
-  radar: N(CTX_S[0], CTX_S),
-  gauge: OK,
-  "progress-ring": OK
-};
-var DNA_FALLBACK = { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)" };
-function cs(chart) {
-  return chart.colorScheme ?? (chart.type ? TYPE_SCHEME[chart.type] : void 0) ?? DNA_FALLBACK;
-}
-var FALLBACK_SERIES = CTX_S;
-function seriesColor(scheme, i) {
-  return scheme.seriesColors?.[i % (scheme.seriesColors?.length || 1)] ?? FALLBACK_SERIES[i % FALLBACK_SERIES.length];
-}
-
-// graph-engine/svg-parts.tsx
-var import_jsx_runtime9 = __toESM(require_jsx_runtime());
-var MARGIN = { top: 8, right: 8, bottom: 20, left: 36 };
-var TICK = { fill: "var(--text-muted)", fontSize: 9, fontWeight: 600 };
-var GRID_STROKE = "var(--border-main)";
-function XAxisBand({ labels, y, range }) {
-  const step = (range[1] - range[0]) / labels.length;
-  const maxChars = Math.max(4, Math.floor(step / 5));
-  const rotate = labels.some((l) => l.length > maxChars);
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_jsx_runtime9.Fragment, { children: labels.map((l, i) => {
-    const cx = range[0] + i * step + step / 2;
-    const display = l.length > maxChars ? l.slice(0, maxChars - 1) + "\u2026" : l;
-    return rotate ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("text", { x: cx, y: y + 6, textAnchor: "end", transform: `rotate(-40,${cx},${y + 6})`, ...TICK, children: display }, i) : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("text", { x: cx, y: y + 14, textAnchor: "middle", ...TICK, children: display }, i);
-  }) });
-}
-function XAxisLinear({ domain, y, range }) {
-  const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_jsx_runtime9.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("text", { x: s(v), y: y + 14, textAnchor: "middle", ...TICK, children: v }, i)) });
-}
-function YAxis({ domain, range, x }) {
-  const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_jsx_runtime9.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("text", { x: x - 4, y: s(v) + 3, textAnchor: "end", ...TICK, children: fmtTick(v) }, i)) });
-}
-function fmtTick(v) {
-  const abs = Math.abs(v);
-  if (abs >= 1e6) return `${+(v / 1e6).toPrecision(3)}M`;
-  if (abs >= 1e4) return `${+(v / 1e3).toPrecision(3)}k`;
-  return String(v);
-}
-function fmtValue(v, c) {
-  const s = v.toLocaleString(void 0, { maximumFractionDigits: 0 });
-  if (!c) return s;
-  const sym = c.currency || "$";
-  return c.currencyFormat === "suffix" ? `${s} ${sym}` : `${sym}${s}`;
-}
-function GridLines({ domain, range, xRange }) {
-  const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_jsx_runtime9.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: s(v), y2: s(v), stroke: GRID_STROKE, strokeOpacity: 0.08 }, i)) });
-}
-function ThresholdLines({ thresholds, yScale, xRange }) {
-  if (!thresholds?.length) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_jsx_runtime9.Fragment, { children: thresholds.map((t, i) => {
-    const y = yScale(t.value);
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: y, y2: y, stroke: t.color, strokeDasharray: "4 4", strokeWidth: 1 }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("text", { x: xRange[1] - 2, y: y - 4, textAnchor: "end", fontSize: 9, fontWeight: 600, fill: t.color, children: t.label })
-    ] }, i);
-  }) });
-}
-function useTooltip() {
-  const [tip, setTip] = (0, import_react6.useState)(null);
-  const show = (0, import_react6.useCallback)((state) => setTip(state), []);
-  const hide = (0, import_react6.useCallback)(() => setTip(null), []);
-  return { tip, show, hide };
-}
-function Crosshairs({ tip, xR, yR, mode, ms = 0 }) {
-  if (!tip || mode === "none") return null;
-  const stroke = "var(--text-muted)";
-  const t = ms > 0 ? `all ${ms}ms ease-out` : void 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { opacity: 0.4, pointerEvents: "none", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("line", { x1: tip.vbX, x2: tip.vbX, y1: tip.vbY, y2: yR[1], stroke, strokeDasharray: "3 3", strokeWidth: 0.75, style: { transition: t } }),
-    mode === "both" && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("line", { x1: xR[0], x2: tip.vbX, y1: tip.vbY, y2: tip.vbY, stroke, strokeDasharray: "3 3", strokeWidth: 0.75, style: { transition: t } }),
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("circle", { cx: tip.vbX, cy: tip.vbY, r: 3, fill: stroke, opacity: 0.8, style: { transition: t } })
-  ] });
-}
-function TooltipOverlay({ tip, yLabel, currencyCfg, ms = 0 }) {
-  if (!tip) return null;
-  const t = ms > 0 ? `left ${ms}ms ease-out, top ${ms}ms ease-out` : void 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
-    BaseBox,
-    {
-      px: "3",
-      py: "2",
-      surfaceRadius: "sm",
-      shadow: "xl",
-      style: {
-        position: "absolute",
-        left: tip.x,
-        top: tip.y - 8,
-        transform: "translate(-50%, -100%)",
-        zIndex: 50,
-        background: "var(--glass-bg, var(--bg-card))",
-        backdropFilter: "blur(12px)",
-        border: "1px solid var(--border-ghost, var(--border-main))",
-        pointerEvents: "none",
-        transition: t
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(BaseText, { color: "muted", style: { fontSize: 9, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, marginBottom: 2 }, children: tip.label }),
-        tip.values.map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(BaseText, { style: { color: v.color, fontSize: 12, fontWeight: 600 }, children: [
-          v.name !== "value" ? `${v.name}: ` : "",
-          fmtValue(v.value, currencyCfg),
-          i === 0 && !currencyCfg ? ` ${yLabel || ""}` : ""
-        ] }, i))
-      ]
-    }
-  );
-}
-
-// graph-engine/cartesian-special.tsx
-var import_jsx_runtime10 = __toESM(require_jsx_runtime());
-function ScatterSvg({ chart, width = 320, height = 150 }) {
-  const data = chart.data;
-  const xDom = niceDomain(Math.min(...data.map((d) => d.x)), Math.max(...data.map((d) => d.x)));
-  const yDom = niceDomain(Math.min(...data.map((d) => d.y)), Math.max(...data.map((d) => d.y)));
-  const xR = [MARGIN.left, width - MARGIN.right];
-  const yR = [height - MARGIN.bottom, MARGIN.top];
-  const xS = linearScale([xDom.min, xDom.max], xR);
-  const yS = linearScale([yDom.min, yDom.max], yR);
-  const maxZ = data.reduce((m, d) => Math.max(m, d.z ?? 1), 1);
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(GridLines, { domain: yDom, range: yR, xRange: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(XAxisLinear, { domain: xDom, y: height - MARGIN.bottom, range: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(YAxis, { domain: yDom, range: yR, x: MARGIN.left }),
-    data.map((d, i) => {
-      const r = chart.type === "bubble" ? 4 + (d.z ?? 1) / maxZ * 16 : 4;
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("circle", { cx: xS(d.x), cy: yS(d.y), r, fill: "var(--primary)", opacity: 0.6 }, i);
-    })
-  ] });
-}
-function WaterfallSvg({ chart, width = 320, height = 150 }) {
-  const data = chart.data;
-  const labels = data.map((d) => d.label);
-  const xR = [MARGIN.left, width - MARGIN.right];
-  const yR = [height - MARGIN.bottom, MARGIN.top];
-  const band_ = bandScale(labels, xR);
-  let running = 0;
-  const bars = data.map((d) => {
-    if (d.type === "total") {
-      running = d.value;
-      return { base: 0, h: d.value, color: "var(--primary)", label: d.label };
-    }
-    const prev = running;
-    running += d.type === "subtract" ? -d.value : d.value;
-    return { base: d.type === "subtract" ? running : prev, h: Math.abs(d.value), color: d.type === "subtract" ? "var(--status-error, #ef4444)" : "var(--status-success, #10b981)", label: d.label };
-  });
-  const maxV = Math.max(...bars.map((b) => b.base + b.h));
-  const yDom = niceDomain(0, maxV);
-  const yS = linearScale([yDom.min, yDom.max], yR);
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(GridLines, { domain: yDom, range: yR, xRange: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(XAxisBand, { labels, y: yR[0], range: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(YAxis, { domain: yDom, range: yR, x: MARGIN.left }),
-    bars.map((b, i) => {
-      const bn = band_(b.label);
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("rect", { x: bn.x, y: yS(b.base + b.h), width: bn.width, height: Math.max(0, yS(b.base) - yS(b.base + b.h)), rx: 3, fill: b.color, opacity: 0.85 }, i);
-    })
-  ] });
-}
-
-// graph-engine/drag-range.tsx
-var import_react7 = __toESM(require_react());
-var import_jsx_runtime11 = __toESM(require_jsx_runtime());
-var INIT = { start: null, end: null, dragging: false };
-function useDragRange() {
-  const [range, setRange] = (0, import_react7.useState)(INIT);
-  const startRef = (0, import_react7.useRef)(null);
-  const onDown = (0, import_react7.useCallback)((ep) => {
-    startRef.current = ep;
-    setRange({ start: ep, end: ep, dragging: true });
-  }, []);
-  const onDrag = (0, import_react7.useCallback)((ep) => {
-    if (!startRef.current) return;
-    setRange({ start: startRef.current, end: ep, dragging: true });
-  }, []);
-  const onUp = (0, import_react7.useCallback)(() => {
-    setRange((prev) => {
-      if (!prev.start || !prev.end || prev.start.idx === prev.end.idx) return INIT;
-      const [s, e] = prev.start.idx < prev.end.idx ? [prev.start, prev.end] : [prev.end, prev.start];
-      return { start: s, end: e, dragging: false };
-    });
-    startRef.current = null;
-  }, []);
-  const clear = (0, import_react7.useCallback)(() => {
-    startRef.current = null;
-    setRange(INIT);
-  }, []);
-  return { range, onDown, onDrag, onUp, clear };
-}
-function RangeHighlight({ range, yR }) {
-  if (!range.start || !range.end) return null;
-  const x1 = Math.min(range.start.vbX, range.end.vbX);
-  const x2 = Math.max(range.start.vbX, range.end.vbX);
-  if (x2 - x1 < 1) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
-    "rect",
-    {
-      x: x1,
-      y: yR[0],
-      width: x2 - x1,
-      height: yR[1] - yR[0],
-      fill: "var(--primary)",
-      opacity: 0.08,
-      pointerEvents: "none",
-      rx: 2
-    }
-  );
-}
-function RangeBadge({ range, scaleX, yLabel, currencyCfg }) {
-  if (!range.start || !range.end || range.dragging) return null;
-  if (range.start.idx === range.end.idx) return null;
-  const [s, e] = range.start.idx < range.end.idx ? [range.start, range.end] : [range.end, range.start];
-  const delta = e.value - s.value;
-  const pct = s.value !== 0 ? Math.round(delta / s.value * 100) : 0;
-  const sign = delta >= 0 ? "+" : "";
-  const color = delta >= 0 ? "var(--status-success, #10b981)" : "var(--status-error, #ef4444)";
-  const midX = (s.vbX + e.vbX) / 2 * scaleX;
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
-    BaseBox,
-    {
-      px: "3",
-      py: "2",
-      surfaceRadius: "sm",
-      shadow: "lg",
-      style: {
-        position: "absolute",
-        left: midX,
-        top: -4,
-        transform: "translate(-50%, -100%)",
-        zIndex: 50,
-        background: "var(--glass-bg, var(--bg-card))",
-        backdropFilter: "blur(12px)",
-        border: `1px solid ${color}`,
-        pointerEvents: "none"
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(BaseText, { variant: "detail", style: { fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }, children: [
-          s.label,
-          " \u2192 ",
-          e.label
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(BaseText, { style: { color, fontSize: 13, fontWeight: 700 }, children: [
-          delta < 0 ? "-" : "+",
-          fmtValue(Math.abs(delta), currencyCfg),
-          " (",
-          sign,
-          pct,
-          "%) ",
-          yLabel || ""
-        ] })
-      ]
-    }
-  );
-}
-
-// architect/graph-composer.types.ts
-function defaultInteraction(type) {
-  return {
-    crosshair: type === "sparkline" ? "none" : "both",
-    dragRange: false,
-    transitionMs: 0
-  };
-}
-
-// graph-engine/cartesian-series.tsx
-var import_jsx_runtime12 = __toESM(require_jsx_runtime());
-function renderSeries(t, data, labels, band, yS, baseline, c, series, pw, chart) {
-  const isBar = t === "bar";
-  const isArea = t === "area" || t === "sparkline";
-  if (t === "distribution") {
-    const bars = data.map((d, i) => {
-      const b = band(labels[i]);
-      const h = baseline - yS(d.value ?? 0);
-      return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("rect", { x: b.x, y: yS(d.value ?? 0), width: b.width, height: Math.max(0, h), rx: 3, fill: c.primary, opacity: 0.5 }, i);
-    });
-    const g = chart?.gaussian;
-    if (!g) return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_jsx_runtime12.Fragment, { children: bars });
-    const xMin = parseFloat(labels[0]), xMax = parseFloat(labels[labels.length - 1]);
-    const maxY = Math.max(...data.map((d) => d.value ?? 0));
-    const scale = maxY / (1 / (g.stddev * Math.sqrt(2 * Math.PI)));
-    const gauss = (x) => 1 / (g.stddev * Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * ((x - g.mean) / g.stddev) ** 2) * scale;
-    const x0 = band(labels[0]).x;
-    const pts = Array.from({ length: 41 }, (_, i) => {
-      const x = xMin + i / 40 * (xMax - xMin);
-      return { x: x0 + i / 40 * pw, y: yS(Math.min(gauss(x), maxY * 1.1)) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
-      bars,
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: linePath(pts), fill: "none", stroke: c.primary, strokeWidth: 2, opacity: 0.9 })
-    ] });
-  }
-  if (isBar) return data.map((d, i) => {
-    const b = band(labels[i]);
-    const h = baseline - yS(d.value ?? 0);
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("rect", { x: b.x, y: yS(d.value ?? 0), width: b.width, height: Math.max(0, h), rx: 3, fill: c.gradient ? "url(#gr-bar)" : c.primary, opacity: 0.85 }, i);
-  });
-  if (isArea) {
-    const pts = data.map((d, i) => {
-      const b = band(labels[i]);
-      return { x: b.x + b.width / 2, y: yS(d.value ?? 0) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: areaPath(pts, baseline), fill: c.fill, opacity: 0.12 }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: linePath(pts), fill: "none", stroke: c.primary, strokeWidth: 2 })
-    ] });
-  }
-  if (t === "line") {
-    const pts = data.map((d, i) => {
-      const b = band(labels[i]);
-      return { x: b.x + b.width / 2, y: yS(d.value ?? 0) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: linePath(pts), fill: "none", stroke: c.primary, strokeWidth: 2 }),
-      pts.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("circle", { cx: p.x, cy: p.y, r: 2.5, fill: c.primary }, i))
-    ] });
-  }
-  if (t === "multi-line") return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_jsx_runtime12.Fragment, { children: series.map((s, si) => {
-    const pts = data.map((d, i) => {
-      const b = band(labels[i]);
-      return { x: b.x + b.width / 2, y: yS(d[s] || 0) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: linePath(pts), fill: "none", stroke: seriesColor(c, si), strokeWidth: 1.5 }),
-      pts.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("circle", { cx: p.x, cy: p.y, r: 2, fill: seriesColor(c, si) }, i))
-    ] }, s);
-  }) });
-  if (t === "stacked-bar") return data.map((d, i) => {
-    const b = band(labels[i]);
-    let y0 = baseline;
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("g", { children: series.map((s, si) => {
-      const v = d[s] || 0;
-      const h = baseline - yS(v);
-      const y = y0 - h;
-      y0 = y;
-      const r = si === series.length - 1 ? 3 : 0;
-      return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("rect", { x: b.x, y, width: b.width, height: Math.max(0, h), rx: r, fill: seriesColor(c, si), opacity: 0.85 }, s);
-    }) }, i);
-  });
-  if (t === "stacked-area") {
-    const cumul = data.map((d) => {
-      let s = 0;
-      return series.map((k) => {
-        s += d[k] || 0;
-        return s;
-      });
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_jsx_runtime12.Fragment, { children: series.map((s, si) => {
-      const pts = data.map((d, i) => {
-        const b = band(labels[i]);
-        return { x: b.x + b.width / 2, y: yS(cumul[i][si]) };
-      });
-      const base = si === 0 ? data.map((_, i) => {
-        const b = band(labels[i]);
-        return { x: b.x + b.width / 2, y: baseline };
-      }) : data.map((_, i) => {
-        const b = band(labels[i]);
-        return { x: b.x + b.width / 2, y: yS(cumul[i][si - 1]) };
-      });
-      const topD = linePath(pts).replace(/^M/, "");
-      const baseD = linePath([...base].reverse()).replace(/^M/, "L");
-      return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("g", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: `M${topD} ${baseD} Z`, fill: seriesColor(c, si), opacity: 0.2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: linePath(pts), fill: "none", stroke: seriesColor(c, si), strokeWidth: 1.5 })
-      ] }, s);
-    }) });
-  }
-  return null;
-}
-
-// graph-engine/cartesian-render.tsx
-var import_jsx_runtime13 = __toESM(require_jsx_runtime());
-var CARTESIAN = /* @__PURE__ */ new Set(["bar", "stacked-bar", "area", "stacked-area", "line", "multi-line", "sparkline", "distribution", "waterfall", "scatter", "bubble"]);
-function isCartesian(type) {
-  return CARTESIAN.has(type);
-}
-function CartesianRender({ chart, width = 320, height = 150 }) {
-  const ref = (0, import_react8.useRef)(null);
-  const { tip, show, hide } = useTooltip();
-  const { range, onDown: dragDown, onDrag, onUp: dragUp, clear: dragClear } = useDragRange();
-  const c = cs(chart);
-  const data = chart.data;
-  const t = chart.type;
-  const spark = t === "sparkline";
-  const h = spark ? 40 : height;
-  const m = spark ? { top: 4, right: 4, bottom: 4, left: 4 } : MARGIN;
-  const pw = width - m.left - m.right;
-  const ph = h - m.top - m.bottom;
-  const xR = [m.left, m.left + pw];
-  const yR = [m.top, m.top + ph];
-  if (t === "scatter" || t === "bubble") return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(ScatterSvg, { chart, width, height });
-  if (t === "waterfall") return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(WaterfallSvg, { chart, width, height });
-  const isStacked = t === "stacked-bar" || t === "stacked-area";
-  const isMulti = t === "multi-line";
-  const series = chart.series || [];
-  const labels = data.map((d) => String(d.label ?? ""));
-  const band = bandScale(labels, xR, t === "line" || t === "multi-line" || t === "area" || t === "stacked-area" || spark ? 0 : 0.2);
-  const allVals = isStacked ? data.map((d) => series.reduce((s, k) => s + (d[k] || 0), 0)) : isMulti ? data.flatMap((d) => series.map((k) => d[k] || 0)) : data.map((d) => d.value ?? 0);
-  const yDom = niceDomain(0, Math.max(...allVals, 1));
-  const yS = linearScale([yDom.min, yDom.max], [yR[1], yR[0]]);
-  const resolve = (e) => {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0) return null;
-    const scaleX = rect.width / width;
-    const scaleY = rect.height / h;
-    const vbX = (e.clientX - rect.left) / scaleX;
-    const idx = Math.min(data.length - 1, Math.max(0, Math.floor((vbX - xR[0]) / pw * data.length)));
-    const d = data[idx];
-    if (!d) return null;
-    const b = band(labels[idx]);
-    const pX = b.x + b.width / 2;
-    const pY = yS(allVals[idx]);
-    return { idx, label: labels[idx], value: allVals[idx], vbX: pX, pY, scaleX, scaleY };
-  };
-  const onMove = (e) => {
-    const r = resolve(e);
-    if (!r) return;
-    if (range.dragging) {
-      onDrag({ idx: r.idx, label: r.label, value: r.value, vbX: r.vbX });
-      return;
-    }
-    const vals = isStacked || isMulti ? series.map((s, i) => ({ name: s, value: data[r.idx][s] || 0, color: seriesColor(c, i) })) : [{ name: "value", value: r.value, color: c.primary }];
-    show({ x: r.vbX * r.scaleX, y: r.pY * r.scaleY, vbX: r.vbX, vbY: r.pY, label: r.label, values: vals });
-  };
-  const ix = chart.interaction ?? defaultInteraction(t);
-  const scX = ref.current ? ref.current.getBoundingClientRect().width / width : 1;
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
-      "svg",
-      {
-        ref,
-        viewBox: `0 0 ${width} ${h}`,
-        width: "100%",
-        height: h,
-        onMouseMove: onMove,
-        onMouseLeave: () => {
-          if (!range.dragging) hide();
-        },
-        onMouseDown: ix.dragRange ? (e) => {
-          const r = resolve(e);
-          if (r) {
-            dragClear();
-            hide();
-            dragDown({ idx: r.idx, label: r.label, value: r.value, vbX: r.vbX });
-          }
-        } : void 0,
-        onMouseUp: ix.dragRange ? dragUp : void 0,
-        style: { display: "block", cursor: spark ? void 0 : ix.dragRange ? "crosshair" : void 0 },
-        children: [
-          c.gradient && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("linearGradient", { id: "gr-bar", x1: "0", y1: "0", x2: "0", y2: "1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("stop", { offset: "0%", stopColor: c.gradient[0] }),
-            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("stop", { offset: "100%", stopColor: c.gradient[1] })
-          ] }) }),
-          ix.dragRange && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(RangeHighlight, { range, yR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(GridLines, { domain: yDom, range: [yR[1], yR[0]], xRange: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(XAxisBand, { labels, y: yR[1], range: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(YAxis, { domain: yDom, range: [yR[1], yR[0]], x: m.left }),
-          renderSeries(t, data, labels, band, yS, yR[1], c, series, pw, chart),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(ThresholdLines, { thresholds: chart.thresholds, yScale: yS, xRange: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(Crosshairs, { tip, xR, yR, mode: ix.crosshair, ms: ix.transitionMs })
-        ]
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(TooltipOverlay, { tip, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig, svgRef: ref, ms: ix.transitionMs }),
-    ix.dragRange && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(RangeBadge, { range, svgRef: ref, scaleX: scX, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig })
-  ] });
-}
-
-// graph-engine/radial-render.tsx
-var import_react9 = __toESM(require_react());
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
-var RADIAL = /* @__PURE__ */ new Set(["pie", "donut", "gauge", "progress-ring"]);
-function isRadial(type) {
-  return RADIAL.has(type);
-}
-function RadialRender({ chart, size = 150 }) {
-  const t = chart.type;
-  if (t === "gauge") return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(GaugeSvg, { chart, size });
-  if (t === "progress-ring") return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(RingSvg, { chart, size });
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(PieSvg, { chart, size, donut: t === "donut" });
-}
-function PieSvg({ chart, size, donut }) {
-  const ref = (0, import_react9.useRef)(null);
-  const { tip, show, hide } = useTooltip();
-  const data = chart.data;
-  const colors = cs(chart).seriesColors || FALLBACK_SERIES;
-  const cx = size / 2, cy = size / 2;
-  const outer = size * 0.38, inner = donut ? size * 0.23 : 0;
-  const values = data.map((d) => d.value ?? 0);
-  const arcs = arcScale(values, -Math.PI / 2, Math.PI * 1.5);
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("svg", { ref, viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, onMouseLeave: hide, children: [
-      arcs.map((arc, i) => {
-        const color = colors[i % colors.length];
-        const mid = (arc.startAngle + arc.endAngle) / 2;
-        const hx = cx + outer * 0.7 * Math.cos(mid);
-        const hy = cy + outer * 0.7 * Math.sin(mid);
-        const d = donut ? donutArc(cx, cy, outer, inner, arc.startAngle, arc.endAngle) : donutArc(cx, cy, outer, 0, arc.startAngle, arc.endAngle);
-        return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-          "path",
-          {
-            d,
-            fill: color,
-            stroke: "var(--bg-card)",
-            strokeWidth: 1.5,
-            onMouseEnter: () => show({ x: hx, y: hy, vbX: hx, vbY: hy, label: data[i].label, values: [{ name: "value", value: values[i], color }] })
-          },
-          i
-        );
-      }),
-      donut && chart.yLabel && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("text", { x: cx, y: cy, textAnchor: "middle", dominantBaseline: "central", fontSize: 14, fontWeight: 700, fill: "var(--text-main)", children: chart.yLabel })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(TooltipOverlay, { tip, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig, svgRef: ref })
-  ] });
-}
-function GaugeSvg({ chart, size }) {
-  const c = cs(chart);
-  const d = chart.data[0];
-  if (!d) return null;
-  const value = d.value ?? 0;
-  const max = chart.range?.max ?? 100;
-  const pct = Math.min(value / max, 1);
-  const cx = size / 2, cy = size * 0.55, r = size * 0.38;
-  const bgPath = arcPath(cx, cy, r, Math.PI, 0);
-  const fgPath = arcPath(cx, cy, r, Math.PI, Math.PI + pct * Math.PI);
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { textAlign: "center" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("svg", { viewBox: `0 0 ${size} ${size * 0.6}`, width: "100%", height: size * 0.55, style: { display: "block" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { d: bgPath, fill: "none", stroke: "var(--border-main)", strokeWidth: 8, strokeLinecap: "round", opacity: 0.15 }),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { d: fgPath, fill: "none", stroke: c.primary, strokeWidth: 8, strokeLinecap: "round" })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(BaseText, { weight: "bold", style: { fontSize: 18, marginTop: -4, color: c.primary }, children: [
-      chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value,
-      chart.yLabel === "%" ? "%" : ""
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(BaseText, { variant: "detail", color: "muted", style: { fontSize: 9 }, children: d.label || chart.title })
-  ] });
-}
-function RingSvg({ chart, size }) {
-  const c = cs(chart);
-  const d = chart.data[0];
-  if (!d) return null;
-  const value = d.value ?? 0;
-  const max = chart.range?.max ?? 100;
-  const pct = Math.min(value / max, 1);
-  const cx = size / 2, cy = size / 2, r = size * 0.38, sw = 8;
-  const circ = Math.PI * 2 * r;
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("circle", { cx, cy, r, fill: "none", stroke: "var(--border-main)", strokeWidth: sw, opacity: 0.15 }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-      "circle",
-      {
-        cx,
-        cy,
-        r,
-        fill: "none",
-        stroke: c.primary,
-        strokeWidth: sw,
-        strokeDasharray: `${pct * circ} ${circ}`,
-        strokeLinecap: "round",
-        transform: `rotate(-90 ${cx} ${cy})`
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("text", { x: cx, y: cy - 4, textAnchor: "middle", fontSize: 22, fontWeight: 700, fill: "var(--text-main)", children: chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("text", { x: cx, y: cy + 14, textAnchor: "middle", fontSize: 9, fill: "var(--text-muted)", children: d.label || chart.title })
-  ] }) });
-}
-
-// graph-engine/polar-render.tsx
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
-var POLAR = /* @__PURE__ */ new Set(["radar"]);
-function isPolar(type) {
-  return POLAR.has(type);
-}
-function PolarRender({ chart, size = 170 }) {
-  const data = chart.data;
-  const series = chart.series || [];
-  const c = cs(chart);
-  const cx = size / 2, cy = size / 2, maxR = size * 0.34;
-  const axes = data.length;
-  if (axes < 3 || !series.length) return null;
-  const angleStep = Math.PI * 2 / axes;
-  const axisAngle = (i) => -Math.PI / 2 + i * angleStep;
-  const allVals = data.flatMap((d) => series.map((s) => d[s] ?? 0));
-  const maxVal = Math.max(...allVals, 1);
-  const rings = [0.25, 0.5, 0.75, 1];
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
-    rings.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { cx, cy, r: maxR * r, fill: "none", stroke: "var(--border-main)", strokeOpacity: 0.15 }, i)),
-    data.map((_, i) => {
-      const a = axisAngle(i);
-      const ex = cx + maxR * Math.cos(a);
-      const ey = cy + maxR * Math.sin(a);
-      const lx = cx + (maxR + 12) * Math.cos(a);
-      const ly = cy + (maxR + 12) * Math.sin(a);
-      return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("g", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("line", { x1: cx, y1: cy, x2: ex, y2: ey, stroke: "var(--border-main)", strokeOpacity: 0.15 }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("text", { x: lx, y: ly, textAnchor: "middle", dominantBaseline: "central", fontSize: 8, fontWeight: 600, fill: "var(--text-muted)", children: data[i].label })
-      ] }, i);
-    }),
-    series.map((s, si) => {
-      const pts = data.map((d, i) => {
-        const a = axisAngle(i);
-        const r = (d[s] ?? 0) / maxVal * maxR;
-        return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
-      });
-      const color = seriesColor(c, si);
-      return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("g", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("polygon", { points: pts.map((p) => `${p.x},${p.y}`).join(" "), fill: color, fillOpacity: 0.12, stroke: color, strokeWidth: 1.5 }),
-        pts.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { cx: p.x, cy: p.y, r: 2.5, fill: color }, i))
-      ] }, s);
-    })
-  ] });
-}
-
-// graph-engine/grid-render.tsx
-var import_react10 = __toESM(require_react());
-
-// graph-engine/color-ramp.ts
-function parseHex(hex) {
-  const h = hex.replace("#", "");
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-}
-function rampColor(stops, t) {
-  if (stops.length < 2) return stops[0] ?? "#888";
-  const seg = Math.min(t, 0.999) * (stops.length - 1);
-  const i = Math.floor(seg), f = seg - i;
-  const [ar, ag, ab] = parseHex(stops[i]), [br, bg, bb] = parseHex(stops[i + 1]);
-  return `rgb(${Math.round(ar + (br - ar) * f)},${Math.round(ag + (bg - ag) * f)},${Math.round(ab + (bb - ab) * f)})`;
-}
-
-// graph-engine/grid-render.tsx
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
-var GRID = /* @__PURE__ */ new Set(["heatmap", "treemap", "funnel"]);
-function isGrid(type) {
-  return GRID.has(type);
-}
-function GridRender({ chart, width = 320, height = 150, axesOverride }) {
-  switch (chart.type) {
-    case "heatmap":
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(HeatmapSvg, { chart, width, height, axesOverride });
-    case "treemap":
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(TreemapSvg, { chart, width, height });
-    case "funnel":
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(FunnelSvg, { chart, width, height });
-    default:
-      return null;
-  }
-}
-function HeatmapSvg({ chart, width, height, axesOverride }) {
-  const c = cs(chart);
-  const ramp = c.gradient ?? ["#10b981", "#f59e0b", "#ef4444"];
-  const ix = chart.interaction ?? defaultInteraction("heatmap");
-  const showMarginal = (axesOverride ?? ix.axes) === "marginal";
-  const cells = chart.data;
-  const rows = [...new Set(cells.map((d) => d.row))];
-  const cols = [...new Set(cells.map((d) => d.col))];
-  const maxVal = Math.max(...cells.map((d) => d.value), 1);
-  const cellMap = new Map(cells.map((d) => [`${d.row}|${d.col}`, d.value]));
-  const [hover, setHover] = (0, import_react10.useState)(null);
-  const labelW = 30, labelH = 14, margR = showMarginal ? 20 : 0, margB = showMarginal ? 12 : 0;
-  const cellW = Math.max(8, (width - labelW - margR) / cols.length);
-  const cellH = Math.max(8, (height - labelH - margB) / rows.length);
-  const useCell = ix.crosshair === "cell";
-  const t = ix.transitionMs > 0 ? `opacity ${ix.transitionMs}ms ease-out` : void 0;
-  const rowSums = rows.map((row) => cols.reduce((s, col) => s + (cellMap.get(`${row}|${col}`) || 0), 0));
-  const colSums = cols.map((col) => rows.reduce((s, row) => s + (cellMap.get(`${row}|${col}`) || 0), 0));
-  const maxRowSum = Math.max(...rowSums, 1);
-  const maxColSum = Math.max(...colSums, 1);
-  const gridRight = labelW + cols.length * cellW;
-  const gridBottom = labelH + rows.length * cellH;
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, onMouseLeave: () => setHover(null), children: [
-    cols.map((col, ci) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
-      "text",
-      {
-        x: labelW + ci * cellW + cellW / 2,
-        y: 10,
-        textAnchor: "middle",
-        fontSize: 7,
-        fontWeight: 600,
-        fill: useCell && hover?.ci === ci ? "var(--text-main)" : "var(--text-muted)",
-        style: { transition: t },
-        children: col
-      },
-      ci
-    )),
-    rows.map((row, ri) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
-        "text",
-        {
-          x: labelW - 3,
-          y: labelH + ri * cellH + cellH / 2 + 3,
-          textAnchor: "end",
-          fontSize: 8,
-          fontWeight: 600,
-          fill: useCell && hover?.ri === ri ? "var(--text-main)" : "var(--text-muted)",
-          style: { transition: t },
-          children: row
-        }
-      ),
-      cols.map((col, ci) => {
-        const val = cellMap.get(`${row}|${col}`) || 0;
-        const ratio = val / maxVal;
-        const isHovered = hover?.ri === ri && hover?.ci === ci;
-        const isAxis = useCell && hover && (hover.ri === ri || hover.ci === ci);
-        const cellColor = ratio === 0 && !isAxis ? "transparent" : rampColor(ramp, ratio);
-        return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
-          "rect",
-          {
-            x: labelW + ci * cellW + 0.5,
-            y: labelH + ri * cellH + 0.5,
-            width: cellW - 1,
-            height: cellH - 1,
-            rx: 2,
-            fill: cellColor,
-            opacity: ratio === 0 && !isAxis ? 0 : isHovered ? 1 : isAxis ? 0.5 : 0.9,
-            stroke: isHovered ? "var(--text-main)" : "none",
-            strokeWidth: isHovered ? 1.5 : 0,
-            style: { cursor: useCell ? "crosshair" : void 0, transition: t },
-            onMouseEnter: () => setHover({ ri, ci, val })
-          },
-          ci
-        );
-      })
-    ] }, ri)),
-    useCell && hover && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
-      "text",
-      {
-        x: labelW + hover.ci * cellW + cellW / 2,
-        y: labelH + hover.ri * cellH - 3,
-        textAnchor: "middle",
-        fontSize: 9,
-        fontWeight: 700,
-        fill: "var(--text-main)",
-        children: fmtValue(hover.val, chart.currencyConfig)
-      }
-    ),
-    showMarginal && rows.map((_, ri) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
-      "rect",
-      {
-        x: gridRight + 3,
-        y: labelH + ri * cellH + 1,
-        rx: 2,
-        width: Math.max(1, rowSums[ri] / maxRowSum * (margR - 5)),
-        height: cellH - 2,
-        fill: ramp[ramp.length - 1],
-        opacity: hover?.ri === ri ? 0.7 : 0.3,
-        style: { transition: t }
-      },
-      `mr-${ri}`
-    )),
-    showMarginal && cols.map((_, ci) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
-      "rect",
-      {
-        x: labelW + ci * cellW + 1,
-        y: gridBottom + 2,
-        rx: 2,
-        width: cellW - 2,
-        height: Math.max(1, colSums[ci] / maxColSum * (margB - 4)),
-        fill: ramp[ramp.length - 1],
-        opacity: hover?.ci === ci ? 0.7 : 0.3,
-        style: { transition: t }
-      },
-      `mc-${ci}`
-    ))
-  ] });
-}
-function TreemapSvg({ chart, width, height }) {
-  const colors = cs(chart).seriesColors || FALLBACK_SERIES;
-  const nodes = chart.data.slice(0, 12);
-  const total = nodes.reduce((s, n) => s + (n.value || 0), 0) || 1;
-  let x = 0;
-  const rects = nodes.map((n, i) => {
-    const w = (n.value || 0) / total * width;
-    const r = { x, y: 0, w, h: height, name: n.name || "", color: colors[i % colors.length] };
-    x += w;
-    return r;
-  });
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: rects.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("g", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("rect", { x: r.x + 1, y: 1, width: Math.max(0, r.w - 2), height: r.h - 2, rx: 4, fill: r.color, opacity: 0.8 }),
-    r.w > 24 && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("text", { x: r.x + r.w / 2, y: r.h / 2, textAnchor: "middle", dominantBaseline: "central", fontSize: 8, fontWeight: 600, fill: "#fff", children: r.name })
-  ] }, i)) });
-}
-function FunnelSvg({ chart, width, height }) {
-  const colors = cs(chart).seriesColors || FALLBACK_SERIES;
-  const data = chart.data;
-  const maxVal = data[0]?.value || 1;
-  const stepH = height / data.length;
-  const pad = 8;
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: data.map((d, i) => {
-    const topW = (d.value || 0) / maxVal * (width - pad * 2);
-    const nextW = i < data.length - 1 ? (data[i + 1].value || 0) / maxVal * (width - pad * 2) : topW * 0.8;
-    const cx = width / 2;
-    const y1 = i * stepH, y2 = y1 + stepH;
-    const path = `M ${cx - topW / 2} ${y1} L ${cx + topW / 2} ${y1} L ${cx + nextW / 2} ${y2} L ${cx - nextW / 2} ${y2} Z`;
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("path", { d: path, fill: colors[i % colors.length], opacity: 0.8 }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("text", { x: cx, y: y1 + stepH / 2, textAnchor: "middle", dominantBaseline: "central", fontSize: 9, fontWeight: 600, fill: "#fff", children: d.label })
-    ] }, i);
-  }) });
-}
-
-// graph-engine/useContainerSize.ts
-var import_react11 = __toESM(require_react());
-var DEFAULT = { width: 320, height: 150 };
-var ASPECT_RATIO = 0.47;
-var MAX_HEIGHT = 280;
-var MIN_HEIGHT = 60;
-function useContainerSize(ref) {
-  const [size, setSize] = (0, import_react11.useState)(DEFAULT);
-  const measure = (0, import_react11.useCallback)((entry) => {
-    const w = Math.round(entry.contentRect.width);
-    if (w <= 0) return;
-    const h = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, Math.round(w * ASPECT_RATIO)));
-    setSize((prev) => prev.width === w && prev.height === h ? prev : { width: w, height: h });
-  }, []);
-  (0, import_react11.useEffect)(() => {
-    const el2 = ref.current;
-    if (!el2) return;
-    let raf = 0;
-    const observer = new ResizeObserver((entries) => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        if (entries[0]) measure(entries[0]);
-      });
-    });
-    observer.observe(el2);
-    return () => {
-      cancelAnimationFrame(raf);
-      observer.disconnect();
-    };
-  }, [ref, measure]);
-  return size;
-}
-
-// graph-engine/useSemanticZoom.ts
-var import_react12 = __toESM(require_react());
-var CONSTRAINTS = {
-  "bar": { minElementWidth: 8, minPlotWidth: 80, minPlotHeight: 40 },
-  "stacked-bar": { minElementWidth: 8, minPlotWidth: 80, minPlotHeight: 40 },
-  "waterfall": { minElementWidth: 8, minPlotWidth: 80, minPlotHeight: 40 },
-  "distribution": { minElementWidth: 8, minPlotWidth: 80, minPlotHeight: 40 },
-  "area": { minElementWidth: 3, minPlotWidth: 80, minPlotHeight: 40 },
-  "stacked-area": { minElementWidth: 3, minPlotWidth: 80, minPlotHeight: 40 },
-  "line": { minElementWidth: 3, minPlotWidth: 80, minPlotHeight: 40 },
-  "sparkline": { minElementWidth: 2, minPlotWidth: 40, minPlotHeight: 20 },
-  "scatter": { minElementWidth: 6, minPlotWidth: 80, minPlotHeight: 40 },
-  "bubble": { minElementWidth: 6, minPlotWidth: 80, minPlotHeight: 40 },
-  "pie": { minElementWidth: 12, minPlotWidth: 60, minPlotHeight: 60 },
-  "donut": { minElementWidth: 12, minPlotWidth: 60, minPlotHeight: 60 },
-  "gauge": { minElementWidth: 12, minPlotWidth: 60, minPlotHeight: 60 },
-  "progress-ring": { minElementWidth: 12, minPlotWidth: 60, minPlotHeight: 60 },
-  "radar": { minElementWidth: 8, minPlotWidth: 60, minPlotHeight: 60 },
-  "heatmap": { minElementWidth: 10, minPlotWidth: 80, minPlotHeight: 40 },
-  "treemap": { minElementWidth: 10, minPlotWidth: 80, minPlotHeight: 40 },
-  "funnel": { minElementWidth: 10, minPlotWidth: 80, minPlotHeight: 40 }
-};
-var FALLBACK = { minElementWidth: 8, minPlotWidth: 80, minPlotHeight: 40 };
-function resolveZoomLevel(n, maxPts) {
-  if (n <= maxPts) return 0;
-  const ratio = n / maxPts;
-  if (ratio <= 2) return 1;
-  if (ratio <= 4) return 2;
-  return 3;
-}
-function useSemanticZoom(container, chart, filters) {
-  return (0, import_react12.useMemo)(() => {
-    const fc = CONSTRAINTS[chart.type] || FALLBACK;
-    const isCart = isCartesian(chart.type);
-    const mL = isCart ? MARGIN.left : 0;
-    const mR = isCart ? MARGIN.right : 0;
-    const mT = isCart ? MARGIN.top : 0;
-    const mB = isCart ? MARGIN.bottom : 0;
-    const wAvail = container.width - mL - mR;
-    const hAvail = container.height - mT - mB;
-    const visibleCount = filters.length > 0 ? filters.filter((f) => f.active).length : chart.data.length;
-    const n = chart.rawPointCount ?? visibleCount;
-    const maxPoints = Math.max(1, Math.floor(wAvail / fc.minElementWidth));
-    const dpr = n / Math.max(1, wAvail);
-    const level = resolveZoomLevel(n, maxPoints);
-    let legibility = "ok";
-    if (isRadial(chart.type) || isPolar(chart.type)) {
-      if (Math.min(wAvail, hAvail) < fc.minPlotWidth) legibility = "illegible";
-      else if (Math.min(wAvail, hAvail) < fc.minPlotWidth * 1.5) legibility = "tight";
-    } else {
-      if (wAvail < fc.minPlotWidth || hAvail < fc.minPlotHeight) legibility = "illegible";
-      else if (wAvail < fc.minPlotWidth * 1.5) legibility = "tight";
-    }
-    return { zoom: { level, dpr, maxPoints, compressed: level > 0 }, legibility };
-  }, [container.width, container.height, chart, filters]);
-}
-
-// graph-engine/useToggleFilters.ts
-var import_react13 = __toESM(require_react());
-function useToggleFilters(chart) {
-  const scheme = cs(chart);
-  const seriesKeys = chart.series || [];
-  const [activeSet, setActiveSet] = (0, import_react13.useState)(() => new Set(seriesKeys));
-  const filters = (0, import_react13.useMemo)(
-    () => seriesKeys.map((key, i) => ({
-      key,
-      label: key,
-      active: activeSet.has(key),
-      color: seriesColor(scheme, i)
-    })),
-    [seriesKeys, activeSet, scheme]
-  );
-  const toggle = (0, import_react13.useCallback)((key) => {
-    setActiveSet((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      if (next.size === 0) return prev;
-      return next;
-    });
-  }, []);
-  const visibleData = (0, import_react13.useMemo)(() => {
-    if (seriesKeys.length === 0 || activeSet.size === seriesKeys.length) return chart.data;
-    const data = chart.data;
-    return data.map((pt) => {
-      const out = { label: pt.label };
-      for (const k of seriesKeys) if (activeSet.has(k)) out[k] = pt[k];
-      return out;
-    });
-  }, [chart.data, seriesKeys, activeSet]);
-  const visibleSeries = (0, import_react13.useMemo)(
-    () => seriesKeys.filter((k) => activeSet.has(k)),
-    [seriesKeys, activeSet]
-  );
-  return { filters, toggle, visibleData, visibleSeries };
-}
-
-// graph-engine/compress-data.ts
-function compressTimeSeries(data, level) {
-  if (level === 0 || data.length === 0) return data;
-  const buckets = /* @__PURE__ */ new Map();
-  for (const pt of data) {
-    const key = bucketKey(pt.label, level);
-    const b = buckets.get(key) ?? { sum: 0, count: 0 };
-    b.sum += pt.value;
-    b.count += 1;
-    buckets.set(key, b);
-  }
-  return Array.from(buckets.entries()).map(([label, b]) => ({ label, value: Math.round(b.sum / b.count) }));
-}
-function compressStacked(data, series, level) {
-  if (level === 0 || data.length === 0) return data;
-  const buckets = /* @__PURE__ */ new Map();
-  for (const pt of data) {
-    const key = bucketKey(String(pt.label), level);
-    const b = buckets.get(key) ?? { sums: {}, count: 0 };
-    for (const s of series) b.sums[s] = (b.sums[s] || 0) + (Number(pt[s]) || 0);
-    b.count += 1;
-    buckets.set(key, b);
-  }
-  return Array.from(buckets.entries()).map(([label, b]) => {
-    const pt = { label };
-    for (const s of series) pt[s] = Math.round((b.sums[s] || 0) / b.count);
-    return pt;
-  });
-}
-function compressCategorical(data, maxPoints) {
-  if (data.length <= maxPoints) return data;
-  const sorted = [...data].sort((a, b) => b.value - a.value);
-  const top = sorted.slice(0, maxPoints - 1);
-  const rest = sorted.slice(maxPoints - 1);
-  const other = rest.reduce((s, d) => s + d.value, 0);
-  return [...top, { label: "Other", value: other }];
-}
-function compressForFamily(directive, zoom) {
-  if (!zoom.compressed) return directive.data;
-  const t = directive.type;
-  const data = directive.data;
-  if (t === "stacked-area" || t === "stacked-bar" || t === "multi-line") {
-    return compressStacked(data, directive.series || [], zoom.level);
-  }
-  if (t === "bar" || t === "area" || t === "line" || t === "sparkline") {
-    return compressTimeSeries(data, zoom.level);
-  }
-  if (t === "pie" || t === "donut" || t === "funnel") {
-    return compressCategorical(data, zoom.maxPoints);
-  }
-  return directive.data;
-}
-function bucketKey(label, level) {
-  const parts = label.replace(/^w\//, "").split("-").map(Number);
-  const month = parts[0] || 1;
-  if (level === 1) {
-    const week = Math.ceil((parts[1] || 1) / 7);
-    return `${String(month).padStart(2, "0")}/W${week}`;
-  }
-  if (level === 2) return `M${String(month).padStart(2, "0")}`;
-  return `Q${Math.ceil(month / 3)}`;
-}
-
-// graph-engine/LegibilityAlert.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function summarize(data) {
-  const vals = data.map((d) => d.value ?? 0).filter((v) => typeof v === "number");
-  if (vals.length === 0) return { count: data.length, min: 0, max: 0, avg: 0 };
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  const avg = Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
-  return { count: data.length, min, max, avg };
-}
-function LegibilityAlert({ chart }) {
-  const stats = summarize(chart.data);
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
-    BaseBox,
-    {
-      p: "3",
-      surfaceRadius: "sm",
-      style: {
-        border: "1px solid var(--status-warning, #f59e0b)",
-        background: "var(--bg-card)",
-        textAlign: "center"
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BaseText, { variant: "detail", weight: "semibold", style: { color: "var(--status-warning, #f59e0b)", textTransform: "uppercase", letterSpacing: "0.05em" }, children: chart.title }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(BaseText, { variant: "detail", color: "muted", style: { marginTop: "var(--space-1, 0.25rem)" }, children: [
-          stats.count,
-          " points \xB7 Min ",
-          stats.min,
-          " \xB7 Max ",
-          stats.max,
-          " \xB7 Avg ",
-          stats.avg
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BaseText, { variant: "detail", color: "muted", style: { marginTop: "var(--space-1, 0.25rem)", opacity: 0.6 }, children: "Expand to view chart" })
-      ]
-    }
-  );
-}
-
-// graph-engine/ToggleBar.tsx
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
-function ToggleBar({ filters, onToggle }) {
-  if (filters.length < 2) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-    BaseBox,
-    {
-      direction: "row",
-      gap: "1",
-      wrap: "wrap",
-      py: "1",
-      style: { justifyContent: "center" },
-      children: filters.map((f) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
-        BaseAction,
-        {
-          onClick: () => onToggle(f.key),
-          style: {
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "var(--space-1, 0.25rem)",
-            padding: "var(--space-0-5, 0.125rem) var(--space-2, 0.5rem)",
-            borderRadius: "var(--radius-full, 999px)",
-            border: "1px solid var(--border-ghost, var(--border-main))",
-            background: f.active ? "var(--bg-card)" : "transparent",
-            opacity: f.active ? 1 : 0.4,
-            cursor: "pointer",
-            transition: "opacity 150ms ease"
-          },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-              BaseBox,
-              {
-                style: {
-                  width: "var(--space-2, 0.5rem)",
-                  height: "var(--space-2, 0.5rem)",
-                  borderRadius: "var(--radius-full, 999px)",
-                  background: f.color,
-                  flexShrink: 0
-                }
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(BaseText, { variant: "detail", style: { fontSize: "9px", fontWeight: 600, whiteSpace: "nowrap" }, children: f.label })
-          ]
-        },
-        f.key
-      ))
-    }
-  );
-}
-
-// graph-engine/GraphRender.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
-function GraphRender({ chart }) {
-  const containerRef = (0, import_react14.useRef)(null);
-  const container = useContainerSize(containerRef);
-  const { filters, toggle, visibleData, visibleSeries } = useToggleFilters(chart);
-  const { zoom, legibility } = useSemanticZoom(container, chart, filters);
-  const t = chart.type;
-  const ix = chart.interaction;
-  const [axesOverride, setAxesOverride] = (0, import_react14.useState)(void 0);
-  const canToggleAxes = t === "heatmap";
-  const resolved = (0, import_react14.useMemo)(() => {
-    const compressed = compressForFamily(chart, zoom);
-    if (compressed === chart.data && visibleSeries.length === (chart.series?.length ?? 0)) return chart;
-    return { ...chart, data: compressed, series: visibleSeries.length > 0 ? visibleSeries : chart.series };
-  }, [chart, zoom, visibleData, visibleSeries]);
-  const isCompact = t === "sparkline" || t === "gauge" || t === "progress-ring";
-  const isChat = chart.renderContext === "chat";
-  const tightBorder = legibility === "tight" ? "var(--status-warning, #f59e0b)" : "var(--border-ghost, var(--border-main))";
-  const contextBorder = isChat ? `1px solid ${tightBorder}` : `1px solid var(--border-subtle, var(--border-main))`;
-  const contextBg = isChat ? "var(--glass-bg, var(--bg-card))" : "var(--bg-card)";
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
-    BaseBox,
-    {
-      ref: containerRef,
-      style: {
-        marginTop: "0.5rem",
-        padding: isCompact ? "0.375rem 0.5rem" : "0.5rem 0.5rem 0.25rem",
-        borderRadius: "0.75rem",
-        border: contextBorder,
-        background: contextBg,
-        backdropFilter: isChat ? "blur(12px)" : void 0,
-        overflow: "visible",
-        maxHeight: isCompact ? void 0 : "22rem"
-      },
-      children: [
-        t !== "sparkline" && /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(BaseText, { variant: "detail", weight: "semibold", style: { fontSize: "10px", marginBottom: "0.25rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }, children: [
-          chart.title,
-          zoom.compressed ? ` (${["", "weekly", "monthly", "quarterly"][zoom.level]})` : ""
-        ] }),
-        legibility === "illegible" ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(LegibilityAlert, { chart }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(RenderFamily, { chart: resolved, w: container.width, h: container.height, axesOverride }),
-        (filters.length >= 2 || canToggleAxes) && /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(BaseBox, { direction: "row", gap: "2", style: { justifyContent: "center", flexWrap: "wrap" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ToggleBar, { filters, onToggle: toggle }),
-          canToggleAxes && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(AxesToggle, { current: axesOverride ?? ix?.axes ?? "none", onToggle: () => {
-            const cur = axesOverride ?? ix?.axes ?? "none";
-            setAxesOverride(cur === "marginal" ? "standard" : "marginal");
-          } })
-        ] })
-      ]
-    }
-  );
-}
-function RenderFamily({ chart, w, h, axesOverride }) {
-  const t = chart.type;
-  if (isCartesian(t)) return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CartesianRender, { chart, width: Math.max(100, w), height: Math.max(60, h) });
-  if (isRadial(t)) return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(RadialRender, { chart, size: Math.max(60, Math.min(w, h)) });
-  if (isPolar(t)) return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PolarRender, { chart, size: Math.max(60, Math.min(w, h)) });
-  if (isGrid(t)) return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GridRender, { chart, width: Math.max(100, w), height: Math.max(60, h), axesOverride });
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CartesianRender, { chart, width: Math.max(100, w), height: Math.max(60, h) });
-}
-function AxesToggle({ current, onToggle }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(BaseAction, { onClick: onToggle, style: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "var(--space-1, 0.25rem)",
-    padding: "var(--space-0-5, 0.125rem) var(--space-2, 0.5rem)",
-    borderRadius: "var(--radius-full, 999px)",
-    cursor: "pointer",
-    border: "1px solid var(--border-ghost, var(--border-main))",
-    background: current === "marginal" ? "var(--bg-card)" : "transparent",
-    opacity: current === "marginal" ? 1 : 0.4,
-    transition: "opacity 150ms ease"
-  }, children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(BaseText, { variant: "detail", style: { fontSize: "9px", fontWeight: 600 }, children: "\u03A3" }) });
-}
-
-// public/dashboard-builders.ts
-function buildYearSourceChart(data) {
-  const byYear = /* @__PURE__ */ new Map();
-  for (const row of data.yearSource) {
-    if (!byYear.has(row.year)) byYear.set(row.year, /* @__PURE__ */ new Map());
-    byYear.get(row.year).set(row.source, parseInt(row.count));
-  }
-  const years = [...byYear.keys()].sort();
-  if (years.length <= 1) return null;
-  return {
-    type: "bar",
-    title: "Publications by Year",
-    yLabel: "Articles",
-    data: years.map((year) => {
-      const sources = byYear.get(year);
-      let total = 0;
-      for (const c of sources.values()) total += c;
-      return { label: year, value: total };
-    })
-  };
-}
-function buildCollabChart(data) {
-  const top = data.collabs.slice(0, 15);
-  if (!top.length) return null;
-  return {
-    type: "bar",
-    title: "Top Collaborating Institutions",
-    yLabel: "Co-authored Papers",
-    data: top.map((c) => ({ label: c.value.substring(0, 30), value: parseInt(c.count) }))
-  };
-}
-function buildCountryChart(data) {
-  if (!data.countries.length) return null;
-  return {
-    type: "donut",
-    title: "Publications by Country",
-    data: data.countries.slice(0, 12).map((c) => ({
-      label: c.country,
-      value: parseInt(c.count)
-    }))
-  };
-}
-function buildDashboardCharts(data) {
-  return [
-    buildYearSourceChart(data),
-    buildCollabChart(data),
-    buildCountryChart(data)
-  ].filter((c) => c !== null);
-}
-
 // public/dashboard-panels.tsx
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
+var import_jsx_runtime6 = __toESM(require_jsx_runtime());
 function yearlyCounts(data) {
   const byYear = /* @__PURE__ */ new Map();
   for (const r of data.yearSource) {
@@ -14497,138 +13119,153 @@ function yearlyCounts(data) {
   }
   return [...byYear.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-6).map(([year, count]) => ({ year, count }));
 }
-function sourceBreakdown(data) {
-  const m = /* @__PURE__ */ new Map();
-  for (const r of data.yearSource) {
-    const s = r.source || "Other";
-    m.set(s, (m.get(s) || 0) + parseInt(r.count));
-  }
-  return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([source, count]) => ({ source, count }));
+function greeting() {
+  const h = (/* @__PURE__ */ new Date()).getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 function BarChart({ rows, title }) {
   const max = Math.max(...rows.map((r) => r.count), 1);
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card card-chart", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Output", title, right: /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(Tag, { mono: true, tone: "muted", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "card card-chart", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(SectionHead, { eyebrow: "Output", title, right: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(Tag, { mono: true, tone: "muted", children: [
       rows[0]?.year,
       "\u2013",
       rows[rows.length - 1]?.year
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "bar-chart", children: rows.map((r) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "bar-col", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "bar-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "bar", style: { height: `${r.count / max * 100}%` }, children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "bar-val", children: r.count }) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "bar-label", children: r.year })
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "bar-chart", children: rows.map((r) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "bar-col", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "bar-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "bar", style: { height: `${r.count / max * 100}%` }, children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "bar-val", children: r.count }) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "bar-label", children: r.year })
     ] }, r.year)) })
   ] });
 }
-function RankedInstitutions({ data }) {
-  const top = data.collabs.slice(0, 8);
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Collaborations", title: "Partner institutions" }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("ul", { className: "ranked-list", children: [
-      top.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("li", { className: "empty", children: "No external co-authors detected yet." }),
-      top.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("li", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank", children: String(i + 1).padStart(2, "0") }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank-label", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank-title", children: c.value }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank-count", children: c.count })
+function TopJournals({ data }) {
+  const top = (data.topJournals || []).slice(0, 5);
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "card", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(SectionHead, { eyebrow: "Venues", title: "Top journals" }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("ul", { className: "ranked-list", children: [
+      top.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("li", { className: "empty", children: "No journal data yet." }),
+      top.map((j, i) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("li", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rank", children: String(i + 1).padStart(2, "0") }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { className: "rank-label", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rank-title", children: j.value }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rank-meta mono", children: j.key !== j.value ? j.key : "" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rank-count", children: j.count })
+      ] }, j.key))
+    ] })
+  ] });
+}
+function PartnerInstitutions({ data }) {
+  const top = data.collabs.slice(0, 6);
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "card", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(SectionHead, { eyebrow: "Collaborations", title: "Partner institutions" }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("ul", { className: "ranked-list", children: [
+      top.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("li", { className: "empty", children: "No external co-authors detected yet." }),
+      top.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("li", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rank", children: String(i + 1).padStart(2, "0") }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rank-label", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rank-title", children: c.value }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rank-count", children: c.count })
       ] }, i))
     ] })
   ] });
 }
-function RankedCountries({ data }) {
-  const top = data.countries.slice(0, 8);
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Reach", title: "Top countries" }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("ul", { className: "ranked-list", children: [
-      top.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("li", { className: "empty", children: "No country data yet." }),
-      top.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("li", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank", children: String(i + 1).padStart(2, "0") }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank-label", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank-title", children: c.country }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank-count", children: c.count })
-      ] }, i))
+function RecentlyIndexed({ data }) {
+  const papers = data.recentPapers || [];
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "card card-span-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(SectionHead, { eyebrow: "Ledger", title: "Recently indexed", right: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("a", { className: "link-btn", href: "/explore.html", children: [
+      "All papers ",
+      Ico.arrow
+    ] }) }),
+    papers.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "muted", children: "No papers yet." }) : /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("table", { className: "paper-table", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("tr", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("th", { children: "Title" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("th", { children: "Journal" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("th", { children: "Published" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("th", { children: "Cites" })
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("tbody", { children: papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("tr", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("td", { className: "paper-title", children: [
+          p.title || "(untitled)",
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "mono paper-doi", children: p.doi })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("td", { children: p.journal || "\u2014" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("td", { children: p.published?.slice(0, 4) || "\u2014" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("td", { children: p.citation_count ?? 0 })
+      ] }, p.doi)) })
     ] })
-  ] });
-}
-function SourceList({ sources }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card card-span-2", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Ingestion", title: "By source index" }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("ul", { className: "ranked-list", children: sources.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("li", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank", children: String(i + 1).padStart(2, "0") }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank-label", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank-title", children: s.source }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "rank-count", children: s.count })
-    ] }, s.source)) })
   ] });
 }
 
 // public/dashboard-charts.tsx
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
+var import_jsx_runtime7 = __toESM(require_jsx_runtime());
 function DashboardContent({ data }) {
   const { me } = useCurrentUser();
-  const oaPct = data.totalPubs > 0 ? Math.round(data.oaCount / data.totalPubs * 100) : 0;
   const years = yearlyCounts(data);
-  const sources = sourceBreakdown(data);
-  const charts = buildDashboardCharts(data);
   const tenantName = me?.tenant || "Institution";
   const displayName = me?.profile.name || me?.user || "";
   const firstName = displayName.split(" ")[0];
-  const heroStats = [
-    { label: "Publications", value: data.totalPubs.toLocaleString() },
-    { label: "Citations", value: data.totalCitations.toLocaleString() },
-    { label: "Open access", value: `${oaPct}%`, accent: true },
-    { label: "Authors indexed", value: data.authorCount.toLocaleString() }
+  const isPersonal = !!me?.profile.orcid;
+  const heroStats = isPersonal ? [
+    { label: "Publications", value: data.totalPubs.toLocaleString(), sub: "indexed via ORCID" },
+    { label: "Citations", value: data.totalCitations.toLocaleString(), sub: "OpenAlex \xB7 last sync" },
+    { label: "h-index", value: me?.hIndex ?? "\u2014", sub: "computed \xB7 real-time", accent: true },
+    { label: "Co-authors", value: data.authorCount.toLocaleString(), sub: "unique, all years" }
+  ] : [
+    { label: "Publications", value: data.totalPubs.toLocaleString(), sub: "indexed records" },
+    { label: "Citations", value: data.totalCitations.toLocaleString(), sub: "sum across papers" },
+    { label: "Open access", value: data.totalPubs > 0 ? `${Math.round(data.oaCount / data.totalPubs * 100)}%` : "\u2014", sub: "of total output", accent: true },
+    { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "view dashboard", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "eyebrow", children: "Institutional overview" }),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("h1", { className: "view-title", children: firstName ? /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
-          "Good work, ",
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: firstName }),
-          "."
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: tenantName }),
-          "."
-        ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "view-sub", children: [
-          "A living map of ",
-          tenantName,
-          "\u2019s scholarly output \u2014 pulled from CrossRef, OpenAlex, Semantic Scholar, and DataCite."
-        ] })
+  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+    greeting(),
+    ", ",
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("em", { children: firstName }),
+    "."
+  ] }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("em", { children: tenantName }),
+    "."
+  ] });
+  const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "view dashboard", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("header", { className: "view-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("h1", { className: "view-title", children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "view-sub", children: sub })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(Tag, { mono: true, children: "CROSSREF \xB7 OPENALEX \xB7 S2 \xB7 DATACITE" }),
-        me?.hIndex != null && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(Tag, { mono: true, tone: "muted", children: [
-          "H-INDEX \xB7 ",
-          me.hIndex
-        ] })
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(Stat, { ...s }, i)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "dash-grid", children: [
-      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "muted", children: "No year data." }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(RankedInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(RankedCountries, { data }),
-      sources.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(SourceList, { sources }),
-      charts.slice(1).map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("section", { className: "card card-span-2", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(GraphRender, { chart }) }, i))
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Stat, { ...s }, i)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "dash-grid", children: [
+      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(BarChart, { rows: years, title: isPersonal ? "Your publications per year" : "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "muted", children: "No year data." }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(RecentlyIndexed, { data })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { id: "import-slot" })
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { id: "import-slot" })
   ] });
 }
 function App() {
-  const [data, setData] = (0, import_react15.useState)(null);
-  const [err, setErr] = (0, import_react15.useState)(null);
-  (0, import_react15.useEffect)(() => {
+  const [data, setData] = (0, import_react5.useState)(null);
+  const [err, setErr] = (0, import_react5.useState)(null);
+  (0, import_react5.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(Shell, { scroll: true, children: [
-    err && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "status error", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Shell, { scroll: true, children: [
+    err && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "status error", children: [
       "Error: ",
       err
     ] }) }),
-    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "eyebrow", children: "Loading dashboard\u2026" }) }),
-    data && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(DashboardContent, { data })
+    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "eyebrow", children: "Loading dashboard\u2026" }) }),
+    data && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(DashboardContent, { data })
   ] });
 }
 var el = document.getElementById("dashboard-root");
-if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime21.jsx)(App, {}));
+if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime7.jsx)(App, {}));
 /*! Bundled license information:
 
 react/cjs/react.production.js:
