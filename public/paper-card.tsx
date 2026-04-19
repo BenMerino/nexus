@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import type { DoiRecord } from './relationship-types';
 
-export function PaperCard({ doi, onClose, style }: {
+export function PaperCard({ doi, onClose, style, onHoverEnter, onHoverLeave }: {
   doi: string; onClose: () => void; style: React.CSSProperties;
+  onHoverEnter?: () => void; onHoverLeave?: () => void;
 }) {
   const [record, setRecord] = useState<DoiRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +16,7 @@ export function PaperCard({ doi, onClose, style }: {
   }, [doi]);
 
   return (
-    <div style={{
+    <div onMouseEnter={onHoverEnter} onMouseLeave={onHoverLeave} style={{
       ...style, width: 340, boxSizing: 'border-box',
       background: 'rgba(255,255,255,0.4)',
       backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
@@ -49,6 +50,14 @@ export function PaperCard({ doi, onClose, style }: {
             <div style={{ marginBottom: 6 }}>
               <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5, color: '#2e7d32', fontWeight: 700 }}>Journal</span>
               <div style={{ color: '#444', marginTop: 2 }}>{record.journal}</div>
+            </div>
+          )}
+          {record.abstract && (
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5, color: '#1565c0', fontWeight: 700 }}>Abstract</span>
+              <div style={{ color: '#444', marginTop: 2, maxHeight: 120, overflowY: 'auto', lineHeight: '15px', fontFamily: 'system-ui, sans-serif', fontSize: 11 }}>
+                {record.abstract.length > 600 ? record.abstract.substring(0, 600) + '\u2026' : record.abstract}
+              </div>
             </div>
           )}
           <div style={{ display: 'flex', gap: 14, marginBottom: 6, flexWrap: 'wrap' }}>

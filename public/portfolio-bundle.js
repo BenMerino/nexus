@@ -24,291 +24,6 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// node_modules/scheduler/cjs/scheduler.production.js
-var require_scheduler_production = __commonJS({
-  "node_modules/scheduler/cjs/scheduler.production.js"(exports) {
-    "use strict";
-    function push(heap, node) {
-      var index2 = heap.length;
-      heap.push(node);
-      a: for (; 0 < index2; ) {
-        var parentIndex = index2 - 1 >>> 1, parent = heap[parentIndex];
-        if (0 < compare(parent, node))
-          heap[parentIndex] = node, heap[index2] = parent, index2 = parentIndex;
-        else break a;
-      }
-    }
-    function peek(heap) {
-      return 0 === heap.length ? null : heap[0];
-    }
-    function pop(heap) {
-      if (0 === heap.length) return null;
-      var first = heap[0], last = heap.pop();
-      if (last !== first) {
-        heap[0] = last;
-        a: for (var index2 = 0, length = heap.length, halfLength = length >>> 1; index2 < halfLength; ) {
-          var leftIndex = 2 * (index2 + 1) - 1, left = heap[leftIndex], rightIndex = leftIndex + 1, right = heap[rightIndex];
-          if (0 > compare(left, last))
-            rightIndex < length && 0 > compare(right, left) ? (heap[index2] = right, heap[rightIndex] = last, index2 = rightIndex) : (heap[index2] = left, heap[leftIndex] = last, index2 = leftIndex);
-          else if (rightIndex < length && 0 > compare(right, last))
-            heap[index2] = right, heap[rightIndex] = last, index2 = rightIndex;
-          else break a;
-        }
-      }
-      return first;
-    }
-    function compare(a2, b) {
-      var diff = a2.sortIndex - b.sortIndex;
-      return 0 !== diff ? diff : a2.id - b.id;
-    }
-    exports.unstable_now = void 0;
-    if ("object" === typeof performance && "function" === typeof performance.now) {
-      localPerformance = performance;
-      exports.unstable_now = function() {
-        return localPerformance.now();
-      };
-    } else {
-      localDate = Date, initialTime = localDate.now();
-      exports.unstable_now = function() {
-        return localDate.now() - initialTime;
-      };
-    }
-    var localPerformance;
-    var localDate;
-    var initialTime;
-    var taskQueue = [];
-    var timerQueue = [];
-    var taskIdCounter = 1;
-    var currentTask = null;
-    var currentPriorityLevel = 3;
-    var isPerformingWork = false;
-    var isHostCallbackScheduled = false;
-    var isHostTimeoutScheduled = false;
-    var needsPaint = false;
-    var localSetTimeout = "function" === typeof setTimeout ? setTimeout : null;
-    var localClearTimeout = "function" === typeof clearTimeout ? clearTimeout : null;
-    var localSetImmediate = "undefined" !== typeof setImmediate ? setImmediate : null;
-    function advanceTimers(currentTime) {
-      for (var timer2 = peek(timerQueue); null !== timer2; ) {
-        if (null === timer2.callback) pop(timerQueue);
-        else if (timer2.startTime <= currentTime)
-          pop(timerQueue), timer2.sortIndex = timer2.expirationTime, push(taskQueue, timer2);
-        else break;
-        timer2 = peek(timerQueue);
-      }
-    }
-    function handleTimeout(currentTime) {
-      isHostTimeoutScheduled = false;
-      advanceTimers(currentTime);
-      if (!isHostCallbackScheduled)
-        if (null !== peek(taskQueue))
-          isHostCallbackScheduled = true, isMessageLoopRunning || (isMessageLoopRunning = true, schedulePerformWorkUntilDeadline());
-        else {
-          var firstTimer = peek(timerQueue);
-          null !== firstTimer && requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
-        }
-    }
-    var isMessageLoopRunning = false;
-    var taskTimeoutID = -1;
-    var frameInterval = 5;
-    var startTime = -1;
-    function shouldYieldToHost() {
-      return needsPaint ? true : exports.unstable_now() - startTime < frameInterval ? false : true;
-    }
-    function performWorkUntilDeadline() {
-      needsPaint = false;
-      if (isMessageLoopRunning) {
-        var currentTime = exports.unstable_now();
-        startTime = currentTime;
-        var hasMoreWork = true;
-        try {
-          a: {
-            isHostCallbackScheduled = false;
-            isHostTimeoutScheduled && (isHostTimeoutScheduled = false, localClearTimeout(taskTimeoutID), taskTimeoutID = -1);
-            isPerformingWork = true;
-            var previousPriorityLevel = currentPriorityLevel;
-            try {
-              b: {
-                advanceTimers(currentTime);
-                for (currentTask = peek(taskQueue); null !== currentTask && !(currentTask.expirationTime > currentTime && shouldYieldToHost()); ) {
-                  var callback = currentTask.callback;
-                  if ("function" === typeof callback) {
-                    currentTask.callback = null;
-                    currentPriorityLevel = currentTask.priorityLevel;
-                    var continuationCallback = callback(
-                      currentTask.expirationTime <= currentTime
-                    );
-                    currentTime = exports.unstable_now();
-                    if ("function" === typeof continuationCallback) {
-                      currentTask.callback = continuationCallback;
-                      advanceTimers(currentTime);
-                      hasMoreWork = true;
-                      break b;
-                    }
-                    currentTask === peek(taskQueue) && pop(taskQueue);
-                    advanceTimers(currentTime);
-                  } else pop(taskQueue);
-                  currentTask = peek(taskQueue);
-                }
-                if (null !== currentTask) hasMoreWork = true;
-                else {
-                  var firstTimer = peek(timerQueue);
-                  null !== firstTimer && requestHostTimeout(
-                    handleTimeout,
-                    firstTimer.startTime - currentTime
-                  );
-                  hasMoreWork = false;
-                }
-              }
-              break a;
-            } finally {
-              currentTask = null, currentPriorityLevel = previousPriorityLevel, isPerformingWork = false;
-            }
-            hasMoreWork = void 0;
-          }
-        } finally {
-          hasMoreWork ? schedulePerformWorkUntilDeadline() : isMessageLoopRunning = false;
-        }
-      }
-    }
-    var schedulePerformWorkUntilDeadline;
-    if ("function" === typeof localSetImmediate)
-      schedulePerformWorkUntilDeadline = function() {
-        localSetImmediate(performWorkUntilDeadline);
-      };
-    else if ("undefined" !== typeof MessageChannel) {
-      channel = new MessageChannel(), port = channel.port2;
-      channel.port1.onmessage = performWorkUntilDeadline;
-      schedulePerformWorkUntilDeadline = function() {
-        port.postMessage(null);
-      };
-    } else
-      schedulePerformWorkUntilDeadline = function() {
-        localSetTimeout(performWorkUntilDeadline, 0);
-      };
-    var channel;
-    var port;
-    function requestHostTimeout(callback, ms) {
-      taskTimeoutID = localSetTimeout(function() {
-        callback(exports.unstable_now());
-      }, ms);
-    }
-    exports.unstable_IdlePriority = 5;
-    exports.unstable_ImmediatePriority = 1;
-    exports.unstable_LowPriority = 4;
-    exports.unstable_NormalPriority = 3;
-    exports.unstable_Profiling = null;
-    exports.unstable_UserBlockingPriority = 2;
-    exports.unstable_cancelCallback = function(task) {
-      task.callback = null;
-    };
-    exports.unstable_forceFrameRate = function(fps) {
-      0 > fps || 125 < fps ? console.error(
-        "forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported"
-      ) : frameInterval = 0 < fps ? Math.floor(1e3 / fps) : 5;
-    };
-    exports.unstable_getCurrentPriorityLevel = function() {
-      return currentPriorityLevel;
-    };
-    exports.unstable_next = function(eventHandler) {
-      switch (currentPriorityLevel) {
-        case 1:
-        case 2:
-        case 3:
-          var priorityLevel = 3;
-          break;
-        default:
-          priorityLevel = currentPriorityLevel;
-      }
-      var previousPriorityLevel = currentPriorityLevel;
-      currentPriorityLevel = priorityLevel;
-      try {
-        return eventHandler();
-      } finally {
-        currentPriorityLevel = previousPriorityLevel;
-      }
-    };
-    exports.unstable_requestPaint = function() {
-      needsPaint = true;
-    };
-    exports.unstable_runWithPriority = function(priorityLevel, eventHandler) {
-      switch (priorityLevel) {
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-          break;
-        default:
-          priorityLevel = 3;
-      }
-      var previousPriorityLevel = currentPriorityLevel;
-      currentPriorityLevel = priorityLevel;
-      try {
-        return eventHandler();
-      } finally {
-        currentPriorityLevel = previousPriorityLevel;
-      }
-    };
-    exports.unstable_scheduleCallback = function(priorityLevel, callback, options) {
-      var currentTime = exports.unstable_now();
-      "object" === typeof options && null !== options ? (options = options.delay, options = "number" === typeof options && 0 < options ? currentTime + options : currentTime) : options = currentTime;
-      switch (priorityLevel) {
-        case 1:
-          var timeout2 = -1;
-          break;
-        case 2:
-          timeout2 = 250;
-          break;
-        case 5:
-          timeout2 = 1073741823;
-          break;
-        case 4:
-          timeout2 = 1e4;
-          break;
-        default:
-          timeout2 = 5e3;
-      }
-      timeout2 = options + timeout2;
-      priorityLevel = {
-        id: taskIdCounter++,
-        callback,
-        priorityLevel,
-        startTime: options,
-        expirationTime: timeout2,
-        sortIndex: -1
-      };
-      options > currentTime ? (priorityLevel.sortIndex = options, push(timerQueue, priorityLevel), null === peek(taskQueue) && priorityLevel === peek(timerQueue) && (isHostTimeoutScheduled ? (localClearTimeout(taskTimeoutID), taskTimeoutID = -1) : isHostTimeoutScheduled = true, requestHostTimeout(handleTimeout, options - currentTime))) : (priorityLevel.sortIndex = timeout2, push(taskQueue, priorityLevel), isHostCallbackScheduled || isPerformingWork || (isHostCallbackScheduled = true, isMessageLoopRunning || (isMessageLoopRunning = true, schedulePerformWorkUntilDeadline())));
-      return priorityLevel;
-    };
-    exports.unstable_shouldYield = shouldYieldToHost;
-    exports.unstable_wrapCallback = function(callback) {
-      var parentPriorityLevel = currentPriorityLevel;
-      return function() {
-        var previousPriorityLevel = currentPriorityLevel;
-        currentPriorityLevel = parentPriorityLevel;
-        try {
-          return callback.apply(this, arguments);
-        } finally {
-          currentPriorityLevel = previousPriorityLevel;
-        }
-      };
-    };
-  }
-});
-
-// node_modules/scheduler/index.js
-var require_scheduler = __commonJS({
-  "node_modules/scheduler/index.js"(exports, module) {
-    "use strict";
-    if (true) {
-      module.exports = require_scheduler_production();
-    } else {
-      module.exports = null;
-    }
-  }
-});
-
 // node_modules/react/cjs/react.production.js
 var require_react_production = __commonJS({
   "node_modules/react/cjs/react.production.js"(exports) {
@@ -375,7 +90,7 @@ var require_react_production = __commonJS({
     assign(pureComponentPrototype, Component.prototype);
     pureComponentPrototype.isPureReactComponent = true;
     var isArrayImpl = Array.isArray;
-    function noop2() {
+    function noop() {
     }
     var ReactSharedInternals = { H: null, A: null, T: null, S: null };
     var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -402,8 +117,8 @@ var require_react_production = __commonJS({
       });
     }
     var userProvidedKeyEscapeRegex = /\/+/g;
-    function getElementKey(element, index2) {
-      return "object" === typeof element && null !== element && null != element.key ? escape("" + element.key) : index2.toString(36);
+    function getElementKey(element, index) {
+      return "object" === typeof element && null !== element && null != element.key ? escape("" + element.key) : index.toString(36);
     }
     function resolveThenable(thenable) {
       switch (thenable.status) {
@@ -412,7 +127,7 @@ var require_react_production = __commonJS({
         case "rejected":
           throw thenable.reason;
         default:
-          switch ("string" === typeof thenable.status ? thenable.then(noop2, noop2) : (thenable.status = "pending", thenable.then(
+          switch ("string" === typeof thenable.status ? thenable.then(noop, noop) : (thenable.status = "pending", thenable.then(
             function(fulfilledValue) {
               "pending" === thenable.status && (thenable.status = "fulfilled", thenable.value = fulfilledValue);
             },
@@ -457,8 +172,8 @@ var require_react_production = __commonJS({
             }
         }
       if (invokeCallback)
-        return callback = callback(children), invokeCallback = "" === nameSoFar ? "." + getElementKey(children, 0) : nameSoFar, isArrayImpl(callback) ? (escapedPrefix = "", null != invokeCallback && (escapedPrefix = invokeCallback.replace(userProvidedKeyEscapeRegex, "$&/") + "/"), mapIntoArray(callback, array, escapedPrefix, "", function(c2) {
-          return c2;
+        return callback = callback(children), invokeCallback = "" === nameSoFar ? "." + getElementKey(children, 0) : nameSoFar, isArrayImpl(callback) ? (escapedPrefix = "", null != invokeCallback && (escapedPrefix = invokeCallback.replace(userProvidedKeyEscapeRegex, "$&/") + "/"), mapIntoArray(callback, array, escapedPrefix, "", function(c) {
+          return c;
         })) : null != callback && (isValidElement(callback) && (callback = cloneAndReplaceKey(
           callback,
           escapedPrefix + (null == callback.key || children && children.key === callback.key ? "" : ("" + callback.key).replace(
@@ -676,7 +391,7 @@ var require_react_production = __commonJS({
       try {
         var returnValue = scope(), onStartTransitionFinish = ReactSharedInternals.S;
         null !== onStartTransitionFinish && onStartTransitionFinish(currentTransition, returnValue);
-        "object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then && returnValue.then(noop2, reportGlobalError);
+        "object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then && returnValue.then(noop, reportGlobalError);
       } catch (error) {
         reportGlobalError(error);
       } finally {
@@ -762,11 +477,296 @@ var require_react = __commonJS({
   }
 });
 
+// node_modules/scheduler/cjs/scheduler.production.js
+var require_scheduler_production = __commonJS({
+  "node_modules/scheduler/cjs/scheduler.production.js"(exports) {
+    "use strict";
+    function push(heap, node) {
+      var index = heap.length;
+      heap.push(node);
+      a: for (; 0 < index; ) {
+        var parentIndex = index - 1 >>> 1, parent = heap[parentIndex];
+        if (0 < compare(parent, node))
+          heap[parentIndex] = node, heap[index] = parent, index = parentIndex;
+        else break a;
+      }
+    }
+    function peek(heap) {
+      return 0 === heap.length ? null : heap[0];
+    }
+    function pop(heap) {
+      if (0 === heap.length) return null;
+      var first = heap[0], last = heap.pop();
+      if (last !== first) {
+        heap[0] = last;
+        a: for (var index = 0, length = heap.length, halfLength = length >>> 1; index < halfLength; ) {
+          var leftIndex = 2 * (index + 1) - 1, left = heap[leftIndex], rightIndex = leftIndex + 1, right = heap[rightIndex];
+          if (0 > compare(left, last))
+            rightIndex < length && 0 > compare(right, left) ? (heap[index] = right, heap[rightIndex] = last, index = rightIndex) : (heap[index] = left, heap[leftIndex] = last, index = leftIndex);
+          else if (rightIndex < length && 0 > compare(right, last))
+            heap[index] = right, heap[rightIndex] = last, index = rightIndex;
+          else break a;
+        }
+      }
+      return first;
+    }
+    function compare(a, b) {
+      var diff = a.sortIndex - b.sortIndex;
+      return 0 !== diff ? diff : a.id - b.id;
+    }
+    exports.unstable_now = void 0;
+    if ("object" === typeof performance && "function" === typeof performance.now) {
+      localPerformance = performance;
+      exports.unstable_now = function() {
+        return localPerformance.now();
+      };
+    } else {
+      localDate = Date, initialTime = localDate.now();
+      exports.unstable_now = function() {
+        return localDate.now() - initialTime;
+      };
+    }
+    var localPerformance;
+    var localDate;
+    var initialTime;
+    var taskQueue = [];
+    var timerQueue = [];
+    var taskIdCounter = 1;
+    var currentTask = null;
+    var currentPriorityLevel = 3;
+    var isPerformingWork = false;
+    var isHostCallbackScheduled = false;
+    var isHostTimeoutScheduled = false;
+    var needsPaint = false;
+    var localSetTimeout = "function" === typeof setTimeout ? setTimeout : null;
+    var localClearTimeout = "function" === typeof clearTimeout ? clearTimeout : null;
+    var localSetImmediate = "undefined" !== typeof setImmediate ? setImmediate : null;
+    function advanceTimers(currentTime) {
+      for (var timer = peek(timerQueue); null !== timer; ) {
+        if (null === timer.callback) pop(timerQueue);
+        else if (timer.startTime <= currentTime)
+          pop(timerQueue), timer.sortIndex = timer.expirationTime, push(taskQueue, timer);
+        else break;
+        timer = peek(timerQueue);
+      }
+    }
+    function handleTimeout(currentTime) {
+      isHostTimeoutScheduled = false;
+      advanceTimers(currentTime);
+      if (!isHostCallbackScheduled)
+        if (null !== peek(taskQueue))
+          isHostCallbackScheduled = true, isMessageLoopRunning || (isMessageLoopRunning = true, schedulePerformWorkUntilDeadline());
+        else {
+          var firstTimer = peek(timerQueue);
+          null !== firstTimer && requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
+        }
+    }
+    var isMessageLoopRunning = false;
+    var taskTimeoutID = -1;
+    var frameInterval = 5;
+    var startTime = -1;
+    function shouldYieldToHost() {
+      return needsPaint ? true : exports.unstable_now() - startTime < frameInterval ? false : true;
+    }
+    function performWorkUntilDeadline() {
+      needsPaint = false;
+      if (isMessageLoopRunning) {
+        var currentTime = exports.unstable_now();
+        startTime = currentTime;
+        var hasMoreWork = true;
+        try {
+          a: {
+            isHostCallbackScheduled = false;
+            isHostTimeoutScheduled && (isHostTimeoutScheduled = false, localClearTimeout(taskTimeoutID), taskTimeoutID = -1);
+            isPerformingWork = true;
+            var previousPriorityLevel = currentPriorityLevel;
+            try {
+              b: {
+                advanceTimers(currentTime);
+                for (currentTask = peek(taskQueue); null !== currentTask && !(currentTask.expirationTime > currentTime && shouldYieldToHost()); ) {
+                  var callback = currentTask.callback;
+                  if ("function" === typeof callback) {
+                    currentTask.callback = null;
+                    currentPriorityLevel = currentTask.priorityLevel;
+                    var continuationCallback = callback(
+                      currentTask.expirationTime <= currentTime
+                    );
+                    currentTime = exports.unstable_now();
+                    if ("function" === typeof continuationCallback) {
+                      currentTask.callback = continuationCallback;
+                      advanceTimers(currentTime);
+                      hasMoreWork = true;
+                      break b;
+                    }
+                    currentTask === peek(taskQueue) && pop(taskQueue);
+                    advanceTimers(currentTime);
+                  } else pop(taskQueue);
+                  currentTask = peek(taskQueue);
+                }
+                if (null !== currentTask) hasMoreWork = true;
+                else {
+                  var firstTimer = peek(timerQueue);
+                  null !== firstTimer && requestHostTimeout(
+                    handleTimeout,
+                    firstTimer.startTime - currentTime
+                  );
+                  hasMoreWork = false;
+                }
+              }
+              break a;
+            } finally {
+              currentTask = null, currentPriorityLevel = previousPriorityLevel, isPerformingWork = false;
+            }
+            hasMoreWork = void 0;
+          }
+        } finally {
+          hasMoreWork ? schedulePerformWorkUntilDeadline() : isMessageLoopRunning = false;
+        }
+      }
+    }
+    var schedulePerformWorkUntilDeadline;
+    if ("function" === typeof localSetImmediate)
+      schedulePerformWorkUntilDeadline = function() {
+        localSetImmediate(performWorkUntilDeadline);
+      };
+    else if ("undefined" !== typeof MessageChannel) {
+      channel = new MessageChannel(), port = channel.port2;
+      channel.port1.onmessage = performWorkUntilDeadline;
+      schedulePerformWorkUntilDeadline = function() {
+        port.postMessage(null);
+      };
+    } else
+      schedulePerformWorkUntilDeadline = function() {
+        localSetTimeout(performWorkUntilDeadline, 0);
+      };
+    var channel;
+    var port;
+    function requestHostTimeout(callback, ms) {
+      taskTimeoutID = localSetTimeout(function() {
+        callback(exports.unstable_now());
+      }, ms);
+    }
+    exports.unstable_IdlePriority = 5;
+    exports.unstable_ImmediatePriority = 1;
+    exports.unstable_LowPriority = 4;
+    exports.unstable_NormalPriority = 3;
+    exports.unstable_Profiling = null;
+    exports.unstable_UserBlockingPriority = 2;
+    exports.unstable_cancelCallback = function(task) {
+      task.callback = null;
+    };
+    exports.unstable_forceFrameRate = function(fps) {
+      0 > fps || 125 < fps ? console.error(
+        "forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported"
+      ) : frameInterval = 0 < fps ? Math.floor(1e3 / fps) : 5;
+    };
+    exports.unstable_getCurrentPriorityLevel = function() {
+      return currentPriorityLevel;
+    };
+    exports.unstable_next = function(eventHandler) {
+      switch (currentPriorityLevel) {
+        case 1:
+        case 2:
+        case 3:
+          var priorityLevel = 3;
+          break;
+        default:
+          priorityLevel = currentPriorityLevel;
+      }
+      var previousPriorityLevel = currentPriorityLevel;
+      currentPriorityLevel = priorityLevel;
+      try {
+        return eventHandler();
+      } finally {
+        currentPriorityLevel = previousPriorityLevel;
+      }
+    };
+    exports.unstable_requestPaint = function() {
+      needsPaint = true;
+    };
+    exports.unstable_runWithPriority = function(priorityLevel, eventHandler) {
+      switch (priorityLevel) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+          break;
+        default:
+          priorityLevel = 3;
+      }
+      var previousPriorityLevel = currentPriorityLevel;
+      currentPriorityLevel = priorityLevel;
+      try {
+        return eventHandler();
+      } finally {
+        currentPriorityLevel = previousPriorityLevel;
+      }
+    };
+    exports.unstable_scheduleCallback = function(priorityLevel, callback, options) {
+      var currentTime = exports.unstable_now();
+      "object" === typeof options && null !== options ? (options = options.delay, options = "number" === typeof options && 0 < options ? currentTime + options : currentTime) : options = currentTime;
+      switch (priorityLevel) {
+        case 1:
+          var timeout = -1;
+          break;
+        case 2:
+          timeout = 250;
+          break;
+        case 5:
+          timeout = 1073741823;
+          break;
+        case 4:
+          timeout = 1e4;
+          break;
+        default:
+          timeout = 5e3;
+      }
+      timeout = options + timeout;
+      priorityLevel = {
+        id: taskIdCounter++,
+        callback,
+        priorityLevel,
+        startTime: options,
+        expirationTime: timeout,
+        sortIndex: -1
+      };
+      options > currentTime ? (priorityLevel.sortIndex = options, push(timerQueue, priorityLevel), null === peek(taskQueue) && priorityLevel === peek(timerQueue) && (isHostTimeoutScheduled ? (localClearTimeout(taskTimeoutID), taskTimeoutID = -1) : isHostTimeoutScheduled = true, requestHostTimeout(handleTimeout, options - currentTime))) : (priorityLevel.sortIndex = timeout, push(taskQueue, priorityLevel), isHostCallbackScheduled || isPerformingWork || (isHostCallbackScheduled = true, isMessageLoopRunning || (isMessageLoopRunning = true, schedulePerformWorkUntilDeadline())));
+      return priorityLevel;
+    };
+    exports.unstable_shouldYield = shouldYieldToHost;
+    exports.unstable_wrapCallback = function(callback) {
+      var parentPriorityLevel = currentPriorityLevel;
+      return function() {
+        var previousPriorityLevel = currentPriorityLevel;
+        currentPriorityLevel = parentPriorityLevel;
+        try {
+          return callback.apply(this, arguments);
+        } finally {
+          currentPriorityLevel = previousPriorityLevel;
+        }
+      };
+    };
+  }
+});
+
+// node_modules/scheduler/index.js
+var require_scheduler = __commonJS({
+  "node_modules/scheduler/index.js"(exports, module) {
+    "use strict";
+    if (true) {
+      module.exports = require_scheduler_production();
+    } else {
+      module.exports = null;
+    }
+  }
+});
+
 // node_modules/react-dom/cjs/react-dom.production.js
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React18 = require_react();
+    var React5 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -776,21 +776,21 @@ var require_react_dom_production = __commonJS({
       }
       return "Minified React error #" + code + "; visit " + url + " for the full message or use the non-minified dev environment for full errors and additional helpful warnings.";
     }
-    function noop2() {
+    function noop() {
     }
     var Internals = {
       d: {
-        f: noop2,
+        f: noop,
         r: function() {
           throw Error(formatProdErrorMessage(522));
         },
-        D: noop2,
-        C: noop2,
-        L: noop2,
-        m: noop2,
-        X: noop2,
-        S: noop2,
-        M: noop2
+        D: noop,
+        C: noop,
+        L: noop,
+        m: noop,
+        X: noop,
+        S: noop,
+        M: noop
       },
       p: 0,
       findDOMNode: null
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React18.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React5.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -898,8 +898,8 @@ var require_react_dom_production = __commonJS({
     exports.requestFormReset = function(form) {
       Internals.d.r(form);
     };
-    exports.unstable_batchedUpdates = function(fn, a2) {
-      return fn(a2);
+    exports.unstable_batchedUpdates = function(fn, a) {
+      return fn(a);
     };
     exports.useFormState = function(action, initialState, permalink) {
       return ReactSharedInternals.H.useFormState(action, initialState, permalink);
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React18 = require_react();
+    var React5 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -994,55 +994,55 @@ var require_react_dom_client_production = __commonJS({
         if (null === alternate) throw Error(formatProdErrorMessage(188));
         return alternate !== fiber ? null : fiber;
       }
-      for (var a2 = fiber, b = alternate; ; ) {
-        var parentA = a2.return;
+      for (var a = fiber, b = alternate; ; ) {
+        var parentA = a.return;
         if (null === parentA) break;
         var parentB = parentA.alternate;
         if (null === parentB) {
           b = parentA.return;
           if (null !== b) {
-            a2 = b;
+            a = b;
             continue;
           }
           break;
         }
         if (parentA.child === parentB.child) {
           for (parentB = parentA.child; parentB; ) {
-            if (parentB === a2) return assertIsMounted(parentA), fiber;
+            if (parentB === a) return assertIsMounted(parentA), fiber;
             if (parentB === b) return assertIsMounted(parentA), alternate;
             parentB = parentB.sibling;
           }
           throw Error(formatProdErrorMessage(188));
         }
-        if (a2.return !== b.return) a2 = parentA, b = parentB;
+        if (a.return !== b.return) a = parentA, b = parentB;
         else {
           for (var didFindChild = false, child$0 = parentA.child; child$0; ) {
-            if (child$0 === a2) {
+            if (child$0 === a) {
               didFindChild = true;
-              a2 = parentA;
+              a = parentA;
               b = parentB;
               break;
             }
             if (child$0 === b) {
               didFindChild = true;
               b = parentA;
-              a2 = parentB;
+              a = parentB;
               break;
             }
             child$0 = child$0.sibling;
           }
           if (!didFindChild) {
             for (child$0 = parentB.child; child$0; ) {
-              if (child$0 === a2) {
+              if (child$0 === a) {
                 didFindChild = true;
-                a2 = parentB;
+                a = parentB;
                 b = parentA;
                 break;
               }
               if (child$0 === b) {
                 didFindChild = true;
                 b = parentB;
-                a2 = parentA;
+                a = parentA;
                 break;
               }
               child$0 = child$0.sibling;
@@ -1050,10 +1050,10 @@ var require_react_dom_client_production = __commonJS({
             if (!didFindChild) throw Error(formatProdErrorMessage(189));
           }
         }
-        if (a2.alternate !== b) throw Error(formatProdErrorMessage(190));
+        if (a.alternate !== b) throw Error(formatProdErrorMessage(190));
       }
-      if (3 !== a2.tag) throw Error(formatProdErrorMessage(188));
-      return a2.stateNode.current === a2 ? fiber : alternate;
+      if (3 !== a.tag) throw Error(formatProdErrorMessage(188));
+      return a.stateNode.current === a ? fiber : alternate;
     }
     function findCurrentHostFiberImpl(node) {
       var tag = node.tag;
@@ -1127,13 +1127,13 @@ var require_react_dom_client_production = __commonJS({
             type = type._init;
             try {
               return getComponentNameFromType(type(innerType));
-            } catch (x2) {
+            } catch (x) {
             }
         }
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React18.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React5.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -1142,16 +1142,16 @@ var require_react_dom_client_production = __commonJS({
       action: null
     };
     var valueStack = [];
-    var index2 = -1;
+    var index = -1;
     function createCursor(defaultValue) {
       return { current: defaultValue };
     }
     function pop(cursor) {
-      0 > index2 || (cursor.current = valueStack[index2], valueStack[index2] = null, index2--);
+      0 > index || (cursor.current = valueStack[index], valueStack[index] = null, index--);
     }
     function push(cursor, value) {
-      index2++;
-      valueStack[index2] = cursor.current;
+      index++;
+      valueStack[index] = cursor.current;
       cursor.current = value;
     }
     var contextStackCursor = createCursor(null);
@@ -1206,10 +1206,10 @@ var require_react_dom_client_production = __commonJS({
       if (void 0 === prefix)
         try {
           throw Error();
-        } catch (x2) {
-          var match = x2.stack.trim().match(/\n( *(at )?)/);
+        } catch (x) {
+          var match = x.stack.trim().match(/\n( *(at )?)/);
           prefix = match && match[1] || "";
-          suffix = -1 < x2.stack.indexOf("\n    at") ? " (<anonymous>)" : -1 < x2.stack.indexOf("@") ? "@unknown:0:0" : "";
+          suffix = -1 < x.stack.indexOf("\n    at") ? " (<anonymous>)" : -1 < x.stack.indexOf("@") ? "@unknown:0:0" : "";
         }
       return "\n" + prefix + name + suffix;
     }
@@ -1235,8 +1235,8 @@ var require_react_dom_client_production = __commonJS({
                 if ("object" === typeof Reflect && Reflect.construct) {
                   try {
                     Reflect.construct(Fake, []);
-                  } catch (x2) {
-                    var control = x2;
+                  } catch (x) {
+                    var control = x;
                   }
                   Reflect.construct(fn, [], Fake);
                 } else {
@@ -1290,9 +1290,9 @@ var require_react_dom_client_production = __commonJS({
               if (1 !== RunInRootFrame || 1 !== namePropDescriptor) {
                 do
                   if (RunInRootFrame--, namePropDescriptor--, 0 > namePropDescriptor || sampleLines[RunInRootFrame] !== controlLines[namePropDescriptor]) {
-                    var frame2 = "\n" + sampleLines[RunInRootFrame].replace(" at new ", " at ");
-                    fn.displayName && frame2.includes("<anonymous>") && (frame2 = frame2.replace("<anonymous>", fn.displayName));
-                    return frame2;
+                    var frame = "\n" + sampleLines[RunInRootFrame].replace(" at new ", " at ");
+                    fn.displayName && frame.includes("<anonymous>") && (frame = frame.replace("<anonymous>", fn.displayName));
+                    return frame;
                   }
                 while (1 <= RunInRootFrame && 0 <= namePropDescriptor);
               }
@@ -1336,8 +1336,8 @@ var require_react_dom_client_production = __commonJS({
           info += describeFiber(workInProgress2, previous), previous = workInProgress2, workInProgress2 = workInProgress2.return;
         while (workInProgress2);
         return info;
-      } catch (x2) {
-        return "\nError generating stack: " + x2.message + "\n" + x2.stack;
+      } catch (x) {
+        return "\nError generating stack: " + x.message + "\n" + x.stack;
       }
     }
     var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -1345,7 +1345,7 @@ var require_react_dom_client_production = __commonJS({
     var cancelCallback$1 = Scheduler.unstable_cancelCallback;
     var shouldYield = Scheduler.unstable_shouldYield;
     var requestPaint = Scheduler.unstable_requestPaint;
-    var now2 = Scheduler.unstable_now;
+    var now = Scheduler.unstable_now;
     var getCurrentPriorityLevel = Scheduler.unstable_getCurrentPriorityLevel;
     var ImmediatePriority = Scheduler.unstable_ImmediatePriority;
     var UserBlockingPriority = Scheduler.unstable_UserBlockingPriority;
@@ -1367,9 +1367,9 @@ var require_react_dom_client_production = __commonJS({
     var clz32 = Math.clz32 ? Math.clz32 : clz32Fallback;
     var log = Math.log;
     var LN2 = Math.LN2;
-    function clz32Fallback(x2) {
-      x2 >>>= 0;
-      return 0 === x2 ? 32 : 31 - (log(x2) / LN2 | 0) | 0;
+    function clz32Fallback(x) {
+      x >>>= 0;
+      return 0 === x ? 32 : 31 - (log(x) / LN2 | 0) | 0;
     }
     var nextTransitionUpdateLane = 256;
     var nextTransitionDeferredLane = 262144;
@@ -1429,17 +1429,17 @@ var require_react_dom_client_production = __commonJS({
           return lanes;
       }
     }
-    function getNextLanes(root2, wipLanes, rootHasPendingCommit) {
-      var pendingLanes = root2.pendingLanes;
+    function getNextLanes(root3, wipLanes, rootHasPendingCommit) {
+      var pendingLanes = root3.pendingLanes;
       if (0 === pendingLanes) return 0;
-      var nextLanes = 0, suspendedLanes = root2.suspendedLanes, pingedLanes = root2.pingedLanes;
-      root2 = root2.warmLanes;
+      var nextLanes = 0, suspendedLanes = root3.suspendedLanes, pingedLanes = root3.pingedLanes;
+      root3 = root3.warmLanes;
       var nonIdlePendingLanes = pendingLanes & 134217727;
-      0 !== nonIdlePendingLanes ? (pendingLanes = nonIdlePendingLanes & ~suspendedLanes, 0 !== pendingLanes ? nextLanes = getHighestPriorityLanes(pendingLanes) : (pingedLanes &= nonIdlePendingLanes, 0 !== pingedLanes ? nextLanes = getHighestPriorityLanes(pingedLanes) : rootHasPendingCommit || (rootHasPendingCommit = nonIdlePendingLanes & ~root2, 0 !== rootHasPendingCommit && (nextLanes = getHighestPriorityLanes(rootHasPendingCommit))))) : (nonIdlePendingLanes = pendingLanes & ~suspendedLanes, 0 !== nonIdlePendingLanes ? nextLanes = getHighestPriorityLanes(nonIdlePendingLanes) : 0 !== pingedLanes ? nextLanes = getHighestPriorityLanes(pingedLanes) : rootHasPendingCommit || (rootHasPendingCommit = pendingLanes & ~root2, 0 !== rootHasPendingCommit && (nextLanes = getHighestPriorityLanes(rootHasPendingCommit))));
+      0 !== nonIdlePendingLanes ? (pendingLanes = nonIdlePendingLanes & ~suspendedLanes, 0 !== pendingLanes ? nextLanes = getHighestPriorityLanes(pendingLanes) : (pingedLanes &= nonIdlePendingLanes, 0 !== pingedLanes ? nextLanes = getHighestPriorityLanes(pingedLanes) : rootHasPendingCommit || (rootHasPendingCommit = nonIdlePendingLanes & ~root3, 0 !== rootHasPendingCommit && (nextLanes = getHighestPriorityLanes(rootHasPendingCommit))))) : (nonIdlePendingLanes = pendingLanes & ~suspendedLanes, 0 !== nonIdlePendingLanes ? nextLanes = getHighestPriorityLanes(nonIdlePendingLanes) : 0 !== pingedLanes ? nextLanes = getHighestPriorityLanes(pingedLanes) : rootHasPendingCommit || (rootHasPendingCommit = pendingLanes & ~root3, 0 !== rootHasPendingCommit && (nextLanes = getHighestPriorityLanes(rootHasPendingCommit))));
       return 0 === nextLanes ? 0 : 0 !== wipLanes && wipLanes !== nextLanes && 0 === (wipLanes & suspendedLanes) && (suspendedLanes = nextLanes & -nextLanes, rootHasPendingCommit = wipLanes & -wipLanes, suspendedLanes >= rootHasPendingCommit || 32 === suspendedLanes && 0 !== (rootHasPendingCommit & 4194048)) ? wipLanes : nextLanes;
     }
-    function checkIfRootIsPrerendering(root2, renderLanes2) {
-      return 0 === (root2.pendingLanes & ~(root2.suspendedLanes & ~root2.pingedLanes) & renderLanes2);
+    function checkIfRootIsPrerendering(root3, renderLanes2) {
+      return 0 === (root3.pendingLanes & ~(root3.suspendedLanes & ~root3.pingedLanes) & renderLanes2);
     }
     function computeExpirationTime(lane, currentTime) {
       switch (lane) {
@@ -1492,21 +1492,21 @@ var require_react_dom_client_production = __commonJS({
       for (var laneMap = [], i = 0; 31 > i; i++) laneMap.push(initial);
       return laneMap;
     }
-    function markRootUpdated$1(root2, updateLane) {
-      root2.pendingLanes |= updateLane;
-      268435456 !== updateLane && (root2.suspendedLanes = 0, root2.pingedLanes = 0, root2.warmLanes = 0);
+    function markRootUpdated$1(root3, updateLane) {
+      root3.pendingLanes |= updateLane;
+      268435456 !== updateLane && (root3.suspendedLanes = 0, root3.pingedLanes = 0, root3.warmLanes = 0);
     }
-    function markRootFinished(root2, finishedLanes, remainingLanes, spawnedLane, updatedLanes, suspendedRetryLanes) {
-      var previouslyPendingLanes = root2.pendingLanes;
-      root2.pendingLanes = remainingLanes;
-      root2.suspendedLanes = 0;
-      root2.pingedLanes = 0;
-      root2.warmLanes = 0;
-      root2.expiredLanes &= remainingLanes;
-      root2.entangledLanes &= remainingLanes;
-      root2.errorRecoveryDisabledLanes &= remainingLanes;
-      root2.shellSuspendCounter = 0;
-      var entanglements = root2.entanglements, expirationTimes = root2.expirationTimes, hiddenUpdates = root2.hiddenUpdates;
+    function markRootFinished(root3, finishedLanes, remainingLanes, spawnedLane, updatedLanes, suspendedRetryLanes) {
+      var previouslyPendingLanes = root3.pendingLanes;
+      root3.pendingLanes = remainingLanes;
+      root3.suspendedLanes = 0;
+      root3.pingedLanes = 0;
+      root3.warmLanes = 0;
+      root3.expiredLanes &= remainingLanes;
+      root3.entangledLanes &= remainingLanes;
+      root3.errorRecoveryDisabledLanes &= remainingLanes;
+      root3.shellSuspendCounter = 0;
+      var entanglements = root3.entanglements, expirationTimes = root3.expirationTimes, hiddenUpdates = root3.hiddenUpdates;
       for (remainingLanes = previouslyPendingLanes & ~remainingLanes; 0 < remainingLanes; ) {
         var index$7 = 31 - clz32(remainingLanes), lane = 1 << index$7;
         entanglements[index$7] = 0;
@@ -1519,28 +1519,28 @@ var require_react_dom_client_production = __commonJS({
           }
         remainingLanes &= ~lane;
       }
-      0 !== spawnedLane && markSpawnedDeferredLane(root2, spawnedLane, 0);
-      0 !== suspendedRetryLanes && 0 === updatedLanes && 0 !== root2.tag && (root2.suspendedLanes |= suspendedRetryLanes & ~(previouslyPendingLanes & ~finishedLanes));
+      0 !== spawnedLane && markSpawnedDeferredLane(root3, spawnedLane, 0);
+      0 !== suspendedRetryLanes && 0 === updatedLanes && 0 !== root3.tag && (root3.suspendedLanes |= suspendedRetryLanes & ~(previouslyPendingLanes & ~finishedLanes));
     }
-    function markSpawnedDeferredLane(root2, spawnedLane, entangledLanes) {
-      root2.pendingLanes |= spawnedLane;
-      root2.suspendedLanes &= ~spawnedLane;
+    function markSpawnedDeferredLane(root3, spawnedLane, entangledLanes) {
+      root3.pendingLanes |= spawnedLane;
+      root3.suspendedLanes &= ~spawnedLane;
       var spawnedLaneIndex = 31 - clz32(spawnedLane);
-      root2.entangledLanes |= spawnedLane;
-      root2.entanglements[spawnedLaneIndex] = root2.entanglements[spawnedLaneIndex] | 1073741824 | entangledLanes & 261930;
+      root3.entangledLanes |= spawnedLane;
+      root3.entanglements[spawnedLaneIndex] = root3.entanglements[spawnedLaneIndex] | 1073741824 | entangledLanes & 261930;
     }
-    function markRootEntangled(root2, entangledLanes) {
-      var rootEntangledLanes = root2.entangledLanes |= entangledLanes;
-      for (root2 = root2.entanglements; rootEntangledLanes; ) {
+    function markRootEntangled(root3, entangledLanes) {
+      var rootEntangledLanes = root3.entangledLanes |= entangledLanes;
+      for (root3 = root3.entanglements; rootEntangledLanes; ) {
         var index$8 = 31 - clz32(rootEntangledLanes), lane = 1 << index$8;
-        lane & entangledLanes | root2[index$8] & entangledLanes && (root2[index$8] |= entangledLanes);
+        lane & entangledLanes | root3[index$8] & entangledLanes && (root3[index$8] |= entangledLanes);
         rootEntangledLanes &= ~lane;
       }
     }
-    function getBumpedLaneForHydration(root2, renderLanes2) {
+    function getBumpedLaneForHydration(root3, renderLanes2) {
       var renderLane = renderLanes2 & -renderLanes2;
       renderLane = 0 !== (renderLane & 42) ? 1 : getBumpedLaneForHydrationByLane(renderLane);
-      return 0 !== (renderLane & (root2.suspendedLanes | renderLanes2)) ? 0 : renderLane;
+      return 0 !== (renderLane & (root3.suspendedLanes | renderLanes2)) ? 0 : renderLane;
     }
     function getBumpedLaneForHydrationByLane(lane) {
       switch (lane) {
@@ -1646,9 +1646,9 @@ var require_react_dom_client_production = __commonJS({
       if (5 === tag || 26 === tag || 27 === tag || 6 === tag) return inst.stateNode;
       throw Error(formatProdErrorMessage(33));
     }
-    function getResourcesFromRoot(root2) {
-      var resources = root2[internalRootNodeResourcesKey];
-      resources || (resources = root2[internalRootNodeResourcesKey] = { hoistableStyles: /* @__PURE__ */ new Map(), hoistableScripts: /* @__PURE__ */ new Map() });
+    function getResourcesFromRoot(root3) {
+      var resources = root3[internalRootNodeResourcesKey];
+      resources || (resources = root3[internalRootNodeResourcesKey] = { hoistableStyles: /* @__PURE__ */ new Map(), hoistableScripts: /* @__PURE__ */ new Map() });
       return resources;
     }
     function markNodeAsHoistable(node) {
@@ -1751,15 +1751,15 @@ var require_react_dom_client_production = __commonJS({
         valueField
       );
       if (!node.hasOwnProperty(valueField) && "undefined" !== typeof descriptor && "function" === typeof descriptor.get && "function" === typeof descriptor.set) {
-        var get2 = descriptor.get, set2 = descriptor.set;
+        var get = descriptor.get, set = descriptor.set;
         Object.defineProperty(node, valueField, {
           configurable: true,
           get: function() {
-            return get2.call(this);
+            return get.call(this);
           },
           set: function(value) {
             currentValue = "" + value;
-            set2.call(this, value);
+            set.call(this, value);
           }
         });
         Object.defineProperty(node, valueField, {
@@ -2099,16 +2099,16 @@ var require_react_dom_client_production = __commonJS({
       }
     }
     var isInsideEventHandler = false;
-    function batchedUpdates$1(fn, a2, b) {
-      if (isInsideEventHandler) return fn(a2, b);
+    function batchedUpdates$1(fn, a, b) {
+      if (isInsideEventHandler) return fn(a, b);
       isInsideEventHandler = true;
       try {
-        var JSCompiler_inline_result = fn(a2);
+        var JSCompiler_inline_result = fn(a);
         return JSCompiler_inline_result;
       } finally {
         if (isInsideEventHandler = false, null !== restoreTarget || null !== restoreQueue) {
-          if (flushSyncWork$1(), restoreTarget && (a2 = restoreTarget, fn = restoreQueue, restoreQueue = restoreTarget = null, restoreStateOfTarget(a2), fn))
-            for (a2 = 0; a2 < fn.length; a2++) restoreStateOfTarget(fn[a2]);
+          if (flushSyncWork$1(), restoreTarget && (a = restoreTarget, fn = restoreQueue, restoreQueue = restoreTarget = null, restoreStateOfTarget(a), fn))
+            for (a = 0; a < fn.length; a++) restoreStateOfTarget(fn[a]);
         }
       }
     }
@@ -2159,12 +2159,12 @@ var require_react_dom_client_production = __commonJS({
         passiveBrowserEventsSupported = false;
       }
     var options;
-    var root = null;
+    var root2 = null;
     var startText = null;
     var fallbackText = null;
     function getData() {
       if (fallbackText) return fallbackText;
-      var start, startValue = startText, startLength = startValue.length, end, endValue = "value" in root ? root.value : root.textContent, endLength = endValue.length;
+      var start, startValue = startText, startLength = startValue.length, end, endValue = "value" in root2 ? root2.value : root2.textContent, endLength = endValue.length;
       for (start = 0; start < startLength && startValue[start] === endValue[start]; start++) ;
       var minEnd = startLength - start;
       for (end = 1; end <= minEnd && startValue[startLength - end] === endValue[endLength - end]; end++) ;
@@ -2455,7 +2455,7 @@ var require_react_dom_client_production = __commonJS({
     }
     function getFallbackBeforeInputChars(domEventName, nativeEvent) {
       if (isComposing)
-        return "compositionend" === domEventName || !canUseCompositionEvent && isFallbackCompositionEnd(domEventName, nativeEvent) ? (domEventName = getData(), fallbackText = startText = root = null, isComposing = false, domEventName) : null;
+        return "compositionend" === domEventName || !canUseCompositionEvent && isFallbackCompositionEnd(domEventName, nativeEvent) ? (domEventName = getData(), fallbackText = startText = root2 = null, isComposing = false, domEventName) : null;
       switch (domEventName) {
         case "paste":
           return null;
@@ -2561,8 +2561,8 @@ var require_react_dom_client_production = __commonJS({
       if ("input" === domEventName || "change" === domEventName)
         return getInstIfValueChanged(targetInst);
     }
-    function is(x2, y2) {
-      return x2 === y2 && (0 !== x2 || 1 / x2 === 1 / y2) || x2 !== x2 && y2 !== y2;
+    function is(x, y) {
+      return x === y && (0 !== x || 1 / x === 1 / y) || x !== x && y !== y;
     }
     var objectIs = "function" === typeof Object.is ? Object.is : is;
     function shallowEqual(objA, objB) {
@@ -2582,15 +2582,15 @@ var require_react_dom_client_production = __commonJS({
       for (; node && node.firstChild; ) node = node.firstChild;
       return node;
     }
-    function getNodeForCharacterOffset(root2, offset) {
-      var node = getLeafNode(root2);
-      root2 = 0;
+    function getNodeForCharacterOffset(root3, offset) {
+      var node = getLeafNode(root3);
+      root3 = 0;
       for (var nodeEnd; node; ) {
         if (3 === node.nodeType) {
-          nodeEnd = root2 + node.textContent.length;
-          if (root2 <= offset && nodeEnd >= offset)
-            return { node, offset: offset - root2 };
-          root2 = nodeEnd;
+          nodeEnd = root3 + node.textContent.length;
+          if (root3 <= offset && nodeEnd >= offset)
+            return { node, offset: offset - root3 };
+          root3 = nodeEnd;
         }
         a: {
           for (; node; ) {
@@ -2935,7 +2935,7 @@ var require_react_dom_client_production = __commonJS({
       treeForkProvider = workInProgress2;
       treeForkCount = totalChildren;
     }
-    function pushTreeId(workInProgress2, totalChildren, index3) {
+    function pushTreeId(workInProgress2, totalChildren, index2) {
       idStack[idStackIndex++] = treeContextId;
       idStack[idStackIndex++] = treeContextOverflow;
       idStack[idStackIndex++] = treeContextProvider;
@@ -2944,17 +2944,17 @@ var require_react_dom_client_production = __commonJS({
       workInProgress2 = treeContextOverflow;
       var baseLength = 32 - clz32(baseIdWithLeadingBit) - 1;
       baseIdWithLeadingBit &= ~(1 << baseLength);
-      index3 += 1;
+      index2 += 1;
       var length = 32 - clz32(totalChildren) + baseLength;
       if (30 < length) {
         var numberOfOverflowBits = baseLength - baseLength % 5;
         length = (baseIdWithLeadingBit & (1 << numberOfOverflowBits) - 1).toString(32);
         baseIdWithLeadingBit >>= numberOfOverflowBits;
         baseLength -= numberOfOverflowBits;
-        treeContextId = 1 << 32 - clz32(totalChildren) + baseLength | index3 << baseLength | baseIdWithLeadingBit;
+        treeContextId = 1 << 32 - clz32(totalChildren) + baseLength | index2 << baseLength | baseIdWithLeadingBit;
         treeContextOverflow = length + workInProgress2;
       } else
-        treeContextId = 1 << length | index3 << baseLength | baseIdWithLeadingBit, treeContextOverflow = workInProgress2;
+        treeContextId = 1 << length | index2 << baseLength | baseIdWithLeadingBit, treeContextOverflow = workInProgress2;
     }
     function pushMaterializedTreeId(workInProgress2) {
       null !== workInProgress2.return && (pushTreeFork(workInProgress2, 1), pushTreeId(workInProgress2, 1, 0));
@@ -3331,7 +3331,7 @@ var require_react_dom_client_production = __commonJS({
     }
     var prevOnStartTransitionFinish = ReactSharedInternals.S;
     ReactSharedInternals.S = function(transition, returnValue) {
-      globalMostRecentTransitionTime = now2();
+      globalMostRecentTransitionTime = now();
       "object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then && entangleAsyncAction(transition, returnValue);
       null !== prevOnStartTransitionFinish && prevOnStartTransitionFinish(transition, returnValue);
     };
@@ -3356,9 +3356,9 @@ var require_react_dom_client_production = __commonJS({
       thenable = thenable.status;
       return "fulfilled" === thenable || "rejected" === thenable;
     }
-    function trackUsedThenable(thenableState2, thenable, index3) {
-      index3 = thenableState2[index3];
-      void 0 === index3 ? thenableState2.push(thenable) : index3 !== thenable && (thenable.then(noop$1, noop$1), thenable = index3);
+    function trackUsedThenable(thenableState2, thenable, index2) {
+      index2 = thenableState2[index2];
+      void 0 === index2 ? thenableState2.push(thenable) : index2 !== thenable && (thenable.then(noop$1, noop$1), thenable = index2);
       switch (thenable.status) {
         case "fulfilled":
           return thenable.value;
@@ -3403,10 +3403,10 @@ var require_react_dom_client_production = __commonJS({
       try {
         var init = lazyType._init;
         return init(lazyType._payload);
-      } catch (x2) {
-        if (null !== x2 && "object" === typeof x2 && "function" === typeof x2.then)
-          throw suspendedThenable = x2, SuspenseException;
-        throw x2;
+      } catch (x) {
+        if (null !== x && "object" === typeof x && "function" === typeof x.then)
+          throw suspendedThenable = x, SuspenseException;
+        throw x;
       }
     }
     var suspendedThenable = null;
@@ -3423,10 +3423,10 @@ var require_react_dom_client_production = __commonJS({
     var thenableState$1 = null;
     var thenableIndexCounter$1 = 0;
     function unwrapThenable(thenable) {
-      var index3 = thenableIndexCounter$1;
+      var index2 = thenableIndexCounter$1;
       thenableIndexCounter$1 += 1;
       null === thenableState$1 && (thenableState$1 = []);
-      return trackUsedThenable(thenableState$1, thenable, index3);
+      return trackUsedThenable(thenableState$1, thenable, index2);
     }
     function coerceRef(workInProgress2, element) {
       element = element.props.ref;
@@ -3870,9 +3870,9 @@ var require_react_dom_client_production = __commonJS({
           );
           thenableState$1 = null;
           return firstChildFiber;
-        } catch (x2) {
-          if (x2 === SuspenseException || x2 === SuspenseActionException) throw x2;
-          var fiber = createFiberImplClass(29, x2, null, returnFiber.mode);
+        } catch (x) {
+          if (x === SuspenseException || x === SuspenseActionException) throw x;
+          var fiber = createFiberImplClass(29, x, null, returnFiber.mode);
           fiber.lanes = lanes;
           fiber.return = returnFiber;
           return fiber;
@@ -3920,14 +3920,14 @@ var require_react_dom_client_production = __commonJS({
       enqueueUpdate$1(fiber, updateQueue, update, lane);
       return getRootForUpdatedFiber(fiber);
     }
-    function entangleTransitions(root2, fiber, lane) {
+    function entangleTransitions(root3, fiber, lane) {
       fiber = fiber.updateQueue;
       if (null !== fiber && (fiber = fiber.shared, 0 !== (lane & 4194048))) {
         var queueLanes = fiber.lanes;
-        queueLanes &= root2.pendingLanes;
+        queueLanes &= root3.pendingLanes;
         lane |= queueLanes;
         fiber.lanes = lane;
-        markRootEntangled(root2, lane);
+        markRootEntangled(root3, lane);
       }
     }
     function enqueueCapturedUpdate(workInProgress2, capturedUpdate) {
@@ -4274,12 +4274,12 @@ var require_react_dom_client_production = __commonJS({
       return { lastEffect: null, events: null, stores: null, memoCache: null };
     }
     function useThenable(thenable) {
-      var index3 = thenableIndexCounter;
+      var index2 = thenableIndexCounter;
       thenableIndexCounter += 1;
       null === thenableState && (thenableState = []);
-      thenable = trackUsedThenable(thenableState, thenable, index3);
-      index3 = currentlyRenderingFiber;
-      null === (null === workInProgressHook ? index3.memoizedState : workInProgressHook.next) && (index3 = index3.alternate, ReactSharedInternals.H = null === index3 || null === index3.memoizedState ? HooksDispatcherOnMount : HooksDispatcherOnUpdate);
+      thenable = trackUsedThenable(thenableState, thenable, index2);
+      index2 = currentlyRenderingFiber;
+      null === (null === workInProgressHook ? index2.memoizedState : workInProgressHook.next) && (index2 = index2.alternate, ReactSharedInternals.H = null === index2 || null === index2.memoizedState ? HooksDispatcherOnMount : HooksDispatcherOnUpdate);
       return thenable;
     }
     function use(usable) {
@@ -4395,7 +4395,7 @@ var require_react_dom_client_production = __commonJS({
       var hook = updateWorkInProgressHook(), queue = hook.queue;
       if (null === queue) throw Error(formatProdErrorMessage(311));
       queue.lastRenderedReducer = reducer;
-      var dispatch2 = queue.dispatch, lastRenderPhaseUpdate = queue.pending, newState = hook.memoizedState;
+      var dispatch = queue.dispatch, lastRenderPhaseUpdate = queue.pending, newState = hook.memoizedState;
       if (null !== lastRenderPhaseUpdate) {
         queue.pending = null;
         var update = lastRenderPhaseUpdate = lastRenderPhaseUpdate.next;
@@ -4407,7 +4407,7 @@ var require_react_dom_client_production = __commonJS({
         null === hook.baseQueue && (hook.baseState = newState);
         queue.lastRenderedState = newState;
       }
-      return [newState, dispatch2];
+      return [newState, dispatch];
     }
     function updateSyncExternalStore(subscribe, getSnapshot, getServerSnapshot) {
       var fiber = currentlyRenderingFiber, hook = updateWorkInProgressHook(), isHydrating$jscomp$0 = isHydrating;
@@ -4470,8 +4470,8 @@ var require_react_dom_client_production = __commonJS({
       }
     }
     function forceStoreRerender(fiber) {
-      var root2 = enqueueConcurrentRenderForLane(fiber, 2);
-      null !== root2 && scheduleUpdateOnFiber(root2, fiber, 2);
+      var root3 = enqueueConcurrentRenderForLane(fiber, 2);
+      null !== root3 && scheduleUpdateOnFiber(root3, fiber, 2);
     }
     function mountStateImpl(initialState) {
       var hook = mountWorkInProgressHook();
@@ -4682,20 +4682,20 @@ var require_react_dom_client_production = __commonJS({
       if ("object" === typeof currentStateHook && null !== currentStateHook && "function" === typeof currentStateHook.then)
         try {
           var state = useThenable(currentStateHook);
-        } catch (x2) {
-          if (x2 === SuspenseException) throw SuspenseActionException;
-          throw x2;
+        } catch (x) {
+          if (x === SuspenseException) throw SuspenseActionException;
+          throw x;
         }
       else state = currentStateHook;
       currentStateHook = updateWorkInProgressHook();
-      var actionQueue = currentStateHook.queue, dispatch2 = actionQueue.dispatch;
+      var actionQueue = currentStateHook.queue, dispatch = actionQueue.dispatch;
       action !== currentStateHook.memoizedState && (currentlyRenderingFiber.flags |= 2048, pushSimpleEffect(
         9,
         { destroy: void 0 },
         actionStateActionEffect.bind(null, actionQueue, action),
         null
       ));
-      return [state, dispatch2, stateHook];
+      return [state, dispatch, stateHook];
     }
     function actionStateActionEffect(actionQueue, action) {
       actionQueue.action = action;
@@ -4707,9 +4707,9 @@ var require_react_dom_client_production = __commonJS({
       updateWorkInProgressHook();
       stateHook = stateHook.memoizedState;
       currentStateHook = updateWorkInProgressHook();
-      var dispatch2 = currentStateHook.queue.dispatch;
+      var dispatch = currentStateHook.queue.dispatch;
       currentStateHook.memoizedState = action;
-      return [stateHook, dispatch2, false];
+      return [stateHook, dispatch, false];
     }
     function pushSimpleEffect(tag, inst, create, deps) {
       tag = { tag, create, deps, inst, next: null };
@@ -4878,7 +4878,7 @@ var require_react_dom_client_production = __commonJS({
         ReactDOMSharedInternals.p = previousPriority, null !== prevTransition && null !== currentTransition.types && (prevTransition.types = currentTransition.types), ReactSharedInternals.T = prevTransition;
       }
     }
-    function noop2() {
+    function noop() {
     }
     function startHostTransition(formFiber, pendingState, action, formData) {
       if (5 !== formFiber.tag) throw Error(formatProdErrorMessage(476));
@@ -4888,7 +4888,7 @@ var require_react_dom_client_production = __commonJS({
         queue,
         pendingState,
         sharedNotPendingObject,
-        null === action ? noop2 : function() {
+        null === action ? noop : function() {
           requestFormReset$1(formFiber);
           return action(formData);
         }
@@ -5040,13 +5040,13 @@ var require_react_dom_client_production = __commonJS({
       null === pending ? update.next = update : (update.next = pending.next, pending.next = update);
       queue.pending = update;
     }
-    function entangleTransitionUpdate(root2, queue, lane) {
+    function entangleTransitionUpdate(root3, queue, lane) {
       if (0 !== (lane & 4194048)) {
         var queueLanes = queue.lanes;
-        queueLanes &= root2.pendingLanes;
+        queueLanes &= root3.pendingLanes;
         lane |= queueLanes;
         queue.lanes = lane;
-        markRootEntangled(root2, lane);
+        markRootEntangled(root3, lane);
       }
     }
     var ContextOnlyDispatcher = {
@@ -5153,9 +5153,9 @@ var require_react_dom_client_production = __commonJS({
       },
       useState: function(initialState) {
         initialState = mountStateImpl(initialState);
-        var queue = initialState.queue, dispatch2 = dispatchSetState.bind(null, currentlyRenderingFiber, queue);
-        queue.dispatch = dispatch2;
-        return [initialState.memoizedState, dispatch2];
+        var queue = initialState.queue, dispatch = dispatchSetState.bind(null, currentlyRenderingFiber, queue);
+        queue.dispatch = dispatch;
+        return [initialState.memoizedState, dispatch];
       },
       useDebugValue: mountDebugValue,
       useDeferredValue: function(value, initialValue) {
@@ -5421,9 +5421,9 @@ var require_react_dom_client_production = __commonJS({
     function defaultOnRecoverableError(error) {
       reportGlobalError(error);
     }
-    function logUncaughtError(root2, errorInfo) {
+    function logUncaughtError(root3, errorInfo) {
       try {
-        var onUncaughtError = root2.onUncaughtError;
+        var onUncaughtError = root3.onUncaughtError;
         onUncaughtError(errorInfo.value, { componentStack: errorInfo.stack });
       } catch (e$74) {
         setTimeout(function() {
@@ -5431,9 +5431,9 @@ var require_react_dom_client_production = __commonJS({
         });
       }
     }
-    function logCaughtError(root2, boundary, errorInfo) {
+    function logCaughtError(root3, boundary, errorInfo) {
       try {
-        var onCaughtError = root2.onCaughtError;
+        var onCaughtError = root3.onCaughtError;
         onCaughtError(errorInfo.value, {
           componentStack: errorInfo.stack,
           errorBoundary: 1 === boundary.tag ? boundary.stateNode : null
@@ -5444,12 +5444,12 @@ var require_react_dom_client_production = __commonJS({
         });
       }
     }
-    function createRootErrorUpdate(root2, errorInfo, lane) {
+    function createRootErrorUpdate(root3, errorInfo, lane) {
       lane = createUpdate(lane);
       lane.tag = 3;
       lane.payload = { element: null };
       lane.callback = function() {
-        logUncaughtError(root2, errorInfo);
+        logUncaughtError(root3, errorInfo);
       };
       return lane;
     }
@@ -5458,7 +5458,7 @@ var require_react_dom_client_production = __commonJS({
       lane.tag = 3;
       return lane;
     }
-    function initializeClassErrorUpdate(update, root2, fiber, errorInfo) {
+    function initializeClassErrorUpdate(update, root3, fiber, errorInfo) {
       var getDerivedStateFromError = fiber.type.getDerivedStateFromError;
       if ("function" === typeof getDerivedStateFromError) {
         var error = errorInfo.value;
@@ -5466,12 +5466,12 @@ var require_react_dom_client_production = __commonJS({
           return getDerivedStateFromError(error);
         };
         update.callback = function() {
-          logCaughtError(root2, fiber, errorInfo);
+          logCaughtError(root3, fiber, errorInfo);
         };
       }
       var inst = fiber.stateNode;
       null !== inst && "function" === typeof inst.componentDidCatch && (update.callback = function() {
-        logCaughtError(root2, fiber, errorInfo);
+        logCaughtError(root3, fiber, errorInfo);
         "function" !== typeof getDerivedStateFromError && (null === legacyErrorBoundariesThatAlreadyFailed ? legacyErrorBoundariesThatAlreadyFailed = /* @__PURE__ */ new Set([this]) : legacyErrorBoundariesThatAlreadyFailed.add(this));
         var stack = errorInfo.stack;
         this.componentDidCatch(errorInfo.value, {
@@ -5479,7 +5479,7 @@ var require_react_dom_client_production = __commonJS({
         });
       });
     }
-    function throwException(root2, returnFiber, sourceFiber, value, rootRenderLanes) {
+    function throwException(root3, returnFiber, sourceFiber, value, rootRenderLanes) {
       sourceFiber.flags |= 32768;
       if (null !== value && "object" === typeof value && "function" === typeof value.then) {
         returnFiber = sourceFiber.alternate;
@@ -5494,30 +5494,30 @@ var require_react_dom_client_production = __commonJS({
           switch (sourceFiber.tag) {
             case 31:
             case 13:
-              return null === shellBoundary ? renderDidSuspendDelayIfPossible() : null === sourceFiber.alternate && 0 === workInProgressRootExitStatus && (workInProgressRootExitStatus = 3), sourceFiber.flags &= -257, sourceFiber.flags |= 65536, sourceFiber.lanes = rootRenderLanes, value === noopSuspenseyCommitThenable ? sourceFiber.flags |= 16384 : (returnFiber = sourceFiber.updateQueue, null === returnFiber ? sourceFiber.updateQueue = /* @__PURE__ */ new Set([value]) : returnFiber.add(value), attachPingListener(root2, value, rootRenderLanes)), false;
+              return null === shellBoundary ? renderDidSuspendDelayIfPossible() : null === sourceFiber.alternate && 0 === workInProgressRootExitStatus && (workInProgressRootExitStatus = 3), sourceFiber.flags &= -257, sourceFiber.flags |= 65536, sourceFiber.lanes = rootRenderLanes, value === noopSuspenseyCommitThenable ? sourceFiber.flags |= 16384 : (returnFiber = sourceFiber.updateQueue, null === returnFiber ? sourceFiber.updateQueue = /* @__PURE__ */ new Set([value]) : returnFiber.add(value), attachPingListener(root3, value, rootRenderLanes)), false;
             case 22:
               return sourceFiber.flags |= 65536, value === noopSuspenseyCommitThenable ? sourceFiber.flags |= 16384 : (returnFiber = sourceFiber.updateQueue, null === returnFiber ? (returnFiber = {
                 transitions: null,
                 markerInstances: null,
                 retryQueue: /* @__PURE__ */ new Set([value])
-              }, sourceFiber.updateQueue = returnFiber) : (sourceFiber = returnFiber.retryQueue, null === sourceFiber ? returnFiber.retryQueue = /* @__PURE__ */ new Set([value]) : sourceFiber.add(value)), attachPingListener(root2, value, rootRenderLanes)), false;
+              }, sourceFiber.updateQueue = returnFiber) : (sourceFiber = returnFiber.retryQueue, null === sourceFiber ? returnFiber.retryQueue = /* @__PURE__ */ new Set([value]) : sourceFiber.add(value)), attachPingListener(root3, value, rootRenderLanes)), false;
           }
           throw Error(formatProdErrorMessage(435, sourceFiber.tag));
         }
-        attachPingListener(root2, value, rootRenderLanes);
+        attachPingListener(root3, value, rootRenderLanes);
         renderDidSuspendDelayIfPossible();
         return false;
       }
       if (isHydrating)
-        return returnFiber = suspenseHandlerStackCursor.current, null !== returnFiber ? (0 === (returnFiber.flags & 65536) && (returnFiber.flags |= 256), returnFiber.flags |= 65536, returnFiber.lanes = rootRenderLanes, value !== HydrationMismatchException && (root2 = Error(formatProdErrorMessage(422), { cause: value }), queueHydrationError(createCapturedValueAtFiber(root2, sourceFiber)))) : (value !== HydrationMismatchException && (returnFiber = Error(formatProdErrorMessage(423), {
+        return returnFiber = suspenseHandlerStackCursor.current, null !== returnFiber ? (0 === (returnFiber.flags & 65536) && (returnFiber.flags |= 256), returnFiber.flags |= 65536, returnFiber.lanes = rootRenderLanes, value !== HydrationMismatchException && (root3 = Error(formatProdErrorMessage(422), { cause: value }), queueHydrationError(createCapturedValueAtFiber(root3, sourceFiber)))) : (value !== HydrationMismatchException && (returnFiber = Error(formatProdErrorMessage(423), {
           cause: value
         }), queueHydrationError(
           createCapturedValueAtFiber(returnFiber, sourceFiber)
-        )), root2 = root2.current.alternate, root2.flags |= 65536, rootRenderLanes &= -rootRenderLanes, root2.lanes |= rootRenderLanes, value = createCapturedValueAtFiber(value, sourceFiber), rootRenderLanes = createRootErrorUpdate(
-          root2.stateNode,
+        )), root3 = root3.current.alternate, root3.flags |= 65536, rootRenderLanes &= -rootRenderLanes, root3.lanes |= rootRenderLanes, value = createCapturedValueAtFiber(value, sourceFiber), rootRenderLanes = createRootErrorUpdate(
+          root3.stateNode,
           value,
           rootRenderLanes
-        ), enqueueCapturedUpdate(root2, rootRenderLanes), 4 !== workInProgressRootExitStatus && (workInProgressRootExitStatus = 2)), false;
+        ), enqueueCapturedUpdate(root3, rootRenderLanes), 4 !== workInProgressRootExitStatus && (workInProgressRootExitStatus = 2)), false;
       var wrapperError = Error(formatProdErrorMessage(520), { cause: value });
       wrapperError = createCapturedValueAtFiber(wrapperError, sourceFiber);
       null === workInProgressRootConcurrentErrors ? workInProgressRootConcurrentErrors = [wrapperError] : workInProgressRootConcurrentErrors.push(wrapperError);
@@ -5528,12 +5528,12 @@ var require_react_dom_client_production = __commonJS({
       do {
         switch (sourceFiber.tag) {
           case 3:
-            return sourceFiber.flags |= 65536, root2 = rootRenderLanes & -rootRenderLanes, sourceFiber.lanes |= root2, root2 = createRootErrorUpdate(sourceFiber.stateNode, value, root2), enqueueCapturedUpdate(sourceFiber, root2), false;
+            return sourceFiber.flags |= 65536, root3 = rootRenderLanes & -rootRenderLanes, sourceFiber.lanes |= root3, root3 = createRootErrorUpdate(sourceFiber.stateNode, value, root3), enqueueCapturedUpdate(sourceFiber, root3), false;
           case 1:
             if (returnFiber = sourceFiber.type, wrapperError = sourceFiber.stateNode, 0 === (sourceFiber.flags & 128) && ("function" === typeof returnFiber.getDerivedStateFromError || null !== wrapperError && "function" === typeof wrapperError.componentDidCatch && (null === legacyErrorBoundariesThatAlreadyFailed || !legacyErrorBoundariesThatAlreadyFailed.has(wrapperError))))
               return sourceFiber.flags |= 65536, rootRenderLanes &= -rootRenderLanes, sourceFiber.lanes |= rootRenderLanes, rootRenderLanes = createClassErrorUpdate(rootRenderLanes), initializeClassErrorUpdate(
                 rootRenderLanes,
-                root2,
+                root3,
                 sourceFiber,
                 value
               ), enqueueCapturedUpdate(sourceFiber, rootRenderLanes), false;
@@ -7005,7 +7005,7 @@ var require_react_dom_client_production = __commonJS({
                   }
                   current = current.sibling;
                 }
-              null !== newProps.tail && now2() > workInProgressRootRenderTargetTime && (workInProgress2.flags |= 128, type = true, cutOffTailIfNeeded(newProps, false), workInProgress2.lanes = 4194304);
+              null !== newProps.tail && now() > workInProgressRootRenderTargetTime && (workInProgress2.flags |= 128, type = true, cutOffTailIfNeeded(newProps, false), workInProgress2.lanes = 4194304);
             }
           else {
             if (!type)
@@ -7013,11 +7013,11 @@ var require_react_dom_client_production = __commonJS({
                 if (workInProgress2.flags |= 128, type = true, current = current.updateQueue, workInProgress2.updateQueue = current, scheduleRetryEffect(workInProgress2, current), cutOffTailIfNeeded(newProps, true), null === newProps.tail && "hidden" === newProps.tailMode && !nextResource.alternate && !isHydrating)
                   return bubbleProperties(workInProgress2), null;
               } else
-                2 * now2() - newProps.renderingStartTime > workInProgressRootRenderTargetTime && 536870912 !== renderLanes2 && (workInProgress2.flags |= 128, type = true, cutOffTailIfNeeded(newProps, false), workInProgress2.lanes = 4194304);
+                2 * now() - newProps.renderingStartTime > workInProgressRootRenderTargetTime && 536870912 !== renderLanes2 && (workInProgress2.flags |= 128, type = true, cutOffTailIfNeeded(newProps, false), workInProgress2.lanes = 4194304);
             newProps.isBackwards ? (nextResource.sibling = workInProgress2.child, workInProgress2.child = nextResource) : (current = newProps.last, null !== current ? current.sibling = nextResource : workInProgress2.child = nextResource, newProps.last = nextResource);
           }
           if (null !== newProps.tail)
-            return current = newProps.tail, newProps.rendering = current, newProps.tail = current.sibling, newProps.renderingStartTime = now2(), current.sibling = null, renderLanes2 = suspenseStackCursor.current, push(
+            return current = newProps.tail, newProps.rendering = current, newProps.tail = current.sibling, newProps.renderingStartTime = now(), current.sibling = null, renderLanes2 = suspenseStackCursor.current, push(
               suspenseStackCursor,
               type ? renderLanes2 & 1 | 2 : renderLanes2 & 1
             ), isHydrating && pushTreeFork(workInProgress2, newProps.treeForkCount), current;
@@ -7312,19 +7312,19 @@ var require_react_dom_client_production = __commonJS({
     var needsFormReset = false;
     var PossiblyWeakSet = "function" === typeof WeakSet ? WeakSet : Set;
     var nextEffect = null;
-    function commitBeforeMutationEffects(root2, firstChild) {
-      root2 = root2.containerInfo;
+    function commitBeforeMutationEffects(root3, firstChild) {
+      root3 = root3.containerInfo;
       eventsEnabled = _enabled;
-      root2 = getActiveElementDeep(root2);
-      if (hasSelectionCapabilities(root2)) {
-        if ("selectionStart" in root2)
+      root3 = getActiveElementDeep(root3);
+      if (hasSelectionCapabilities(root3)) {
+        if ("selectionStart" in root3)
           var JSCompiler_temp = {
-            start: root2.selectionStart,
-            end: root2.selectionEnd
+            start: root3.selectionStart,
+            end: root3.selectionEnd
           };
         else
           a: {
-            JSCompiler_temp = (JSCompiler_temp = root2.ownerDocument) && JSCompiler_temp.defaultView || window;
+            JSCompiler_temp = (JSCompiler_temp = root3.ownerDocument) && JSCompiler_temp.defaultView || window;
             var selection = JSCompiler_temp.getSelection && JSCompiler_temp.getSelection();
             if (selection && 0 !== selection.rangeCount) {
               JSCompiler_temp = selection.anchorNode;
@@ -7336,7 +7336,7 @@ var require_react_dom_client_production = __commonJS({
                 JSCompiler_temp = null;
                 break a;
               }
-              var length = 0, start = -1, end = -1, indexWithinAnchor = 0, indexWithinFocus = 0, node = root2, parentNode = null;
+              var length = 0, start = -1, end = -1, indexWithinAnchor = 0, indexWithinFocus = 0, node = root3, parentNode = null;
               b: for (; ; ) {
                 for (var next; ; ) {
                   node !== JSCompiler_temp || 0 !== anchorOffset && 3 !== node.nodeType || (start = length + anchorOffset);
@@ -7347,7 +7347,7 @@ var require_react_dom_client_production = __commonJS({
                   node = next;
                 }
                 for (; ; ) {
-                  if (node === root2) break b;
+                  if (node === root3) break b;
                   parentNode === JSCompiler_temp && ++indexWithinAnchor === anchorOffset && (start = length);
                   parentNode === focusNode && ++indexWithinFocus === selection && (end = length);
                   if (null !== (next = node.nextSibling)) break;
@@ -7361,28 +7361,28 @@ var require_react_dom_client_production = __commonJS({
           }
         JSCompiler_temp = JSCompiler_temp || { start: 0, end: 0 };
       } else JSCompiler_temp = null;
-      selectionInformation = { focusedElem: root2, selectionRange: JSCompiler_temp };
+      selectionInformation = { focusedElem: root3, selectionRange: JSCompiler_temp };
       _enabled = false;
       for (nextEffect = firstChild; null !== nextEffect; )
-        if (firstChild = nextEffect, root2 = firstChild.child, 0 !== (firstChild.subtreeFlags & 1028) && null !== root2)
-          root2.return = firstChild, nextEffect = root2;
+        if (firstChild = nextEffect, root3 = firstChild.child, 0 !== (firstChild.subtreeFlags & 1028) && null !== root3)
+          root3.return = firstChild, nextEffect = root3;
         else
           for (; null !== nextEffect; ) {
             firstChild = nextEffect;
             focusNode = firstChild.alternate;
-            root2 = firstChild.flags;
+            root3 = firstChild.flags;
             switch (firstChild.tag) {
               case 0:
-                if (0 !== (root2 & 4) && (root2 = firstChild.updateQueue, root2 = null !== root2 ? root2.events : null, null !== root2))
-                  for (JSCompiler_temp = 0; JSCompiler_temp < root2.length; JSCompiler_temp++)
-                    anchorOffset = root2[JSCompiler_temp], anchorOffset.ref.impl = anchorOffset.nextImpl;
+                if (0 !== (root3 & 4) && (root3 = firstChild.updateQueue, root3 = null !== root3 ? root3.events : null, null !== root3))
+                  for (JSCompiler_temp = 0; JSCompiler_temp < root3.length; JSCompiler_temp++)
+                    anchorOffset = root3[JSCompiler_temp], anchorOffset.ref.impl = anchorOffset.nextImpl;
                 break;
               case 11:
               case 15:
                 break;
               case 1:
-                if (0 !== (root2 & 1024) && null !== focusNode) {
-                  root2 = void 0;
+                if (0 !== (root3 & 1024) && null !== focusNode) {
+                  root3 = void 0;
                   JSCompiler_temp = firstChild;
                   anchorOffset = focusNode.memoizedProps;
                   focusNode = focusNode.memoizedState;
@@ -7392,11 +7392,11 @@ var require_react_dom_client_production = __commonJS({
                       JSCompiler_temp.type,
                       anchorOffset
                     );
-                    root2 = selection.getSnapshotBeforeUpdate(
+                    root3 = selection.getSnapshotBeforeUpdate(
                       resolvedPrevProps,
                       focusNode
                     );
-                    selection.__reactInternalSnapshotBeforeUpdate = root2;
+                    selection.__reactInternalSnapshotBeforeUpdate = root3;
                   } catch (error) {
                     captureCommitPhaseError(
                       JSCompiler_temp,
@@ -7407,18 +7407,18 @@ var require_react_dom_client_production = __commonJS({
                 }
                 break;
               case 3:
-                if (0 !== (root2 & 1024)) {
-                  if (root2 = firstChild.stateNode.containerInfo, JSCompiler_temp = root2.nodeType, 9 === JSCompiler_temp)
-                    clearContainerSparingly(root2);
+                if (0 !== (root3 & 1024)) {
+                  if (root3 = firstChild.stateNode.containerInfo, JSCompiler_temp = root3.nodeType, 9 === JSCompiler_temp)
+                    clearContainerSparingly(root3);
                   else if (1 === JSCompiler_temp)
-                    switch (root2.nodeName) {
+                    switch (root3.nodeName) {
                       case "HEAD":
                       case "HTML":
                       case "BODY":
-                        clearContainerSparingly(root2);
+                        clearContainerSparingly(root3);
                         break;
                       default:
-                        root2.textContent = "";
+                        root3.textContent = "";
                     }
                 }
                 break;
@@ -7430,12 +7430,12 @@ var require_react_dom_client_production = __commonJS({
               case 17:
                 break;
               default:
-                if (0 !== (root2 & 1024)) throw Error(formatProdErrorMessage(163));
+                if (0 !== (root3 & 1024)) throw Error(formatProdErrorMessage(163));
             }
-            root2 = firstChild.sibling;
-            if (null !== root2) {
-              root2.return = firstChild.return;
-              nextEffect = root2;
+            root3 = firstChild.sibling;
+            if (null !== root3) {
+              root3.return = firstChild.return;
+              nextEffect = root3;
               break;
             }
             nextEffect = firstChild.return;
@@ -7746,7 +7746,7 @@ var require_react_dom_client_production = __commonJS({
       var deletions = parentFiber.deletions;
       if (null !== deletions)
         for (var i = 0; i < deletions.length; i++) {
-          var childToDelete = deletions[i], root2 = root$jscomp$0, returnFiber = parentFiber, parent = returnFiber;
+          var childToDelete = deletions[i], root3 = root$jscomp$0, returnFiber = parentFiber, parent = returnFiber;
           a: for (; null !== parent; ) {
             switch (parent.tag) {
               case 27:
@@ -7769,11 +7769,11 @@ var require_react_dom_client_production = __commonJS({
             parent = parent.return;
           }
           if (null === hostParent) throw Error(formatProdErrorMessage(160));
-          commitDeletionEffectsOnFiber(root2, returnFiber, childToDelete);
+          commitDeletionEffectsOnFiber(root3, returnFiber, childToDelete);
           hostParent = null;
           hostParentIsContainer = false;
-          root2 = childToDelete.alternate;
-          null !== root2 && (root2.return = null);
+          root3 = childToDelete.alternate;
+          null !== root3 && (root3.return = null);
           childToDelete.return = null;
         }
       if (parentFiber.subtreeFlags & 13886)
@@ -7781,26 +7781,26 @@ var require_react_dom_client_production = __commonJS({
           commitMutationEffectsOnFiber(parentFiber, root$jscomp$0), parentFiber = parentFiber.sibling;
     }
     var currentHoistableRoot = null;
-    function commitMutationEffectsOnFiber(finishedWork, root2) {
+    function commitMutationEffectsOnFiber(finishedWork, root3) {
       var current = finishedWork.alternate, flags = finishedWork.flags;
       switch (finishedWork.tag) {
         case 0:
         case 11:
         case 14:
         case 15:
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 4 && (commitHookEffectListUnmount(3, finishedWork, finishedWork.return), commitHookEffectListMount(3, finishedWork), commitHookEffectListUnmount(5, finishedWork, finishedWork.return));
           break;
         case 1:
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 512 && (offscreenSubtreeWasHidden || null === current || safelyDetachRef(current, current.return));
           flags & 64 && offscreenSubtreeIsHidden && (finishedWork = finishedWork.updateQueue, null !== finishedWork && (flags = finishedWork.callbacks, null !== flags && (current = finishedWork.shared.hiddenCallbacks, finishedWork.shared.hiddenCallbacks = null === current ? flags : current.concat(flags))));
           break;
         case 26:
           var hoistableRoot = currentHoistableRoot;
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 512 && (offscreenSubtreeWasHidden || null === current || safelyDetachRef(current, current.return));
           if (flags & 4) {
@@ -7896,7 +7896,7 @@ var require_react_dom_client_production = __commonJS({
           }
           break;
         case 27:
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 512 && (offscreenSubtreeWasHidden || null === current || safelyDetachRef(current, current.return));
           null !== current && flags & 4 && commitHostUpdate(
@@ -7906,7 +7906,7 @@ var require_react_dom_client_production = __commonJS({
           );
           break;
         case 5:
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 512 && (offscreenSubtreeWasHidden || null === current || safelyDetachRef(current, current.return));
           if (finishedWork.flags & 32) {
@@ -7925,7 +7925,7 @@ var require_react_dom_client_production = __commonJS({
           flags & 1024 && (needsFormReset = true);
           break;
         case 6:
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
           if (flags & 4) {
             if (null === finishedWork.stateNode)
@@ -7942,13 +7942,13 @@ var require_react_dom_client_production = __commonJS({
         case 3:
           tagCaches = null;
           hoistableRoot = currentHoistableRoot;
-          currentHoistableRoot = getHoistableRoot(root2.containerInfo);
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          currentHoistableRoot = getHoistableRoot(root3.containerInfo);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           currentHoistableRoot = hoistableRoot;
           commitReconciliationEffects(finishedWork);
           if (flags & 4 && null !== current && current.memoizedState.isDehydrated)
             try {
-              retryIfBlockedOn(root2.containerInfo);
+              retryIfBlockedOn(root3.containerInfo);
             } catch (error) {
               captureCommitPhaseError(finishedWork, finishedWork.return, error);
             }
@@ -7959,23 +7959,23 @@ var require_react_dom_client_production = __commonJS({
           currentHoistableRoot = getHoistableRoot(
             finishedWork.stateNode.containerInfo
           );
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
           currentHoistableRoot = flags;
           break;
         case 12:
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
           break;
         case 31:
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 4 && (flags = finishedWork.updateQueue, null !== flags && (finishedWork.updateQueue = null, attachSuspenseRetryListeners(finishedWork, flags)));
           break;
         case 13:
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
-          finishedWork.child.flags & 8192 && null !== finishedWork.memoizedState !== (null !== current && null !== current.memoizedState) && (globalMostRecentFallbackTime = now2());
+          finishedWork.child.flags & 8192 && null !== finishedWork.memoizedState !== (null !== current && null !== current.memoizedState) && (globalMostRecentFallbackTime = now());
           flags & 4 && (flags = finishedWork.updateQueue, null !== flags && (finishedWork.updateQueue = null, attachSuspenseRetryListeners(finishedWork, flags)));
           break;
         case 22:
@@ -7983,15 +7983,15 @@ var require_react_dom_client_production = __commonJS({
           var wasHidden = null !== current && null !== current.memoizedState, prevOffscreenSubtreeIsHidden = offscreenSubtreeIsHidden, prevOffscreenSubtreeWasHidden = offscreenSubtreeWasHidden;
           offscreenSubtreeIsHidden = prevOffscreenSubtreeIsHidden || hoistableRoot;
           offscreenSubtreeWasHidden = prevOffscreenSubtreeWasHidden || wasHidden;
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           offscreenSubtreeWasHidden = prevOffscreenSubtreeWasHidden;
           offscreenSubtreeIsHidden = prevOffscreenSubtreeIsHidden;
           commitReconciliationEffects(finishedWork);
           if (flags & 8192)
-            a: for (root2 = finishedWork.stateNode, root2._visibility = hoistableRoot ? root2._visibility & -2 : root2._visibility | 1, hoistableRoot && (null === current || wasHidden || offscreenSubtreeIsHidden || offscreenSubtreeWasHidden || recursivelyTraverseDisappearLayoutEffects(finishedWork)), current = null, root2 = finishedWork; ; ) {
-              if (5 === root2.tag || 26 === root2.tag) {
+            a: for (root3 = finishedWork.stateNode, root3._visibility = hoistableRoot ? root3._visibility & -2 : root3._visibility | 1, hoistableRoot && (null === current || wasHidden || offscreenSubtreeIsHidden || offscreenSubtreeWasHidden || recursivelyTraverseDisappearLayoutEffects(finishedWork)), current = null, root3 = finishedWork; ; ) {
+              if (5 === root3.tag || 26 === root3.tag) {
                 if (null === current) {
-                  wasHidden = current = root2;
+                  wasHidden = current = root3;
                   try {
                     if (currentResource = wasHidden.stateNode, hoistableRoot)
                       maybeNodes = currentResource.style, "function" === typeof maybeNodes.setProperty ? maybeNodes.setProperty("display", "none", "important") : maybeNodes.display = "none";
@@ -8004,18 +8004,18 @@ var require_react_dom_client_production = __commonJS({
                     captureCommitPhaseError(wasHidden, wasHidden.return, error);
                   }
                 }
-              } else if (6 === root2.tag) {
+              } else if (6 === root3.tag) {
                 if (null === current) {
-                  wasHidden = root2;
+                  wasHidden = root3;
                   try {
                     wasHidden.stateNode.nodeValue = hoistableRoot ? "" : wasHidden.memoizedProps;
                   } catch (error) {
                     captureCommitPhaseError(wasHidden, wasHidden.return, error);
                   }
                 }
-              } else if (18 === root2.tag) {
+              } else if (18 === root3.tag) {
                 if (null === current) {
-                  wasHidden = root2;
+                  wasHidden = root3;
                   try {
                     var instance = wasHidden.stateNode;
                     hoistableRoot ? hideOrUnhideDehydratedBoundary(instance, true) : hideOrUnhideDehydratedBoundary(wasHidden.stateNode, false);
@@ -8023,25 +8023,25 @@ var require_react_dom_client_production = __commonJS({
                     captureCommitPhaseError(wasHidden, wasHidden.return, error);
                   }
                 }
-              } else if ((22 !== root2.tag && 23 !== root2.tag || null === root2.memoizedState || root2 === finishedWork) && null !== root2.child) {
-                root2.child.return = root2;
-                root2 = root2.child;
+              } else if ((22 !== root3.tag && 23 !== root3.tag || null === root3.memoizedState || root3 === finishedWork) && null !== root3.child) {
+                root3.child.return = root3;
+                root3 = root3.child;
                 continue;
               }
-              if (root2 === finishedWork) break a;
-              for (; null === root2.sibling; ) {
-                if (null === root2.return || root2.return === finishedWork) break a;
-                current === root2 && (current = null);
-                root2 = root2.return;
+              if (root3 === finishedWork) break a;
+              for (; null === root3.sibling; ) {
+                if (null === root3.return || root3.return === finishedWork) break a;
+                current === root3 && (current = null);
+                root3 = root3.return;
               }
-              current === root2 && (current = null);
-              root2.sibling.return = root2.return;
-              root2 = root2.sibling;
+              current === root3 && (current = null);
+              root3.sibling.return = root3.return;
+              root3 = root3.sibling;
             }
           flags & 4 && (flags = finishedWork.updateQueue, null !== flags && (current = flags.retryQueue, null !== current && (flags.retryQueue = null, attachSuspenseRetryListeners(finishedWork, current))));
           break;
         case 19:
-          recursivelyTraverseMutationEffects(root2, finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 4 && (flags = finishedWork.updateQueue, null !== flags && (finishedWork.updateQueue = null, attachSuspenseRetryListeners(finishedWork, flags)));
           break;
@@ -8050,7 +8050,7 @@ var require_react_dom_client_production = __commonJS({
         case 21:
           break;
         default:
-          recursivelyTraverseMutationEffects(root2, finishedWork), commitReconciliationEffects(finishedWork);
+          recursivelyTraverseMutationEffects(root3, finishedWork), commitReconciliationEffects(finishedWork);
       }
     }
     function commitReconciliationEffects(finishedWork) {
@@ -8104,10 +8104,10 @@ var require_react_dom_client_production = __commonJS({
           parentFiber = parentFiber.sibling;
         }
     }
-    function recursivelyTraverseLayoutEffects(root2, parentFiber) {
+    function recursivelyTraverseLayoutEffects(root3, parentFiber) {
       if (parentFiber.subtreeFlags & 8772)
         for (parentFiber = parentFiber.child; null !== parentFiber; )
-          commitLayoutEffectOnFiber(root2, parentFiber.alternate, parentFiber), parentFiber = parentFiber.sibling;
+          commitLayoutEffectOnFiber(root3, parentFiber.alternate, parentFiber), parentFiber = parentFiber.sibling;
     }
     function recursivelyTraverseDisappearLayoutEffects(parentFiber) {
       for (parentFiber = parentFiber.child; null !== parentFiber; ) {
@@ -8262,11 +8262,11 @@ var require_react_dom_client_production = __commonJS({
       finishedWork = finishedWork.memoizedState.cache;
       finishedWork !== current && (finishedWork.refCount++, null != current && releaseCache(current));
     }
-    function recursivelyTraversePassiveMountEffects(root2, parentFiber, committedLanes, committedTransitions) {
+    function recursivelyTraversePassiveMountEffects(root3, parentFiber, committedLanes, committedTransitions) {
       if (parentFiber.subtreeFlags & 10256)
         for (parentFiber = parentFiber.child; null !== parentFiber; )
           commitPassiveMountOnFiber(
-            root2,
+            root3,
             parentFiber,
             committedLanes,
             committedTransitions
@@ -8717,22 +8717,22 @@ var require_react_dom_client_production = __commonJS({
       null !== lane && (lane.flags |= 32);
       return workInProgressDeferredLane;
     }
-    function scheduleUpdateOnFiber(root2, fiber, lane) {
-      if (root2 === workInProgressRoot && (2 === workInProgressSuspendedReason || 9 === workInProgressSuspendedReason) || null !== root2.cancelPendingCommit)
-        prepareFreshStack(root2, 0), markRootSuspended(
-          root2,
+    function scheduleUpdateOnFiber(root3, fiber, lane) {
+      if (root3 === workInProgressRoot && (2 === workInProgressSuspendedReason || 9 === workInProgressSuspendedReason) || null !== root3.cancelPendingCommit)
+        prepareFreshStack(root3, 0), markRootSuspended(
+          root3,
           workInProgressRootRenderLanes,
           workInProgressDeferredLane,
           false
         );
-      markRootUpdated$1(root2, lane);
-      if (0 === (executionContext & 2) || root2 !== workInProgressRoot)
-        root2 === workInProgressRoot && (0 === (executionContext & 2) && (workInProgressRootInterleavedUpdatedLanes |= lane), 4 === workInProgressRootExitStatus && markRootSuspended(
-          root2,
+      markRootUpdated$1(root3, lane);
+      if (0 === (executionContext & 2) || root3 !== workInProgressRoot)
+        root3 === workInProgressRoot && (0 === (executionContext & 2) && (workInProgressRootInterleavedUpdatedLanes |= lane), 4 === workInProgressRootExitStatus && markRootSuspended(
+          root3,
           workInProgressRootRenderLanes,
           workInProgressDeferredLane,
           false
-        )), ensureRootIsScheduled(root2);
+        )), ensureRootIsScheduled(root3);
     }
     function performWorkOnRoot(root$jscomp$0, lanes, forceSync) {
       if (0 !== (executionContext & 6)) throw Error(formatProdErrorMessage(327));
@@ -8757,18 +8757,18 @@ var require_react_dom_client_production = __commonJS({
             if (0 !== JSCompiler_inline_result) {
               lanes = JSCompiler_inline_result;
               a: {
-                var root2 = root$jscomp$0;
+                var root3 = root$jscomp$0;
                 exitStatus = workInProgressRootConcurrentErrors;
-                var wasRootDehydrated = root2.current.memoizedState.isDehydrated;
-                wasRootDehydrated && (prepareFreshStack(root2, JSCompiler_inline_result).flags |= 256);
+                var wasRootDehydrated = root3.current.memoizedState.isDehydrated;
+                wasRootDehydrated && (prepareFreshStack(root3, JSCompiler_inline_result).flags |= 256);
                 JSCompiler_inline_result = renderRootSync(
-                  root2,
+                  root3,
                   JSCompiler_inline_result,
                   false
                 );
                 if (2 !== JSCompiler_inline_result) {
                   if (workInProgressRootDidAttachPingListener && !wasRootDehydrated) {
-                    root2.errorRecoveryDisabledLanes |= renderWasConcurrent;
+                    root3.errorRecoveryDisabledLanes |= renderWasConcurrent;
                     workInProgressRootInterleavedUpdatedLanes |= renderWasConcurrent;
                     exitStatus = 4;
                     break a;
@@ -8817,7 +8817,7 @@ var require_react_dom_client_production = __commonJS({
               default:
                 throw Error(formatProdErrorMessage(329));
             }
-            if ((lanes & 62914560) === lanes && (exitStatus = globalMostRecentFallbackTime + 300 - now2(), 10 < exitStatus)) {
+            if ((lanes & 62914560) === lanes && (exitStatus = globalMostRecentFallbackTime + 300 - now(), 10 < exitStatus)) {
               markRootSuspended(
                 shouldTimeSlice,
                 lanes,
@@ -8870,8 +8870,8 @@ var require_react_dom_client_production = __commonJS({
       } while (1);
       ensureRootIsScheduled(root$jscomp$0);
     }
-    function commitRootWhenReady(root2, finishedWork, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, lanes, spawnedLane, updatedLanes, suspendedRetryLanes, didSkipSuspendedSiblings, exitStatus, suspendedCommitReason, completedRenderStartTime, completedRenderEndTime) {
-      root2.timeoutHandle = -1;
+    function commitRootWhenReady(root3, finishedWork, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, lanes, spawnedLane, updatedLanes, suspendedRetryLanes, didSkipSuspendedSiblings, exitStatus, suspendedCommitReason, completedRenderStartTime, completedRenderEndTime) {
+      root3.timeoutHandle = -1;
       suspendedCommitReason = finishedWork.subtreeFlags;
       if (suspendedCommitReason & 8192 || 16785408 === (suspendedCommitReason & 16785408)) {
         suspendedCommitReason = {
@@ -8889,17 +8889,17 @@ var require_react_dom_client_production = __commonJS({
           lanes,
           suspendedCommitReason
         );
-        var timeoutOffset = (lanes & 62914560) === lanes ? globalMostRecentFallbackTime - now2() : (lanes & 4194048) === lanes ? globalMostRecentTransitionTime - now2() : 0;
+        var timeoutOffset = (lanes & 62914560) === lanes ? globalMostRecentFallbackTime - now() : (lanes & 4194048) === lanes ? globalMostRecentTransitionTime - now() : 0;
         timeoutOffset = waitForCommitToBeReady(
           suspendedCommitReason,
           timeoutOffset
         );
         if (null !== timeoutOffset) {
           pendingEffectsLanes = lanes;
-          root2.cancelPendingCommit = timeoutOffset(
+          root3.cancelPendingCommit = timeoutOffset(
             commitRoot.bind(
               null,
-              root2,
+              root3,
               finishedWork,
               lanes,
               recoverableErrors,
@@ -8915,12 +8915,12 @@ var require_react_dom_client_production = __commonJS({
               completedRenderEndTime
             )
           );
-          markRootSuspended(root2, lanes, spawnedLane, !didSkipSuspendedSiblings);
+          markRootSuspended(root3, lanes, spawnedLane, !didSkipSuspendedSiblings);
           return;
         }
       }
       commitRoot(
-        root2,
+        root3,
         finishedWork,
         lanes,
         recoverableErrors,
@@ -8959,19 +8959,19 @@ var require_react_dom_client_production = __commonJS({
       }
       return true;
     }
-    function markRootSuspended(root2, suspendedLanes, spawnedLane, didAttemptEntireTree) {
+    function markRootSuspended(root3, suspendedLanes, spawnedLane, didAttemptEntireTree) {
       suspendedLanes &= ~workInProgressRootPingedLanes;
       suspendedLanes &= ~workInProgressRootInterleavedUpdatedLanes;
-      root2.suspendedLanes |= suspendedLanes;
-      root2.pingedLanes &= ~suspendedLanes;
-      didAttemptEntireTree && (root2.warmLanes |= suspendedLanes);
-      didAttemptEntireTree = root2.expirationTimes;
+      root3.suspendedLanes |= suspendedLanes;
+      root3.pingedLanes &= ~suspendedLanes;
+      didAttemptEntireTree && (root3.warmLanes |= suspendedLanes);
+      didAttemptEntireTree = root3.expirationTimes;
       for (var lanes = suspendedLanes; 0 < lanes; ) {
         var index$6 = 31 - clz32(lanes), lane = 1 << index$6;
         didAttemptEntireTree[index$6] = -1;
         lanes &= ~lane;
       }
-      0 !== spawnedLane && markSpawnedDeferredLane(root2, spawnedLane, suspendedLanes);
+      0 !== spawnedLane && markSpawnedDeferredLane(root3, spawnedLane, suspendedLanes);
     }
     function flushSyncWork$1() {
       return 0 === (executionContext & 6) ? (flushSyncWorkAcrossRoots_impl(0, false), false) : true;
@@ -8987,44 +8987,44 @@ var require_react_dom_client_production = __commonJS({
         workInProgress = null;
       }
     }
-    function prepareFreshStack(root2, lanes) {
-      var timeoutHandle = root2.timeoutHandle;
-      -1 !== timeoutHandle && (root2.timeoutHandle = -1, cancelTimeout(timeoutHandle));
-      timeoutHandle = root2.cancelPendingCommit;
-      null !== timeoutHandle && (root2.cancelPendingCommit = null, timeoutHandle());
+    function prepareFreshStack(root3, lanes) {
+      var timeoutHandle = root3.timeoutHandle;
+      -1 !== timeoutHandle && (root3.timeoutHandle = -1, cancelTimeout(timeoutHandle));
+      timeoutHandle = root3.cancelPendingCommit;
+      null !== timeoutHandle && (root3.cancelPendingCommit = null, timeoutHandle());
       pendingEffectsLanes = 0;
       resetWorkInProgressStack();
-      workInProgressRoot = root2;
-      workInProgress = timeoutHandle = createWorkInProgress(root2.current, null);
+      workInProgressRoot = root3;
+      workInProgress = timeoutHandle = createWorkInProgress(root3.current, null);
       workInProgressRootRenderLanes = lanes;
       workInProgressSuspendedReason = 0;
       workInProgressThrownValue = null;
       workInProgressRootDidSkipSuspendedSiblings = false;
-      workInProgressRootIsPrerendering = checkIfRootIsPrerendering(root2, lanes);
+      workInProgressRootIsPrerendering = checkIfRootIsPrerendering(root3, lanes);
       workInProgressRootDidAttachPingListener = false;
       workInProgressSuspendedRetryLanes = workInProgressDeferredLane = workInProgressRootPingedLanes = workInProgressRootInterleavedUpdatedLanes = workInProgressRootSkippedLanes = workInProgressRootExitStatus = 0;
       workInProgressRootRecoverableErrors = workInProgressRootConcurrentErrors = null;
       workInProgressRootDidIncludeRecursiveRenderUpdate = false;
       0 !== (lanes & 8) && (lanes |= lanes & 32);
-      var allEntangledLanes = root2.entangledLanes;
+      var allEntangledLanes = root3.entangledLanes;
       if (0 !== allEntangledLanes)
-        for (root2 = root2.entanglements, allEntangledLanes &= lanes; 0 < allEntangledLanes; ) {
+        for (root3 = root3.entanglements, allEntangledLanes &= lanes; 0 < allEntangledLanes; ) {
           var index$4 = 31 - clz32(allEntangledLanes), lane = 1 << index$4;
-          lanes |= root2[index$4];
+          lanes |= root3[index$4];
           allEntangledLanes &= ~lane;
         }
       entangledRenderLanes = lanes;
       finishQueueingConcurrentUpdates();
       return timeoutHandle;
     }
-    function handleThrow(root2, thrownValue) {
+    function handleThrow(root3, thrownValue) {
       currentlyRenderingFiber = null;
       ReactSharedInternals.H = ContextOnlyDispatcher;
       thrownValue === SuspenseException || thrownValue === SuspenseActionException ? (thrownValue = getSuspendedThenable(), workInProgressSuspendedReason = 3) : thrownValue === SuspenseyCommitException ? (thrownValue = getSuspendedThenable(), workInProgressSuspendedReason = 4) : workInProgressSuspendedReason = thrownValue === SelectiveHydrationException ? 8 : null !== thrownValue && "object" === typeof thrownValue && "function" === typeof thrownValue.then ? 6 : 1;
       workInProgressThrownValue = thrownValue;
       null === workInProgress && (workInProgressRootExitStatus = 1, logUncaughtError(
-        root2,
-        createCapturedValueAtFiber(thrownValue, root2.current)
+        root3,
+        createCapturedValueAtFiber(thrownValue, root3.current)
       ));
     }
     function shouldRemainOnPreviousScreen() {
@@ -9051,12 +9051,12 @@ var require_react_dom_client_production = __commonJS({
         false
       );
     }
-    function renderRootSync(root2, lanes, shouldYieldForPrerendering) {
+    function renderRootSync(root3, lanes, shouldYieldForPrerendering) {
       var prevExecutionContext = executionContext;
       executionContext |= 2;
       var prevDispatcher = pushDispatcher(), prevAsyncDispatcher = pushAsyncDispatcher();
-      if (workInProgressRoot !== root2 || workInProgressRootRenderLanes !== lanes)
-        workInProgressTransitions = null, prepareFreshStack(root2, lanes);
+      if (workInProgressRoot !== root3 || workInProgressRootRenderLanes !== lanes)
+        workInProgressTransitions = null, prepareFreshStack(root3, lanes);
       lanes = false;
       var exitStatus = workInProgressRootExitStatus;
       a: do
@@ -9076,24 +9076,24 @@ var require_react_dom_client_production = __commonJS({
                 var reason = workInProgressSuspendedReason;
                 workInProgressSuspendedReason = 0;
                 workInProgressThrownValue = null;
-                throwAndUnwindWorkLoop(root2, unitOfWork, thrownValue, reason);
+                throwAndUnwindWorkLoop(root3, unitOfWork, thrownValue, reason);
                 if (shouldYieldForPrerendering && workInProgressRootIsPrerendering) {
                   exitStatus = 0;
                   break a;
                 }
                 break;
               default:
-                reason = workInProgressSuspendedReason, workInProgressSuspendedReason = 0, workInProgressThrownValue = null, throwAndUnwindWorkLoop(root2, unitOfWork, thrownValue, reason);
+                reason = workInProgressSuspendedReason, workInProgressSuspendedReason = 0, workInProgressThrownValue = null, throwAndUnwindWorkLoop(root3, unitOfWork, thrownValue, reason);
             }
           }
           workLoopSync();
           exitStatus = workInProgressRootExitStatus;
           break;
         } catch (thrownValue$165) {
-          handleThrow(root2, thrownValue$165);
+          handleThrow(root3, thrownValue$165);
         }
       while (1);
-      lanes && root2.shellSuspendCounter++;
+      lanes && root3.shellSuspendCounter++;
       lastContextDependency = currentlyRenderingFiber$1 = null;
       executionContext = prevExecutionContext;
       ReactSharedInternals.H = prevDispatcher;
@@ -9104,12 +9104,12 @@ var require_react_dom_client_production = __commonJS({
     function workLoopSync() {
       for (; null !== workInProgress; ) performUnitOfWork(workInProgress);
     }
-    function renderRootConcurrent(root2, lanes) {
+    function renderRootConcurrent(root3, lanes) {
       var prevExecutionContext = executionContext;
       executionContext |= 2;
       var prevDispatcher = pushDispatcher(), prevAsyncDispatcher = pushAsyncDispatcher();
-      workInProgressRoot !== root2 || workInProgressRootRenderLanes !== lanes ? (workInProgressTransitions = null, workInProgressRootRenderTargetTime = now2() + 500, prepareFreshStack(root2, lanes)) : workInProgressRootIsPrerendering = checkIfRootIsPrerendering(
-        root2,
+      workInProgressRoot !== root3 || workInProgressRootRenderLanes !== lanes ? (workInProgressTransitions = null, workInProgressRootRenderTargetTime = now() + 500, prepareFreshStack(root3, lanes)) : workInProgressRootIsPrerendering = checkIfRootIsPrerendering(
+        root3,
         lanes
       );
       a: do
@@ -9121,7 +9121,7 @@ var require_react_dom_client_production = __commonJS({
               case 1:
                 workInProgressSuspendedReason = 0;
                 workInProgressThrownValue = null;
-                throwAndUnwindWorkLoop(root2, lanes, thrownValue, 1);
+                throwAndUnwindWorkLoop(root3, lanes, thrownValue, 1);
                 break;
               case 2:
               case 9:
@@ -9132,8 +9132,8 @@ var require_react_dom_client_production = __commonJS({
                   break;
                 }
                 lanes = function() {
-                  2 !== workInProgressSuspendedReason && 9 !== workInProgressSuspendedReason || workInProgressRoot !== root2 || (workInProgressSuspendedReason = 7);
-                  ensureRootIsScheduled(root2);
+                  2 !== workInProgressSuspendedReason && 9 !== workInProgressSuspendedReason || workInProgressRoot !== root3 || (workInProgressSuspendedReason = 7);
+                  ensureRootIsScheduled(root3);
                 };
                 thrownValue.then(lanes, lanes);
                 break a;
@@ -9144,7 +9144,7 @@ var require_react_dom_client_production = __commonJS({
                 workInProgressSuspendedReason = 5;
                 break a;
               case 7:
-                isThenableResolved(thrownValue) ? (workInProgressSuspendedReason = 0, workInProgressThrownValue = null, replaySuspendedUnitOfWork(lanes)) : (workInProgressSuspendedReason = 0, workInProgressThrownValue = null, throwAndUnwindWorkLoop(root2, lanes, thrownValue, 7));
+                isThenableResolved(thrownValue) ? (workInProgressSuspendedReason = 0, workInProgressThrownValue = null, replaySuspendedUnitOfWork(lanes)) : (workInProgressSuspendedReason = 0, workInProgressThrownValue = null, throwAndUnwindWorkLoop(root3, lanes, thrownValue, 7));
                 break;
               case 5:
                 var resource = null;
@@ -9168,12 +9168,12 @@ var require_react_dom_client_production = __commonJS({
                 }
                 workInProgressSuspendedReason = 0;
                 workInProgressThrownValue = null;
-                throwAndUnwindWorkLoop(root2, lanes, thrownValue, 5);
+                throwAndUnwindWorkLoop(root3, lanes, thrownValue, 5);
                 break;
               case 6:
                 workInProgressSuspendedReason = 0;
                 workInProgressThrownValue = null;
-                throwAndUnwindWorkLoop(root2, lanes, thrownValue, 6);
+                throwAndUnwindWorkLoop(root3, lanes, thrownValue, 6);
                 break;
               case 8:
                 resetWorkInProgressStack();
@@ -9186,7 +9186,7 @@ var require_react_dom_client_production = __commonJS({
           workLoopConcurrentByScheduler();
           break;
         } catch (thrownValue$167) {
-          handleThrow(root2, thrownValue$167);
+          handleThrow(root3, thrownValue$167);
         }
       while (1);
       lastContextDependency = currentlyRenderingFiber$1 = null;
@@ -9241,7 +9241,7 @@ var require_react_dom_client_production = __commonJS({
       unitOfWork.memoizedProps = unitOfWork.pendingProps;
       null === next ? completeUnitOfWork(unitOfWork) : workInProgress = next;
     }
-    function throwAndUnwindWorkLoop(root2, unitOfWork, thrownValue, suspendedReason) {
+    function throwAndUnwindWorkLoop(root3, unitOfWork, thrownValue, suspendedReason) {
       lastContextDependency = currentlyRenderingFiber$1 = null;
       resetHooksOnUnwind(unitOfWork);
       thenableState$1 = null;
@@ -9249,7 +9249,7 @@ var require_react_dom_client_production = __commonJS({
       var returnFiber = unitOfWork.return;
       try {
         if (throwException(
-          root2,
+          root3,
           returnFiber,
           unitOfWork,
           thrownValue,
@@ -9257,8 +9257,8 @@ var require_react_dom_client_production = __commonJS({
         )) {
           workInProgressRootExitStatus = 1;
           logUncaughtError(
-            root2,
-            createCapturedValueAtFiber(thrownValue, root2.current)
+            root3,
+            createCapturedValueAtFiber(thrownValue, root3.current)
           );
           workInProgress = null;
           return;
@@ -9267,19 +9267,19 @@ var require_react_dom_client_production = __commonJS({
         if (null !== returnFiber) throw workInProgress = returnFiber, error;
         workInProgressRootExitStatus = 1;
         logUncaughtError(
-          root2,
-          createCapturedValueAtFiber(thrownValue, root2.current)
+          root3,
+          createCapturedValueAtFiber(thrownValue, root3.current)
         );
         workInProgress = null;
         return;
       }
       if (unitOfWork.flags & 32768) {
-        if (isHydrating || 1 === suspendedReason) root2 = true;
+        if (isHydrating || 1 === suspendedReason) root3 = true;
         else if (workInProgressRootIsPrerendering || 0 !== (workInProgressRootRenderLanes & 536870912))
-          root2 = false;
-        else if (workInProgressRootDidSkipSuspendedSiblings = root2 = true, 2 === suspendedReason || 9 === suspendedReason || 3 === suspendedReason || 6 === suspendedReason)
+          root3 = false;
+        else if (workInProgressRootDidSkipSuspendedSiblings = root3 = true, 2 === suspendedReason || 9 === suspendedReason || 3 === suspendedReason || 6 === suspendedReason)
           suspendedReason = suspenseHandlerStackCursor.current, null !== suspendedReason && 13 === suspendedReason.tag && (suspendedReason.flags |= 16384);
-        unwindUnitOfWork(unitOfWork, root2);
+        unwindUnitOfWork(unitOfWork, root3);
       } else completeUnitOfWork(unitOfWork);
     }
     function completeUnitOfWork(unitOfWork) {
@@ -9330,35 +9330,35 @@ var require_react_dom_client_production = __commonJS({
       workInProgressRootExitStatus = 6;
       workInProgress = null;
     }
-    function commitRoot(root2, finishedWork, lanes, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, spawnedLane, updatedLanes, suspendedRetryLanes) {
-      root2.cancelPendingCommit = null;
+    function commitRoot(root3, finishedWork, lanes, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, spawnedLane, updatedLanes, suspendedRetryLanes) {
+      root3.cancelPendingCommit = null;
       do
         flushPendingEffects();
       while (0 !== pendingEffectsStatus);
       if (0 !== (executionContext & 6)) throw Error(formatProdErrorMessage(327));
       if (null !== finishedWork) {
-        if (finishedWork === root2.current) throw Error(formatProdErrorMessage(177));
+        if (finishedWork === root3.current) throw Error(formatProdErrorMessage(177));
         didIncludeRenderPhaseUpdate = finishedWork.lanes | finishedWork.childLanes;
         didIncludeRenderPhaseUpdate |= concurrentlyUpdatedLanes;
         markRootFinished(
-          root2,
+          root3,
           lanes,
           didIncludeRenderPhaseUpdate,
           spawnedLane,
           updatedLanes,
           suspendedRetryLanes
         );
-        root2 === workInProgressRoot && (workInProgress = workInProgressRoot = null, workInProgressRootRenderLanes = 0);
+        root3 === workInProgressRoot && (workInProgress = workInProgressRoot = null, workInProgressRootRenderLanes = 0);
         pendingFinishedWork = finishedWork;
-        pendingEffectsRoot = root2;
+        pendingEffectsRoot = root3;
         pendingEffectsLanes = lanes;
         pendingEffectsRemainingLanes = didIncludeRenderPhaseUpdate;
         pendingPassiveTransitions = transitions;
         pendingRecoverableErrors = recoverableErrors;
-        0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256) ? (root2.callbackNode = null, root2.callbackPriority = 0, scheduleCallback$1(NormalPriority$1, function() {
+        0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256) ? (root3.callbackNode = null, root3.callbackPriority = 0, scheduleCallback$1(NormalPriority$1, function() {
           flushPassiveEffects();
           return null;
-        })) : (root2.callbackNode = null, root2.callbackPriority = 0);
+        })) : (root3.callbackNode = null, root3.callbackPriority = 0);
         recoverableErrors = 0 !== (finishedWork.flags & 13878);
         if (0 !== (finishedWork.subtreeFlags & 13878) || recoverableErrors) {
           recoverableErrors = ReactSharedInternals.T;
@@ -9368,7 +9368,7 @@ var require_react_dom_client_production = __commonJS({
           spawnedLane = executionContext;
           executionContext |= 4;
           try {
-            commitBeforeMutationEffects(root2, finishedWork, lanes);
+            commitBeforeMutationEffects(root3, finishedWork, lanes);
           } finally {
             executionContext = spawnedLane, ReactDOMSharedInternals.p = transitions, ReactSharedInternals.T = recoverableErrors;
           }
@@ -9382,7 +9382,7 @@ var require_react_dom_client_production = __commonJS({
     function flushMutationEffects() {
       if (1 === pendingEffectsStatus) {
         pendingEffectsStatus = 0;
-        var root2 = pendingEffectsRoot, finishedWork = pendingFinishedWork, rootMutationHasEffect = 0 !== (finishedWork.flags & 13878);
+        var root3 = pendingEffectsRoot, finishedWork = pendingFinishedWork, rootMutationHasEffect = 0 !== (finishedWork.flags & 13878);
         if (0 !== (finishedWork.subtreeFlags & 13878) || rootMutationHasEffect) {
           rootMutationHasEffect = ReactSharedInternals.T;
           ReactSharedInternals.T = null;
@@ -9391,8 +9391,8 @@ var require_react_dom_client_production = __commonJS({
           var prevExecutionContext = executionContext;
           executionContext |= 4;
           try {
-            commitMutationEffectsOnFiber(finishedWork, root2);
-            var priorSelectionInformation = selectionInformation, curFocusedElem = getActiveElementDeep(root2.containerInfo), priorFocusedElem = priorSelectionInformation.focusedElem, priorSelectionRange = priorSelectionInformation.selectionRange;
+            commitMutationEffectsOnFiber(finishedWork, root3);
+            var priorSelectionInformation = selectionInformation, curFocusedElem = getActiveElementDeep(root3.containerInfo), priorFocusedElem = priorSelectionInformation.focusedElem, priorSelectionRange = priorSelectionInformation.selectionRange;
             if (curFocusedElem !== priorFocusedElem && priorFocusedElem && priorFocusedElem.ownerDocument && containsNode(
               priorFocusedElem.ownerDocument.documentElement,
               priorFocusedElem
@@ -9446,14 +9446,14 @@ var require_react_dom_client_production = __commonJS({
             executionContext = prevExecutionContext, ReactDOMSharedInternals.p = previousPriority, ReactSharedInternals.T = rootMutationHasEffect;
           }
         }
-        root2.current = finishedWork;
+        root3.current = finishedWork;
         pendingEffectsStatus = 2;
       }
     }
     function flushLayoutEffects() {
       if (2 === pendingEffectsStatus) {
         pendingEffectsStatus = 0;
-        var root2 = pendingEffectsRoot, finishedWork = pendingFinishedWork, rootHasLayoutEffect = 0 !== (finishedWork.flags & 8772);
+        var root3 = pendingEffectsRoot, finishedWork = pendingFinishedWork, rootHasLayoutEffect = 0 !== (finishedWork.flags & 8772);
         if (0 !== (finishedWork.subtreeFlags & 8772) || rootHasLayoutEffect) {
           rootHasLayoutEffect = ReactSharedInternals.T;
           ReactSharedInternals.T = null;
@@ -9462,7 +9462,7 @@ var require_react_dom_client_production = __commonJS({
           var prevExecutionContext = executionContext;
           executionContext |= 4;
           try {
-            commitLayoutEffectOnFiber(root2, finishedWork.alternate, finishedWork);
+            commitLayoutEffectOnFiber(root3, finishedWork.alternate, finishedWork);
           } finally {
             executionContext = prevExecutionContext, ReactDOMSharedInternals.p = previousPriority, ReactSharedInternals.T = rootHasLayoutEffect;
           }
@@ -9474,9 +9474,9 @@ var require_react_dom_client_production = __commonJS({
       if (4 === pendingEffectsStatus || 3 === pendingEffectsStatus) {
         pendingEffectsStatus = 0;
         requestPaint();
-        var root2 = pendingEffectsRoot, finishedWork = pendingFinishedWork, lanes = pendingEffectsLanes, recoverableErrors = pendingRecoverableErrors;
-        0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256) ? pendingEffectsStatus = 5 : (pendingEffectsStatus = 0, pendingFinishedWork = pendingEffectsRoot = null, releaseRootPooledCache(root2, root2.pendingLanes));
-        var remainingLanes = root2.pendingLanes;
+        var root3 = pendingEffectsRoot, finishedWork = pendingFinishedWork, lanes = pendingEffectsLanes, recoverableErrors = pendingRecoverableErrors;
+        0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256) ? pendingEffectsStatus = 5 : (pendingEffectsStatus = 0, pendingFinishedWork = pendingEffectsRoot = null, releaseRootPooledCache(root3, root3.pendingLanes));
+        var remainingLanes = root3.pendingLanes;
         0 === remainingLanes && (legacyErrorBoundariesThatAlreadyFailed = null);
         lanesToEventPriority(lanes);
         finishedWork = finishedWork.stateNode;
@@ -9496,7 +9496,7 @@ var require_react_dom_client_production = __commonJS({
           ReactDOMSharedInternals.p = 2;
           ReactSharedInternals.T = null;
           try {
-            for (var onRecoverableError = root2.onRecoverableError, i = 0; i < recoverableErrors.length; i++) {
+            for (var onRecoverableError = root3.onRecoverableError, i = 0; i < recoverableErrors.length; i++) {
               var recoverableError = recoverableErrors[i];
               onRecoverableError(recoverableError.value, {
                 componentStack: recoverableError.stack
@@ -9507,14 +9507,14 @@ var require_react_dom_client_production = __commonJS({
           }
         }
         0 !== (pendingEffectsLanes & 3) && flushPendingEffects();
-        ensureRootIsScheduled(root2);
-        remainingLanes = root2.pendingLanes;
-        0 !== (lanes & 261930) && 0 !== (remainingLanes & 42) ? root2 === rootWithNestedUpdates ? nestedUpdateCount++ : (nestedUpdateCount = 0, rootWithNestedUpdates = root2) : nestedUpdateCount = 0;
+        ensureRootIsScheduled(root3);
+        remainingLanes = root3.pendingLanes;
+        0 !== (lanes & 261930) && 0 !== (remainingLanes & 42) ? root3 === rootWithNestedUpdates ? nestedUpdateCount++ : (nestedUpdateCount = 0, rootWithNestedUpdates = root3) : nestedUpdateCount = 0;
         flushSyncWorkAcrossRoots_impl(0, false);
       }
     }
-    function releaseRootPooledCache(root2, remainingLanes) {
-      0 === (root2.pooledCacheLanes &= remainingLanes) && (remainingLanes = root2.pooledCache, null != remainingLanes && (root2.pooledCache = null, releaseCache(remainingLanes)));
+    function releaseRootPooledCache(root3, remainingLanes) {
+      0 === (root3.pooledCacheLanes &= remainingLanes) && (remainingLanes = root3.pooledCache, null != remainingLanes && (root3.pooledCache = null, releaseCache(remainingLanes)));
     }
     function flushPendingEffects() {
       flushMutationEffects();
@@ -9524,7 +9524,7 @@ var require_react_dom_client_production = __commonJS({
     }
     function flushPassiveEffects() {
       if (5 !== pendingEffectsStatus) return false;
-      var root2 = pendingEffectsRoot, remainingLanes = pendingEffectsRemainingLanes;
+      var root3 = pendingEffectsRoot, remainingLanes = pendingEffectsRemainingLanes;
       pendingEffectsRemainingLanes = 0;
       var renderPriority = lanesToEventPriority(pendingEffectsLanes), prevTransition = ReactSharedInternals.T, previousPriority = ReactDOMSharedInternals.p;
       try {
@@ -9555,7 +9555,7 @@ var require_react_dom_client_production = __commonJS({
           }
         return true;
       } finally {
-        ReactDOMSharedInternals.p = previousPriority, ReactSharedInternals.T = prevTransition, releaseRootPooledCache(root2, remainingLanes);
+        ReactDOMSharedInternals.p = previousPriority, ReactSharedInternals.T = prevTransition, releaseRootPooledCache(root3, remainingLanes);
       }
     }
     function captureCommitPhaseErrorOnRoot(rootFiber, sourceFiber, error) {
@@ -9594,23 +9594,23 @@ var require_react_dom_client_production = __commonJS({
           nearestMountedAncestor = nearestMountedAncestor.return;
         }
     }
-    function attachPingListener(root2, wakeable, lanes) {
-      var pingCache = root2.pingCache;
+    function attachPingListener(root3, wakeable, lanes) {
+      var pingCache = root3.pingCache;
       if (null === pingCache) {
-        pingCache = root2.pingCache = new PossiblyWeakMap();
+        pingCache = root3.pingCache = new PossiblyWeakMap();
         var threadIDs = /* @__PURE__ */ new Set();
         pingCache.set(wakeable, threadIDs);
       } else
         threadIDs = pingCache.get(wakeable), void 0 === threadIDs && (threadIDs = /* @__PURE__ */ new Set(), pingCache.set(wakeable, threadIDs));
-      threadIDs.has(lanes) || (workInProgressRootDidAttachPingListener = true, threadIDs.add(lanes), root2 = pingSuspendedRoot.bind(null, root2, wakeable, lanes), wakeable.then(root2, root2));
+      threadIDs.has(lanes) || (workInProgressRootDidAttachPingListener = true, threadIDs.add(lanes), root3 = pingSuspendedRoot.bind(null, root3, wakeable, lanes), wakeable.then(root3, root3));
     }
-    function pingSuspendedRoot(root2, wakeable, pingedLanes) {
-      var pingCache = root2.pingCache;
+    function pingSuspendedRoot(root3, wakeable, pingedLanes) {
+      var pingCache = root3.pingCache;
       null !== pingCache && pingCache.delete(wakeable);
-      root2.pingedLanes |= root2.suspendedLanes & pingedLanes;
-      root2.warmLanes &= ~pingedLanes;
-      workInProgressRoot === root2 && (workInProgressRootRenderLanes & pingedLanes) === pingedLanes && (4 === workInProgressRootExitStatus || 3 === workInProgressRootExitStatus && (workInProgressRootRenderLanes & 62914560) === workInProgressRootRenderLanes && 300 > now2() - globalMostRecentFallbackTime ? 0 === (executionContext & 2) && prepareFreshStack(root2, 0) : workInProgressRootPingedLanes |= pingedLanes, workInProgressSuspendedRetryLanes === workInProgressRootRenderLanes && (workInProgressSuspendedRetryLanes = 0));
-      ensureRootIsScheduled(root2);
+      root3.pingedLanes |= root3.suspendedLanes & pingedLanes;
+      root3.warmLanes &= ~pingedLanes;
+      workInProgressRoot === root3 && (workInProgressRootRenderLanes & pingedLanes) === pingedLanes && (4 === workInProgressRootExitStatus || 3 === workInProgressRootExitStatus && (workInProgressRootRenderLanes & 62914560) === workInProgressRootRenderLanes && 300 > now() - globalMostRecentFallbackTime ? 0 === (executionContext & 2) && prepareFreshStack(root3, 0) : workInProgressRootPingedLanes |= pingedLanes, workInProgressSuspendedRetryLanes === workInProgressRootRenderLanes && (workInProgressSuspendedRetryLanes = 0));
+      ensureRootIsScheduled(root3);
     }
     function retryTimedOutBoundary(boundaryFiber, retryLane) {
       0 === retryLane && (retryLane = claimNextRetryLane());
@@ -9652,8 +9652,8 @@ var require_react_dom_client_production = __commonJS({
     var mightHavePendingSyncWork = false;
     var isFlushingWork = false;
     var currentEventTransitionLane = 0;
-    function ensureRootIsScheduled(root2) {
-      root2 !== lastScheduledRoot && null === root2.next && (null === lastScheduledRoot ? firstScheduledRoot = lastScheduledRoot = root2 : lastScheduledRoot = lastScheduledRoot.next = root2);
+    function ensureRootIsScheduled(root3) {
+      root3 !== lastScheduledRoot && null === root3.next && (null === lastScheduledRoot ? firstScheduledRoot = lastScheduledRoot = root3 : lastScheduledRoot = lastScheduledRoot.next = root3);
       mightHavePendingSyncWork = true;
       didScheduleMicrotask || (didScheduleMicrotask = true, scheduleImmediateRootScheduleTask());
     }
@@ -9693,39 +9693,39 @@ var require_react_dom_client_production = __commonJS({
       mightHavePendingSyncWork = didScheduleMicrotask = false;
       var syncTransitionLanes = 0;
       0 !== currentEventTransitionLane && shouldAttemptEagerTransition() && (syncTransitionLanes = currentEventTransitionLane);
-      for (var currentTime = now2(), prev = null, root2 = firstScheduledRoot; null !== root2; ) {
-        var next = root2.next, nextLanes = scheduleTaskForRootDuringMicrotask(root2, currentTime);
+      for (var currentTime = now(), prev = null, root3 = firstScheduledRoot; null !== root3; ) {
+        var next = root3.next, nextLanes = scheduleTaskForRootDuringMicrotask(root3, currentTime);
         if (0 === nextLanes)
-          root2.next = null, null === prev ? firstScheduledRoot = next : prev.next = next, null === next && (lastScheduledRoot = prev);
-        else if (prev = root2, 0 !== syncTransitionLanes || 0 !== (nextLanes & 3))
+          root3.next = null, null === prev ? firstScheduledRoot = next : prev.next = next, null === next && (lastScheduledRoot = prev);
+        else if (prev = root3, 0 !== syncTransitionLanes || 0 !== (nextLanes & 3))
           mightHavePendingSyncWork = true;
-        root2 = next;
+        root3 = next;
       }
       0 !== pendingEffectsStatus && 5 !== pendingEffectsStatus || flushSyncWorkAcrossRoots_impl(syncTransitionLanes, false);
       0 !== currentEventTransitionLane && (currentEventTransitionLane = 0);
     }
-    function scheduleTaskForRootDuringMicrotask(root2, currentTime) {
-      for (var suspendedLanes = root2.suspendedLanes, pingedLanes = root2.pingedLanes, expirationTimes = root2.expirationTimes, lanes = root2.pendingLanes & -62914561; 0 < lanes; ) {
+    function scheduleTaskForRootDuringMicrotask(root3, currentTime) {
+      for (var suspendedLanes = root3.suspendedLanes, pingedLanes = root3.pingedLanes, expirationTimes = root3.expirationTimes, lanes = root3.pendingLanes & -62914561; 0 < lanes; ) {
         var index$5 = 31 - clz32(lanes), lane = 1 << index$5, expirationTime = expirationTimes[index$5];
         if (-1 === expirationTime) {
           if (0 === (lane & suspendedLanes) || 0 !== (lane & pingedLanes))
             expirationTimes[index$5] = computeExpirationTime(lane, currentTime);
-        } else expirationTime <= currentTime && (root2.expiredLanes |= lane);
+        } else expirationTime <= currentTime && (root3.expiredLanes |= lane);
         lanes &= ~lane;
       }
       currentTime = workInProgressRoot;
       suspendedLanes = workInProgressRootRenderLanes;
       suspendedLanes = getNextLanes(
-        root2,
-        root2 === currentTime ? suspendedLanes : 0,
-        null !== root2.cancelPendingCommit || -1 !== root2.timeoutHandle
+        root3,
+        root3 === currentTime ? suspendedLanes : 0,
+        null !== root3.cancelPendingCommit || -1 !== root3.timeoutHandle
       );
-      pingedLanes = root2.callbackNode;
-      if (0 === suspendedLanes || root2 === currentTime && (2 === workInProgressSuspendedReason || 9 === workInProgressSuspendedReason) || null !== root2.cancelPendingCommit)
-        return null !== pingedLanes && null !== pingedLanes && cancelCallback$1(pingedLanes), root2.callbackNode = null, root2.callbackPriority = 0;
-      if (0 === (suspendedLanes & 3) || checkIfRootIsPrerendering(root2, suspendedLanes)) {
+      pingedLanes = root3.callbackNode;
+      if (0 === suspendedLanes || root3 === currentTime && (2 === workInProgressSuspendedReason || 9 === workInProgressSuspendedReason) || null !== root3.cancelPendingCommit)
+        return null !== pingedLanes && null !== pingedLanes && cancelCallback$1(pingedLanes), root3.callbackNode = null, root3.callbackPriority = 0;
+      if (0 === (suspendedLanes & 3) || checkIfRootIsPrerendering(root3, suspendedLanes)) {
         currentTime = suspendedLanes & -suspendedLanes;
-        if (currentTime === root2.callbackPriority) return currentTime;
+        if (currentTime === root3.callbackPriority) return currentTime;
         null !== pingedLanes && cancelCallback$1(pingedLanes);
         switch (lanesToEventPriority(suspendedLanes)) {
           case 2:
@@ -9741,37 +9741,37 @@ var require_react_dom_client_production = __commonJS({
           default:
             suspendedLanes = NormalPriority$1;
         }
-        pingedLanes = performWorkOnRootViaSchedulerTask.bind(null, root2);
+        pingedLanes = performWorkOnRootViaSchedulerTask.bind(null, root3);
         suspendedLanes = scheduleCallback$3(suspendedLanes, pingedLanes);
-        root2.callbackPriority = currentTime;
-        root2.callbackNode = suspendedLanes;
+        root3.callbackPriority = currentTime;
+        root3.callbackNode = suspendedLanes;
         return currentTime;
       }
       null !== pingedLanes && null !== pingedLanes && cancelCallback$1(pingedLanes);
-      root2.callbackPriority = 2;
-      root2.callbackNode = null;
+      root3.callbackPriority = 2;
+      root3.callbackNode = null;
       return 2;
     }
-    function performWorkOnRootViaSchedulerTask(root2, didTimeout) {
+    function performWorkOnRootViaSchedulerTask(root3, didTimeout) {
       if (0 !== pendingEffectsStatus && 5 !== pendingEffectsStatus)
-        return root2.callbackNode = null, root2.callbackPriority = 0, null;
-      var originalCallbackNode = root2.callbackNode;
-      if (flushPendingEffects() && root2.callbackNode !== originalCallbackNode)
+        return root3.callbackNode = null, root3.callbackPriority = 0, null;
+      var originalCallbackNode = root3.callbackNode;
+      if (flushPendingEffects() && root3.callbackNode !== originalCallbackNode)
         return null;
       var workInProgressRootRenderLanes$jscomp$0 = workInProgressRootRenderLanes;
       workInProgressRootRenderLanes$jscomp$0 = getNextLanes(
-        root2,
-        root2 === workInProgressRoot ? workInProgressRootRenderLanes$jscomp$0 : 0,
-        null !== root2.cancelPendingCommit || -1 !== root2.timeoutHandle
+        root3,
+        root3 === workInProgressRoot ? workInProgressRootRenderLanes$jscomp$0 : 0,
+        null !== root3.cancelPendingCommit || -1 !== root3.timeoutHandle
       );
       if (0 === workInProgressRootRenderLanes$jscomp$0) return null;
-      performWorkOnRoot(root2, workInProgressRootRenderLanes$jscomp$0, didTimeout);
-      scheduleTaskForRootDuringMicrotask(root2, now2());
-      return null != root2.callbackNode && root2.callbackNode === originalCallbackNode ? performWorkOnRootViaSchedulerTask.bind(null, root2) : null;
+      performWorkOnRoot(root3, workInProgressRootRenderLanes$jscomp$0, didTimeout);
+      scheduleTaskForRootDuringMicrotask(root3, now());
+      return null != root3.callbackNode && root3.callbackNode === originalCallbackNode ? performWorkOnRootViaSchedulerTask.bind(null, root3) : null;
     }
-    function performSyncWorkOnRoot(root2, lanes) {
+    function performSyncWorkOnRoot(root3, lanes) {
       if (flushPendingEffects()) return null;
-      performWorkOnRoot(root2, lanes, true);
+      performWorkOnRoot(root3, lanes, true);
     }
     function scheduleImmediateRootScheduleTask() {
       scheduleMicrotask(function() {
@@ -10298,7 +10298,7 @@ var require_react_dom_client_production = __commonJS({
             }
           else
             isComposing ? isFallbackCompositionEnd(domEventName, nativeEvent) && (eventType = "onCompositionEnd") : "keydown" === domEventName && 229 === nativeEvent.keyCode && (eventType = "onCompositionStart");
-          eventType && (useFallbackCompositionData && "ko" !== nativeEvent.locale && (isComposing || "onCompositionStart" !== eventType ? "onCompositionEnd" === eventType && isComposing && (fallbackData = getData()) : (root = nativeEventTarget, startText = "value" in root ? root.value : root.textContent, isComposing = true)), handleEventFunc = accumulateTwoPhaseListeners(targetInst, eventType), 0 < handleEventFunc.length && (eventType = new SyntheticCompositionEvent(
+          eventType && (useFallbackCompositionData && "ko" !== nativeEvent.locale && (isComposing || "onCompositionStart" !== eventType ? "onCompositionEnd" === eventType && isComposing && (fallbackData = getData()) : (root2 = nativeEventTarget, startText = "value" in root2 ? root2.value : root2.textContent, isComposing = true)), handleEventFunc = accumulateTwoPhaseListeners(targetInst, eventType), 0 < handleEventFunc.length && (eventType = new SyntheticCompositionEvent(
             eventType,
             domEventName,
             null,
@@ -11777,15 +11777,15 @@ var require_react_dom_client_production = __commonJS({
         "stylesheet" === resource.type && 0 === (resource.state.loading & 4) && (instance = resource.instance, resource.state.loading |= 4, insertStylesheet(instance, props.precedence, hoistableRoot));
       return resource.instance;
     }
-    function insertStylesheet(instance, precedence, root2) {
-      for (var nodes = root2.querySelectorAll(
+    function insertStylesheet(instance, precedence, root3) {
+      for (var nodes = root3.querySelectorAll(
         'link[rel="stylesheet"][data-precedence],style[data-precedence]'
       ), last = nodes.length ? nodes[nodes.length - 1] : null, prior = last, i = 0; i < nodes.length; i++) {
         var node = nodes[i];
         if (node.dataset.precedence === precedence) prior = node;
         else if (prior !== last) break;
       }
-      prior ? prior.parentNode.insertBefore(instance, prior.nextSibling) : (precedence = 9 === root2.nodeType ? root2.head : root2, precedence.insertBefore(instance, precedence.firstChild));
+      prior ? prior.parentNode.insertBefore(instance, prior.nextSibling) : (precedence = 9 === root3.nodeType ? root3.head : root3, precedence.insertBefore(instance, precedence.firstChild));
     }
     function adoptPreloadPropsForStylesheet(stylesheetProps, preloadProps) {
       null == stylesheetProps.crossOrigin && (stylesheetProps.crossOrigin = preloadProps.crossOrigin);
@@ -11934,14 +11934,14 @@ var require_react_dom_client_production = __commonJS({
       state.stylesheets = null;
       null !== state.unsuspend && (state.count++, precedencesByRoot = /* @__PURE__ */ new Map(), resources.forEach(insertStylesheetIntoRoot, state), precedencesByRoot = null, onUnsuspend.call(state));
     }
-    function insertStylesheetIntoRoot(root2, resource) {
+    function insertStylesheetIntoRoot(root3, resource) {
       if (!(resource.state.loading & 4)) {
-        var precedences = precedencesByRoot.get(root2);
+        var precedences = precedencesByRoot.get(root3);
         if (precedences) var last = precedences.get(null);
         else {
           precedences = /* @__PURE__ */ new Map();
-          precedencesByRoot.set(root2, precedences);
-          for (var nodes = root2.querySelectorAll(
+          precedencesByRoot.set(root3, precedences);
+          for (var nodes = root3.querySelectorAll(
             "link[data-precedence],style[data-precedence]"
           ), i = 0; i < nodes.length; i++) {
             var node = nodes[i];
@@ -11959,7 +11959,7 @@ var require_react_dom_client_production = __commonJS({
         last = onUnsuspend.bind(this);
         nodes.addEventListener("load", last);
         nodes.addEventListener("error", last);
-        i ? i.parentNode.insertBefore(nodes, i.nextSibling) : (root2 = 9 === root2.nodeType ? root2.head : root2, root2.insertBefore(nodes, root2.firstChild));
+        i ? i.parentNode.insertBefore(nodes, i.nextSibling) : (root3 = 9 === root3.nodeType ? root3.head : root3, root3.insertBefore(nodes, root3.firstChild));
         resource.state.loading |= 4;
       }
     }
@@ -12038,8 +12038,8 @@ var require_react_dom_client_production = __commonJS({
     function markRetryLaneImpl(fiber, retryLane) {
       fiber = fiber.memoizedState;
       if (null !== fiber && null !== fiber.dehydrated) {
-        var a2 = fiber.retryLane;
-        fiber.retryLane = 0 !== a2 && a2 < retryLane ? a2 : retryLane;
+        var a = fiber.retryLane;
+        fiber.retryLane = 0 !== a && a < retryLane ? a : retryLane;
       }
     }
     function markRetryLaneIfNotHydrated(fiber, retryLane) {
@@ -12048,8 +12048,8 @@ var require_react_dom_client_production = __commonJS({
     }
     function attemptContinuousHydration(fiber) {
       if (13 === fiber.tag || 31 === fiber.tag) {
-        var root2 = enqueueConcurrentRenderForLane(fiber, 67108864);
-        null !== root2 && scheduleUpdateOnFiber(root2, fiber, 67108864);
+        var root3 = enqueueConcurrentRenderForLane(fiber, 67108864);
+        null !== root3 && scheduleUpdateOnFiber(root3, fiber, 67108864);
         markRetryLaneIfNotHydrated(fiber, 67108864);
       }
     }
@@ -12057,8 +12057,8 @@ var require_react_dom_client_production = __commonJS({
       if (13 === fiber.tag || 31 === fiber.tag) {
         var lane = requestUpdateLane();
         lane = getBumpedLaneForHydrationByLane(lane);
-        var root2 = enqueueConcurrentRenderForLane(fiber, lane);
-        null !== root2 && scheduleUpdateOnFiber(root2, fiber, lane);
+        var root3 = enqueueConcurrentRenderForLane(fiber, lane);
+        null !== root3 && scheduleUpdateOnFiber(root3, fiber, lane);
         markRetryLaneIfNotHydrated(fiber, lane);
       }
     }
@@ -12112,21 +12112,21 @@ var require_react_dom_client_production = __commonJS({
                   if (fiber.current.memoizedState.isDehydrated) {
                     var lanes = getHighestPriorityLanes(fiber.pendingLanes);
                     if (0 !== lanes) {
-                      var root2 = fiber;
-                      root2.pendingLanes |= 2;
-                      for (root2.entangledLanes |= 2; lanes; ) {
+                      var root3 = fiber;
+                      root3.pendingLanes |= 2;
+                      for (root3.entangledLanes |= 2; lanes; ) {
                         var lane = 1 << 31 - clz32(lanes);
-                        root2.entanglements[1] |= lane;
+                        root3.entanglements[1] |= lane;
                         lanes &= ~lane;
                       }
                       ensureRootIsScheduled(fiber);
-                      0 === (executionContext & 6) && (workInProgressRootRenderTargetTime = now2() + 500, flushSyncWorkAcrossRoots_impl(0, false));
+                      0 === (executionContext & 6) && (workInProgressRootRenderTargetTime = now() + 500, flushSyncWorkAcrossRoots_impl(0, false));
                     }
                   }
                   break;
                 case 31:
                 case 13:
-                  root2 = enqueueConcurrentRenderForLane(fiber, 2), null !== root2 && scheduleUpdateOnFiber(root2, fiber, 2), flushSyncWork$1(), markRetryLaneIfNotHydrated(fiber, 2);
+                  root3 = enqueueConcurrentRenderForLane(fiber, 2), null !== root3 && scheduleUpdateOnFiber(root3, fiber, 2), flushSyncWork$1(), markRetryLaneIfNotHydrated(fiber, 2);
               }
             fiber = findInstanceBlockingEvent(nativeEvent);
             null === fiber && dispatchEventForPluginEventSystem(
@@ -12552,17 +12552,17 @@ var require_react_dom_client_production = __commonJS({
       this._internalRoot = internalRoot;
     }
     ReactDOMHydrationRoot.prototype.render = ReactDOMRoot.prototype.render = function(children) {
-      var root2 = this._internalRoot;
-      if (null === root2) throw Error(formatProdErrorMessage(409));
-      var current = root2.current, lane = requestUpdateLane();
-      updateContainerImpl(current, lane, children, root2, null, null);
+      var root3 = this._internalRoot;
+      if (null === root3) throw Error(formatProdErrorMessage(409));
+      var current = root3.current, lane = requestUpdateLane();
+      updateContainerImpl(current, lane, children, root3, null, null);
     };
     ReactDOMHydrationRoot.prototype.unmount = ReactDOMRoot.prototype.unmount = function() {
-      var root2 = this._internalRoot;
-      if (null !== root2) {
+      var root3 = this._internalRoot;
+      if (null !== root3) {
         this._internalRoot = null;
-        var container = root2.containerInfo;
-        updateContainerImpl(root2.current, 2, null, root2, null, null);
+        var container = root3.containerInfo;
+        updateContainerImpl(root3.current, 2, null, root3, null, null);
         flushSyncWork$1();
         container[internalContainerInstanceKey] = null;
       }
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React18.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React5.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12746,7 +12746,8 @@ var require_jsx_runtime = __commonJS({
   }
 });
 
-// public/relationships.tsx
+// public/portfolio.tsx
+var import_react5 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
 // public/shell.tsx
@@ -12820,8 +12821,24 @@ var Ico = {
 
 // public/ui-primitives.tsx
 var import_jsx_runtime2 = __toESM(require_jsx_runtime());
+function Stat({ label, value, sub, accent }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "stat", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-label", children: label }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-value", style: accent ? { color: "var(--accent)" } : void 0, children: value }),
+    sub && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-sub", children: sub })
+  ] });
+}
 function Tag({ children, tone = "default", mono = false }) {
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: `tag tag-${tone} ${mono ? "mono" : ""}`, children });
+}
+function SectionHead({ eyebrow, title, right }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "section-head", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+      eyebrow && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "eyebrow", children: eyebrow }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { className: "section-title", children: title })
+    ] }),
+    right
+  ] });
 }
 
 // public/shell-sidebar.tsx
@@ -13091,3233 +13108,198 @@ function Shell({ children, scroll = false, currentPath, tweaks = false }) {
   ] });
 }
 
-// public/graph-explorer-body.tsx
-var import_react22 = __toESM(require_react());
-
-// public/enrich-meta.ts
-function enrichWithMeta(nodes, tagMeta) {
-  if (!Object.keys(tagMeta).length) return nodes;
-  const citValues = nodes.map((n) => tagMeta[n.id]?.avgCitations || 0).sort((a2, b) => a2 - b);
-  const citP70 = citValues[Math.floor(citValues.length * 0.7)] || 0;
-  return nodes.map((n) => {
-    const meta = tagMeta[n.id];
-    if (!meta) return n;
-    const haloIntensity = meta.avgCitations > citP70 ? Math.min(1, (meta.avgCitations - citP70) / (citP70 || 1)) : 0;
-    return { ...n, haloIntensity, openAccess: meta.openAccessPct > 0.5, topKeywords: meta.topKeywords };
-  });
-}
-
-// public/node-classify.ts
-function percentile(sorted, p) {
-  if (!sorted.length) return 0;
-  const idx = Math.ceil(p * sorted.length) - 1;
-  return sorted[Math.max(0, idx)];
-}
-function classifyNodes(nodes, edges, allNodes, communityMap) {
-  const nodeById = new Map(allNodes.map((n) => [n.id, n]));
-  const profileMap = /* @__PURE__ */ new Map();
-  for (const e of edges) {
-    const sNode = nodeById.get(e.source);
-    const tNode = nodeById.get(e.target);
-    if (!sNode || !tNode) continue;
-    const sMap = profileMap.get(e.source) || /* @__PURE__ */ new Map();
-    sMap.set(tNode.group, (sMap.get(tNode.group) || 0) + e.weight);
-    profileMap.set(e.source, sMap);
-    const tMap = profileMap.get(e.target) || /* @__PURE__ */ new Map();
-    tMap.set(sNode.group, (tMap.get(sNode.group) || 0) + e.weight);
-    profileMap.set(e.target, tMap);
-  }
-  const degrees = nodes.map((n) => n.degree).sort((a2, b) => a2 - b);
-  const weights = nodes.map((n) => n.weight).sort((a2, b) => a2 - b);
-  const degP75 = percentile(degrees, 0.75);
-  const degMedian = percentile(degrees, 0.5);
-  const weightP75 = percentile(weights, 0.75);
-  const avgWeights = nodes.filter((n) => n.degree > 0).map((n) => n.weight / n.degree).sort((a2, b) => a2 - b);
-  const avgWtMedian = percentile(avgWeights, 0.5);
-  return nodes.map((n) => {
-    let role = "default";
-    if (n.degree <= 2) {
-      role = "leaf";
-    } else if (n.degree >= degP75 && n.weight >= weightP75) {
-      role = "hub";
-    } else if (n.degree >= degMedian && n.degree > 0 && n.weight / n.degree < avgWtMedian) {
-      role = "bridge";
-    }
-    const catMap = profileMap.get(n.id) || /* @__PURE__ */ new Map();
-    const categoryProfile = [...catMap.entries()].map(([category, weight]) => ({ category, weight })).sort((a2, b) => b.weight - a2.weight);
-    const community = communityMap?.get(n.id) ?? 0;
-    return { ...n, role, community, categoryProfile };
-  });
-}
-
-// public/project-graph.ts
-function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags, expandedJournal) {
-  const doiToTags = /* @__PURE__ */ new Map();
-  const doiLabels = /* @__PURE__ */ new Map();
-  for (const n of rawNodes) {
-    if (n.group === "doi") doiLabels.set(n.id, n.label);
-  }
-  for (const e of rawEdges) {
-    const list = doiToTags.get(e.source) || [];
-    list.push(e.target);
-    doiToTags.set(e.source, list);
-  }
-  const institutions = rawNodes.filter((n) => n.group === "institution");
-  const authors = rawNodes.filter((n) => n.group === "author");
-  const journals = new Map(rawNodes.filter((n) => n.group === "journal").map((n) => [n.id, n]));
-  const journalPapers = /* @__PURE__ */ new Map();
-  for (const [doiId, tags] of doiToTags) {
-    const jTag = tags.find((t) => journals.has(t));
-    if (jTag) {
-      const list = journalPapers.get(jTag) || [];
-      list.push({ doi: doiId.replace("doi:", ""), title: doiLabels.get(doiId) || doiId });
-      journalPapers.set(jTag, list);
-    }
-  }
-  const allNodes = [];
-  const allEdges = [];
-  const matchingDois = /* @__PURE__ */ new Set();
-  const added = /* @__PURE__ */ new Set();
-  function addNode(id, label, group, w, papers, ext_id) {
-    if (added.has(id)) return;
-    added.add(id);
-    allNodes.push({ id, label, group, ext_id, doiCount: w, degree: 0, weight: w || 1, papers });
-  }
-  for (const inst of institutions) addNode(inst.id, inst.label, "institution", 0, void 0, inst.id.replace(/^[^:]+:/, ""));
-  for (const auth of authors) {
-    addNode(auth.id, auth.label, "author", 0, void 0, auth.id.replace(/^[^:]+:/, ""));
-    for (const inst of institutions) allEdges.push({ source: inst.id, target: auth.id, weight: 1, sharedDois: [] });
-  }
-  for (const [jId, papers] of journalPapers) {
-    if (expandedJournal && expandedJournal !== jId) continue;
-    const j = journals.get(jId);
-    addNode(j.id, j.label, "journal", papers.length, papers, j.id.replace(/^[^:]+:/, ""));
-    for (const auth of authors) allEdges.push({ source: auth.id, target: j.id, weight: papers.length, sharedDois: [] });
-    for (const p of papers) matchingDois.add(p.doi);
-    if (expandedJournal === jId) {
-      for (const p of papers) {
-        addNode("doi:" + p.doi, p.title, "doi", 0);
-        allEdges.push({ source: jId, target: "doi:" + p.doi, weight: 1, sharedDois: [] });
-      }
-    }
-  }
-  const communityMap = /* @__PURE__ */ new Map();
-  allNodes.forEach((n) => {
-    communityMap.set(n.id, n.group === "institution" ? 0 : n.group === "author" ? 1 : n.group === "journal" ? 2 : 3);
-  });
-  const nodes = classifyNodes(allNodes, allEdges, allNodes, communityMap);
-  return { nodes, edges: allEdges, matchingDois };
-}
-
-// public/use-force-layout.ts
-var import_react5 = __toESM(require_react());
-
-// node_modules/d3-quadtree/src/add.js
-function add_default(d) {
-  const x2 = +this._x.call(null, d), y2 = +this._y.call(null, d);
-  return add(this.cover(x2, y2), x2, y2, d);
-}
-function add(tree, x2, y2, d) {
-  if (isNaN(x2) || isNaN(y2)) return tree;
-  var parent, node = tree._root, leaf = { data: d }, x0 = tree._x0, y0 = tree._y0, x1 = tree._x1, y1 = tree._y1, xm, ym, xp, yp, right, bottom, i, j;
-  if (!node) return tree._root = leaf, tree;
-  while (node.length) {
-    if (right = x2 >= (xm = (x0 + x1) / 2)) x0 = xm;
-    else x1 = xm;
-    if (bottom = y2 >= (ym = (y0 + y1) / 2)) y0 = ym;
-    else y1 = ym;
-    if (parent = node, !(node = node[i = bottom << 1 | right])) return parent[i] = leaf, tree;
-  }
-  xp = +tree._x.call(null, node.data);
-  yp = +tree._y.call(null, node.data);
-  if (x2 === xp && y2 === yp) return leaf.next = node, parent ? parent[i] = leaf : tree._root = leaf, tree;
-  do {
-    parent = parent ? parent[i] = new Array(4) : tree._root = new Array(4);
-    if (right = x2 >= (xm = (x0 + x1) / 2)) x0 = xm;
-    else x1 = xm;
-    if (bottom = y2 >= (ym = (y0 + y1) / 2)) y0 = ym;
-    else y1 = ym;
-  } while ((i = bottom << 1 | right) === (j = (yp >= ym) << 1 | xp >= xm));
-  return parent[j] = node, parent[i] = leaf, tree;
-}
-function addAll(data) {
-  var d, i, n = data.length, x2, y2, xz = new Array(n), yz = new Array(n), x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (i = 0; i < n; ++i) {
-    if (isNaN(x2 = +this._x.call(null, d = data[i])) || isNaN(y2 = +this._y.call(null, d))) continue;
-    xz[i] = x2;
-    yz[i] = y2;
-    if (x2 < x0) x0 = x2;
-    if (x2 > x1) x1 = x2;
-    if (y2 < y0) y0 = y2;
-    if (y2 > y1) y1 = y2;
-  }
-  if (x0 > x1 || y0 > y1) return this;
-  this.cover(x0, y0).cover(x1, y1);
-  for (i = 0; i < n; ++i) {
-    add(this, xz[i], yz[i], data[i]);
-  }
-  return this;
-}
-
-// node_modules/d3-quadtree/src/cover.js
-function cover_default(x2, y2) {
-  if (isNaN(x2 = +x2) || isNaN(y2 = +y2)) return this;
-  var x0 = this._x0, y0 = this._y0, x1 = this._x1, y1 = this._y1;
-  if (isNaN(x0)) {
-    x1 = (x0 = Math.floor(x2)) + 1;
-    y1 = (y0 = Math.floor(y2)) + 1;
-  } else {
-    var z = x1 - x0 || 1, node = this._root, parent, i;
-    while (x0 > x2 || x2 >= x1 || y0 > y2 || y2 >= y1) {
-      i = (y2 < y0) << 1 | x2 < x0;
-      parent = new Array(4), parent[i] = node, node = parent, z *= 2;
-      switch (i) {
-        case 0:
-          x1 = x0 + z, y1 = y0 + z;
-          break;
-        case 1:
-          x0 = x1 - z, y1 = y0 + z;
-          break;
-        case 2:
-          x1 = x0 + z, y0 = y1 - z;
-          break;
-        case 3:
-          x0 = x1 - z, y0 = y1 - z;
-          break;
-      }
-    }
-    if (this._root && this._root.length) this._root = node;
-  }
-  this._x0 = x0;
-  this._y0 = y0;
-  this._x1 = x1;
-  this._y1 = y1;
-  return this;
-}
-
-// node_modules/d3-quadtree/src/data.js
-function data_default() {
-  var data = [];
-  this.visit(function(node) {
-    if (!node.length) do
-      data.push(node.data);
-    while (node = node.next);
-  });
-  return data;
-}
-
-// node_modules/d3-quadtree/src/extent.js
-function extent_default(_) {
-  return arguments.length ? this.cover(+_[0][0], +_[0][1]).cover(+_[1][0], +_[1][1]) : isNaN(this._x0) ? void 0 : [[this._x0, this._y0], [this._x1, this._y1]];
-}
-
-// node_modules/d3-quadtree/src/quad.js
-function quad_default(node, x0, y0, x1, y1) {
-  this.node = node;
-  this.x0 = x0;
-  this.y0 = y0;
-  this.x1 = x1;
-  this.y1 = y1;
-}
-
-// node_modules/d3-quadtree/src/find.js
-function find_default(x2, y2, radius) {
-  var data, x0 = this._x0, y0 = this._y0, x1, y1, x22, y22, x3 = this._x1, y3 = this._y1, quads = [], node = this._root, q, i;
-  if (node) quads.push(new quad_default(node, x0, y0, x3, y3));
-  if (radius == null) radius = Infinity;
-  else {
-    x0 = x2 - radius, y0 = y2 - radius;
-    x3 = x2 + radius, y3 = y2 + radius;
-    radius *= radius;
-  }
-  while (q = quads.pop()) {
-    if (!(node = q.node) || (x1 = q.x0) > x3 || (y1 = q.y0) > y3 || (x22 = q.x1) < x0 || (y22 = q.y1) < y0) continue;
-    if (node.length) {
-      var xm = (x1 + x22) / 2, ym = (y1 + y22) / 2;
-      quads.push(
-        new quad_default(node[3], xm, ym, x22, y22),
-        new quad_default(node[2], x1, ym, xm, y22),
-        new quad_default(node[1], xm, y1, x22, ym),
-        new quad_default(node[0], x1, y1, xm, ym)
-      );
-      if (i = (y2 >= ym) << 1 | x2 >= xm) {
-        q = quads[quads.length - 1];
-        quads[quads.length - 1] = quads[quads.length - 1 - i];
-        quads[quads.length - 1 - i] = q;
-      }
-    } else {
-      var dx = x2 - +this._x.call(null, node.data), dy = y2 - +this._y.call(null, node.data), d2 = dx * dx + dy * dy;
-      if (d2 < radius) {
-        var d = Math.sqrt(radius = d2);
-        x0 = x2 - d, y0 = y2 - d;
-        x3 = x2 + d, y3 = y2 + d;
-        data = node.data;
-      }
-    }
-  }
-  return data;
-}
-
-// node_modules/d3-quadtree/src/remove.js
-function remove_default(d) {
-  if (isNaN(x2 = +this._x.call(null, d)) || isNaN(y2 = +this._y.call(null, d))) return this;
-  var parent, node = this._root, retainer, previous, next, x0 = this._x0, y0 = this._y0, x1 = this._x1, y1 = this._y1, x2, y2, xm, ym, right, bottom, i, j;
-  if (!node) return this;
-  if (node.length) while (true) {
-    if (right = x2 >= (xm = (x0 + x1) / 2)) x0 = xm;
-    else x1 = xm;
-    if (bottom = y2 >= (ym = (y0 + y1) / 2)) y0 = ym;
-    else y1 = ym;
-    if (!(parent = node, node = node[i = bottom << 1 | right])) return this;
-    if (!node.length) break;
-    if (parent[i + 1 & 3] || parent[i + 2 & 3] || parent[i + 3 & 3]) retainer = parent, j = i;
-  }
-  while (node.data !== d) if (!(previous = node, node = node.next)) return this;
-  if (next = node.next) delete node.next;
-  if (previous) return next ? previous.next = next : delete previous.next, this;
-  if (!parent) return this._root = next, this;
-  next ? parent[i] = next : delete parent[i];
-  if ((node = parent[0] || parent[1] || parent[2] || parent[3]) && node === (parent[3] || parent[2] || parent[1] || parent[0]) && !node.length) {
-    if (retainer) retainer[j] = node;
-    else this._root = node;
-  }
-  return this;
-}
-function removeAll(data) {
-  for (var i = 0, n = data.length; i < n; ++i) this.remove(data[i]);
-  return this;
-}
-
-// node_modules/d3-quadtree/src/root.js
-function root_default() {
-  return this._root;
-}
-
-// node_modules/d3-quadtree/src/size.js
-function size_default() {
-  var size = 0;
-  this.visit(function(node) {
-    if (!node.length) do
-      ++size;
-    while (node = node.next);
-  });
-  return size;
-}
-
-// node_modules/d3-quadtree/src/visit.js
-function visit_default(callback) {
-  var quads = [], q, node = this._root, child, x0, y0, x1, y1;
-  if (node) quads.push(new quad_default(node, this._x0, this._y0, this._x1, this._y1));
-  while (q = quads.pop()) {
-    if (!callback(node = q.node, x0 = q.x0, y0 = q.y0, x1 = q.x1, y1 = q.y1) && node.length) {
-      var xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
-      if (child = node[3]) quads.push(new quad_default(child, xm, ym, x1, y1));
-      if (child = node[2]) quads.push(new quad_default(child, x0, ym, xm, y1));
-      if (child = node[1]) quads.push(new quad_default(child, xm, y0, x1, ym));
-      if (child = node[0]) quads.push(new quad_default(child, x0, y0, xm, ym));
-    }
-  }
-  return this;
-}
-
-// node_modules/d3-quadtree/src/visitAfter.js
-function visitAfter_default(callback) {
-  var quads = [], next = [], q;
-  if (this._root) quads.push(new quad_default(this._root, this._x0, this._y0, this._x1, this._y1));
-  while (q = quads.pop()) {
-    var node = q.node;
-    if (node.length) {
-      var child, x0 = q.x0, y0 = q.y0, x1 = q.x1, y1 = q.y1, xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
-      if (child = node[0]) quads.push(new quad_default(child, x0, y0, xm, ym));
-      if (child = node[1]) quads.push(new quad_default(child, xm, y0, x1, ym));
-      if (child = node[2]) quads.push(new quad_default(child, x0, ym, xm, y1));
-      if (child = node[3]) quads.push(new quad_default(child, xm, ym, x1, y1));
-    }
-    next.push(q);
-  }
-  while (q = next.pop()) {
-    callback(q.node, q.x0, q.y0, q.x1, q.y1);
-  }
-  return this;
-}
-
-// node_modules/d3-quadtree/src/x.js
-function defaultX(d) {
-  return d[0];
-}
-function x_default(_) {
-  return arguments.length ? (this._x = _, this) : this._x;
-}
-
-// node_modules/d3-quadtree/src/y.js
-function defaultY(d) {
-  return d[1];
-}
-function y_default(_) {
-  return arguments.length ? (this._y = _, this) : this._y;
-}
-
-// node_modules/d3-quadtree/src/quadtree.js
-function quadtree(nodes, x2, y2) {
-  var tree = new Quadtree(x2 == null ? defaultX : x2, y2 == null ? defaultY : y2, NaN, NaN, NaN, NaN);
-  return nodes == null ? tree : tree.addAll(nodes);
-}
-function Quadtree(x2, y2, x0, y0, x1, y1) {
-  this._x = x2;
-  this._y = y2;
-  this._x0 = x0;
-  this._y0 = y0;
-  this._x1 = x1;
-  this._y1 = y1;
-  this._root = void 0;
-}
-function leaf_copy(leaf) {
-  var copy = { data: leaf.data }, next = copy;
-  while (leaf = leaf.next) next = next.next = { data: leaf.data };
-  return copy;
-}
-var treeProto = quadtree.prototype = Quadtree.prototype;
-treeProto.copy = function() {
-  var copy = new Quadtree(this._x, this._y, this._x0, this._y0, this._x1, this._y1), node = this._root, nodes, child;
-  if (!node) return copy;
-  if (!node.length) return copy._root = leaf_copy(node), copy;
-  nodes = [{ source: node, target: copy._root = new Array(4) }];
-  while (node = nodes.pop()) {
-    for (var i = 0; i < 4; ++i) {
-      if (child = node.source[i]) {
-        if (child.length) nodes.push({ source: child, target: node.target[i] = new Array(4) });
-        else node.target[i] = leaf_copy(child);
-      }
-    }
-  }
-  return copy;
-};
-treeProto.add = add_default;
-treeProto.addAll = addAll;
-treeProto.cover = cover_default;
-treeProto.data = data_default;
-treeProto.extent = extent_default;
-treeProto.find = find_default;
-treeProto.remove = remove_default;
-treeProto.removeAll = removeAll;
-treeProto.root = root_default;
-treeProto.size = size_default;
-treeProto.visit = visit_default;
-treeProto.visitAfter = visitAfter_default;
-treeProto.x = x_default;
-treeProto.y = y_default;
-
-// node_modules/d3-force/src/constant.js
-function constant_default(x2) {
-  return function() {
-    return x2;
-  };
-}
-
-// node_modules/d3-force/src/jiggle.js
-function jiggle_default(random) {
-  return (random() - 0.5) * 1e-6;
-}
-
-// node_modules/d3-force/src/collide.js
-function x(d) {
-  return d.x + d.vx;
-}
-function y(d) {
-  return d.y + d.vy;
-}
-function collide_default(radius) {
-  var nodes, radii, random, strength = 1, iterations = 1;
-  if (typeof radius !== "function") radius = constant_default(radius == null ? 1 : +radius);
-  function force() {
-    var i, n = nodes.length, tree, node, xi, yi, ri, ri2;
-    for (var k = 0; k < iterations; ++k) {
-      tree = quadtree(nodes, x, y).visitAfter(prepare);
-      for (i = 0; i < n; ++i) {
-        node = nodes[i];
-        ri = radii[node.index], ri2 = ri * ri;
-        xi = node.x + node.vx;
-        yi = node.y + node.vy;
-        tree.visit(apply);
-      }
-    }
-    function apply(quad, x0, y0, x1, y1) {
-      var data = quad.data, rj = quad.r, r = ri + rj;
-      if (data) {
-        if (data.index > node.index) {
-          var x2 = xi - data.x - data.vx, y2 = yi - data.y - data.vy, l = x2 * x2 + y2 * y2;
-          if (l < r * r) {
-            if (x2 === 0) x2 = jiggle_default(random), l += x2 * x2;
-            if (y2 === 0) y2 = jiggle_default(random), l += y2 * y2;
-            l = (r - (l = Math.sqrt(l))) / l * strength;
-            node.vx += (x2 *= l) * (r = (rj *= rj) / (ri2 + rj));
-            node.vy += (y2 *= l) * r;
-            data.vx -= x2 * (r = 1 - r);
-            data.vy -= y2 * r;
-          }
-        }
-        return;
-      }
-      return x0 > xi + r || x1 < xi - r || y0 > yi + r || y1 < yi - r;
-    }
-  }
-  function prepare(quad) {
-    if (quad.data) return quad.r = radii[quad.data.index];
-    for (var i = quad.r = 0; i < 4; ++i) {
-      if (quad[i] && quad[i].r > quad.r) {
-        quad.r = quad[i].r;
-      }
-    }
-  }
-  function initialize() {
-    if (!nodes) return;
-    var i, n = nodes.length, node;
-    radii = new Array(n);
-    for (i = 0; i < n; ++i) node = nodes[i], radii[node.index] = +radius(node, i, nodes);
-  }
-  force.initialize = function(_nodes, _random) {
-    nodes = _nodes;
-    random = _random;
-    initialize();
-  };
-  force.iterations = function(_) {
-    return arguments.length ? (iterations = +_, force) : iterations;
-  };
-  force.strength = function(_) {
-    return arguments.length ? (strength = +_, force) : strength;
-  };
-  force.radius = function(_) {
-    return arguments.length ? (radius = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : radius;
-  };
-  return force;
-}
-
-// node_modules/d3-force/src/link.js
-function index(d) {
-  return d.index;
-}
-function find(nodeById, nodeId) {
-  var node = nodeById.get(nodeId);
-  if (!node) throw new Error("node not found: " + nodeId);
-  return node;
-}
-function link_default(links) {
-  var id = index, strength = defaultStrength, strengths, distance = constant_default(30), distances, nodes, count, bias, random, iterations = 1;
-  if (links == null) links = [];
-  function defaultStrength(link) {
-    return 1 / Math.min(count[link.source.index], count[link.target.index]);
-  }
-  function force(alpha) {
-    for (var k = 0, n = links.length; k < iterations; ++k) {
-      for (var i = 0, link, source, target, x2, y2, l, b; i < n; ++i) {
-        link = links[i], source = link.source, target = link.target;
-        x2 = target.x + target.vx - source.x - source.vx || jiggle_default(random);
-        y2 = target.y + target.vy - source.y - source.vy || jiggle_default(random);
-        l = Math.sqrt(x2 * x2 + y2 * y2);
-        l = (l - distances[i]) / l * alpha * strengths[i];
-        x2 *= l, y2 *= l;
-        target.vx -= x2 * (b = bias[i]);
-        target.vy -= y2 * b;
-        source.vx += x2 * (b = 1 - b);
-        source.vy += y2 * b;
-      }
-    }
-  }
-  function initialize() {
-    if (!nodes) return;
-    var i, n = nodes.length, m2 = links.length, nodeById = new Map(nodes.map((d, i2) => [id(d, i2, nodes), d])), link;
-    for (i = 0, count = new Array(n); i < m2; ++i) {
-      link = links[i], link.index = i;
-      if (typeof link.source !== "object") link.source = find(nodeById, link.source);
-      if (typeof link.target !== "object") link.target = find(nodeById, link.target);
-      count[link.source.index] = (count[link.source.index] || 0) + 1;
-      count[link.target.index] = (count[link.target.index] || 0) + 1;
-    }
-    for (i = 0, bias = new Array(m2); i < m2; ++i) {
-      link = links[i], bias[i] = count[link.source.index] / (count[link.source.index] + count[link.target.index]);
-    }
-    strengths = new Array(m2), initializeStrength();
-    distances = new Array(m2), initializeDistance();
-  }
-  function initializeStrength() {
-    if (!nodes) return;
-    for (var i = 0, n = links.length; i < n; ++i) {
-      strengths[i] = +strength(links[i], i, links);
-    }
-  }
-  function initializeDistance() {
-    if (!nodes) return;
-    for (var i = 0, n = links.length; i < n; ++i) {
-      distances[i] = +distance(links[i], i, links);
-    }
-  }
-  force.initialize = function(_nodes, _random) {
-    nodes = _nodes;
-    random = _random;
-    initialize();
-  };
-  force.links = function(_) {
-    return arguments.length ? (links = _, initialize(), force) : links;
-  };
-  force.id = function(_) {
-    return arguments.length ? (id = _, force) : id;
-  };
-  force.iterations = function(_) {
-    return arguments.length ? (iterations = +_, force) : iterations;
-  };
-  force.strength = function(_) {
-    return arguments.length ? (strength = typeof _ === "function" ? _ : constant_default(+_), initializeStrength(), force) : strength;
-  };
-  force.distance = function(_) {
-    return arguments.length ? (distance = typeof _ === "function" ? _ : constant_default(+_), initializeDistance(), force) : distance;
-  };
-  return force;
-}
-
-// node_modules/d3-dispatch/src/dispatch.js
-var noop = { value: () => {
-} };
-function dispatch() {
-  for (var i = 0, n = arguments.length, _ = {}, t; i < n; ++i) {
-    if (!(t = arguments[i] + "") || t in _ || /[\s.]/.test(t)) throw new Error("illegal type: " + t);
-    _[t] = [];
-  }
-  return new Dispatch(_);
-}
-function Dispatch(_) {
-  this._ = _;
-}
-function parseTypenames(typenames, types) {
-  return typenames.trim().split(/^|\s+/).map(function(t) {
-    var name = "", i = t.indexOf(".");
-    if (i >= 0) name = t.slice(i + 1), t = t.slice(0, i);
-    if (t && !types.hasOwnProperty(t)) throw new Error("unknown type: " + t);
-    return { type: t, name };
-  });
-}
-Dispatch.prototype = dispatch.prototype = {
-  constructor: Dispatch,
-  on: function(typename, callback) {
-    var _ = this._, T = parseTypenames(typename + "", _), t, i = -1, n = T.length;
-    if (arguments.length < 2) {
-      while (++i < n) if ((t = (typename = T[i]).type) && (t = get(_[t], typename.name))) return t;
-      return;
-    }
-    if (callback != null && typeof callback !== "function") throw new Error("invalid callback: " + callback);
-    while (++i < n) {
-      if (t = (typename = T[i]).type) _[t] = set(_[t], typename.name, callback);
-      else if (callback == null) for (t in _) _[t] = set(_[t], typename.name, null);
-    }
-    return this;
-  },
-  copy: function() {
-    var copy = {}, _ = this._;
-    for (var t in _) copy[t] = _[t].slice();
-    return new Dispatch(copy);
-  },
-  call: function(type, that) {
-    if ((n = arguments.length - 2) > 0) for (var args = new Array(n), i = 0, n, t; i < n; ++i) args[i] = arguments[i + 2];
-    if (!this._.hasOwnProperty(type)) throw new Error("unknown type: " + type);
-    for (t = this._[type], i = 0, n = t.length; i < n; ++i) t[i].value.apply(that, args);
-  },
-  apply: function(type, that, args) {
-    if (!this._.hasOwnProperty(type)) throw new Error("unknown type: " + type);
-    for (var t = this._[type], i = 0, n = t.length; i < n; ++i) t[i].value.apply(that, args);
-  }
-};
-function get(type, name) {
-  for (var i = 0, n = type.length, c2; i < n; ++i) {
-    if ((c2 = type[i]).name === name) {
-      return c2.value;
-    }
-  }
-}
-function set(type, name, callback) {
-  for (var i = 0, n = type.length; i < n; ++i) {
-    if (type[i].name === name) {
-      type[i] = noop, type = type.slice(0, i).concat(type.slice(i + 1));
-      break;
-    }
-  }
-  if (callback != null) type.push({ name, value: callback });
-  return type;
-}
-var dispatch_default = dispatch;
-
-// node_modules/d3-timer/src/timer.js
-var frame = 0;
-var timeout = 0;
-var interval = 0;
-var pokeDelay = 1e3;
-var taskHead;
-var taskTail;
-var clockLast = 0;
-var clockNow = 0;
-var clockSkew = 0;
-var clock = typeof performance === "object" && performance.now ? performance : Date;
-var setFrame = typeof window === "object" && window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : function(f) {
-  setTimeout(f, 17);
-};
-function now() {
-  return clockNow || (setFrame(clearNow), clockNow = clock.now() + clockSkew);
-}
-function clearNow() {
-  clockNow = 0;
-}
-function Timer() {
-  this._call = this._time = this._next = null;
-}
-Timer.prototype = timer.prototype = {
-  constructor: Timer,
-  restart: function(callback, delay, time) {
-    if (typeof callback !== "function") throw new TypeError("callback is not a function");
-    time = (time == null ? now() : +time) + (delay == null ? 0 : +delay);
-    if (!this._next && taskTail !== this) {
-      if (taskTail) taskTail._next = this;
-      else taskHead = this;
-      taskTail = this;
-    }
-    this._call = callback;
-    this._time = time;
-    sleep();
-  },
-  stop: function() {
-    if (this._call) {
-      this._call = null;
-      this._time = Infinity;
-      sleep();
-    }
-  }
-};
-function timer(callback, delay, time) {
-  var t = new Timer();
-  t.restart(callback, delay, time);
-  return t;
-}
-function timerFlush() {
-  now();
-  ++frame;
-  var t = taskHead, e;
-  while (t) {
-    if ((e = clockNow - t._time) >= 0) t._call.call(void 0, e);
-    t = t._next;
-  }
-  --frame;
-}
-function wake() {
-  clockNow = (clockLast = clock.now()) + clockSkew;
-  frame = timeout = 0;
-  try {
-    timerFlush();
-  } finally {
-    frame = 0;
-    nap();
-    clockNow = 0;
-  }
-}
-function poke() {
-  var now2 = clock.now(), delay = now2 - clockLast;
-  if (delay > pokeDelay) clockSkew -= delay, clockLast = now2;
-}
-function nap() {
-  var t0, t1 = taskHead, t2, time = Infinity;
-  while (t1) {
-    if (t1._call) {
-      if (time > t1._time) time = t1._time;
-      t0 = t1, t1 = t1._next;
-    } else {
-      t2 = t1._next, t1._next = null;
-      t1 = t0 ? t0._next = t2 : taskHead = t2;
-    }
-  }
-  taskTail = t0;
-  sleep(time);
-}
-function sleep(time) {
-  if (frame) return;
-  if (timeout) timeout = clearTimeout(timeout);
-  var delay = time - clockNow;
-  if (delay > 24) {
-    if (time < Infinity) timeout = setTimeout(wake, time - clock.now() - clockSkew);
-    if (interval) interval = clearInterval(interval);
-  } else {
-    if (!interval) clockLast = clock.now(), interval = setInterval(poke, pokeDelay);
-    frame = 1, setFrame(wake);
-  }
-}
-
-// node_modules/d3-force/src/lcg.js
-var a = 1664525;
-var c = 1013904223;
-var m = 4294967296;
-function lcg_default() {
-  let s = 1;
-  return () => (s = (a * s + c) % m) / m;
-}
-
-// node_modules/d3-force/src/simulation.js
-var initialRadius = 10;
-var initialAngle = Math.PI * (3 - Math.sqrt(5));
-function simulation_default(nodes) {
-  var simulation, alpha = 1, alphaMin = 1e-3, alphaDecay = 1 - Math.pow(alphaMin, 1 / 300), alphaTarget = 0, velocityDecay = 0.6, forces = /* @__PURE__ */ new Map(), stepper = timer(step), event = dispatch_default("tick", "end"), random = lcg_default();
-  if (nodes == null) nodes = [];
-  function step() {
-    tick();
-    event.call("tick", simulation);
-    if (alpha < alphaMin) {
-      stepper.stop();
-      event.call("end", simulation);
-    }
-  }
-  function tick(iterations) {
-    var i, n = nodes.length, node;
-    if (iterations === void 0) iterations = 1;
-    for (var k = 0; k < iterations; ++k) {
-      alpha += (alphaTarget - alpha) * alphaDecay;
-      forces.forEach(function(force) {
-        force(alpha);
-      });
-      for (i = 0; i < n; ++i) {
-        node = nodes[i];
-        if (node.fx == null) node.x += node.vx *= velocityDecay;
-        else node.x = node.fx, node.vx = 0;
-        if (node.fy == null) node.y += node.vy *= velocityDecay;
-        else node.y = node.fy, node.vy = 0;
-      }
-    }
-    return simulation;
-  }
-  function initializeNodes() {
-    for (var i = 0, n = nodes.length, node; i < n; ++i) {
-      node = nodes[i], node.index = i;
-      if (node.fx != null) node.x = node.fx;
-      if (node.fy != null) node.y = node.fy;
-      if (isNaN(node.x) || isNaN(node.y)) {
-        var radius = initialRadius * Math.sqrt(0.5 + i), angle = i * initialAngle;
-        node.x = radius * Math.cos(angle);
-        node.y = radius * Math.sin(angle);
-      }
-      if (isNaN(node.vx) || isNaN(node.vy)) {
-        node.vx = node.vy = 0;
-      }
-    }
-  }
-  function initializeForce(force) {
-    if (force.initialize) force.initialize(nodes, random);
-    return force;
-  }
-  initializeNodes();
-  return simulation = {
-    tick,
-    restart: function() {
-      return stepper.restart(step), simulation;
-    },
-    stop: function() {
-      return stepper.stop(), simulation;
-    },
-    nodes: function(_) {
-      return arguments.length ? (nodes = _, initializeNodes(), forces.forEach(initializeForce), simulation) : nodes;
-    },
-    alpha: function(_) {
-      return arguments.length ? (alpha = +_, simulation) : alpha;
-    },
-    alphaMin: function(_) {
-      return arguments.length ? (alphaMin = +_, simulation) : alphaMin;
-    },
-    alphaDecay: function(_) {
-      return arguments.length ? (alphaDecay = +_, simulation) : +alphaDecay;
-    },
-    alphaTarget: function(_) {
-      return arguments.length ? (alphaTarget = +_, simulation) : alphaTarget;
-    },
-    velocityDecay: function(_) {
-      return arguments.length ? (velocityDecay = 1 - _, simulation) : 1 - velocityDecay;
-    },
-    randomSource: function(_) {
-      return arguments.length ? (random = _, forces.forEach(initializeForce), simulation) : random;
-    },
-    force: function(name, _) {
-      return arguments.length > 1 ? (_ == null ? forces.delete(name) : forces.set(name, initializeForce(_)), simulation) : forces.get(name);
-    },
-    find: function(x2, y2, radius) {
-      var i = 0, n = nodes.length, dx, dy, d2, node, closest;
-      if (radius == null) radius = Infinity;
-      else radius *= radius;
-      for (i = 0; i < n; ++i) {
-        node = nodes[i];
-        dx = x2 - node.x;
-        dy = y2 - node.y;
-        d2 = dx * dx + dy * dy;
-        if (d2 < radius) closest = node, radius = d2;
-      }
-      return closest;
-    },
-    on: function(name, _) {
-      return arguments.length > 1 ? (event.on(name, _), simulation) : event.on(name);
-    }
-  };
-}
-
-// node_modules/d3-force/src/x.js
-function x_default2(x2) {
-  var strength = constant_default(0.1), nodes, strengths, xz;
-  if (typeof x2 !== "function") x2 = constant_default(x2 == null ? 0 : +x2);
-  function force(alpha) {
-    for (var i = 0, n = nodes.length, node; i < n; ++i) {
-      node = nodes[i], node.vx += (xz[i] - node.x) * strengths[i] * alpha;
-    }
-  }
-  function initialize() {
-    if (!nodes) return;
-    var i, n = nodes.length;
-    strengths = new Array(n);
-    xz = new Array(n);
-    for (i = 0; i < n; ++i) {
-      strengths[i] = isNaN(xz[i] = +x2(nodes[i], i, nodes)) ? 0 : +strength(nodes[i], i, nodes);
-    }
-  }
-  force.initialize = function(_) {
-    nodes = _;
-    initialize();
-  };
-  force.strength = function(_) {
-    return arguments.length ? (strength = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : strength;
-  };
-  force.x = function(_) {
-    return arguments.length ? (x2 = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : x2;
-  };
-  return force;
-}
-
-// node_modules/d3-force/src/y.js
-function y_default2(y2) {
-  var strength = constant_default(0.1), nodes, strengths, yz;
-  if (typeof y2 !== "function") y2 = constant_default(y2 == null ? 0 : +y2);
-  function force(alpha) {
-    for (var i = 0, n = nodes.length, node; i < n; ++i) {
-      node = nodes[i], node.vy += (yz[i] - node.y) * strengths[i] * alpha;
-    }
-  }
-  function initialize() {
-    if (!nodes) return;
-    var i, n = nodes.length;
-    strengths = new Array(n);
-    yz = new Array(n);
-    for (i = 0; i < n; ++i) {
-      strengths[i] = isNaN(yz[i] = +y2(nodes[i], i, nodes)) ? 0 : +strength(nodes[i], i, nodes);
-    }
-  }
-  force.initialize = function(_) {
-    nodes = _;
-    initialize();
-  };
-  force.strength = function(_) {
-    return arguments.length ? (strength = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : strength;
-  };
-  force.y = function(_) {
-    return arguments.length ? (y2 = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : y2;
-  };
-  return force;
-}
-
-// public/relationship-types.ts
-var TAG_CATEGORIES = ["institution", "author", "journal"];
-var COLORS = {
-  institution: "#f57f17",
-  author: "#c62828",
-  journal: "#2e7d32"
-};
-var BG_COLORS = {
-  institution: "#fff8e1",
-  author: "#fce4ec",
-  journal: "#e8f5e9"
-};
-var COMMUNITY_COLORS = [
-  "#e6194b",
-  "#3cb44b",
-  "#4363d8",
-  "#f58231",
-  "#911eb4",
-  "#42d4f4",
-  "#f032e6",
-  "#bfef45",
-  "#fabebe",
-  "#469990",
-  "#dcbeff",
-  "#9A6324"
-];
-var COMMUNITY_BG = [
-  "#fde0e6",
-  "#e4f5e4",
-  "#dfe6f8",
-  "#fde9d4",
-  "#ecdaf5",
-  "#d8f4fb",
-  "#f8d6f6",
-  "#f2fad6",
-  "#fde8e8",
-  "#d6edea",
-  "#f0e6ff",
-  "#f0e4d0"
-];
-function communityColor(id) {
-  return COMMUNITY_COLORS[id % COMMUNITY_COLORS.length];
-}
-function communityBg(id) {
-  return COMMUNITY_BG[id % COMMUNITY_BG.length];
-}
-function nodeRadius(weight, role) {
-  const base = Math.max(4, Math.min(18, 4 + Math.sqrt(weight) * 2));
-  if (role === "hub") return Math.min(22, base * 1.3);
-  if (role === "leaf") return Math.max(4, base * 0.8);
-  return base;
-}
-
-// public/use-force-layout.ts
-function useForceLayout(inputNodes, edges, width, height) {
-  const simRef = (0, import_react5.useRef)(null);
-  const nodesRef = (0, import_react5.useRef)([]);
-  const [snapshot, setSnapshot] = (0, import_react5.useState)([]);
-  const inputKeyRef = (0, import_react5.useRef)("");
-  const rafRef = (0, import_react5.useRef)(0);
-  const dirtyRef = (0, import_react5.useRef)(false);
-  const pinTimer = (0, import_react5.useRef)(null);
-  const inputKey = inputNodes.map((n) => n.id).join(",");
-  (0, import_react5.useEffect)(() => {
-    if (inputKey === inputKeyRef.current && simRef.current) return;
-    inputKeyRef.current = inputKey;
-    if (simRef.current) simRef.current.stop();
-    cancelAnimationFrame(rafRef.current);
-    if (pinTimer.current) clearTimeout(pinTimer.current);
-    const prevPos = /* @__PURE__ */ new Map();
-    for (const n of nodesRef.current) prevPos.set(n.id, { x: n.x, y: n.y });
-    const journals = inputNodes.filter((n) => n.group === "journal");
-    const jCount = journals.length;
-    const pos = /* @__PURE__ */ new Map();
-    const cols = Math.min(jCount, 4);
-    const padX = 140;
-    const colW = (width - padX * 2) / Math.max(cols - 1, 1);
-    const rowH = 90;
-    const gridTop = 130;
-    journals.sort((a2, b) => (b.weight || 0) - (a2.weight || 0));
-    journals.forEach((j, idx) => {
-      const col = idx % cols;
-      const row = Math.floor(idx / cols);
-      pos.set(j.id, {
-        x: cols === 1 ? width / 2 : padX + col * colW,
-        y: gridTop + row * rowH
-      });
-    });
-    const inst = inputNodes.find((n) => n.group === "institution");
-    const auth = inputNodes.find((n) => n.group === "author");
-    if (inst) pos.set(inst.id, { x: width / 2, y: 25 });
-    if (auth) pos.set(auth.id, { x: width / 2, y: 75 });
-    const alwaysPin = /* @__PURE__ */ new Set(["institution", "author"]);
-    const nodes = inputNodes.map((n) => {
-      const target = pos.get(n.id) || { x: width / 2, y: height / 2 };
-      const prev = prevPos.get(n.id);
-      if (alwaysPin.has(n.group)) {
-        return { ...n, x: target.x, y: target.y, vx: 0, vy: 0, fx: target.x, fy: target.y };
-      }
-      const start = prev && n.group === "journal" ? prev : target;
-      return { ...n, x: start.x, y: start.y, vx: 0, vy: 0, fx: null, fy: null };
-    });
-    nodesRef.current = nodes;
-    const nodeIndex = new Map(nodes.map((n, i) => [n.id, i]));
-    const links = edges.filter((e) => nodeIndex.has(e.source) && nodeIndex.has(e.target)).map((e) => ({ source: nodeIndex.get(e.source), target: nodeIndex.get(e.target) }));
-    const flush = () => {
-      if (dirtyRef.current) {
-        dirtyRef.current = false;
-        setSnapshot(nodes.map((n) => ({ ...n })));
-      }
-      rafRef.current = requestAnimationFrame(flush);
-    };
-    rafRef.current = requestAnimationFrame(flush);
-    const sim = simulation_default(nodes).force("link", link_default(links).distance(50).strength(0.03)).force("x", x_default2((n) => pos.get(n.id)?.x ?? width / 2).strength((n) => n.group === "doi" ? 0.4 : 0.9)).force("y", y_default2((n) => pos.get(n.id)?.y ?? height / 2).strength((n) => n.group === "doi" ? 0.4 : 0.9)).force("collide", collide_default().radius((n) => nodeRadius(n.weight || 0) + 12).strength(0.5).iterations(2)).alphaDecay(0.08).velocityDecay(0.6).on("tick", () => {
-      dirtyRef.current = true;
-    });
-    simRef.current = sim;
-    pinTimer.current = setTimeout(() => {
-      for (const n of nodes) {
-        if (!pinGroups.has(n.group)) continue;
-        const p = pos.get(n.id);
-        if (p) {
-          n.fx = p.x;
-          n.fy = p.y;
-          n.x = p.x;
-          n.y = p.y;
-        }
-      }
-      dirtyRef.current = true;
-    }, 600);
-    return () => {
-      sim.stop();
-      cancelAnimationFrame(rafRef.current);
-      clearTimeout(pinTimer.current);
-    };
-  }, [inputKey, edges, width, height]);
-  const reheat = (0, import_react5.useCallback)(() => {
-    if (simRef.current) simRef.current.alpha(0.3).restart();
-  }, []);
-  return { simNodes: snapshot, nodesRef, simRef, reheat };
-}
-
-// public/use-filter-state.ts
-var import_react6 = __toESM(require_react());
-function useFilterState() {
-  const [categoryOrder, setCategoryOrder] = (0, import_react6.useState)([...TAG_CATEGORIES]);
-  const [activeCategories, setActiveCategories] = (0, import_react6.useState)(() => new Set(TAG_CATEGORIES));
-  const [pinnedTags, setPinnedTags] = (0, import_react6.useState)([]);
-  const [filtersVisible, setFiltersVisible] = (0, import_react6.useState)(false);
-  const toggleCategory = (0, import_react6.useCallback)((cat) => {
-    setActiveCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(cat)) {
-        next.delete(cat);
-        if (next.size === 0) return prev;
-      } else next.add(cat);
-      return next;
-    });
-  }, []);
-  const toggleTag = (0, import_react6.useCallback)((id) => {
-    setPinnedTags((prev) => prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]);
-  }, []);
-  const reorderCategories = (0, import_react6.useCallback)((from, to) => {
-    setCategoryOrder((prev) => {
-      const n = [...prev];
-      const [m2] = n.splice(from, 1);
-      n.splice(to, 0, m2);
-      return n;
-    });
-  }, []);
-  return {
-    categoryOrder,
-    activeCategories,
-    pinnedTags,
-    filtersVisible,
-    setFiltersVisible,
-    toggleCategory,
-    toggleTag,
-    reorderCategories
-  };
-}
-
-// public/graph-controls.tsx
-var import_react7 = __toESM(require_react());
+// public/portfolio-velocity.tsx
 var import_jsx_runtime6 = __toESM(require_jsx_runtime());
-function CategoryStrip({ categories, counts, active, onToggle, onReorder }) {
-  const [dragIdx, setDragIdx] = (0, import_react7.useState)(null);
-  const [overIdx, setOverIdx] = (0, import_react7.useState)(null);
-  const dragRef = (0, import_react7.useRef)(null);
-  const onDragStart = (0, import_react7.useCallback)((e, idx) => {
-    dragRef.current = idx;
-    setDragIdx(idx);
-    e.dataTransfer.effectAllowed = "move";
-  }, []);
-  const onDragOver = (0, import_react7.useCallback)((e, idx) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setOverIdx(idx);
-  }, []);
-  const onDrop = (0, import_react7.useCallback)((e, toIdx) => {
-    e.preventDefault();
-    if (dragRef.current !== null && dragRef.current !== toIdx) onReorder(dragRef.current, toIdx);
-    setDragIdx(null);
-    setOverIdx(null);
-    dragRef.current = null;
-  }, [onReorder]);
-  const onDragEnd = (0, import_react7.useCallback)(() => {
-    setDragIdx(null);
-    setOverIdx(null);
-    dragRef.current = null;
-  }, []);
-  const visible = categories.filter((c2) => (counts[c2] || 0) > 0);
-  const activeList = visible.filter((c2) => active.has(c2));
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: {
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    marginBottom: 12,
-    flexWrap: "wrap",
-    padding: "8px 12px",
-    background: "var(--bg-card)",
-    border: "1px solid var(--border-soft)",
-    borderRadius: "var(--radius)"
-  }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: { fontSize: 10, color: "var(--fg-dim)", fontFamily: "var(--mono)", marginRight: 2, letterSpacing: "0.12em", textTransform: "uppercase" }, children: "layout order" }),
-    visible.map((cat, i) => {
-      const isActive = active.has(cat);
-      const isDragging = dragIdx === i;
-      const isOver = overIdx === i && dragIdx !== null && dragIdx !== i;
-      const orderNum = isActive ? activeList.indexOf(cat) + 1 : null;
-      return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
-        "button",
-        {
-          draggable: true,
-          onClick: () => onToggle(cat),
-          onDragStart: (e) => onDragStart(e, i),
-          onDragOver: (e) => onDragOver(e, i),
-          onDrop: (e) => onDrop(e, i),
-          onDragEnd,
-          style: {
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 5,
-            padding: "4px 10px",
-            borderRadius: 999,
-            cursor: "grab",
-            border: `1.5px solid ${isOver ? "var(--accent)" : isActive ? COLORS[cat] : "var(--border)"}`,
-            background: isActive ? BG_COLORS[cat] : "var(--bg-inset)",
-            color: isActive ? COLORS[cat] : "var(--fg-dim)",
-            fontFamily: "var(--mono)",
-            fontSize: 12,
-            fontWeight: isActive ? 500 : 400,
-            opacity: isDragging ? 0.4 : isActive ? 1 : 0.6,
-            transition: "border-color 100ms, opacity 100ms",
-            userSelect: "none",
-            boxShadow: isOver ? "0 0 0 2px var(--accent)" : "none"
-          },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: { color: isActive ? COLORS[cat] : "var(--fg-dim)", fontSize: 10, letterSpacing: 1, lineHeight: 1 }, children: "\u283F" }),
-            orderNum !== null && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: {
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              fontSize: 10,
-              fontWeight: 500,
-              background: COLORS[cat],
-              color: "#1a1612"
-            }, children: orderNum }),
-            cat,
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { style: { fontSize: 10, opacity: 0.7 }, children: [
-              "(",
-              counts[cat] || 0,
-              ")"
-            ] })
-          ]
-        },
-        cat
-      );
-    })
-  ] });
-}
-function TagPicker({ category, tags, pinnedTags, pinnedOrder, onToggleTag }) {
-  const [expanded, setExpanded] = (0, import_react7.useState)(false);
-  const hasPins = tags.some((t) => pinnedTags.has(t.id));
-  const visible = tags.slice(0, expanded ? tags.length : 12);
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { marginBottom: 6 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: COLORS[category] }, children: category }),
-      hasPins && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-        "button",
-        {
-          onClick: () => {
-            for (const t of tags) if (pinnedTags.has(t.id)) onToggleTag(t.id);
-          },
-          style: { background: "none", border: "none", cursor: "pointer", fontSize: 10, color: "var(--fg-dim)", fontFamily: "var(--mono)", padding: 0 },
-          children: "clear"
-        }
-      )
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 3 }, children: [
-      visible.map((t) => {
-        const pinned = pinnedTags.has(t.id);
-        return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
-          "button",
-          {
-            onClick: () => onToggleTag(t.id),
-            style: {
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 3,
-              padding: "2px 7px",
-              borderRadius: 3,
-              border: `1px solid ${pinned ? COLORS[category] : "var(--border-soft)"}`,
-              background: pinned ? BG_COLORS[category] : "var(--bg-inset)",
-              color: pinned ? COLORS[category] : "var(--fg-muted)",
-              cursor: "pointer",
-              fontFamily: "var(--mono)",
-              fontSize: 10,
-              fontWeight: pinned ? 500 : 400,
-              transition: "all 100ms ease",
-              maxWidth: 180,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap"
-            },
-            children: [
-              t.label,
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: { fontSize: 9, opacity: 0.65 }, children: t.doiCount })
-            ]
-          },
-          t.id
-        );
-      }),
-      tags.length > 12 && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-        "button",
-        {
-          onClick: () => setExpanded((p) => !p),
-          style: { background: "transparent", border: "1px solid var(--border-soft)", borderRadius: 3, cursor: "pointer", fontSize: 10, color: "var(--fg-dim)", fontFamily: "var(--mono)", padding: "2px 7px" },
-          children: expanded ? "less" : `+${tags.length - 12}`
-        }
-      )
-    ] })
-  ] });
-}
-
-// public/detail-panel.tsx
-var import_react8 = __toESM(require_react());
-var import_jsx_runtime7 = __toESM(require_jsx_runtime());
-function DetailPanel({
-  node,
-  connections,
-  edgesForNode,
-  onClose,
-  onSelectNode
-}) {
-  const grouped = (0, import_react8.useMemo)(() => {
-    const g = {};
-    for (const c2 of connections) {
-      const edge = edgesForNode.find(
-        (e) => e.source === node.id && e.target === c2.id || e.target === node.id && e.source === c2.id
-      );
-      const entry = { node: c2, weight: edge?.weight || 0, dois: edge?.sharedDois || [] };
-      (g[c2.group] ||= []).push(entry);
-    }
-    for (const k of Object.keys(g)) g[k].sort((a2, b) => b.weight - a2.weight);
-    return g;
-  }, [connections, edgesForNode, node.id]);
-  const allDois = (0, import_react8.useMemo)(() => {
-    const set2 = /* @__PURE__ */ new Set();
-    for (const e of edgesForNode) for (const d of e.sharedDois) set2.add(d);
-    return [...set2];
-  }, [edgesForNode]);
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "detail-panel", style: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 320,
-    maxHeight: "calc(100% - 24px)",
-    padding: 20,
-    fontSize: 13
-  }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "detail-head", style: { paddingBottom: 14 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "tag mono", style: { color: COLORS[node.group], background: BG_COLORS[node.group], marginRight: 4 }, children: node.group }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { className: "tag mono", style: { color: communityColor(node.community), background: communityBg(node.community) }, children: [
-          "Community ",
-          node.community + 1
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("h3", { style: { marginTop: 8, wordBreak: "break-word" }, children: node.label }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 6, display: "flex", gap: 10, flexWrap: "wrap", fontFamily: "var(--mono)" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
-            "weight: ",
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("strong", { style: { color: COLORS[node.group] }, children: node.weight })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
-            node.degree,
-            " connection",
-            node.degree !== 1 ? "s" : ""
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
-            node.doiCount,
-            " paper",
-            node.doiCount !== 1 ? "s" : ""
-          ] })
-        ] })
+var TREND_SYMBOL = { rising: "\u25B2", flat: "\u2192", falling: "\u25BC" };
+var TREND_COLOR = { rising: "var(--ok)", flat: "var(--fg-dim)", falling: "var(--err)" };
+function VelocityPanel({ velocity }) {
+  const { series, forecast = [], score, trend } = velocity;
+  const histY = (p) => p.partial && p.projected != null ? p.projected : p.total;
+  const allPoints = [
+    ...series.map((p) => ({ year: p.year, y: histY(p), kind: "hist", partial: !!p.partial, raw: p.total })),
+    ...forecast.map((p) => ({ year: p.year, y: p.total, kind: "fc", partial: false, raw: p.total }))
+  ];
+  const max = Math.max(1, ...allPoints.map((p) => p.y));
+  const w = 460, h = 140, pad = 28;
+  const xs = allPoints.map((p) => p.year);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const xScale = (y) => pad + (xs.length > 1 ? (y - minX) / (maxX - minX) * (w - pad * 2) : 0);
+  const yScale = (v) => h - pad - v / max * (h - pad * 2);
+  const histPts = allPoints.filter((p) => p.kind === "hist").map((p) => [xScale(p.year), yScale(p.y)]);
+  const histPath = histPts.map((pt, i) => (i === 0 ? "M" : "L") + pt[0] + "," + pt[1]).join(" ");
+  const lastFull = series.filter((p) => !p.partial).slice(-1)[0];
+  const bridgeStartX = lastFull ? xScale(lastFull.year) : histPts[histPts.length - 1][0];
+  const bridgeStartY = lastFull ? yScale(histY(lastFull)) : histPts[histPts.length - 1][1];
+  const fcSource = [
+    ...series.filter((p) => p.partial).map((p) => ({ year: p.year, y: histY(p) })),
+    ...forecast.map((p) => ({ year: p.year, y: p.total }))
+  ];
+  const fcPath = `M${bridgeStartX},${bridgeStartY}` + fcSource.map((p) => ` L${xScale(p.year)},${yScale(p.y)}`).join("");
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", color: "var(--accent)", lineHeight: 1 }, children: score.toFixed(2) }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "score" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { className: "close", onClick: onClose, "aria-label": "Close", children: "\xD7" })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "detail-section-label", children: [
-      "Connected tags (",
-      connections.length,
-      ")"
-    ] }),
-    Object.entries(grouped).sort(([a2], [b]) => a2.localeCompare(b)).map(([group, items]) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { marginBottom: 10 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 500, color: COLORS[group], marginBottom: 4, fontFamily: "var(--mono)" }, children: [
-        group,
-        " (",
-        items.length,
-        ")"
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 }, children: [
-        items.slice(0, 25).map(({ node: item, weight }) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
-          "span",
-          {
-            onClick: () => onSelectNode(item.id),
-            title: `${weight} shared paper${weight !== 1 ? "s" : ""}`,
-            style: {
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              background: BG_COLORS[group],
-              color: COLORS[group],
-              padding: "2px 8px",
-              borderRadius: 3,
-              fontSize: 11,
-              cursor: "pointer",
-              maxWidth: 220,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap"
-            },
-            children: [
-              item.label,
-              weight > 1 && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: { fontSize: 9, opacity: 0.75, fontWeight: 500 }, children: weight })
-            ]
-          },
-          item.id
-        )),
-        items.length > 25 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { style: { fontSize: 11, color: "var(--fg-dim)" }, children: [
-          "+",
-          items.length - 25,
-          " more"
-        ] })
-      ] })
-    ] }, group)),
-    allDois.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { marginTop: 14, borderTop: "1px solid var(--border-soft)", paddingTop: 10 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "detail-section-label", children: [
-        "Papers (",
-        allDois.length,
-        ")"
-      ] }),
-      allDois.slice(0, 15).map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", padding: "3px 0", borderBottom: "1px solid var(--border-soft)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "var(--mono)" }, children: d }, i)),
-      allDois.length > 15 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 6 }, children: [
-        "+",
-        allDois.length - 15,
-        " more"
-      ] })
-    ] })
-  ] });
-}
-
-// public/filtered-charts.tsx
-var import_react15 = __toESM(require_react());
-
-// graph-engine/cartesian-render.tsx
-var import_react12 = __toESM(require_react());
-
-// graph-engine/scales.ts
-function linearScale(domain, range) {
-  const [d0, d1] = domain;
-  const [r0, r1] = range;
-  const span = d1 - d0 || 1;
-  return (value) => r0 + (value - d0) / span * (r1 - r0);
-}
-function bandScale(labels, range, padding = 0.2) {
-  const [r0, r1] = range;
-  const total = r1 - r0;
-  const step = total / labels.length;
-  const bandW = step * (1 - padding);
-  const offset = step * padding * 0.5;
-  const map = new Map(labels.map((l, i) => [l, { x: r0 + i * step + offset, width: bandW }]));
-  return (label) => map.get(label) ?? { x: r0, width: bandW };
-}
-function arcScale(values, startAngle = 0, endAngle = Math.PI * 2) {
-  const total = values.reduce((s, v) => s + v, 0) || 1;
-  const span = endAngle - startAngle;
-  let cursor = startAngle;
-  return values.map((v) => {
-    const sweep = v / total * span;
-    const arc = { startAngle: cursor, endAngle: cursor + sweep };
-    cursor += sweep;
-    return arc;
-  });
-}
-function niceDomain(min, max, ticks2 = 5) {
-  if (min === max) return { min: 0, max: max || 1, step: (max || 1) / ticks2 };
-  const rawStep = (max - min) / ticks2;
-  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const residual = rawStep / mag;
-  const niceStep = residual <= 1.5 ? 1 : residual <= 3 ? 2 : residual <= 7 ? 5 : 10;
-  const step = niceStep * mag;
-  return { min: Math.floor(min / step) * step, max: Math.ceil(max / step) * step, step };
-}
-function ticks(domain) {
-  const result = [];
-  for (let v = domain.min; v <= domain.max + domain.step * 1e-3; v += domain.step) {
-    result.push(Math.round(v * 1e6) / 1e6);
-  }
-  return result;
-}
-function arcPath(cx, cy, r, start, end) {
-  const s = { x: cx + r * Math.cos(start), y: cy + r * Math.sin(start) };
-  const e = { x: cx + r * Math.cos(end), y: cy + r * Math.sin(end) };
-  const large = end - start > Math.PI ? 1 : 0;
-  return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
-}
-function donutArc(cx, cy, outer, inner, start, end) {
-  const os = { x: cx + outer * Math.cos(start), y: cy + outer * Math.sin(start) };
-  const oe = { x: cx + outer * Math.cos(end), y: cy + outer * Math.sin(end) };
-  const ie = { x: cx + inner * Math.cos(end), y: cy + inner * Math.sin(end) };
-  const is_ = { x: cx + inner * Math.cos(start), y: cy + inner * Math.sin(start) };
-  const large = end - start > Math.PI ? 1 : 0;
-  return `M ${os.x} ${os.y} A ${outer} ${outer} 0 ${large} 1 ${oe.x} ${oe.y} L ${ie.x} ${ie.y} A ${inner} ${inner} 0 ${large} 0 ${is_.x} ${is_.y} Z`;
-}
-function linePath(points) {
-  const n = points.length;
-  if (n === 0) return "";
-  if (n === 1) return `M ${points[0].x} ${points[0].y}`;
-  if (n === 2) return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
-  const ms = monotoneSlopes(points);
-  let d = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 0; i < n - 1; i++) {
-    const dx = (points[i + 1].x - points[i].x) / 3;
-    d += ` C ${points[i].x + dx} ${points[i].y + ms[i] * dx}, ${points[i + 1].x - dx} ${points[i + 1].y - ms[i + 1] * dx}, ${points[i + 1].x} ${points[i + 1].y}`;
-  }
-  return d;
-}
-function monotoneSlopes(pts) {
-  const n = pts.length;
-  const d = [];
-  const m2 = [];
-  for (let i = 0; i < n - 1; i++) {
-    const dx = pts[i + 1].x - pts[i].x;
-    d.push(dx === 0 ? 0 : (pts[i + 1].y - pts[i].y) / dx);
-  }
-  m2.push(d[0]);
-  for (let i = 1; i < n - 1; i++) m2.push(d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2);
-  m2.push(d[n - 2]);
-  for (let i = 0; i < n - 1; i++) {
-    if (d[i] === 0) {
-      m2[i] = 0;
-      m2[i + 1] = 0;
-      continue;
-    }
-    const a2 = m2[i] / d[i], b = m2[i + 1] / d[i];
-    const s = a2 * a2 + b * b;
-    if (s > 9) {
-      const t = 3 / Math.sqrt(s);
-      m2[i] = t * a2 * d[i];
-      m2[i + 1] = t * b * d[i];
-    }
-  }
-  return m2;
-}
-function areaPath(points, baseline) {
-  if (!points.length) return "";
-  const last = points[points.length - 1], first = points[0];
-  return `${linePath(points)} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`;
-}
-
-// graph-engine/svg-parts.tsx
-var import_react10 = __toESM(require_react());
-
-// primitives/BaseBox.tsx
-var import_react9 = __toESM(require_react());
-var import_jsx_runtime8 = __toESM(require_jsx_runtime());
-var BaseBox = import_react9.default.forwardRef(
-  ({ children, direction, gap, px, py, surfaceRadius, shadow, style, ...rest }, ref) => {
-    const s = {
-      display: direction === "row" ? "flex" : void 0,
-      flexDirection: direction === "row" ? "row" : void 0,
-      gap: gap ? `${Number(gap) * 0.25}rem` : void 0,
-      ...style
-    };
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { ref, style: s, ...rest, children });
-  }
-);
-
-// primitives/BaseText.tsx
-var import_jsx_runtime9 = __toESM(require_jsx_runtime());
-function BaseText({ children, variant, weight, color, style, ...rest }) {
-  const s = {
-    fontWeight: weight === "semibold" ? 600 : void 0,
-    color: color === "muted" ? "#888" : void 0,
-    ...style
-  };
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: s, ...rest, children });
-}
-
-// graph-engine/svg-color-schemes.ts
-var CTX_S = [
-  "var(--chart-5, #06b6d4)",
-  "var(--chart-3, #8b5cf6)",
-  "var(--status-success, #10b981)",
-  "var(--chart-4, #f59e0b)",
-  "var(--chart-6, #ec4899)",
-  "var(--chart-7, #14b8a6)",
-  "var(--chart-8, #6366f1)",
-  "var(--status-info, #3b82f6)"
-];
-var N = (p, s) => ({ sentiment: "neutral", primary: p, fill: p, seriesColors: s });
-var INFO_G = { sentiment: "neutral", primary: "var(--status-info, #3b82f6)", fill: "var(--status-info, #3b82f6)", gradient: ["#3b82f6", "#06b6d4"] };
-var OK = { sentiment: "positive", primary: "var(--status-success, #10b981)", fill: "var(--status-success, #10b981)" };
-var TYPE_SCHEME = {
-  heatmap: { sentiment: "neutral", primary: CTX_S[0], fill: CTX_S[0], gradient: ["#6366f1", "#a855f7", "#ec4899", "#f97316"] },
-  bubble: N(CTX_S[1], CTX_S),
-  scatter: N(CTX_S[1], CTX_S),
-  bar: INFO_G,
-  line: INFO_G,
-  area: INFO_G,
-  pie: N(CTX_S[0], CTX_S),
-  donut: N(CTX_S[0], CTX_S),
-  funnel: N(CTX_S[0], CTX_S),
-  treemap: N(CTX_S[0], CTX_S),
-  radar: N(CTX_S[0], CTX_S),
-  gauge: OK,
-  "progress-ring": OK
-};
-var DNA_FALLBACK = { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)" };
-function cs(chart) {
-  return chart.colorScheme ?? (chart.type ? TYPE_SCHEME[chart.type] : void 0) ?? DNA_FALLBACK;
-}
-var FALLBACK_SERIES = CTX_S;
-function seriesColor(scheme2, i) {
-  return scheme2.seriesColors?.[i % (scheme2.seriesColors?.length || 1)] ?? FALLBACK_SERIES[i % FALLBACK_SERIES.length];
-}
-
-// graph-engine/svg-parts.tsx
-var import_jsx_runtime10 = __toESM(require_jsx_runtime());
-var MARGIN = { top: 8, right: 8, bottom: 20, left: 36 };
-var TICK = { fill: "var(--text-muted)", fontSize: 9, fontWeight: 600 };
-var GRID_STROKE = "var(--border-main)";
-function XAxisBand({ labels, y: y2, range }) {
-  const step = (range[1] - range[0]) / labels.length;
-  const maxChars = Math.max(4, Math.floor(step / 5));
-  const rotate = labels.some((l) => l.length > maxChars);
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: labels.map((l, i) => {
-    const cx = range[0] + i * step + step / 2;
-    const display = l.length > maxChars ? l.slice(0, maxChars - 1) + "\u2026" : l;
-    return rotate ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: cx, y: y2 + 6, textAnchor: "end", transform: `rotate(-40,${cx},${y2 + 6})`, ...TICK, children: display }, i) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: cx, y: y2 + 14, textAnchor: "middle", ...TICK, children: display }, i);
-  }) });
-}
-function XAxisLinear({ domain, y: y2, range }) {
-  const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: s(v), y: y2 + 14, textAnchor: "middle", ...TICK, children: v }, i)) });
-}
-function YAxis({ domain, range, x: x2 }) {
-  const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: x2 - 4, y: s(v) + 3, textAnchor: "end", ...TICK, children: fmtTick(v) }, i)) });
-}
-function fmtTick(v) {
-  const abs = Math.abs(v);
-  if (abs >= 1e6) return `${+(v / 1e6).toPrecision(3)}M`;
-  if (abs >= 1e4) return `${+(v / 1e3).toPrecision(3)}k`;
-  return String(v);
-}
-function fmtValue(v, c2) {
-  const s = v.toLocaleString(void 0, { maximumFractionDigits: 0 });
-  if (!c2) return s;
-  const sym = c2.currency || "$";
-  return c2.currencyFormat === "suffix" ? `${s} ${sym}` : `${sym}${s}`;
-}
-function GridLines({ domain, range, xRange }) {
-  const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: s(v), y2: s(v), stroke: GRID_STROKE, strokeOpacity: 0.08 }, i)) });
-}
-function ThresholdLines({ thresholds, yScale, xRange }) {
-  if (!thresholds?.length) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: thresholds.map((t, i) => {
-    const y2 = yScale(t.value);
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: y2, y2, stroke: t.color, strokeDasharray: "4 4", strokeWidth: 1 }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: xRange[1] - 2, y: y2 - 4, textAnchor: "end", fontSize: 9, fontWeight: 600, fill: t.color, children: t.label })
-    ] }, i);
-  }) });
-}
-function useTooltip() {
-  const [tip, setTip] = (0, import_react10.useState)(null);
-  const show = (0, import_react10.useCallback)((state) => setTip(state), []);
-  const hide = (0, import_react10.useCallback)(() => setTip(null), []);
-  return { tip, show, hide };
-}
-function Crosshairs({ tip, xR, yR, mode, ms = 0 }) {
-  if (!tip || mode === "none") return null;
-  const stroke = "var(--text-muted)";
-  const t = ms > 0 ? `all ${ms}ms ease-out` : void 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { opacity: 0.4, pointerEvents: "none", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("line", { x1: tip.vbX, x2: tip.vbX, y1: tip.vbY, y2: yR[1], stroke, strokeDasharray: "3 3", strokeWidth: 0.75, style: { transition: t } }),
-    mode === "both" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("line", { x1: xR[0], x2: tip.vbX, y1: tip.vbY, y2: tip.vbY, stroke, strokeDasharray: "3 3", strokeWidth: 0.75, style: { transition: t } }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("circle", { cx: tip.vbX, cy: tip.vbY, r: 3, fill: stroke, opacity: 0.8, style: { transition: t } })
-  ] });
-}
-function TooltipOverlay({ tip, yLabel, currencyCfg, ms = 0 }) {
-  if (!tip) return null;
-  const t = ms > 0 ? `left ${ms}ms ease-out, top ${ms}ms ease-out` : void 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
-    BaseBox,
-    {
-      px: "3",
-      py: "2",
-      surfaceRadius: "sm",
-      shadow: "xl",
-      style: {
-        position: "absolute",
-        left: tip.x,
-        top: tip.y - 8,
-        transform: "translate(-50%, -100%)",
-        zIndex: 50,
-        background: "var(--glass-bg, var(--bg-card))",
-        backdropFilter: "blur(12px)",
-        border: "1px solid var(--border-ghost, var(--border-main))",
-        pointerEvents: "none",
-        transition: t
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(BaseText, { color: "muted", style: { fontSize: 9, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, marginBottom: 2 }, children: tip.label }),
-        tip.values.map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(BaseText, { style: { color: v.color, fontSize: 12, fontWeight: 600 }, children: [
-          v.name !== "value" ? `${v.name}: ` : "",
-          fmtValue(v.value, currencyCfg),
-          i === 0 && !currencyCfg ? ` ${yLabel || ""}` : ""
-        ] }, i))
-      ]
-    }
-  );
-}
-
-// graph-engine/cartesian-special.tsx
-var import_jsx_runtime11 = __toESM(require_jsx_runtime());
-function ScatterSvg({ chart, width = 320, height = 150 }) {
-  const data = chart.data;
-  const xDom = niceDomain(Math.min(...data.map((d) => d.x)), Math.max(...data.map((d) => d.x)));
-  const yDom = niceDomain(Math.min(...data.map((d) => d.y)), Math.max(...data.map((d) => d.y)));
-  const xR = [MARGIN.left, width - MARGIN.right];
-  const yR = [height - MARGIN.bottom, MARGIN.top];
-  const xS = linearScale([xDom.min, xDom.max], xR);
-  const yS = linearScale([yDom.min, yDom.max], yR);
-  const maxZ = data.reduce((m2, d) => Math.max(m2, d.z ?? 1), 1);
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridLines, { domain: yDom, range: yR, xRange: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(XAxisLinear, { domain: xDom, y: height - MARGIN.bottom, range: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(YAxis, { domain: yDom, range: yR, x: MARGIN.left }),
-    data.map((d, i) => {
-      const r = chart.type === "bubble" ? 4 + (d.z ?? 1) / maxZ * 16 : 4;
-      return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("circle", { cx: xS(d.x), cy: yS(d.y), r, fill: "var(--primary)", opacity: 0.6 }, i);
-    })
-  ] });
-}
-function WaterfallSvg({ chart, width = 320, height = 150 }) {
-  const data = chart.data;
-  const labels = data.map((d) => d.label);
-  const xR = [MARGIN.left, width - MARGIN.right];
-  const yR = [height - MARGIN.bottom, MARGIN.top];
-  const band_ = bandScale(labels, xR);
-  let running = 0;
-  const bars = data.map((d) => {
-    if (d.type === "total") {
-      running = d.value;
-      return { base: 0, h: d.value, color: "var(--primary)", label: d.label };
-    }
-    const prev = running;
-    running += d.type === "subtract" ? -d.value : d.value;
-    return { base: d.type === "subtract" ? running : prev, h: Math.abs(d.value), color: d.type === "subtract" ? "var(--status-error, #ef4444)" : "var(--status-success, #10b981)", label: d.label };
-  });
-  const maxV = Math.max(...bars.map((b) => b.base + b.h));
-  const yDom = niceDomain(0, maxV);
-  const yS = linearScale([yDom.min, yDom.max], yR);
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridLines, { domain: yDom, range: yR, xRange: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(XAxisBand, { labels, y: yR[0], range: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(YAxis, { domain: yDom, range: yR, x: MARGIN.left }),
-    bars.map((b, i) => {
-      const bn = band_(b.label);
-      return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("rect", { x: bn.x, y: yS(b.base + b.h), width: bn.width, height: Math.max(0, yS(b.base) - yS(b.base + b.h)), rx: 3, fill: b.color, opacity: 0.85 }, i);
-    })
-  ] });
-}
-
-// graph-engine/drag-range.tsx
-var import_react11 = __toESM(require_react());
-var import_jsx_runtime12 = __toESM(require_jsx_runtime());
-var INIT = { start: null, end: null, dragging: false };
-function useDragRange() {
-  const [range, setRange] = (0, import_react11.useState)(INIT);
-  const startRef = (0, import_react11.useRef)(null);
-  const onDown = (0, import_react11.useCallback)((ep) => {
-    startRef.current = ep;
-    setRange({ start: ep, end: ep, dragging: true });
-  }, []);
-  const onDrag = (0, import_react11.useCallback)((ep) => {
-    if (!startRef.current) return;
-    setRange({ start: startRef.current, end: ep, dragging: true });
-  }, []);
-  const onUp = (0, import_react11.useCallback)(() => {
-    setRange((prev) => {
-      if (!prev.start || !prev.end || prev.start.idx === prev.end.idx) return INIT;
-      const [s, e] = prev.start.idx < prev.end.idx ? [prev.start, prev.end] : [prev.end, prev.start];
-      return { start: s, end: e, dragging: false };
-    });
-    startRef.current = null;
-  }, []);
-  const clear = (0, import_react11.useCallback)(() => {
-    startRef.current = null;
-    setRange(INIT);
-  }, []);
-  return { range, onDown, onDrag, onUp, clear };
-}
-function RangeHighlight({ range, yR }) {
-  if (!range.start || !range.end) return null;
-  const x1 = Math.min(range.start.vbX, range.end.vbX);
-  const x2 = Math.max(range.start.vbX, range.end.vbX);
-  if (x2 - x1 < 1) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
-    "rect",
-    {
-      x: x1,
-      y: yR[0],
-      width: x2 - x1,
-      height: yR[1] - yR[0],
-      fill: "var(--primary)",
-      opacity: 0.08,
-      pointerEvents: "none",
-      rx: 2
-    }
-  );
-}
-function RangeBadge({ range, scaleX, yLabel, currencyCfg }) {
-  if (!range.start || !range.end || range.dragging) return null;
-  if (range.start.idx === range.end.idx) return null;
-  const [s, e] = range.start.idx < range.end.idx ? [range.start, range.end] : [range.end, range.start];
-  const delta = e.value - s.value;
-  const pct = s.value !== 0 ? Math.round(delta / s.value * 100) : 0;
-  const sign = delta >= 0 ? "+" : "";
-  const color = delta >= 0 ? "var(--status-success, #10b981)" : "var(--status-error, #ef4444)";
-  const midX = (s.vbX + e.vbX) / 2 * scaleX;
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
-    BaseBox,
-    {
-      px: "3",
-      py: "2",
-      surfaceRadius: "sm",
-      shadow: "lg",
-      style: {
-        position: "absolute",
-        left: midX,
-        top: -4,
-        transform: "translate(-50%, -100%)",
-        zIndex: 50,
-        background: "var(--glass-bg, var(--bg-card))",
-        backdropFilter: "blur(12px)",
-        border: `1px solid ${color}`,
-        pointerEvents: "none"
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(BaseText, { variant: "detail", style: { fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }, children: [
-          s.label,
-          " \u2192 ",
-          e.label
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(BaseText, { style: { color, fontSize: 13, fontWeight: 700 }, children: [
-          delta < 0 ? "-" : "+",
-          fmtValue(Math.abs(delta), currencyCfg),
-          " (",
-          sign,
-          pct,
-          "%) ",
-          yLabel || ""
-        ] })
-      ]
-    }
-  );
-}
-
-// architect/graph-composer.types.ts
-function defaultInteraction(type) {
-  return {
-    crosshair: type === "sparkline" ? "none" : "both",
-    dragRange: false,
-    transitionMs: 0
-  };
-}
-
-// graph-engine/cartesian-series.tsx
-var import_jsx_runtime13 = __toESM(require_jsx_runtime());
-function renderSeries(t, data, labels, band, yS, baseline, c2, series, pw, chart) {
-  const isBar = t === "bar";
-  const isArea = t === "area" || t === "sparkline";
-  if (t === "distribution") {
-    const bars = data.map((d, i) => {
-      const b = band(labels[i]);
-      const h = baseline - yS(d.value ?? 0);
-      return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("rect", { x: b.x, y: yS(d.value ?? 0), width: b.width, height: Math.max(0, h), rx: 3, fill: c2.primary, opacity: 0.5 }, i);
-    });
-    const g = chart?.gaussian;
-    if (!g) return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_jsx_runtime13.Fragment, { children: bars });
-    const xMin = parseFloat(labels[0]), xMax = parseFloat(labels[labels.length - 1]);
-    const maxY = Math.max(...data.map((d) => d.value ?? 0));
-    const scale = maxY / (1 / (g.stddev * Math.sqrt(2 * Math.PI)));
-    const gauss = (x2) => 1 / (g.stddev * Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * ((x2 - g.mean) / g.stddev) ** 2) * scale;
-    const x0 = band(labels[0]).x;
-    const pts = Array.from({ length: 41 }, (_, i) => {
-      const x2 = xMin + i / 40 * (xMax - xMin);
-      return { x: x0 + i / 40 * pw, y: yS(Math.min(gauss(x2), maxY * 1.1)) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_jsx_runtime13.Fragment, { children: [
-      bars,
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: linePath(pts), fill: "none", stroke: c2.primary, strokeWidth: 2, opacity: 0.9 })
-    ] });
-  }
-  if (isBar) return data.map((d, i) => {
-    const b = band(labels[i]);
-    const h = baseline - yS(d.value ?? 0);
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("rect", { x: b.x, y: yS(d.value ?? 0), width: b.width, height: Math.max(0, h), rx: 3, fill: c2.gradient ? "url(#gr-bar)" : c2.primary, opacity: 0.85 }, i);
-  });
-  if (isArea) {
-    const pts = data.map((d, i) => {
-      const b = band(labels[i]);
-      return { x: b.x + b.width / 2, y: yS(d.value ?? 0) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_jsx_runtime13.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: areaPath(pts, baseline), fill: c2.fill, opacity: 0.12 }),
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: linePath(pts), fill: "none", stroke: c2.primary, strokeWidth: 2 })
-    ] });
-  }
-  if (t === "line") {
-    const pts = data.map((d, i) => {
-      const b = band(labels[i]);
-      return { x: b.x + b.width / 2, y: yS(d.value ?? 0) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_jsx_runtime13.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: linePath(pts), fill: "none", stroke: c2.primary, strokeWidth: 2 }),
-      pts.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("circle", { cx: p.x, cy: p.y, r: 2.5, fill: c2.primary }, i))
-    ] });
-  }
-  if (t === "multi-line") return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_jsx_runtime13.Fragment, { children: series.map((s, si) => {
-    const pts = data.map((d, i) => {
-      const b = band(labels[i]);
-      return { x: b.x + b.width / 2, y: yS(d[s] || 0) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: linePath(pts), fill: "none", stroke: seriesColor(c2, si), strokeWidth: 1.5 }),
-      pts.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("circle", { cx: p.x, cy: p.y, r: 2, fill: seriesColor(c2, si) }, i))
-    ] }, s);
-  }) });
-  if (t === "stacked-bar") return data.map((d, i) => {
-    const b = band(labels[i]);
-    let y0 = baseline;
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("g", { children: series.map((s, si) => {
-      const v = d[s] || 0;
-      const h = baseline - yS(v);
-      const y2 = y0 - h;
-      y0 = y2;
-      const r = si === series.length - 1 ? 3 : 0;
-      return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("rect", { x: b.x, y: y2, width: b.width, height: Math.max(0, h), rx: r, fill: seriesColor(c2, si), opacity: 0.85 }, s);
-    }) }, i);
-  });
-  if (t === "stacked-area") {
-    const cumul = data.map((d) => {
-      let s = 0;
-      return series.map((k) => {
-        s += d[k] || 0;
-        return s;
-      });
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_jsx_runtime13.Fragment, { children: series.map((s, si) => {
-      const pts = data.map((d, i) => {
-        const b = band(labels[i]);
-        return { x: b.x + b.width / 2, y: yS(cumul[i][si]) };
-      });
-      const base = si === 0 ? data.map((_, i) => {
-        const b = band(labels[i]);
-        return { x: b.x + b.width / 2, y: baseline };
-      }) : data.map((_, i) => {
-        const b = band(labels[i]);
-        return { x: b.x + b.width / 2, y: yS(cumul[i][si - 1]) };
-      });
-      const topD = linePath(pts).replace(/^M/, "");
-      const baseD = linePath([...base].reverse()).replace(/^M/, "L");
-      return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("g", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: `M${topD} ${baseD} Z`, fill: seriesColor(c2, si), opacity: 0.2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: linePath(pts), fill: "none", stroke: seriesColor(c2, si), strokeWidth: 1.5 })
-      ] }, s);
-    }) });
-  }
-  return null;
-}
-
-// graph-engine/cartesian-render.tsx
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
-function CartesianRender({ chart, width = 320, height = 150 }) {
-  const ref = (0, import_react12.useRef)(null);
-  const { tip, show, hide } = useTooltip();
-  const { range, onDown: dragDown, onDrag, onUp: dragUp, clear: dragClear } = useDragRange();
-  const c2 = cs(chart);
-  const data = chart.data;
-  const t = chart.type;
-  const spark = t === "sparkline";
-  const h = spark ? 40 : height;
-  const m2 = spark ? { top: 4, right: 4, bottom: 4, left: 4 } : MARGIN;
-  const pw = width - m2.left - m2.right;
-  const ph = h - m2.top - m2.bottom;
-  const xR = [m2.left, m2.left + pw];
-  const yR = [m2.top, m2.top + ph];
-  if (t === "scatter" || t === "bubble") return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(ScatterSvg, { chart, width, height });
-  if (t === "waterfall") return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(WaterfallSvg, { chart, width, height });
-  const isStacked = t === "stacked-bar" || t === "stacked-area";
-  const isMulti = t === "multi-line";
-  const series = chart.series || [];
-  const labels = data.map((d) => String(d.label ?? ""));
-  const band = bandScale(labels, xR, t === "line" || t === "multi-line" || t === "area" || t === "stacked-area" || spark ? 0 : 0.2);
-  const allVals = isStacked ? data.map((d) => series.reduce((s, k) => s + (d[k] || 0), 0)) : isMulti ? data.flatMap((d) => series.map((k) => d[k] || 0)) : data.map((d) => d.value ?? 0);
-  const yDom = niceDomain(0, Math.max(...allVals, 1));
-  const yS = linearScale([yDom.min, yDom.max], [yR[1], yR[0]]);
-  const resolve = (e) => {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0) return null;
-    const scaleX = rect.width / width;
-    const scaleY = rect.height / h;
-    const vbX = (e.clientX - rect.left) / scaleX;
-    const idx = Math.min(data.length - 1, Math.max(0, Math.floor((vbX - xR[0]) / pw * data.length)));
-    const d = data[idx];
-    if (!d) return null;
-    const b = band(labels[idx]);
-    const pX = b.x + b.width / 2;
-    const pY = yS(allVals[idx]);
-    return { idx, label: labels[idx], value: allVals[idx], vbX: pX, pY, scaleX, scaleY };
-  };
-  const onMove = (e) => {
-    const r = resolve(e);
-    if (!r) return;
-    if (range.dragging) {
-      onDrag({ idx: r.idx, label: r.label, value: r.value, vbX: r.vbX });
-      return;
-    }
-    const vals = isStacked || isMulti ? series.map((s, i) => ({ name: s, value: data[r.idx][s] || 0, color: seriesColor(c2, i) })) : [{ name: "value", value: r.value, color: c2.primary }];
-    show({ x: r.vbX * r.scaleX, y: r.pY * r.scaleY, vbX: r.vbX, vbY: r.pY, label: r.label, values: vals });
-  };
-  const ix = chart.interaction ?? defaultInteraction(t);
-  const scX = ref.current ? ref.current.getBoundingClientRect().width / width : 1;
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-      "svg",
-      {
-        ref,
-        viewBox: `0 0 ${width} ${h}`,
-        width: "100%",
-        height: h,
-        onMouseMove: onMove,
-        onMouseLeave: () => {
-          if (!range.dragging) hide();
-        },
-        onMouseDown: ix.dragRange ? (e) => {
-          const r = resolve(e);
-          if (r) {
-            dragClear();
-            hide();
-            dragDown({ idx: r.idx, label: r.label, value: r.value, vbX: r.vbX });
-          }
-        } : void 0,
-        onMouseUp: ix.dragRange ? dragUp : void 0,
-        style: { display: "block", cursor: spark ? void 0 : ix.dragRange ? "crosshair" : void 0 },
-        children: [
-          c2.gradient && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("linearGradient", { id: "gr-bar", x1: "0", y1: "0", x2: "0", y2: "1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("stop", { offset: "0%", stopColor: c2.gradient[0] }),
-            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("stop", { offset: "100%", stopColor: c2.gradient[1] })
-          ] }) }),
-          ix.dragRange && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(RangeHighlight, { range, yR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(GridLines, { domain: yDom, range: [yR[1], yR[0]], xRange: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(XAxisBand, { labels, y: yR[1], range: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(YAxis, { domain: yDom, range: [yR[1], yR[0]], x: m2.left }),
-          renderSeries(t, data, labels, band, yS, yR[1], c2, series, pw, chart),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(ThresholdLines, { thresholds: chart.thresholds, yScale: yS, xRange: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(Crosshairs, { tip, xR, yR, mode: ix.crosshair, ms: ix.transitionMs })
-        ]
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(TooltipOverlay, { tip, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig, svgRef: ref, ms: ix.transitionMs }),
-    ix.dragRange && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(RangeBadge, { range, svgRef: ref, scaleX: scX, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig })
-  ] });
-}
-
-// graph-engine/radial-render.tsx
-var import_react13 = __toESM(require_react());
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
-function RadialRender({ chart, size = 150 }) {
-  const t = chart.type;
-  if (t === "gauge") return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(GaugeSvg, { chart, size });
-  if (t === "progress-ring") return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(RingSvg, { chart, size });
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(PieSvg, { chart, size, donut: t === "donut" });
-}
-function PieSvg({ chart, size, donut }) {
-  const ref = (0, import_react13.useRef)(null);
-  const { tip, show, hide } = useTooltip();
-  const data = chart.data;
-  const colors = cs(chart).seriesColors || FALLBACK_SERIES;
-  const cx = size / 2, cy = size / 2;
-  const outer = size * 0.38, inner = donut ? size * 0.23 : 0;
-  const values = data.map((d) => d.value ?? 0);
-  const arcs = arcScale(values, -Math.PI / 2, Math.PI * 1.5);
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("svg", { ref, viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, onMouseLeave: hide, children: [
-      arcs.map((arc, i) => {
-        const color = colors[i % colors.length];
-        const mid = (arc.startAngle + arc.endAngle) / 2;
-        const hx = cx + outer * 0.7 * Math.cos(mid);
-        const hy = cy + outer * 0.7 * Math.sin(mid);
-        const d = donut ? donutArc(cx, cy, outer, inner, arc.startAngle, arc.endAngle) : donutArc(cx, cy, outer, 0, arc.startAngle, arc.endAngle);
-        return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
-          "path",
-          {
-            d,
-            fill: color,
-            stroke: "var(--bg-card)",
-            strokeWidth: 1.5,
-            onMouseEnter: () => show({ x: hx, y: hy, vbX: hx, vbY: hy, label: data[i].label, values: [{ name: "value", value: values[i], color }] })
-          },
-          i
-        );
-      }),
-      donut && chart.yLabel && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("text", { x: cx, y: cy, textAnchor: "middle", dominantBaseline: "central", fontSize: 14, fontWeight: 700, fill: "var(--text-main)", children: chart.yLabel })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(TooltipOverlay, { tip, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig, svgRef: ref })
-  ] });
-}
-function GaugeSvg({ chart, size }) {
-  const c2 = cs(chart);
-  const d = chart.data[0];
-  if (!d) return null;
-  const value = d.value ?? 0;
-  const max = chart.range?.max ?? 100;
-  const pct = Math.min(value / max, 1);
-  const cx = size / 2, cy = size * 0.55, r = size * 0.38;
-  const bgPath = arcPath(cx, cy, r, Math.PI, 0);
-  const fgPath = arcPath(cx, cy, r, Math.PI, Math.PI + pct * Math.PI);
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { textAlign: "center" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("svg", { viewBox: `0 0 ${size} ${size * 0.6}`, width: "100%", height: size * 0.55, style: { display: "block" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("path", { d: bgPath, fill: "none", stroke: "var(--border-main)", strokeWidth: 8, strokeLinecap: "round", opacity: 0.15 }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("path", { d: fgPath, fill: "none", stroke: c2.primary, strokeWidth: 8, strokeLinecap: "round" })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(BaseText, { weight: "bold", style: { fontSize: 18, marginTop: -4, color: c2.primary }, children: [
-      chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value,
-      chart.yLabel === "%" ? "%" : ""
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(BaseText, { variant: "detail", color: "muted", style: { fontSize: 9 }, children: d.label || chart.title })
-  ] });
-}
-function RingSvg({ chart, size }) {
-  const c2 = cs(chart);
-  const d = chart.data[0];
-  if (!d) return null;
-  const value = d.value ?? 0;
-  const max = chart.range?.max ?? 100;
-  const pct = Math.min(value / max, 1);
-  const cx = size / 2, cy = size / 2, r = size * 0.38, sw = 8;
-  const circ = Math.PI * 2 * r;
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { cx, cy, r, fill: "none", stroke: "var(--border-main)", strokeWidth: sw, opacity: 0.15 }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
-      "circle",
-      {
-        cx,
-        cy,
-        r,
-        fill: "none",
-        stroke: c2.primary,
-        strokeWidth: sw,
-        strokeDasharray: `${pct * circ} ${circ}`,
-        strokeLinecap: "round",
-        transform: `rotate(-90 ${cx} ${cy})`
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("text", { x: cx, y: cy - 4, textAnchor: "middle", fontSize: 22, fontWeight: 700, fill: "var(--text-main)", children: chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("text", { x: cx, y: cy + 14, textAnchor: "middle", fontSize: 9, fill: "var(--text-muted)", children: d.label || chart.title })
-  ] }) });
-}
-
-// public/filtered-paper-list.tsx
-var import_react14 = __toESM(require_react());
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
-var PAGE_SIZE = 20;
-function formatAuthors(authors) {
-  if (!authors?.length) return "\u2014";
-  if (authors.length <= 3) return authors.join(", ");
-  return `${authors.slice(0, 3).join(", ")} et al.`;
-}
-var btnStyle = {
-  background: "none",
-  border: "1px solid #ddd",
-  borderRadius: 4,
-  cursor: "pointer",
-  fontSize: 12,
-  color: "#555",
-  fontFamily: "monospace",
-  padding: "4px 10px"
-};
-var cellStyle = {
-  padding: "4px 8px",
-  fontSize: 11,
-  fontFamily: "monospace",
-  borderBottom: "1px solid #f0f0f0",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis"
-};
-function FilteredPaperList({ papers }) {
-  const [expanded, setExpanded] = (0, import_react14.useState)(false);
-  const [showAll, setShowAll] = (0, import_react14.useState)(false);
-  if (!papers.length) return null;
-  const sorted = [...papers].sort((a2, b) => (b.citation_count || 0) - (a2.citation_count || 0));
-  const visible = showAll ? sorted : sorted.slice(0, PAGE_SIZE);
-  const hasMore = sorted.length > PAGE_SIZE;
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { marginTop: 12 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("button", { onClick: () => setExpanded(!expanded), style: btnStyle, children: expanded ? "Hide papers" : `Show ${papers.length} paper${papers.length !== 1 ? "s" : ""}` }),
-    expanded && /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { marginTop: 8, border: "1px solid #eee", borderRadius: 6, overflow: "auto", maxHeight: 500 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("tr", { style: { background: "#fafafa", textAlign: "left" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 700, width: "40%" }, children: "Title" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 700, width: "25%" }, children: "Authors" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 700, width: "10%" }, children: "Year" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 700, width: "15%" }, children: "Journal" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 700, width: "10%", textAlign: "right" }, children: "Cited" })
-        ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("tbody", { children: visible.map((r) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("tr", { style: { cursor: "default" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: { ...cellStyle, whiteSpace: "normal", maxWidth: 300 }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
-            "a",
-            {
-              href: `https://doi.org/${r.doi}`,
-              target: "_blank",
-              rel: "noopener noreferrer",
-              style: { color: "#2563eb", textDecoration: "none" },
-              title: r.title || r.doi,
-              children: [
-                (r.title || r.doi).substring(0, 80),
-                (r.title || r.doi).length > 80 ? "..." : ""
-              ]
-            }
-          ) }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: cellStyle, title: r.authors?.join(", "), children: formatAuthors(r.authors) }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: cellStyle, children: r.published ? r.published.substring(0, 4) : "\u2014" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: cellStyle, title: r.journal, children: r.journal ? r.journal.substring(0, 25) : "\u2014" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: { ...cellStyle, textAlign: "right" }, children: r.citation_count ?? "\u2014" })
-        ] }, r.doi)) })
-      ] }),
-      hasMore && !showAll && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 8, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("button", { onClick: () => setShowAll(true), style: { ...btnStyle, border: "none", color: "#2563eb" }, children: [
-        "Show all ",
-        sorted.length,
-        " papers"
-      ] }) })
-    ] })
-  ] });
-}
-
-// public/filtered-charts.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function ChartCard({ chart }) {
-  const isDonut = chart.type === "donut" || chart.type === "pie";
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { background: "#fff", border: "1px solid #eee", borderRadius: 8, padding: "8px 10px 4px", overflow: "hidden" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", marginBottom: 4 }, children: chart.title }),
-    isDonut ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RadialRender, { chart, size: 200 }) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(CartesianRender, { chart, width: 340, height: 160 })
-  ] });
-}
-function StatsBar({ nodes, edges, doiCount }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", gap: 16, fontSize: 12, color: "#666", fontFamily: "monospace", padding: "8px 0", flexWrap: "wrap" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { children: [
-      nodes.length,
-      " tags"
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { children: [
-      edges.length,
-      " connections"
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { color: "#333" }, children: [
-      doiCount,
-      " papers"
-    ] }),
-    TAG_CATEGORIES.map((cat) => {
-      const count = nodes.filter((n) => n.group === cat).length;
-      if (!count) return null;
-      return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { color: COLORS[cat] }, children: [
-        count,
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { color: TREND_COLOR[trend], fontSize: 16, fontFamily: "var(--mono)" }, children: [
+        TREND_SYMBOL[trend],
         " ",
-        cat,
-        count !== 1 ? "s" : ""
-      ] }, cat);
-    })
-  ] });
-}
-var scheme = (color) => ({
-  sentiment: "neutral",
-  primary: color,
-  fill: color,
-  gradient: [color, color]
-});
-function buildCharts(filtered) {
-  const charts = [];
-  const withCitations = filtered.filter((r) => r.citation_count > 0).sort((a2, b) => b.citation_count - a2.citation_count).slice(0, 15);
-  if (withCitations.length > 0) {
-    charts.push({ type: "bar", title: "Citations", yLabel: "Citations", colorScheme: scheme("#3b82f6"), data: withCitations.map((r) => ({ label: (r.title || r.doi).substring(0, 22), value: r.citation_count })) });
-  }
-  const typeMap = /* @__PURE__ */ new Map();
-  for (const r of filtered) typeMap.set(r.type || "unknown", (typeMap.get(r.type || "unknown") || 0) + 1);
-  if (typeMap.size > 0) {
-    const typeScheme = { sentiment: "neutral", primary: COLORS.type, fill: COLORS.type, seriesColors: Object.values(COLORS) };
-    charts.push({ type: typeMap.size > 1 ? "donut" : "bar", title: "By Type", colorScheme: typeScheme, data: [...typeMap.entries()].map(([label, value]) => ({ label, value })) });
-  }
-  const journalMap = /* @__PURE__ */ new Map();
-  for (const r of filtered) if (r.journal) journalMap.set(r.journal, (journalMap.get(r.journal) || 0) + 1);
-  if (journalMap.size > 0) {
-    charts.push({ type: "bar", title: "By Journal", yLabel: "Count", colorScheme: scheme(COLORS.journal), data: [...journalMap.entries()].sort((a2, b) => b[1] - a2[1]).slice(0, 12).map(([label, value]) => ({ label: label.substring(0, 22), value })) });
-  }
-  const yearMap = /* @__PURE__ */ new Map();
-  for (const r of filtered) {
-    if (r.published) {
-      const y2 = r.published.substring(0, 4);
-      if (/^\d{4}$/.test(y2)) yearMap.set(y2, (yearMap.get(y2) || 0) + 1);
-    }
-  }
-  if (yearMap.size > 0) {
-    charts.push({ type: yearMap.size > 1 ? "line" : "bar", title: "Timeline", yLabel: "Papers", colorScheme: scheme(COLORS.year), data: [...yearMap.entries()].sort((a2, b) => a2[0].localeCompare(b[0])).map(([label, value]) => ({ label, value })) });
-  }
-  const authorMap = /* @__PURE__ */ new Map();
-  for (const r of filtered) if (r.authors) for (const a2 of r.authors) authorMap.set(a2, (authorMap.get(a2) || 0) + 1);
-  const topAuthors = [...authorMap.entries()].sort((a2, b) => b[1] - a2[1]).slice(0, 15);
-  if (topAuthors.length > 0) {
-    charts.push({ type: "bar", title: "Authors", yLabel: "Papers", colorScheme: scheme(COLORS.author), data: topAuthors.map(([label, value]) => ({ label: label.substring(0, 20), value })) });
-  }
-  const pubMap = /* @__PURE__ */ new Map();
-  for (const r of filtered) if (r.publisher) pubMap.set(r.publisher, (pubMap.get(r.publisher) || 0) + 1);
-  if (pubMap.size > 0) {
-    charts.push({ type: "bar", title: "Publishers", yLabel: "Count", colorScheme: scheme(COLORS.publisher), data: [...pubMap.entries()].sort((a2, b) => b[1] - a2[1]).slice(0, 10).map(([label, value]) => ({ label: label.substring(0, 22), value })) });
-  }
-  return charts;
-}
-function FilteredCharts({ matchingDois, totalDois }) {
-  const [records, setRecords] = (0, import_react15.useState)([]);
-  const [loaded, setLoaded] = (0, import_react15.useState)(false);
-  (0, import_react15.useEffect)(() => {
-    fetch("/api/records").then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setRecords(data);
-      setLoaded(true);
-    }).catch(() => setLoaded(true));
-  }, []);
-  const filtered = records.filter((r) => matchingDois.has(r.doi));
-  const isFiltered = matchingDois.size < totalDois;
-  if (!loaded) return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { padding: 12, color: "#999", fontFamily: "monospace", fontSize: 12 }, children: "Loading charts..." });
-  if (!filtered.length) return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { padding: 12, color: "#999", fontFamily: "monospace", fontSize: 12 }, children: "No matching papers for current selection." });
-  const charts = buildCharts(filtered);
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { children: [
-    charts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_jsx_runtime17.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { fontSize: 11, color: "#666", fontFamily: "monospace", marginBottom: 8 }, children: isFiltered ? `Charts for ${filtered.length} of ${totalDois} papers (filtered)` : `Charts for all ${filtered.length} papers` }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 8 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ChartCard, { chart }, `${chart.title}-${filtered.length}-${i}`)) })
+        trend
+      ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(FilteredPaperList, { papers: filtered })
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { width: w, height: h, style: { display: "block", maxWidth: "100%" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: histPath, fill: "none", stroke: "var(--accent)", strokeWidth: 2 }),
+      fcSource.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: fcPath, fill: "none", stroke: "var(--accent)", strokeWidth: 2, strokeDasharray: "4 4", opacity: 0.5 }),
+      allPoints.map((p, i) => {
+        const cx = xScale(p.year), cy = yScale(p.y);
+        const isForecast = p.kind === "fc";
+        const isPartial = p.partial;
+        return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("g", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx, cy, r: 3, fill: isForecast || isPartial ? "var(--bg-card)" : "var(--accent)", stroke: "var(--accent)", strokeWidth: 1.5 }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("text", { x: cx, y: h - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: p.year }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("text", { x: cx, y: cy - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg)", fontFamily: "var(--mono)", children: p.y }),
+          isPartial && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("text", { x: cx, y: cy + 14, fontSize: 8, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: [
+            "(",
+            p.raw,
+            " so far)"
+          ] })
+        ] }, i);
+      })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
   ] });
 }
 
-// public/graph-canvas.tsx
-var import_react17 = __toESM(require_react());
-
-// public/node-shapes.ts
-function shapePath(group, cx, cy, r) {
-  switch (group) {
-    case "institution": {
-      return `M ${cx} ${cy - r} L ${cx + r} ${cy} L ${cx} ${cy + r} L ${cx - r} ${cy} Z`;
-    }
-    case "author": {
-      const pts = [];
-      for (let i = 0; i < 6; i++) {
-        const a2 = Math.PI / 3 * i - Math.PI / 2;
-        pts.push(`${cx + r * Math.cos(a2)} ${cy + r * Math.sin(a2)}`);
-      }
-      return `M ${pts[0]} L ${pts.slice(1).join(" L ")} Z`;
-    }
-    case "doi": {
-      const h = r * 0.8;
-      const rr = r * 0.2;
-      return [
-        `M ${cx - h + rr} ${cy - h}`,
-        `L ${cx + h - rr} ${cy - h} Q ${cx + h} ${cy - h} ${cx + h} ${cy - h + rr}`,
-        `L ${cx + h} ${cy + h - rr} Q ${cx + h} ${cy + h} ${cx + h - rr} ${cy + h}`,
-        `L ${cx - h + rr} ${cy + h} Q ${cx - h} ${cy + h} ${cx - h} ${cy + h - rr}`,
-        `L ${cx - h} ${cy - h + rr} Q ${cx - h} ${cy - h} ${cx - h + rr} ${cy - h}`,
-        "Z"
-      ].join(" ");
-    }
-    default:
-      return null;
+// public/portfolio-collaborators.tsx
+var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+function CollaboratorsPanel({ suggested }) {
+  if (!suggested.length) {
+    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No potential collaborators found yet. Backfill needs to run, or no one in your tenant shares your concepts (excluding existing co-authors)." });
   }
-}
-
-// public/node-glyph.tsx
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
-function wrapLabel(text, maxChars) {
-  const words = text.split(" ");
-  const lines = [];
-  let line = "";
-  for (const word of words) {
-    if (line && (line + " " + word).length > maxChars) {
-      lines.push(line);
-      line = word;
-    } else line = line ? line + " " + word : word;
-  }
-  if (line) lines.push(line);
-  return lines;
-}
-function NodeGlyph({
-  node,
-  highlighted,
-  collaboratorHint,
-  dimmed,
-  selected,
-  hovered,
-  expanded,
-  showLabel = true,
-  dense,
-  pinIndex,
-  onClick,
-  onDragStart,
-  onMouseEnter,
-  onMouseLeave
-}) {
-  const cColor = COLORS[node.group] || "#666";
-  const cBg = BG_COLORS[node.group] || "#eee";
-  const r = nodeRadius(node.weight || 0, node.role);
-  const isDoi = node.group === "doi";
-  const label = isDoi ? hovered || selected ? node.label : node.label.length > 22 ? node.label.substring(0, 20) + "\u2026" : node.label : node.label.length > 28 ? node.label.substring(0, 25) + "..." : node.label;
-  const fontSize = isDoi ? 9 : r >= 10 ? 11 : 10;
-  const d = shapePath(node.group, node.x, node.y, r);
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
-    "g",
-    {
-      onClick,
-      onMouseEnter,
-      onMouseLeave,
-      onMouseDown: (e) => {
-        e.stopPropagation();
-        onDragStart(e);
-      },
-      style: { cursor: "grab", transition: "opacity 200ms ease" },
-      opacity: dimmed ? 0.1 : 1,
-      children: [
-        collaboratorHint && (d ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: shapePath(node.group, node.x, node.y, r + 9), fill: "none", stroke: "#f9a825", strokeWidth: 2, strokeDasharray: "3 3" }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("circle", { cx: node.x, cy: node.y, r: r + 9, fill: "none", stroke: "#f9a825", strokeWidth: 2, strokeDasharray: "3 3" })),
-        (selected || highlighted || hovered) && (d ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: shapePath(node.group, node.x, node.y, r + 5), fill: "none", stroke: cColor, strokeWidth: hovered ? 2 : 1.5, opacity: 0.5 }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("circle", { cx: node.x, cy: node.y, r: r + 5, fill: "none", stroke: cColor, strokeWidth: hovered ? 2 : 1.5, opacity: 0.5 })),
-        d ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d, fill: selected ? cColor : cBg, stroke: cColor, strokeWidth: r >= 8 ? 2 : 1.5 }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("circle", { cx: node.x, cy: node.y, r, fill: selected ? cColor : cBg, stroke: cColor, strokeWidth: r >= 8 ? 2 : 1.5 }),
-        !dimmed && isDoi && (hovered || selected) && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("text", { x: node.x + r + 4, y: node.y - 4, fontSize, fontFamily: "monospace", fill: "#333", children: wrapLabel(label, 30).map((line, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("tspan", { x: node.x + r + 4, dy: i === 0 ? 0 : 11, children: line }, i)) }),
-        !dimmed && isDoi && !hovered && !selected && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("text", { x: node.x + r + 4, y: node.y + 3.5, fontSize, fontFamily: "monospace", fill: "#333", opacity: 0.5, children: label }),
-        !dimmed && !isDoi && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-          "text",
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("p", { style: { fontSize: 13, color: "var(--fg-muted)", marginBottom: 12 }, children: "Researchers in your institution working on similar concepts you haven\u2019t co-authored with yet." }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: suggested.map((s) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { borderLeft: "2px solid var(--accent)", padding: "10px 14px", background: "var(--bg-inset)", borderRadius: 3 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontWeight: 500, fontSize: 14 }, children: s.name || s.orcid }),
+          s.faculty && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)" }, children: s.faculty })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+          "a",
           {
-            x: node.x + r + 4,
-            y: node.y + 3.5,
-            fontSize,
-            fontFamily: "monospace",
-            fontWeight: selected || node.role === "hub" ? 700 : 400,
-            fill: selected ? cColor : "#333",
-            children: label
+            href: `/overview.html?highlight=${encodeURIComponent(s.orcid)}`,
+            style: { fontSize: 11, fontFamily: "var(--mono)", color: "var(--accent)" },
+            children: "On graph \u2192"
           }
         )
-      ]
-    }
-  );
-}
-
-// public/edge-render.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
-function edgeStrokeWidth(weight) {
-  return Math.min(6, 0.3 + Math.log2(weight + 1) * 1.5);
-}
-function edgeOpacity(weight, isConnected, hasSelection) {
-  if (hasSelection && !isConnected) return 0.03;
-  if (hasSelection && isConnected) return Math.min(0.7, 0.15 + weight * 0.1);
-  return Math.min(0.6, 0.08 + weight * 0.08);
-}
-function EdgeDefs({ edges, nodeMap }) {
-  const seen = /* @__PURE__ */ new Set();
-  const gradients = [];
-  for (const e of edges) {
-    const s = nodeMap.get(e.source);
-    const t = nodeMap.get(e.target);
-    if (!s || !t || s.group === t.group) continue;
-    const key = s.group < t.group ? `${s.group}-${t.group}` : `${t.group}-${s.group}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const [g1, g2] = s.group < t.group ? [s.group, t.group] : [t.group, s.group];
-    gradients.push(
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("linearGradient", { id: `eg-${key}`, gradientUnits: "userSpaceOnUse", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("stop", { offset: "0%", stopColor: COLORS[g1] }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("stop", { offset: "100%", stopColor: COLORS[g2] })
-      ] }, key)
-    );
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("defs", { children: gradients });
-}
-function EdgeLine({ edge, nodeMap, selectedNodeId, connectedIds, hovered, onMouseEnter, onMouseLeave }) {
-  const s = nodeMap.get(edge.source);
-  const t = nodeMap.get(edge.target);
-  if (!s || !t) return null;
-  const isConn = selectedNodeId ? connectedIds.has(edge.source) && connectedIds.has(edge.target) : true;
-  const w = edge.weight;
-  const sw = edgeStrokeWidth(w) + (hovered ? 2 : 0);
-  const op = hovered ? 0.9 : edgeOpacity(w, isConn, !!selectedNodeId);
-  const gradKey = s.group !== t.group ? `eg-${s.group < t.group ? `${s.group}-${t.group}` : `${t.group}-${s.group}`}` : null;
-  const stroke = gradKey ? `url(#${gradKey})` : isConn && selectedNodeId ? COLORS[t.group] || "#ccc" : "#bbb";
-  const showWeight = w > 1 && op > 0.05;
-  const mx = (s.x + t.x) / 2, my = (s.y + t.y) / 2;
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("g", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
-      "line",
-      {
-        x1: s.x,
-        y1: s.y,
-        x2: t.x,
-        y2: t.y,
-        stroke,
-        strokeWidth: sw,
-        opacity: op,
-        pathLength: 1,
-        strokeDasharray: 1,
-        strokeDashoffset: 0,
-        style: { cursor: "pointer" },
-        onMouseEnter,
-        onMouseLeave,
-        children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("animate", { attributeName: "stroke-dashoffset", from: "1", to: "0", dur: "0.4s", fill: "freeze" })
-      }
-    ),
-    showWeight && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
-      "text",
-      {
-        x: mx,
-        y: my - 4,
-        textAnchor: "middle",
-        fontSize: 8,
-        fontFamily: "monospace",
-        fill: "#888",
-        opacity: Math.min(op * 1.5, 0.7),
-        fontWeight: 600,
-        style: { pointerEvents: "none" },
-        children: w
-      }
-    )
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }, children: [
+        s.sharedConcepts.map((c) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: { fontSize: 10, background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 10, padding: "1px 8px", fontFamily: "var(--mono)", color: "var(--fg-muted)" }, children: c }, c)),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { style: { fontSize: 10, color: "var(--fg-dim)", marginLeft: 4 }, children: [
+          s.sharedCount,
+          " shared"
+        ] })
+      ] })
+    ] }, s.orcid)) })
   ] });
 }
 
-// public/node-card.tsx
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
-function NodeCard({ node, cColor, selected, hovered, expanded, dimmed, collaboratorHint, isJournal, handlers, style, onSelectPaper, onUnhoverPaper }) {
-  const papers = isJournal && node.papers ? node.papers : [];
-  const open = hovered || expanded;
-  const visiblePapers = papers.slice(0, 6);
-  const cw = open ? 280 : isJournal ? 160 : 220;
-  const maxC = Math.floor(cw / 7.5);
-  const trunc = node.label.length > maxC ? node.label.substring(0, maxC - 1) + "\u2026" : node.label;
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { ...handlers, style: {
-    ...style,
-    width: cw,
-    transform: "translate(-50%, -50%)",
-    boxSizing: "border-box",
-    cursor: isJournal ? "pointer" : "default",
-    background: "rgba(255,255,255,0.35)",
-    backdropFilter: "blur(12px)",
-    WebkitBackdropFilter: "blur(12px)",
-    border: collaboratorHint ? `2px dashed #f9a825` : `1.5px solid ${cColor}`,
-    borderRadius: 8,
-    padding: "6px 0",
-    boxShadow: collaboratorHint ? "0 0 0 3px rgba(249,168,37,0.25), 0 8px 24px rgba(0,0,0,0.12)" : open ? "0 8px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.6)" : "0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)",
-    opacity: dimmed ? 0.1 : 1,
-    transition: "opacity 200ms, box-shadow 300ms",
-    fontFamily: "monospace"
-  }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { textAlign: "center", fontSize: 12, fontWeight: 700, color: "#222", lineHeight: "16px", padding: "0 8px" }, children: trunc }),
-    isJournal && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: {
-      textAlign: "center",
-      fontSize: 10,
-      color: cColor,
-      marginTop: 2,
-      fontWeight: 600,
-      maxHeight: open ? 0 : 16,
-      opacity: open ? 0 : 1,
-      overflow: "hidden",
-      transition: "max-height 250ms ease, opacity 200ms ease"
-    }, children: [
-      papers.length,
-      " paper",
-      papers.length !== 1 ? "s" : ""
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: {
-      maxHeight: open ? 400 : 0,
-      opacity: open ? 1 : 0,
-      overflow: "hidden",
-      transition: "max-height 300ms ease, opacity 250ms ease"
-    }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { padding: "6px 12px 4px", borderTop: "1px solid rgba(0,0,0,0.06)", marginTop: 6 }, children: [
-        node.ext_id && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { fontSize: 11, color: "#777", marginBottom: 5 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { textTransform: "uppercase", fontSize: 9, letterSpacing: 0.5, color: cColor, fontWeight: 700 }, children: node.group === "journal" ? "ISSN-L" : node.group === "author" ? "ORCID" : "ROR" }),
-          " ",
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { color: "#333" }, children: node.ext_id })
+// public/portfolio.tsx
+var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+function PortfolioContent({ data }) {
+  const totalCitations = data.works.reduce((s, w) => s + (w.citation_count || 0), 0);
+  const avgCit = data.works.length ? Math.round(totalCitations / data.works.length) : 0;
+  const nameFirst = (data.researcher.name || data.researcher.orcid).split(" ")[0];
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "view", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("header", { className: "view-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "eyebrow", children: "Researcher portfolio" }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("h1", { className: "view-title", children: [
+          "Your research, ",
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("em", { children: nameFirst }),
+          "."
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { display: "flex", gap: 12, fontSize: 11, marginBottom: 5 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("strong", { style: { color: cColor, fontSize: 13 }, children: node.doiCount }),
-            " ",
-            /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { color: "#888" }, children: "papers" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("strong", { style: { color: cColor, fontSize: 13 }, children: node.degree }),
-            " ",
-            /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { color: "#888" }, children: "links" })
-          ] })
-        ] }),
-        node.topKeywords && node.topKeywords.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { fontSize: 11, color: "#666", fontStyle: "italic" }, children: node.topKeywords.join(" \xB7 ") })
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "view-sub", children: "Pulled from ORCID, OpenAlex, and CrossRef. Deduped, attributed, synced." })
       ] }),
-      visiblePapers.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { borderTop: "1px solid rgba(0,0,0,0.06)", padding: "6px 0 2px", marginTop: 2 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: cColor, fontWeight: 700, padding: "0 12px 4px" }, children: "Papers" }),
-        visiblePapers.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
-          "div",
-          {
-            onMouseEnter: (e) => {
-              e.currentTarget.style.background = "rgba(0,0,0,0.04)";
-              onSelectPaper?.(p.doi);
-            },
-            onMouseLeave: (e) => {
-              e.currentTarget.style.background = "transparent";
-              onUnhoverPaper?.();
-            },
-            style: { fontSize: 11, color: "#444", lineHeight: "16px", padding: "3px 12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "1px solid rgba(0,0,0,0.03)", cursor: "pointer" },
-            children: p.title
-          },
-          i
-        )),
-        papers.length > 6 && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { fontSize: 11, color: cColor, padding: "4px 12px", fontWeight: 600 }, children: [
-          "+",
-          papers.length - 6,
-          " more"
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Tag, { mono: true, children: [
+          "ORCID ",
+          data.researcher.orcid
+        ] }),
+        data.researcher.faculty && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Tag, { mono: true, tone: "muted", children: data.researcher.faculty })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "stat-row", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Stat, { label: "Publications", value: data.works.length }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Stat, { label: "Total citations", value: totalCitations.toLocaleString() }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Stat, { label: "Avg. per paper", value: avgCit, accent: true }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Stat, { label: "Collaborators", value: data.collaborators.existing.length })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "dash-grid", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(VelocityPanel, { velocity: data.velocity })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("section", { className: "card card-span-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(SectionHead, { eyebrow: "Missing link", title: "Suggested collaborators" }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(CollaboratorsPanel, { suggested: data.collaborators.suggested })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("section", { className: "card card-span-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(SectionHead, { eyebrow: "Ledger", title: "Your publications", right: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Tag, { mono: true, tone: "muted", children: [
+          data.works.length,
+          " total"
+        ] }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("table", { className: "paper-table", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("tr", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("th", { children: "Title" }),
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("th", { children: "Year" }),
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("th", { children: "Citations" })
+          ] }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("tbody", { children: data.works.slice(0, 40).map((w) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("tr", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("td", { className: "paper-title", children: [
+              w.title || "(untitled)",
+              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "mono paper-doi", children: w.doi })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("td", { children: w.year || "\u2014" }),
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("td", { children: w.citation_count ?? 0 })
+          ] }, w.doi)) })
         ] })
       ] })
     ] })
   ] });
 }
-
-// public/paper-card.tsx
-var import_react16 = __toESM(require_react());
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
-function PaperCard({ doi, onClose, style, onHoverEnter, onHoverLeave }) {
-  const [record, setRecord] = (0, import_react16.useState)(null);
-  const [loading, setLoading] = (0, import_react16.useState)(true);
-  (0, import_react16.useEffect)(() => {
-    fetch(`/api/records/${encodeURIComponent(doi)}`).then((r) => r.json()).then((d) => {
-      if (d && !d.error) setRecord(d);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [doi]);
-  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { onMouseEnter: onHoverEnter, onMouseLeave: onHoverLeave, style: {
-    ...style,
-    width: 340,
-    boxSizing: "border-box",
-    background: "rgba(255,255,255,0.4)",
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
-    border: "1.5px solid rgba(100,100,100,0.3)",
-    borderRadius: 10,
-    padding: "12px 14px",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.6)",
-    fontFamily: "monospace",
-    zIndex: 20,
-    animation: "card-expand 250ms ease-out"
-  }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { fontSize: 13, fontWeight: 700, color: "#222", lineHeight: "18px", flex: 1, wordBreak: "break-word" }, children: record?.title || doi }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
-        "button",
-        {
-          onClick: (e) => {
-            e.stopPropagation();
-            onClose();
-          },
-          style: { background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#999", padding: "0 0 0 8px", lineHeight: 1 },
-          children: "x"
-        }
-      )
-    ] }),
-    loading && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { fontSize: 11, color: "#999" }, children: "Loading..." }),
-    record && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { fontSize: 11, color: "#555" }, children: [
-      record.authors && record.authors.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { marginBottom: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#c62828", fontWeight: 700 }, children: "Authors" }),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { color: "#444", marginTop: 2 }, children: [
-          record.authors.slice(0, 5).join(", "),
-          record.authors.length > 5 ? ` +${record.authors.length - 5}` : ""
-        ] })
-      ] }),
-      record.journal && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { marginBottom: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#2e7d32", fontWeight: 700 }, children: "Journal" }),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { color: "#444", marginTop: 2 }, children: record.journal })
-      ] }),
-      record.abstract && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { marginBottom: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#1565c0", fontWeight: 700 }, children: "Abstract" }),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { color: "#444", marginTop: 2, maxHeight: 120, overflowY: "auto", lineHeight: "15px", fontFamily: "system-ui, sans-serif", fontSize: 11 }, children: record.abstract.length > 600 ? record.abstract.substring(0, 600) + "\u2026" : record.abstract })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { display: "flex", gap: 14, marginBottom: 6, flexWrap: "wrap" }, children: [
-        record.published && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }, children: "Year " }),
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("strong", { style: { color: "#333" }, children: record.published.substring(0, 4) })
-        ] }),
-        record.citation_count > 0 && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }, children: "Citations " }),
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("strong", { style: { color: "#333" }, children: record.citation_count })
-        ] }),
-        record.type && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }, children: "Type " }),
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { color: "#333" }, children: record.type })
-        ] })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
-      "a",
-      {
-        href: `https://doi.org/${doi}`,
-        target: "_blank",
-        rel: "noopener noreferrer",
-        style: { display: "inline-block", fontSize: 10, color: "#1565c0", marginTop: 4, textDecoration: "none" },
-        children: [
-          doi,
-          " \u2197"
-        ]
-      }
-    )
-  ] });
-}
-
-// public/graph-canvas.tsx
-var import_jsx_runtime22 = __toESM(require_jsx_runtime());
-var CARD_GROUPS = /* @__PURE__ */ new Set(["institution", "author", "journal"]);
-function GraphCanvas({
-  dims,
-  projectedEdges,
-  layoutNodes,
-  nodeMap,
-  selectedNodeId,
-  connectedIds,
-  highlightedIds,
-  simMutableRef,
-  d3SimRef,
-  onSelect,
-  categoryOrder,
-  expandedJournal
-}) {
-  const dragRef = (0, import_react17.useRef)(null);
-  const [hoveredNodeId, setHoveredNodeId] = (0, import_react17.useState)(null);
-  const [hoveredEdgeIdx, setHoveredEdgeIdx] = (0, import_react17.useState)(null);
-  const [selectedPaper, setSelectedPaper] = (0, import_react17.useState)(null);
-  const hoverTimeoutRef = (0, import_react17.useRef)(null);
-  const clearPaperSoon = () => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    hoverTimeoutRef.current = window.setTimeout(() => setSelectedPaper(null), 120);
-  };
-  const cancelClear = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-  };
-  const onNodeDragStart = (0, import_react17.useCallback)((nodeId, clientX, clientY, svgEl) => {
-    const node = simMutableRef.current.find((n) => n.id === nodeId);
-    if (!node) return;
-    const rect = svgEl.getBoundingClientRect();
-    node.fx = node.x;
-    node.fy = node.y;
-    dragRef.current = { node, offsetX: node.x - (clientX - rect.left) / rect.width * dims.width, offsetY: node.y - (clientY - rect.top) / rect.height * dims.height };
-    if (d3SimRef.current) d3SimRef.current.alphaTarget(0.3).restart();
-  }, [simMutableRef, d3SimRef, dims]);
-  const onNodeDrag = (0, import_react17.useCallback)((clientX, clientY, svgEl) => {
-    const drag = dragRef.current;
-    if (!drag) return;
-    const rect = svgEl.getBoundingClientRect();
-    drag.node.fx = (clientX - rect.left) / rect.width * dims.width + drag.offsetX;
-    drag.node.fy = (clientY - rect.top) / rect.height * dims.height + drag.offsetY;
-  }, [dims]);
-  const onNodeDragEnd = (0, import_react17.useCallback)(() => {
-    const drag = dragRef.current;
-    if (!drag) return;
-    drag.node.fx = null;
-    drag.node.fy = null;
-    dragRef.current = null;
-    if (d3SimRef.current) d3SimRef.current.alphaTarget(0);
-  }, [d3SimRef]);
-  const catIndexMap = (0, import_react17.useMemo)(() => new Map(categoryOrder.map((cat, i) => [cat, i])), [categoryOrder]);
-  const hoveredEdge = hoveredEdgeIdx !== null ? projectedEdges[hoveredEdgeIdx] : null;
-  const dense = layoutNodes.length > 80;
-  const pad = 60;
-  const inView = (x2, y2) => x2 >= -pad && x2 <= dims.width + pad && y2 >= -pad && y2 <= dims.height + pad;
-  const visibleNodes = (0, import_react17.useMemo)(() => layoutNodes.filter((n) => inView(n.x, n.y)), [layoutNodes, dims.width, dims.height]);
-  const visibleEdges = (0, import_react17.useMemo)(() => projectedEdges.filter((e) => {
-    const s = nodeMap.get(e.source), t = nodeMap.get(e.target);
-    return s && t && (inView(s.x, s.y) || inView(t.x, t.y));
-  }), [projectedEdges, nodeMap, dims.width, dims.height]);
-  const cardNodes = (0, import_react17.useMemo)(() => visibleNodes.filter((n) => CARD_GROUPS.has(n.group)), [visibleNodes]);
-  const nonCardNodes = (0, import_react17.useMemo)(() => visibleNodes.filter((n) => !CARD_GROUPS.has(n.group)), [visibleNodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { position: "relative" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("style", { children: `@keyframes card-in { from { opacity: 0; transform: translate(-50%,-50%) scale(0.85); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
-@keyframes card-expand { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }` }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
-      "svg",
-      {
-        width: dims.width,
-        height: dims.height,
-        viewBox: `0 0 ${dims.width} ${dims.height}`,
-        style: { display: "block", width: "100%", height: "auto" },
-        onMouseMove: (e) => {
-          if (dragRef.current) onNodeDrag(e.clientX, e.clientY, e.currentTarget);
-        },
-        onMouseUp: () => onNodeDragEnd(),
-        onMouseLeave: () => onNodeDragEnd(),
-        onClick: (e) => {
-          if (e.target === e.currentTarget) onSelect(null);
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(EdgeDefs, { edges: visibleEdges, nodeMap }),
-          visibleEdges.map((e, i) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
-            EdgeLine,
-            {
-              edge: e,
-              nodeMap,
-              selectedNodeId,
-              connectedIds,
-              hovered: hoveredEdgeIdx === i,
-              onMouseEnter: () => setHoveredEdgeIdx(i),
-              onMouseLeave: () => setHoveredEdgeIdx(null)
-            },
-            `${e.source}-${e.target}`
-          )),
-          nonCardNodes.map((n) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
-            NodeGlyph,
-            {
-              node: n,
-              highlighted: connectedIds.has(n.id) && n.id !== selectedNodeId,
-              collaboratorHint: !!highlightedIds?.has(n.id),
-              dimmed: !!selectedNodeId && !connectedIds.has(n.id),
-              selected: n.id === selectedNodeId,
-              hovered: hoveredNodeId === n.id,
-              expanded: false,
-              showLabel: true,
-              dense,
-              pinIndex: catIndexMap.has(n.group) ? catIndexMap.get(n.group) : null,
-              onClick: () => onSelect(selectedNodeId === n.id ? null : n.id),
-              onDragStart: (e) => {
-                const svg = e.target.ownerSVGElement;
-                if (svg) onNodeDragStart(n.id, e.clientX, e.clientY, svg);
-              },
-              onMouseEnter: () => setHoveredNodeId(n.id),
-              onMouseLeave: () => setHoveredNodeId(null)
-            },
-            n.id
-          ))
-        ]
-      }
-    ),
-    hoveredNodeId && CARD_GROUPS.has(nodeMap.get(hoveredNodeId)?.group || "") && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: {
-      position: "absolute",
-      inset: 0,
-      backdropFilter: "blur(2px)",
-      WebkitBackdropFilter: "blur(2px)",
-      background: "rgba(0,0,0,0.15)",
-      pointerEvents: "none",
-      zIndex: 5
-    } }),
-    cardNodes.map((n) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
-      NodeCard,
-      {
-        node: n,
-        cColor: COLORS[n.group] || "#666",
-        selected: n.id === selectedNodeId,
-        hovered: hoveredNodeId === n.id,
-        expanded: expandedJournal === n.id,
-        dimmed: !!selectedNodeId && !connectedIds.has(n.id),
-        collaboratorHint: !!highlightedIds?.has(n.id),
-        isJournal: n.group === "journal",
-        style: {
-          position: "absolute",
-          left: `${n.x / dims.width * 100}%`,
-          top: `${n.y / dims.height * 100}%`,
-          zIndex: hoveredNodeId === n.id || expandedJournal === n.id ? 10 : 1,
-          animation: "card-in 350ms ease-out"
-        },
-        onSelectPaper: (doi) => {
-          cancelClear();
-          setSelectedPaper({ doi, x: n.x / dims.width * 100, y: n.y / dims.height * 100 });
-        },
-        onUnhoverPaper: clearPaperSoon,
-        handlers: {
-          onClick: () => onSelect(selectedNodeId === n.id ? null : n.id),
-          onMouseEnter: () => setHoveredNodeId(n.id),
-          onMouseLeave: () => setHoveredNodeId(null)
-        }
-      },
-      n.id
-    )),
-    selectedPaper && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
-      PaperCard,
-      {
-        doi: selectedPaper.doi,
-        onClose: () => setSelectedPaper(null),
-        onHoverEnter: cancelClear,
-        onHoverLeave: clearPaperSoon,
-        style: { position: "absolute", left: `calc(${selectedPaper.x}% + 140px)`, top: `${selectedPaper.y}%`, transform: "translateY(-50%)" }
-      }
-    )
-  ] });
-}
-
-// public/graph-search.tsx
-var import_react18 = __toESM(require_react());
-var import_jsx_runtime23 = __toESM(require_jsx_runtime());
-function GraphSearch({ nodes, onSelect }) {
-  const [query, setQuery] = (0, import_react18.useState)("");
-  const [open, setOpen] = (0, import_react18.useState)(false);
-  const matches = (0, import_react18.useMemo)(() => {
-    if (!query || query.length < 2) return [];
-    const q = query.toLowerCase();
-    return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
-  }, [query, nodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
-    "div",
-    {
-      style: { position: "relative", display: "inline-block" },
-      onBlur: (e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
-          "input",
-          {
-            value: query,
-            onChange: (e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            },
-            onFocus: () => setOpen(true),
-            placeholder: "Search nodes\u2026",
-            style: { fontFamily: "var(--mono)", fontSize: 12, padding: "6px 10px", width: 180 }
-          }
-        ),
-        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: {
-          position: "absolute",
-          top: "100%",
-          left: 0,
-          zIndex: 10,
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          borderRadius: 4,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-          maxHeight: 240,
-          overflow: "auto",
-          width: 280,
-          marginTop: 4
-        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
-          "div",
-          {
-            tabIndex: 0,
-            onMouseDown: (e) => {
-              e.preventDefault();
-              onSelect(n.id);
-              setQuery("");
-              setOpen(false);
-            },
-            style: {
-              padding: "6px 10px",
-              cursor: "pointer",
-              fontSize: 11,
-              fontFamily: "var(--mono)",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              borderBottom: "1px solid var(--border-soft)",
-              color: "var(--fg)"
-            },
-            onMouseOver: (e) => e.currentTarget.style.background = "var(--bg-elev)",
-            onMouseOut: (e) => e.currentTarget.style.background = "transparent",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
-            ]
-          },
-          n.id
-        )) })
-      ]
-    }
-  );
-}
-
-// public/graph-legend.tsx
-var import_jsx_runtime24 = __toESM(require_jsx_runtime());
-var ITEMS = [
-  { group: "institution", shape: "\u25C6", label: "Institution" },
-  { group: "author", shape: "\u2B21", label: "Author" },
-  { group: "journal", shape: "\u25CF", label: "Journal" }
-];
-function GraphLegend() {
-  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: {
-    display: "inline-flex",
-    gap: 12,
-    fontSize: 11,
-    fontFamily: "var(--mono)",
-    color: "var(--fg-muted)",
-    alignItems: "center"
-  }, children: [
-    ITEMS.map(({ group, shape, label }) => /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 3 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: { color: COLORS[group], fontSize: 13 }, children: shape }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { children: label })
-    ] }, group)),
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10 }, children: "size = paper count" })
-  ] });
-}
-
-// public/use-tag-counts.ts
-var import_react19 = __toESM(require_react());
-function useTagCounts(rawNodes, rawEdges) {
-  return (0, import_react19.useMemo)(() => {
-    const counts = {};
-    const doiPerTag = /* @__PURE__ */ new Map();
-    for (const e of rawEdges) doiPerTag.set(e.target, (doiPerTag.get(e.target) || 0) + 1);
-    const byCategory = {};
-    for (const n of rawNodes) {
-      if (n.group === "doi") continue;
-      counts[n.group] = (counts[n.group] || 0) + 1;
-      (byCategory[n.group] ||= []).push({ id: n.id, label: n.label, doiCount: doiPerTag.get(n.id) || 0 });
-    }
-    for (const cat of Object.keys(byCategory)) byCategory[cat].sort((a2, b) => b.doiCount - a2.doiCount);
-    return { categoryCounts: counts, tagsByCategory: byCategory };
-  }, [rawNodes, rawEdges]);
-}
-
-// public/time-slider.tsx
-var import_react20 = __toESM(require_react());
-var import_jsx_runtime25 = __toESM(require_jsx_runtime());
-function yearOf(n) {
-  if (n.group !== "doi" || !n.published) return 0;
-  const y2 = parseInt(n.published.substring(0, 4));
-  return y2 > 1900 ? y2 : 0;
-}
-function useTimeRange(nodes) {
-  return (0, import_react20.useMemo)(() => {
-    let min = 9999, max = 0;
-    for (const n of nodes) {
-      const y2 = yearOf(n);
-      if (y2) {
-        min = Math.min(min, y2);
-        max = Math.max(max, y2);
-      }
-    }
-    return { min: min > max ? 0 : min, max };
-  }, [nodes]);
-}
-function useTimeFilter(rawNodes, rawEdges, maxYear) {
-  return (0, import_react20.useMemo)(() => {
-    if (!maxYear) return { nodes: rawNodes, edges: rawEdges };
-    const keep = /* @__PURE__ */ new Set();
-    const nodes = rawNodes.filter((n) => {
-      if (n.group !== "doi") return true;
-      const y2 = yearOf(n);
-      const ok = !y2 || y2 <= maxYear;
-      if (ok) keep.add(n.id);
-      return ok;
-    });
-    const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
-    return { nodes, edges };
-  }, [rawNodes, rawEdges, maxYear]);
-}
-function TimeSlider({ min, max, value, onChange }) {
-  if (!min || !max || min >= max) return null;
-  const display = value || max;
-  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--mono)", fontSize: 11, minWidth: 200 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { color: "var(--fg-dim)" }, children: min }),
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-      "input",
-      {
-        type: "range",
-        min,
-        max,
-        value: display,
-        onChange: (e) => onChange(parseInt(e.target.value)),
-        style: { flex: 1, minWidth: 100, cursor: "pointer", accentColor: "var(--accent)" }
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { color: "var(--accent)", fontWeight: 500, minWidth: 40 }, children: display })
-  ] });
-}
-
-// public/use-graph-data.ts
-var import_react21 = __toESM(require_react());
-function useGraphData() {
-  const [rawNodes, setRawNodes] = (0, import_react21.useState)([]);
-  const [rawEdges, setRawEdges] = (0, import_react21.useState)([]);
-  const [tagMeta, setTagMeta] = (0, import_react21.useState)({});
-  const [loading, setLoading] = (0, import_react21.useState)(true);
-  (0, import_react21.useEffect)(() => {
-    fetch("/api/graph").then((r) => r.json()).then((d) => {
-      setRawNodes(d.nodes);
-      setRawEdges(d.edges);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-    fetch("/api/graph-metadata").then((r) => r.json()).then((d) => setTagMeta(d.tagMeta || {})).catch(() => {
-    });
-  }, []);
-  return { rawNodes, rawEdges, tagMeta, loading };
-}
-
-// public/graph-explorer-body.tsx
-var import_jsx_runtime26 = __toESM(require_jsx_runtime());
-function GraphExplorerBody() {
-  const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
-  const [selectedNodeId, setSelectedNodeId] = (0, import_react22.useState)(null);
-  const [expandedJournal, setExpandedJournal] = (0, import_react22.useState)(null);
-  const [maxYear, setMaxYear] = (0, import_react22.useState)((/* @__PURE__ */ new Date()).getFullYear());
-  const highlightedIds = (0, import_react22.useMemo)(() => {
-    const o = new URLSearchParams(window.location.search).get("highlight");
-    return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
-  }, []);
-  const { me } = useCurrentUser();
-  const containerRef = (0, import_react22.useRef)(null);
-  const [dims, setDims] = (0, import_react22.useState)({ width: 1100, height: 600 });
-  const { categoryOrder, activeCategories, pinnedTags, filtersVisible, setFiltersVisible, toggleCategory, toggleTag, reorderCategories } = useFilterState();
-  (0, import_react22.useEffect)(() => {
-    if (!rawNodes.length) return;
-    const f = highlightedIds.values().next().value;
-    if (f && rawNodes.some((n) => n.id === f)) setSelectedNodeId(f);
-  }, [rawNodes, highlightedIds]);
-  const jCount = rawNodes.filter((n) => n.group === "journal").length;
-  const baseHeight = Math.max(500, 120 + (Math.ceil(jCount / 4) + (expandedJournal ? 3 : 0)) * 80);
-  (0, import_react22.useEffect)(() => {
-    const el2 = containerRef.current;
-    if (!el2) return;
-    setDims((prev) => ({ ...prev, height: baseHeight }));
-    const obs = new ResizeObserver((entries) => {
-      const { width } = entries[0].contentRect;
-      if (width > 0) setDims({ width, height: baseHeight });
-    });
-    obs.observe(el2);
-    return () => obs.disconnect();
-  }, [baseHeight]);
-  const handleSelect = (0, import_react22.useCallback)((id) => {
-    if (id && rawNodes.find((n) => n.id === id)?.group === "journal") {
-      setExpandedJournal((prev) => prev === id ? null : id);
-      setSelectedNodeId(null);
-      return;
-    }
-    setSelectedNodeId(id);
-  }, [rawNodes]);
-  const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  const sliderActive = yearMax > 0 && maxYear < yearMax;
-  const { nodes: timeNodes, edges: timeEdges } = useTimeFilter(rawNodes, rawEdges, sliderActive ? maxYear : 0);
-  const { nodes: projectedNodesRaw, edges: projectedEdges, matchingDois } = (0, import_react22.useMemo)(
-    () => projectGraph(sliderActive ? timeNodes : rawNodes, sliderActive ? timeEdges : rawEdges, activeCategories, pinnedTags, null),
-    [sliderActive, timeNodes, timeEdges, rawNodes, rawEdges, activeCategories, pinnedTags]
-  );
-  const totalCounts = (0, import_react22.useMemo)(() => {
-    const c2 = /* @__PURE__ */ new Map();
-    for (const e of rawEdges) c2.set(e.target, (c2.get(e.target) || 0) + 1);
-    return c2;
-  }, [rawEdges]);
-  const projectedNodes = (0, import_react22.useMemo)(() => enrichWithMeta(projectedNodesRaw, tagMeta).map((n) => ({
-    ...n,
-    weight: totalCounts.get(n.id) || n.weight,
-    doiCount: totalCounts.get(n.id) || n.doiCount
-  })), [projectedNodesRaw, tagMeta, totalCounts]);
-  const doiCount = (0, import_react22.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
-  const { simNodes: layoutNodes, nodesRef: simMutableRef, simRef: d3SimRef } = useForceLayout(projectedNodes, projectedEdges, dims.width, dims.height);
-  const nodeMap = (0, import_react22.useMemo)(() => new Map(layoutNodes.map((n) => [n.id, n])), [layoutNodes]);
-  const { connectedIds, edgesForNode } = (0, import_react22.useMemo)(() => {
-    if (!selectedNodeId) return { connectedIds: /* @__PURE__ */ new Set(), edgesForNode: [] };
-    const ids = /* @__PURE__ */ new Set([selectedNodeId]);
-    const matching = [];
-    for (const e of projectedEdges) {
-      if (e.source === selectedNodeId) {
-        ids.add(e.target);
-        matching.push(e);
-      }
-      if (e.target === selectedNodeId) {
-        ids.add(e.source);
-        matching.push(e);
-      }
-    }
-    return { connectedIds: ids, edgesForNode: matching };
-  }, [selectedNodeId, projectedEdges]);
-  const selectedNode = selectedNodeId ? nodeMap.get(selectedNodeId) : null;
-  const selectedConnections = (0, import_react22.useMemo)(() => {
-    if (!selectedNodeId) return [];
-    return [...connectedIds].filter((id) => id !== selectedNodeId).map((id) => nodeMap.get(id)).filter(Boolean);
-  }, [selectedNodeId, connectedIds, nodeMap]);
-  const chartDois = (0, import_react22.useMemo)(() => {
-    if (!selectedNodeId) return matchingDois;
-    const nodeDois = /* @__PURE__ */ new Set();
-    for (const e of rawEdges) if (e.target === selectedNodeId) {
-      const doi = e.source.replace("doi:", "");
-      if (matchingDois.has(doi)) nodeDois.add(doi);
-    }
-    return nodeDois;
-  }, [selectedNodeId, rawEdges, matchingDois]);
-  const { categoryCounts, tagsByCategory } = useTagCounts(rawNodes, rawEdges);
-  const pinnedSet = (0, import_react22.useMemo)(() => new Set(pinnedTags), [pinnedTags]);
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
-  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "view graph-view", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("header", { className: "view-head compact", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
-        /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("h1", { className: "view-title tight", children: [
-          "The institution as a ",
-          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("em", { children: "network" }),
-          "."
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(Tag, { mono: true, children: [
-          projectedNodes.length,
-          " NODES"
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(Tag, { mono: true, tone: "muted", children: [
-          projectedEdges.length,
-          " EDGES"
-        ] })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { style: { marginBottom: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("button", { onClick: () => setFiltersVisible(!filtersVisible), children: [
-        filtersVisible ? "Hide filters" : "Filters",
-        pinnedTags.length > 0 ? ` (${pinnedTags.length})` : ""
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: handleSelect }),
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphLegend, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(TimeSlider, { min: yearMin, max: yearMax, value: maxYear, onChange: setMaxYear })
-    ] }),
-    filtersVisible && /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(import_jsx_runtime26.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(CategoryStrip, { categories: categoryOrder, counts: categoryCounts, active: activeCategories, onToggle: toggleCategory, onReorder: reorderCategories }),
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "card", style: { padding: "8px 12px", marginBottom: 12 }, children: categoryOrder.map((cat) => {
-        if (!activeCategories.has(cat)) return null;
-        const tags = tagsByCategory[cat];
-        if (!tags?.length) return null;
-        return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(TagPicker, { category: cat, tags, pinnedTags: pinnedSet, pinnedOrder: pinnedTags, onToggleTag: toggleTag }, cat);
-      }) })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { ref: containerRef, style: { position: "relative", background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: "var(--radius)", overflow: "hidden" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "canvas-corner-tl", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { children: [
-          "tenant \xB7 ",
-          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("em", { children: me?.tenant || "\u2014" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { children: [
-          "role \xB7 ",
-          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("em", { children: me?.role || "\u2014" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { children: [
-          "scope \xB7 ",
-          sliderActive ? `\u2264 ${maxYear}` : "all years"
-        ] })
-      ] }),
-      projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { padding: 40, textAlign: "center" }, className: "muted", children: "No data." }) : /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphCanvas, { dims, projectedEdges, layoutNodes, nodeMap, selectedNodeId, connectedIds, highlightedIds, simMutableRef, d3SimRef, onSelect: handleSelect, categoryOrder: categoryOrder.filter((c2) => activeCategories.has(c2)), expandedJournal }),
-      selectedNode && /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(DetailPanel, { node: selectedNode, connections: selectedConnections, edgesForNode, onClose: () => setSelectedNodeId(null), onSelectNode: (id) => setSelectedNodeId(id) })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(StatsBar, { nodes: projectedNodes, edges: projectedEdges, doiCount }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { marginTop: 20, borderTop: "1px solid var(--border-soft)", paddingTop: 20 }, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(FilteredCharts, { matchingDois: chartDois, totalDois: doiCount }) })
-  ] });
-}
-
-// public/relationships.tsx
-var import_jsx_runtime27 = __toESM(require_jsx_runtime());
 function App() {
-  return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(Shell, { scroll: true, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphExplorerBody, {}) });
+  const [data, setData] = (0, import_react5.useState)(null);
+  const [error, setError] = (0, import_react5.useState)(null);
+  (0, import_react5.useEffect)(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orcid = params.get("orcid");
+    const url = orcid ? `/api/portfolio?orcid=${encodeURIComponent(orcid)}` : "/api/portfolio";
+    fetch(url).then(async (r) => {
+      if (!r.ok) {
+        setError((await r.json()).error || "Failed to load");
+        return;
+      }
+      setData(await r.json());
+    }).catch((e) => setError(e.message));
+  }, []);
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(Shell, { scroll: true, children: [
+    error && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "status error", children: [
+      "Error: ",
+      error
+    ] }) }),
+    !data && !error && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "eyebrow", children: "Loading portfolio\u2026" }) }),
+    data && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(PortfolioContent, { data })
+  ] });
 }
-var el = document.getElementById("relationships-root");
-if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime27.jsx)(App, {}));
+var root = (0, import_client.createRoot)(document.getElementById("portfolio-root"));
+root.render(/* @__PURE__ */ (0, import_jsx_runtime8.jsx)(App, {}));
 /*! Bundled license information:
 
-scheduler/cjs/scheduler.production.js:
+react/cjs/react.production.js:
   (**
    * @license React
-   * scheduler.production.js
+   * react.production.js
    *
    * Copyright (c) Meta Platforms, Inc. and affiliates.
    *
@@ -16325,10 +13307,10 @@ scheduler/cjs/scheduler.production.js:
    * LICENSE file in the root directory of this source tree.
    *)
 
-react/cjs/react.production.js:
+scheduler/cjs/scheduler.production.js:
   (**
    * @license React
-   * react.production.js
+   * scheduler.production.js
    *
    * Copyright (c) Meta Platforms, Inc. and affiliates.
    *

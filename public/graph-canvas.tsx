@@ -9,7 +9,7 @@ import { PaperCard } from './paper-card';
 const CARD_GROUPS = new Set(['institution', 'author', 'journal']);
 
 export function GraphCanvas({
-  dims, projectedEdges, layoutNodes, nodeMap, selectedNodeId, connectedIds,
+  dims, projectedEdges, layoutNodes, nodeMap, selectedNodeId, connectedIds, highlightedIds,
   simMutableRef, d3SimRef, onSelect, categoryOrder, expandedJournal,
 }: {
   dims: { width: number; height: number };
@@ -18,6 +18,7 @@ export function GraphCanvas({
   nodeMap: Map<string, EnrichedSimNode>;
   selectedNodeId: string | null;
   connectedIds: Set<string>;
+  highlightedIds?: Set<string>;
   simMutableRef: React.MutableRefObject<EnrichedSimNode[]>;
   d3SimRef: React.MutableRefObject<any>;
   onSelect: (id: string | null) => void;
@@ -27,8 +28,10 @@ export function GraphCanvas({
   const dragRef = useRef<{ node: EnrichedSimNode; offsetX: number; offsetY: number } | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredEdgeIdx, setHoveredEdgeIdx] = useState<number | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [selectedPaper, setSelectedPaper] = useState<{ doi: string; x: number; y: number } | null>(null);
+  const hoverTimeoutRef = useRef<number | null>(null);
+  const clearPaperSoon = () => { if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = window.setTimeout(() => setSelectedPaper(null), 120); };
+  const cancelClear = () => { if (hoverTimeoutRef.current) { clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = null; } };
 
   const onNodeDragStart = useCallback((nodeId: string, clientX: number, clientY: number, svgEl: SVGSVGElement) => {
     const node = simMutableRef.current.find((n) => n.id === nodeId);
@@ -77,12 +80,7 @@ export function GraphCanvas({
 @keyframes card-expand { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       <svg width={dims.width} height={dims.height} viewBox={`0 0 ${dims.width} ${dims.height}`}
         style={{ display: 'block', width: '100%', height: 'auto' }}
-        onMouseMove={(e) => {
-          const svg = e.currentTarget as unknown as SVGSVGElement;
-          const rect = svg.getBoundingClientRect();
-          setMousePos({ x: (e.clientX - rect.left) / rect.width * dims.width, y: (e.clientY - rect.top) / rect.height * dims.height });
-          if (dragRef.current) onNodeDrag(e.clientX, e.clientY, svg);
-        }}
+        onMouseMove={(e) => { if (dragRef.current) onNodeDrag(e.clientX, e.clientY, e.currentTarget as unknown as SVGSVGElement); }}
         onMouseUp={() => onNodeDragEnd()} onMouseLeave={() => onNodeDragEnd()}
         onClick={(e) => { if (e.target === e.currentTarget) onSelect(null); }}>
         <EdgeDefs edges={visibleEdges} nodeMap={nodeMap} />
@@ -94,6 +92,7 @@ export function GraphCanvas({
         {nonCardNodes.map(n => (
           <NodeGlyph key={n.id} node={n}
             highlighted={connectedIds.has(n.id) && n.id !== selectedNodeId}
+            collaboratorHint={!!highlightedIds?.has(n.id)}
             dimmed={!!selectedNodeId && !connectedIds.has(n.id)}
             selected={n.id === selectedNodeId} hovered={hoveredNodeId === n.id}
             expanded={false} showLabel dense={dense}
@@ -109,7 +108,7 @@ export function GraphCanvas({
         <div style={{
           position: 'absolute', inset: 0,
           backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
-          background: 'rgba(255,255,255,0.1)',
+          background: 'rgba(0,0,0,0.15)',
           pointerEvents: 'none', zIndex: 5,
         }} />
       )}
@@ -121,6 +120,7 @@ export function GraphCanvas({
           hovered={hoveredNodeId === n.id}
           expanded={expandedJournal === n.id}
           dimmed={!!selectedNodeId && !connectedIds.has(n.id)}
+          collaboratorHint={!!highlightedIds?.has(n.id)}
           isJournal={n.group === 'journal'}
           style={{
             position: 'absolute',
@@ -129,7 +129,8 @@ export function GraphCanvas({
             zIndex: (hoveredNodeId === n.id || expandedJournal === n.id) ? 10 : 1,
             animation: 'card-in 350ms ease-out',
           }}
-          onSelectPaper={(doi) => setSelectedPaper({ doi, x: n.x / dims.width * 100, y: n.y / dims.height * 100 })}
+          onSelectPaper={(doi) => { cancelClear(); setSelectedPaper({ doi, x: n.x / dims.width * 100, y: n.y / dims.height * 100 }); }}
+          onUnhoverPaper={clearPaperSoon}
           handlers={{
             onClick: () => onSelect(selectedNodeId === n.id ? null : n.id),
             onMouseEnter: () => setHoveredNodeId(n.id),
@@ -139,6 +140,7 @@ export function GraphCanvas({
 
       {selectedPaper && (
         <PaperCard doi={selectedPaper.doi} onClose={() => setSelectedPaper(null)}
+          onHoverEnter={cancelClear} onHoverLeave={clearPaperSoon}
           style={{ position: 'absolute', left: `calc(${selectedPaper.x}% + 140px)`, top: `${selectedPaper.y}%`, transform: 'translateY(-50%)' }} />
       )}
     </div>

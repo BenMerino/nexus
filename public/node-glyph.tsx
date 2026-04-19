@@ -16,11 +16,11 @@ function wrapLabel(text: string, maxChars: number): string[] {
 }
 
 export function NodeGlyph({
-  node, highlighted, dimmed, selected, hovered, expanded, showLabel = true, dense, pinIndex,
+  node, highlighted, collaboratorHint, dimmed, selected, hovered, expanded, showLabel = true, dense, pinIndex,
   onClick, onDragStart, onMouseEnter, onMouseLeave,
 }: {
   node: EnrichedSimNode;
-  highlighted: boolean; dimmed: boolean; selected: boolean; hovered: boolean;
+  highlighted: boolean; collaboratorHint?: boolean; dimmed: boolean; selected: boolean; hovered: boolean;
   expanded?: boolean; showLabel?: boolean; dense?: boolean; pinIndex: number | null;
   onClick: () => void;
   onDragStart: (e: React.MouseEvent) => void;
@@ -41,6 +41,10 @@ export function NodeGlyph({
     <g onClick={onClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
       onMouseDown={(e) => { e.stopPropagation(); onDragStart(e); }}
       style={{ cursor: 'grab', transition: 'opacity 200ms ease' }} opacity={dimmed ? 0.1 : 1}>
+      {collaboratorHint && (
+        d ? <path d={shapePath(node.group, node.x, node.y, r + 9)!} fill="none" stroke="#f9a825" strokeWidth={2} strokeDasharray="3 3" />
+          : <circle cx={node.x} cy={node.y} r={r + 9} fill="none" stroke="#f9a825" strokeWidth={2} strokeDasharray="3 3" />
+      )}
       {(selected || highlighted || hovered) && (
         d ? <path d={shapePath(node.group, node.x, node.y, r + 5)!} fill="none" stroke={cColor} strokeWidth={hovered ? 2 : 1.5} opacity={0.5} />
           : <circle cx={node.x} cy={node.y} r={r + 5} fill="none" stroke={cColor} strokeWidth={hovered ? 2 : 1.5} opacity={0.5} />

@@ -5,34 +5,36 @@
   <title>Author Import — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
 </head>
-<body>
+<body class="shell-fixed">
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/author-import.html"></div>
+    <main class="main">
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Admin · author intake</div>
+            <h1 class="view-title">Find researchers by <em>name</em>.</h1>
+            <div class="view-sub">Search OpenAlex for matches, pick the right ORCID, import their full publication history.</div>
+          </div>
+        </header>
 
-  <nav>
-    <span class="logo">Nexus</span>
-    <span id="nav-links"></span>
-    <div id="nav-user" style="margin-left: auto; min-height: 28px;"><a href="/api/auth?action=logout">Logout</a></div>
-  </nav>
-
-  <div class="page">
-    <h1>Author Import</h1>
-
-    <div class="card">
-      <div style="max-width: 500px;">
-        <label style="display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: bold;">Author Name</label>
-        <div class="flex gap-8">
-          <input id="author-search" type="text" placeholder="e.g. Albert Einstein" style="flex: 1;">
-          <button onclick="searchAuthor()">Search</button>
+        <div class="card">
+          <label class="form-label">Author name</label>
+          <div class="flex gap-8">
+            <input id="author-search" class="doi-input" type="text" placeholder="e.g. Albert Einstein" style="flex: 1;">
+            <button class="primary-btn" onclick="searchAuthor()">Search</button>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div id="suggestions" class="mt-8"></div>
-    <div id="status" class="mt-8"></div>
-    <div id="results" class="mt-16"></div>
+        <div id="suggestions" class="mt-16"></div>
+        <div id="status" class="mt-8"></div>
+        <div id="results" class="mt-16"></div>
+      </div>
+    </main>
   </div>
 
   <script src="/author-import.js"></script>
-  <script src="/nav.js"></script>
+  <script type="module" src="/shell-mount-bundle.js"></script>
 </body>
 </html>

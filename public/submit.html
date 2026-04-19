@@ -2,35 +2,38 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Nexus</title>
+  <title>Submit DOI — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
 </head>
-<body>
+<body class="shell-fixed">
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/submit.html"></div>
+    <main class="main">
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Ingestion</div>
+            <h1 class="view-title">Submit a <em>DOI</em>.</h1>
+            <div class="view-sub">Fetched in parallel from CrossRef, OpenAlex, Semantic Scholar, and DataCite. Deduped, tagged, stored.</div>
+          </div>
+          <div class="view-meta">
+            <span class="tag mono">CROSSREF · OPENALEX · S2 · DATACITE</span>
+          </div>
+        </header>
 
-  <nav>
-    <span class="logo">Nexus</span>
-    <span id="nav-links"></span>
-    <div id="nav-user" style="margin-left: auto; min-height: 28px;"><a href="/api/auth?action=logout">Logout</a></div>
-  </nav>
-
-  <div class="page">
-    <h1>Submit a DOI</h1>
-
-    <div class="card">
-      <div style="display: flex; flex-direction: column; gap: 12px; max-width: 600px;">
-        <div>
-          <label style="display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: bold;">DOI</label>
-          <input id="doi-input" type="text" placeholder="e.g. 10.1038/nature12373" style="width: 100%;">
+        <div class="card">
+          <label class="form-label">DOI</label>
+          <div class="doi-input-row" style="display: flex; gap: 10px;">
+            <input id="doi-input" class="doi-input" type="text" placeholder="e.g. 10.1038/nature12373" style="flex: 1;">
+            <button class="primary-btn" onclick="submit()">Check DOI</button>
+          </div>
         </div>
-        <div>
-          <button onclick="submit()">Check DOI</button>
-        </div>
+
+        <div id="status" class="mt-16"></div>
+        <div id="results" class="mt-16"></div>
       </div>
-    </div>
-
-    <div id="status"></div>
-    <div id="results"></div>
+    </main>
   </div>
 
   <script>
@@ -45,7 +48,7 @@
       const status = document.getElementById("status");
       const results = document.getElementById("results");
       status.className = "status loading";
-      status.textContent = "Checking DOI across CrossRef, OpenAlex, Semantic Scholar, DataCite...";
+      status.textContent = "Checking DOI across CrossRef, OpenAlex, Semantic Scholar, DataCite…";
       results.innerHTML = "";
 
       try {
@@ -83,18 +86,18 @@
         if (typeof val === "boolean") val = val ? "Yes" : "No";
         return `<tr><td>${k}</td><td>${val}</td></tr>`;
       }).join("");
-      return `<div class="normalized"><h3>Normalized Record</h3><table>${rows}</table></div>`;
+      return `<div class="normalized"><h3>Normalized record</h3><table>${rows}</table></div>`;
     }
 
     function renderTags(tags) {
-      return '<div class="card mt-16"><h3>Extracted Tags</h3><div class="mt-8">'
+      return '<div class="card mt-16"><h3>Extracted tags</h3><div class="mt-8">'
         + tags.map(t => `<span class="tag ${t.category}">${t.category}: ${t.value}</span>`).join(" ")
         + '</div></div>';
     }
 
     function renderSources(sources) {
       const names = ["crossref", "openalex", "semanticScholar", "datacite"];
-      let html = '<h2 class="mt-16">Raw API Responses</h2>';
+      let html = '<h2 class="mt-16" style="font-family: var(--display); font-weight: 400; margin-top: 24px;">Raw API responses</h2>';
       html += names.map(s => {
         const d = sources[s];
         if (!d || !d.found) return `<div class="source"><h3>${s}</h3><span class="not-found">Not found</span></div>`;
@@ -109,6 +112,6 @@
       return html;
     }
   </script>
-  <script src="/nav.js"></script>
+  <script type="module" src="/shell-mount-bundle.js"></script>
 </body>
 </html>

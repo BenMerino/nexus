@@ -10,8 +10,8 @@ const ITEMS: { group: string; shape: string; label: string }[] = [
 export function GraphLegend() {
   return (
     <div style={{
-      display: 'inline-flex', gap: 12, fontSize: 11, fontFamily: 'monospace',
-      color: '#666', alignItems: 'center',
+      display: 'inline-flex', gap: 12, fontSize: 11, fontFamily: 'var(--mono)',
+      color: 'var(--fg-muted)', alignItems: 'center',
     }}>
       {ITEMS.map(({ group, shape, label }) => (
         <span key={group} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
@@ -19,7 +19,7 @@ export function GraphLegend() {
           <span>{label}</span>
         </span>
       ))}
-      <span style={{ color: '#999', fontSize: 10 }}>size = paper count</span>
+      <span style={{ color: 'var(--fg-dim)', fontSize: 10 }}>size = paper count</span>
     </div>
   );
 }

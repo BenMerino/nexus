@@ -1,13 +1,38 @@
 const { sql } = require("@vercel/postgres");
 const { ensureSchema, deleteTagsForRecord, deleteRecord, deleteSubmissionsForDoi } = require("../../lib/db");
-const { getScope } = require("../../lib/scope");
+const { getScope, requireScope, isPersonalScope } = require("../../lib/scope");
 
 module.exports = async function handler(req, res) {
+  await ensureSchema();
+
+  if (req.method === "GET") {
+    const scope = await requireScope(req, res);
+    if (!scope) return;
+    const doi = decodeURIComponent(req.query.id || "");
+    if (!doi) return res.status(400).json({ error: "Missing DOI" });
+    try {
+      let rows;
+      if (isPersonalScope(scope)) {
+        ({ rows } = await sql`SELECT doi, title, authors, abstract, journal, published, citation_count, type, open_access_url
+          FROM doi_records WHERE doi = ${doi}
+          AND id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid})`);
+      } else {
+        ({ rows } = await sql`SELECT doi, title, authors, abstract, journal, published, citation_count, type, open_access_url
+          FROM doi_records WHERE doi = ${doi} AND tenant_id = ${scope.tenantId}`);
+      }
+      if (!rows[0]) return res.status(404).json({ error: "Not found" });
+      const r = rows[0];
+      res.json({ ...r, authors: r.authors ? JSON.parse(r.authors) : [] });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+    return;
+  }
+
   if (req.method !== "DELETE") return res.status(405).json({ error: "Method not allowed" });
 
-  await ensureSchema();
   const scope = await getScope(req);
-  if (scope.role !== "superadmin") return res.status(403).json({ error: "Superadmin required" });
+  if (scope?.role !== "superadmin") return res.status(403).json({ error: "Superadmin required" });
   const id = Number(req.query.id);
 
   try {

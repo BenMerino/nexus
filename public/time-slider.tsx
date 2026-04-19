@@ -41,12 +41,12 @@ export function TimeSlider({ min, max, value, onChange }: {
   const display = value || max;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'monospace', fontSize: 11, minWidth: 200 }}>
-      <span style={{ color: '#999' }}>{min}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--mono)', fontSize: 11, minWidth: 200 }}>
+      <span style={{ color: 'var(--fg-dim)' }}>{min}</span>
       <input type="range" min={min} max={max} value={display}
         onChange={e => onChange(parseInt(e.target.value))}
-        style={{ flex: 1, minWidth: 100, cursor: 'pointer' }} />
-      <span style={{ color: '#333', fontWeight: 700, minWidth: 32 }}>{display}</span>
+        style={{ flex: 1, minWidth: 100, cursor: 'pointer', accentColor: 'var(--accent)' }} />
+      <span style={{ color: 'var(--accent)', fontWeight: 500, minWidth: 40 }}>{display}</span>
     </div>
   );
 }

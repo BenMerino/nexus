@@ -1,11 +1,24 @@
 // Bulk institution import with cursor pagination (superadmin only)
 var DEFAULT_ROR = "https://ror.org/03gawms58"; // UTalca
 
+function mountImportUI() {
+  var slot = document.getElementById("import-slot");
+  var tpl = document.getElementById("import-template");
+  if (!slot || !tpl || slot.childElementCount) return false;
+  slot.appendChild(tpl.content.cloneNode(true));
+  return true;
+}
+
 fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
-  if (d.role === "superadmin") {
-    var el = document.getElementById("import-section");
-    if (el) el.style.display = "";
-  }
+  if (d.role !== "superadmin") return;
+  var tries = 0;
+  var iv = setInterval(function () {
+    if (mountImportUI() || tries++ > 40) {
+      clearInterval(iv);
+      var el = document.getElementById("import-section");
+      if (el) el.style.display = "";
+    }
+  }, 100);
 });
 
 function startImport() {

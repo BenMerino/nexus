@@ -1,12 +1,13 @@
 import React from 'react';
 import type { EnrichedSimNode } from './relationship-types';
 
-export function NodeCard({ node, cColor, selected, hovered, expanded, dimmed, isJournal, handlers, style, onSelectPaper }: {
+export function NodeCard({ node, cColor, selected, hovered, expanded, dimmed, collaboratorHint, isJournal, handlers, style, onSelectPaper, onUnhoverPaper }: {
   node: EnrichedSimNode; cColor: string;
-  selected: boolean; hovered: boolean; expanded: boolean; dimmed: boolean;
+  selected: boolean; hovered: boolean; expanded: boolean; dimmed: boolean; collaboratorHint?: boolean;
   isJournal: boolean; style: React.CSSProperties;
   handlers: { onClick: () => void; onMouseEnter: () => void; onMouseLeave: () => void };
   onSelectPaper?: (doi: string) => void;
+  onUnhoverPaper?: () => void;
 }) {
   const papers = (isJournal && node.papers) ? node.papers : [];
   const open = hovered || expanded;
@@ -21,11 +22,13 @@ export function NodeCard({ node, cColor, selected, hovered, expanded, dimmed, is
       boxSizing: 'border-box', cursor: isJournal ? 'pointer' : 'default',
       background: 'rgba(255,255,255,0.35)',
       backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-      border: `1.5px solid ${cColor}`,
+      border: collaboratorHint ? `2px dashed #f9a825` : `1.5px solid ${cColor}`,
       borderRadius: 8, padding: '6px 0',
-      boxShadow: open
-        ? '0 8px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.6)'
-        : '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
+      boxShadow: collaboratorHint
+        ? '0 0 0 3px rgba(249,168,37,0.25), 0 8px 24px rgba(0,0,0,0.12)'
+        : (open
+          ? '0 8px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.6)'
+          : '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)'),
       opacity: dimmed ? 0.1 : 1,
       transition: 'opacity 200ms, box-shadow 300ms',
       fontFamily: 'monospace',
@@ -70,10 +73,10 @@ export function NodeCard({ node, cColor, selected, hovered, expanded, dimmed, is
           <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', padding: '6px 0 2px', marginTop: 2 }}>
             <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5, color: cColor, fontWeight: 700, padding: '0 12px 4px' }}>Papers</div>
             {visiblePapers.map((p, i) => (
-              <div key={i} onClick={(e) => { e.stopPropagation(); onSelectPaper?.(p.doi); }}
-                style={{ fontSize: 11, color: '#444', lineHeight: '16px', padding: '3px 12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid rgba(0,0,0,0.03)', cursor: 'pointer' }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.04)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}>
+              <div key={i}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.04)'; onSelectPaper?.(p.doi); }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; onUnhoverPaper?.(); }}
+                style={{ fontSize: 11, color: '#444', lineHeight: '16px', padding: '3px 12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid rgba(0,0,0,0.03)', cursor: 'pointer' }}>
                 {p.title}
               </div>
             ))}

@@ -6,3 +6,7 @@ node_modules/
 .env.local
 .vercel
 .env*.local
+.DS_Store
+.claude/
+Nexus.zip
+nexus.zip

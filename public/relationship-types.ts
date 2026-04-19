@@ -52,6 +52,8 @@ export interface DoiRecord {
   citation_count: number;
   type: string;
   published: string;
+  abstract?: string | null;
+  open_access_url?: string | null;
 }
 
 export const TAG_CATEGORIES = ['institution', 'author', 'journal'] as const;

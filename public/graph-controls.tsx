@@ -35,9 +35,9 @@ export function CategoryStrip({ categories, counts, active, onToggle, onReorder 
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 4, marginBottom: 12, flexWrap: 'wrap',
-      padding: '6px 10px', background: '#f9f9fc', border: '1px solid #e8e8f0', borderRadius: 8,
+      padding: '8px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)',
     }}>
-      <span style={{ fontSize: 10, color: '#999', fontFamily: 'monospace', marginRight: 2 }}>
+      <span style={{ fontSize: 10, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', marginRight: 2, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
         layout order
       </span>
       {visible.map((cat, i) => {
@@ -52,24 +52,24 @@ export function CategoryStrip({ categories, counts, active, onToggle, onReorder 
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
               padding: '4px 10px', borderRadius: 999, cursor: 'grab',
-              border: `1.5px solid ${isOver ? '#333' : isActive ? COLORS[cat] : '#ddd'}`,
-              background: isActive ? BG_COLORS[cat] : '#fff',
-              color: isActive ? COLORS[cat] : '#999',
-              fontFamily: 'monospace', fontSize: 12,
-              fontWeight: isActive ? 600 : 400,
-              opacity: isDragging ? 0.4 : isActive ? 1 : 0.5,
+              border: `1.5px solid ${isOver ? 'var(--accent)' : isActive ? COLORS[cat] : 'var(--border)'}`,
+              background: isActive ? BG_COLORS[cat] : 'var(--bg-inset)',
+              color: isActive ? COLORS[cat] : 'var(--fg-dim)',
+              fontFamily: 'var(--mono)', fontSize: 12,
+              fontWeight: isActive ? 500 : 400,
+              opacity: isDragging ? 0.4 : isActive ? 1 : 0.6,
               transition: 'border-color 100ms, opacity 100ms',
               userSelect: 'none',
-              boxShadow: isOver ? '0 0 0 2px #333' : 'none',
+              boxShadow: isOver ? '0 0 0 2px var(--accent)' : 'none',
             }}>
-            <span style={{ color: isActive ? COLORS[cat] : '#ccc', fontSize: 10, letterSpacing: 1, lineHeight: 1 }}>
+            <span style={{ color: isActive ? COLORS[cat] : 'var(--fg-dim)', fontSize: 10, letterSpacing: 1, lineHeight: 1 }}>
               ⠿
             </span>
             {orderNum !== null && (
               <span style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: 18, height: 18, borderRadius: '50%', fontSize: 10, fontWeight: 700,
-                background: COLORS[cat], color: '#fff',
+                width: 18, height: 18, borderRadius: '50%', fontSize: 10, fontWeight: 500,
+                background: COLORS[cat], color: '#1a1612',
               }}>{orderNum}</span>
             )}
             {cat}
@@ -102,7 +102,7 @@ export function TagPicker({ category, tags, pinnedTags, pinnedOrder, onToggleTag
         </span>
         {hasPins && (
           <button onClick={() => { for (const t of tags) if (pinnedTags.has(t.id)) onToggleTag(t.id); }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: '#999', fontFamily: 'monospace', padding: 0 }}>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', padding: 0 }}>
             clear
           </button>
         )}
@@ -115,21 +115,21 @@ export function TagPicker({ category, tags, pinnedTags, pinnedOrder, onToggleTag
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 3,
                 padding: '2px 7px', borderRadius: 3,
-                border: `1px solid ${pinned ? COLORS[category] : '#e0e0e0'}`,
-                background: pinned ? BG_COLORS[category] : '#fafafa',
-                color: pinned ? COLORS[category] : '#666',
-                cursor: 'pointer', fontFamily: 'monospace', fontSize: 10,
-                fontWeight: pinned ? 600 : 400, transition: 'all 100ms ease',
+                border: `1px solid ${pinned ? COLORS[category] : 'var(--border-soft)'}`,
+                background: pinned ? BG_COLORS[category] : 'var(--bg-inset)',
+                color: pinned ? COLORS[category] : 'var(--fg-muted)',
+                cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: 10,
+                fontWeight: pinned ? 500 : 400, transition: 'all 100ms ease',
                 maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
               {t.label}
-              <span style={{ fontSize: 9, opacity: 0.6 }}>{t.doiCount}</span>
+              <span style={{ fontSize: 9, opacity: 0.65 }}>{t.doiCount}</span>
             </button>
           );
         })}
         {tags.length > 12 && (
           <button onClick={() => setExpanded(p => !p)}
-            style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 3, cursor: 'pointer', fontSize: 10, color: '#999', fontFamily: 'monospace', padding: '2px 7px' }}>
+            style={{ background: 'transparent', border: '1px solid var(--border-soft)', borderRadius: 3, cursor: 'pointer', fontSize: 10, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', padding: '2px 7px' }}>
             {expanded ? 'less' : `+${tags.length - 12}`}
           </button>
         )}

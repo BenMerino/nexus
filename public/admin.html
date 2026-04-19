@@ -6,112 +6,148 @@
   <link rel="stylesheet" href="/shared.css">
   <style>
     #tenant-detail { display: none; }
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-    .back-btn { cursor: pointer; font-size: 13px; color: #1565c0; background: none; border: none; padding: 0; margin-bottom: 12px; }
-    .back-btn:hover { text-decoration: underline; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #eee; }
-    th { font-weight: bold; text-transform: uppercase; font-size: 11px; color: #999; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; }
-    .badge-superadmin { background: #f3e5f5; color: #7b1fa2; }
-    .badge-director { background: #e3f2fd; color: #1565c0; }
-    .badge-secretary { background: #fff3e0; color: #e65100; }
-    .badge-academic { background: #e8f5e9; color: #2e7d32; }
-    .color-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
-    .color-row label { width: 120px; font-size: 12px; }
-    .color-row input[type="color"] { width: 40px; height: 28px; border: 1px solid #ccc; cursor: pointer; }
-    .form-row { margin: 8px 0; }
-    .form-row label { display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; font-weight: bold; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+    .back-btn {
+      cursor: pointer; font-size: 13px; color: var(--accent);
+      background: transparent; border: 0; padding: 0; margin-bottom: 14px; font: inherit;
+    }
+    .back-btn:hover { filter: brightness(1.15); }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .admin-table th, .admin-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-soft); }
+    .admin-table th { font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: 0.12em; color: var(--fg-dim); font-family: var(--mono); }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 3px;
+      font-size: 10px; font-weight: 500; font-family: var(--mono); letter-spacing: 0.06em;
+    }
+    .badge-superadmin { background: oklch(0.28 0.05 300 / 0.5); color: oklch(0.82 0.10 300); }
+    .badge-director   { background: oklch(0.28 0.05 245 / 0.5); color: oklch(0.82 0.10 245); }
+    .badge-secretary  { background: oklch(0.28 0.05 50  / 0.5); color: oklch(0.82 0.10 50); }
+    .badge-academic   { background: oklch(0.28 0.05 145 / 0.5); color: oklch(0.82 0.10 145); }
+    .color-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+    .color-row label { width: 130px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
+    .color-row input[type="color"] { width: 40px; height: 30px; border: 1px solid var(--border); cursor: pointer; background: transparent; border-radius: 3px; padding: 0; }
+    .form-row { margin: 10px 0; }
+    .form-row label { display: block; font-family: var(--mono); font-size: 10px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.12em; color: var(--fg-dim); }
     .form-row input, .form-row select { width: 100%; }
-    .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
-    .logo-box { width: 80px; height: 80px; border: 1px dashed #ccc; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
-    .logo-box:hover { border-color: #999; }
+    .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start; }
+    .logo-box {
+      width: 80px; height: 80px; border: 1px dashed var(--border); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      cursor: pointer; background: var(--bg-inset);
+    }
+    .logo-box:hover { border-color: var(--accent); }
     .logo-box img { max-width: 80px; max-height: 80px; object-fit: contain; }
-    .tm-card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 8px; }
-    .tm-vals { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+    .tm-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 4px; padding: 14px; margin-bottom: 10px; }
+    .tm-vals { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
     .tm-vals .tag { cursor: pointer; border: 2px solid transparent; }
-    .tm-vals .tag.selected { border-color: #333; font-weight: bold; }
-    .synonym-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 12px; }
+    .tm-vals .tag.selected { border-color: var(--accent); font-weight: 500; }
+    .synonym-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 12px; }
+    .card h3 { font-family: var(--display); font-weight: 400; font-size: 18px; margin-bottom: 10px; }
+    .card p { font-size: 12px; color: var(--fg-muted); margin-bottom: 10px; }
   </style>
 </head>
-<body>
+<body class="shell-fixed">
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
-  <nav>
-    <span class="logo">Nexus</span>
-    <span id="nav-links"></span>
-    <div id="nav-user" style="margin-left: auto; min-height: 28px;"><a href="/api/auth?action=logout">Logout</a></div>
-  </nav>
-  <div class="page">
-    <h1>Platform Admin</h1>
-    <div id="no-access" style="display:none;" class="card"><p>Superadmin access required.</p></div>
-    <div id="tenant-overview" style="display:none;">
-      <div class="card" id="tenants-grid"></div>
-      <button class="btn" style="margin-top:16px;" id="btn-new-tenant">+ New Tenant</button>
-      <div class="card" id="new-tenant-card" style="display:none;margin-top:16px;"></div>
-      <div class="card" id="indexation-card" style="margin-top:16px;">
-        <h3>Journal Indexation (Source of Truth)</h3>
-        <p style="font-size:12px;color:#666;margin:0 0 8px;">Upload the official journal list per indexing source. On import, ISSNs become canonical and every matching paper is auto-tagged.</p>
-        <div id="indexation-counts" style="font-size:12px;color:#555;margin-bottom:8px;">Loading…</div>
-        <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
-          <div><label style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:bold;">Source</label>
-            <select id="idx-source"><option value="Scopus">Scopus</option><option value="WoS">WoS</option><option value="SciELO">SciELO</option></select></div>
-          <div><label style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:bold;">CSV file</label>
-            <input type="file" id="idx-file" accept=".csv,text/csv"></div>
-          <button onclick="idxImport()">Import &amp; Backfill</button>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/admin.html"></div>
+    <main class="main">
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Platform</div>
+            <h1 class="view-title">Superadmin <em>console</em>.</h1>
+            <div class="view-sub">Tenants, users, indexation sources, and OpenAlex imports — everything that shapes a CRIS.</div>
+          </div>
+        </header>
+
+        <div id="no-access" style="display:none;" class="card"><p>Superadmin access required.</p></div>
+
+        <div id="tenant-overview" style="display:none;">
+          <div class="card" id="tenants-grid"></div>
+          <button class="primary-btn" style="margin-top:18px;" id="btn-new-tenant">+ New tenant</button>
+          <div class="card" id="new-tenant-card" style="display:none;margin-top:18px;"></div>
+
+          <div class="card" id="indexation-card" style="margin-top:18px;">
+            <h3>Journal indexation (source of truth)</h3>
+            <p>Upload the official journal list per indexing source. On import, ISSNs become canonical and every matching paper is auto-tagged.</p>
+            <div id="indexation-counts" style="font-size:12px;color:var(--fg-muted);margin-bottom:10px;font-family:var(--mono);">Loading…</div>
+            <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
+              <div class="form-row" style="margin:0;"><label>Source</label>
+                <select id="idx-source"><option value="Scopus">Scopus</option><option value="WoS">WoS</option><option value="SciELO">SciELO</option></select>
+              </div>
+              <div class="form-row" style="margin:0;"><label>CSV file</label>
+                <input type="file" id="idx-file" accept=".csv,text/csv">
+              </div>
+              <button class="primary-btn" onclick="idxImport()">Import &amp; backfill</button>
+            </div>
+            <div id="idx-status" style="margin-top:10px;font-size:12px;"></div>
+          </div>
         </div>
-        <div id="idx-status" style="margin-top:8px;font-size:12px;"></div>
-      </div>
-    </div>
-    <div id="tenant-detail">
-      <button class="back-btn" id="btn-back">&larr; Back to all tenants</button>
-      <h2 id="detail-title"></h2>
-      <div class="card" style="margin-bottom:16px;">
-        <h3>Subtenants</h3>
-        <div id="subtenants-list"></div>
-        <div style="display:flex;gap:8px;align-items:end;margin-top:10px;">
-          <div><label style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:bold;">Name</label><input id="st-name" placeholder="e.g. Faculty of Engineering"></div>
-          <div><label style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:bold;">ROR ID</label><input id="st-ror" placeholder="Optional"></div>
-          <button onclick="addSubtenant()">Add</button>
+
+        <div id="tenant-detail">
+          <button class="back-btn" id="btn-back">← Back to all tenants</button>
+          <h2 id="detail-title" style="font-family: var(--display); font-weight: 400; font-size: 32px; margin-bottom: 14px;"></h2>
+
+          <div class="card" style="margin-bottom:18px;">
+            <h3>Subtenants</h3>
+            <div id="subtenants-list"></div>
+            <div style="display:flex;gap:10px;align-items:end;margin-top:12px;">
+              <div class="form-row" style="margin:0;flex:1;"><label>Name</label><input id="st-name" placeholder="e.g. Faculty of Engineering"></div>
+              <div class="form-row" style="margin:0;flex:1;"><label>ROR ID</label><input id="st-ror" placeholder="Optional"></div>
+              <button class="primary-btn" onclick="addSubtenant()">Add</button>
+            </div>
+          </div>
+
+          <div class="detail-grid">
+            <div class="card"><h3>Users</h3><div id="users-list"></div></div>
+            <div class="card"><h3>Add user</h3><div id="user-form"></div></div>
+          </div>
+
+          <div class="card" style="margin-top:18px;">
+            <h3>Tag manager</h3>
+            <p>Detect and merge duplicate tags. Click a tag to pick the canonical name.</p>
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+              <select id="tm-category">
+                <option value="">All</option>
+                <option value="author">Author</option>
+                <option value="institution">Institution</option>
+                <option value="journal">Journal</option>
+                <option value="publisher">Publisher</option>
+                <option value="venue">Venue</option>
+              </select>
+              <button class="primary-btn" onclick="tmScan()">Scan</button>
+              <button onclick="tmRorResolve()">Auto-resolve institutions (ROR)</button>
+              <button class="secondary" onclick="tmShowSynonyms()">Active synonyms</button>
+              <span id="tm-status" style="font-size:12px;color:var(--fg-muted);"></span>
+            </div>
+            <div id="tm-content"></div>
+          </div>
+
+          <div class="card" style="margin-top:18px;">
+            <h3>Submit DOI</h3>
+            <div style="display:flex;gap:10px;align-items:end;">
+              <div class="form-row" style="margin:0;flex:1;"><label>DOI</label><input id="doi-input" type="text" placeholder="e.g. 10.1038/nature12373"></div>
+              <button class="primary-btn" onclick="submitDoi()">Submit</button>
+            </div>
+            <div id="doi-status" style="margin-top:10px;"></div>
+            <div id="doi-results" style="margin-top:10px;"></div>
+          </div>
+
+          <div class="detail-grid" style="margin-top:18px;">
+            <div class="card"><h3>Edit tenant</h3><div id="tenant-form"></div></div>
+            <div class="card">
+              <h3>OpenAlex import</h3>
+              <p>Fetch all affiliated academics, ORCIDs, and DOIs for this institution via its ROR.</p>
+              <button class="primary-btn" id="btn-institution-import">Import from OpenAlex</button>
+              <div id="import-status" style="margin-top:10px;"></div>
+              <div id="import-results" style="margin-top:10px;"></div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="detail-grid">
-        <div class="card"><h3>Users</h3><div id="users-list"></div></div>
-        <div class="card"><h3>Add User</h3><div id="user-form"></div></div>
-      </div>
-      <div class="card" style="margin-top:16px;">
-        <h3>Tag Manager</h3>
-        <p style="font-size:12px;color:#666;margin:0 0 8px;">Detect and merge duplicate tags. Click a tag to pick the canonical name.</p>
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
-          <select id="tm-category"><option value="">All</option><option value="author">Author</option><option value="institution">Institution</option><option value="journal">Journal</option><option value="publisher">Publisher</option><option value="venue">Venue</option></select>
-          <button onclick="tmScan()">Scan</button>
-          <button onclick="tmRorResolve()">Auto-resolve Institutions (ROR)</button>
-          <button class="secondary" onclick="tmShowSynonyms()">Active Synonyms</button>
-          <span id="tm-status" style="font-size:12px;color:#666;"></span>
-        </div>
-        <div id="tm-content"></div>
-      </div>
-      <div class="card" style="margin-top:16px;">
-        <h3>Submit DOI</h3>
-        <div style="display:flex;gap:8px;align-items:end;">
-          <div style="flex:1;"><label style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:bold;">DOI</label><input id="doi-input" type="text" placeholder="e.g. 10.1038/nature12373" style="width:100%;"></div>
-          <button onclick="submitDoi()">Submit</button>
-        </div>
-        <div id="doi-status" style="margin-top:8px;"></div>
-        <div id="doi-results" style="margin-top:8px;"></div>
-      </div>
-      <div class="detail-grid" style="margin-top:16px;">
-        <div class="card"><h3>Edit Tenant</h3><div id="tenant-form"></div></div>
-        <div class="card">
-          <h3>OpenAlex Import</h3>
-          <p style="font-size:12px;color:#666;margin:0 0 8px;">Fetch all affiliated academics, ORCIDs, and DOIs for this institution via its ROR.</p>
-          <button id="btn-institution-import">Import from OpenAlex</button>
-          <div id="import-status" style="margin-top:8px;"></div>
-          <div id="import-results" style="margin-top:8px;"></div>
-        </div>
-      </div>
-    </div>
+    </main>
   </div>
-  <script src="/nav.js"></script>
+
   <script src="/color-extract.js"></script>
   <script src="/admin-tenant-form.js"></script>
   <script src="/admin-users.js"></script>
@@ -119,5 +155,6 @@
   <script src="/admin-author-import.js"></script>
   <script src="/admin-indexation.js"></script>
   <script src="/admin-app.js"></script>
+  <script type="module" src="/shell-mount-bundle.js"></script>
 </body>
 </html>

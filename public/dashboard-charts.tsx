@@ -1,76 +1,79 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Shell } from './shell';
+import { useCurrentUser } from './shell-helpers';
+import { Stat, Tag } from './ui-primitives';
 import { GraphRender } from '../graph-engine/index.js';
-import { buildDashboardCharts } from './dashboard-builders.js';
-import type { DashboardData } from './dashboard-builders.js';
+import { buildDashboardCharts, type DashboardData } from './dashboard-builders.js';
+import { yearlyCounts, sourceBreakdown, BarChart, RankedInstitutions, RankedCountries, SourceList } from './dashboard-panels';
 
-function SummaryCards({ data }: { data: DashboardData }) {
-  const cards = [
-    { label: 'Publications', value: data.totalPubs },
-    { label: 'Citations', value: data.totalCitations.toLocaleString() },
-    { label: 'Open Access', value: data.oaCount },
-    { label: 'Authors', value: data.authorCount },
+function DashboardContent({ data }: { data: DashboardData }) {
+  const { me } = useCurrentUser();
+  const oaPct = data.totalPubs > 0 ? Math.round((data.oaCount / data.totalPubs) * 100) : 0;
+  const years = yearlyCounts(data);
+  const sources = sourceBreakdown(data);
+  const charts = buildDashboardCharts(data);
+
+  const tenantName = me?.tenant || 'Institution';
+  const displayName = me?.profile.name || me?.user || '';
+  const firstName = displayName.split(' ')[0];
+
+  const heroStats = [
+    { label: 'Publications',    value: data.totalPubs.toLocaleString() },
+    { label: 'Citations',       value: data.totalCitations.toLocaleString() },
+    { label: 'Open access',     value: `${oaPct}%`, accent: true },
+    { label: 'Authors indexed', value: data.authorCount.toLocaleString() },
   ];
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
-      {cards.map((c, i) => (
-        <div key={i} style={{ background: '#f8f9fa', border: '1px solid #e0e0e0', borderRadius: '6px', padding: '16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', fontFamily: 'monospace' }}>{c.value}</div>
-          <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>{c.label}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
-function SourceBreakdown({ data }: { data: DashboardData }) {
-  const sourceCounts = new Map<string, number>();
-  for (const row of data.yearSource) {
-    const src = row.source || 'Other';
-    sourceCounts.set(src, (sourceCounts.get(src) || 0) + parseInt(row.count));
-  }
-  const entries = [...sourceCounts.entries()].sort((a, b) => b[1] - a[1]);
-  if (!entries.length) return null;
   return (
-    <div style={{ marginBottom: '1.5rem' }}>
-      <h3 style={{ fontFamily: 'monospace', fontSize: '14px', marginBottom: '8px' }}>By Source Index</h3>
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-        {entries.map(([src, count]) => (
-          <div key={src} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: '4px', padding: '8px 14px', fontFamily: 'monospace', fontSize: '13px' }}>
-            <strong>{src}</strong>: {count}
-          </div>
+    <div className="view dashboard">
+      <header className="view-head">
+        <div>
+          <div className="eyebrow">Institutional overview</div>
+          <h1 className="view-title">
+            {firstName ? <>Good work, <em>{firstName}</em>.</> : <><em>{tenantName}</em>.</>}
+          </h1>
+          <div className="view-sub">A living map of {tenantName}&rsquo;s scholarly output — pulled from CrossRef, OpenAlex, Semantic Scholar, and DataCite.</div>
+        </div>
+        <div className="view-meta">
+          <Tag mono>CROSSREF · OPENALEX · S2 · DATACITE</Tag>
+          {me?.hIndex != null && <Tag mono tone="muted">H-INDEX · {me.hIndex}</Tag>}
+        </div>
+      </header>
+
+      <div className="stat-row">
+        {heroStats.map((s, i) => <Stat key={i} {...s} />)}
+      </div>
+
+      <div className="dash-grid">
+        {years.length > 0 ? <BarChart rows={years} title="Publications per year" /> : <div className="card card-chart"><div className="muted">No year data.</div></div>}
+        <RankedInstitutions data={data} />
+        <RankedCountries data={data} />
+        {sources.length > 0 && <SourceList sources={sources} />}
+        {charts.slice(1).map((chart, i) => (
+          <section key={i} className="card card-span-2"><GraphRender chart={chart} /></section>
         ))}
       </div>
+      <div id="import-slot" />
     </div>
   );
 }
 
 function App() {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     fetch('/api/dashboard?action=stats')
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
+      .then(setData)
+      .catch(e => setErr(String(e)));
   }, []);
-
-  if (loading) return <div style={{ padding: '2rem', fontFamily: 'monospace' }}>Loading dashboard...</div>;
-  if (!data) return <div style={{ padding: '2rem', fontFamily: 'monospace' }}>Error loading data.</div>;
-
-  const charts = buildDashboardCharts(data);
-
   return (
-    <div>
-      <SummaryCards data={data} />
-      <SourceBreakdown data={data} />
-      {charts.map((chart, i) => (
-        <div key={i} style={{ marginBottom: '1rem' }}>
-          <GraphRender chart={chart} />
-        </div>
-      ))}
-    </div>
+    <Shell scroll>
+      {err && <div className="view"><div className="status error">Error: {err}</div></div>}
+      {!data && !err && <div className="view"><div className="eyebrow">Loading dashboard…</div></div>}
+      {data && <DashboardContent data={data} />}
+    </Shell>
   );
 }
 

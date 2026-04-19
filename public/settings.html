@@ -5,59 +5,68 @@
   <title>Settings — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
   <style>
-    .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
-    .logo-box { width: 80px; height: 80px; border: 1px dashed #ccc; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
-    .logo-box:hover { border-color: #999; }
-    .logo-box img { max-width: 80px; max-height: 80px; object-fit: contain; }
-    .color-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
-    .color-row label { width: 130px; font-size: 12px; }
-    .color-row input[type="color"] { width: 36px; height: 28px; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 0; }
-    .color-row .hex { font-size: 11px; color: #999; font-family: monospace; }
+    .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; }
+    .logo-box {
+      width: 96px; height: 96px;
+      border: 1px dashed var(--border); border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer;
+      background: var(--bg-inset);
+    }
+    .logo-box:hover { border-color: var(--accent); }
+    .logo-box img { max-width: 96px; max-height: 96px; object-fit: contain; }
+    .color-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+    .color-row label { width: 140px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
+    .color-row input[type="color"] { width: 40px; height: 32px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 0; background: transparent; }
+    .color-row .hex { font-size: 11px; color: var(--fg-dim); font-family: var(--mono); }
   </style>
 </head>
-<body>
+<body class="shell-fixed">
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
-
-  <nav>
-    <span class="logo">Nexus</span>
-    <span id="nav-links"></span>
-    <div id="nav-user" style="margin-left: auto; min-height: 28px;"><a href="/api/auth?action=logout">Logout</a></div>
-  </nav>
-
-  <div class="page">
-    <h1>Settings</h1>
-
-    <div class="card" id="branding-card" style="display:none;">
-      <h3 id="branding-title">University Branding</h3>
-      <div class="branding-grid">
-        <div>
-          <div class="logo-box" id="logo-preview" onclick="document.getElementById('logo-input').click()" title="Click to upload logo">
-            <span class="text-muted text-small">No logo</span>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/settings.html"></div>
+    <main class="main">
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Tenant</div>
+            <h1 class="view-title">Branding &amp; <em>identity</em>.</h1>
+            <div class="view-sub">Logo, primary, and secondary colors propagate across every authenticated page for your institution.</div>
           </div>
-          <input type="file" id="logo-input" accept="image/*" style="display: none;">
-          <div id="upload-status" class="text-small mt-8" style="width:80px;text-align:center;"></div>
-        </div>
-        <div>
-          <div class="color-row">
-            <label>Primary Color</label>
-            <input type="color" id="primary-color" value="#333333">
-            <span class="hex" id="primary-hex">#333333</span>
+        </header>
+
+        <div class="card" id="branding-card" style="display:none;">
+          <h3 id="branding-title" style="font-family: var(--display); font-weight: 400; font-size: 22px; margin-bottom: 18px;">University branding</h3>
+          <div class="branding-grid">
+            <div>
+              <div class="logo-box" id="logo-preview" onclick="document.getElementById('logo-input').click()" title="Click to upload logo">
+                <span class="text-muted text-small">No logo</span>
+              </div>
+              <input type="file" id="logo-input" accept="image/*" style="display: none;">
+              <div id="upload-status" class="text-small mt-8" style="width:96px;text-align:center;"></div>
+            </div>
+            <div>
+              <div class="color-row">
+                <label>Primary</label>
+                <input type="color" id="primary-color" value="#e6a756">
+                <span class="hex" id="primary-hex">#e6a756</span>
+              </div>
+              <div class="color-row">
+                <label>Secondary</label>
+                <input type="color" id="secondary-color" value="#6ba4d6">
+                <span class="hex" id="secondary-hex">#6ba4d6</span>
+              </div>
+              <div id="color-suggestions" style="margin-top:12px;"></div>
+              <button class="primary-btn" onclick="saveColors()" style="margin-top:12px;">Save colors</button>
+              <span id="color-status" class="text-small" style="margin-left:10px;"></span>
+            </div>
           </div>
-          <div class="color-row">
-            <label>Secondary Color</label>
-            <input type="color" id="secondary-color" value="#1565c0">
-            <span class="hex" id="secondary-hex">#1565c0</span>
-          </div>
-          <div id="color-suggestions" style="margin-top:10px;"></div>
-          <button onclick="saveColors()" style="margin-top:8px;">Save Colors</button>
-          <span id="color-status" class="text-small" style="margin-left:8px;"></span>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 
-  <script src="/nav.js"></script>
   <script src="/color-extract.js"></script>
   <script src="/settings-app.js"></script>
+  <script type="module" src="/shell-mount-bundle.js"></script>
 </body>
 </html>
