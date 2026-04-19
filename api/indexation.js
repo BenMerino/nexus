@@ -1,8 +1,7 @@
 const { ensureSchema } = require("../lib/db");
 const { requireRole } = require("../lib/auth");
-const { extractEntries, replaceIndex, listCounts } = require("../lib/indexed-journals");
-const { backfillIndexationTags, clearIndexationTagsForSource } = require("../lib/indexed-backfill");
-const { seedIndexedJournalsFromOpenAlex } = require("../lib/openalex-to-indexed-journals");
+const { listCounts } = require("../lib/indexed-journals");
+const { runSeed } = require("../lib/indexation-seed");
 
 module.exports = async function handler(req, res) {
   await ensureSchema();
@@ -13,21 +12,16 @@ module.exports = async function handler(req, res) {
     return res.json({ counts: await listCounts() });
   }
 
-  if (req.method === "POST" && req.query.action === "seed-from-openalex") {
-    const seeded = await seedIndexedJournalsFromOpenAlex();
-    const backfill = await backfillIndexationTags();
-    return res.json({ ok: true, seeded, backfill });
-  }
-
-  if (req.method === "POST") {
-    const { csv, source } = req.body || {};
-    if (!csv || !source) return res.status(400).json({ error: "csv and source are required" });
-    const entries = extractEntries(csv);
-    if (!entries.length) return res.status(400).json({ error: "No ISSN-bearing rows found" });
-    const imported = await replaceIndex(source, entries);
-    await clearIndexationTagsForSource(imported.source);
-    const backfill = await backfillIndexationTags();
-    return res.json({ ok: true, imported, backfill });
+  if (req.method === "POST" && req.query.action === "seed") {
+    const sourceId = req.query.source;
+    if (!sourceId) return res.status(400).json({ error: "source query param is required" });
+    const { csv } = req.body || {};
+    try {
+      const result = await runSeed(sourceId, { csv });
+      return res.json({ ok: true, ...result });
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
   }
 
   res.status(405).json({ error: "Method not allowed" });

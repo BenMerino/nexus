@@ -6,9 +6,23 @@
       var counts = (d && d.counts) || [];
       if (!counts.length) { el.textContent = "No journal lists imported yet."; return; }
       el.innerHTML = counts.map(function (c) {
-        return '<span style="margin-right:14px;"><strong>' + c.source + '</strong>: ' + c.count.toLocaleString() + " journals</span>";
+        var when = c.last_seeded_at ? " (" + new Date(c.last_seeded_at).toISOString().slice(0, 10) + ")" : "";
+        return '<span style="margin-right:14px;"><strong>' + c.source + '</strong>: ' + c.count.toLocaleString() + " journals" + when + "</span>";
       }).join("");
     }).catch(function () {});
+  }
+
+  function postSeed(source, body, status) {
+    return fetch("/api/indexation?action=seed&source=" + encodeURIComponent(source), {
+      method: "POST",
+      headers: body ? { "Content-Type": "application/json" } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    }).then(r => r.json()).then(function (d) {
+      if (d.error) { status.textContent = "Error: " + d.error; return; }
+      var imp = d.imported || {}, bf = d.backfill || {};
+      status.textContent = "Seeded " + imp.count + " " + imp.source + " journals. Tagged " + bf.tagged + " paper-source pairs (scanned " + bf.scanned + ").";
+      refreshCounts();
+    }).catch(function (err) { status.textContent = "Error: " + err.message; });
   }
 
   window.idxImport = function () {
@@ -20,17 +34,15 @@
     var reader = new FileReader();
     reader.onload = function () {
       status.textContent = "Importing " + src + " and backfilling tags…";
-      fetch("/api/indexation", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csv: reader.result, source: src }),
-      }).then(r => r.json()).then(function (d) {
-        if (d.error) { status.textContent = "Error: " + d.error; return; }
-        var imp = d.imported || {}, bf = d.backfill || {};
-        status.textContent = "Imported " + imp.count + " " + imp.source + " journals. Tagged " + bf.tagged + " paper-source pairs (scanned " + bf.scanned + ").";
-        refreshCounts();
-      }).catch(function (err) { status.textContent = "Error: " + err.message; });
+      postSeed(src, { csv: reader.result }, status);
     };
     reader.readAsText(file);
+  };
+
+  window.idxSeedScielo = function () {
+    var status = document.getElementById("idx-status");
+    status.textContent = "Fetching SciELO identifiers and backfilling tags…";
+    postSeed("SciELO", null, status);
   };
 
   if (document.readyState === "loading") {
