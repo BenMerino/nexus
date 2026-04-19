@@ -48,6 +48,19 @@
       <div class="card" id="tenants-grid"></div>
       <button class="btn" style="margin-top:16px;" id="btn-new-tenant">+ New Tenant</button>
       <div class="card" id="new-tenant-card" style="display:none;margin-top:16px;"></div>
+      <div class="card" id="indexation-card" style="margin-top:16px;">
+        <h3>Journal Indexation (Source of Truth)</h3>
+        <p style="font-size:12px;color:#666;margin:0 0 8px;">Upload the official journal list per indexing source. On import, ISSNs become canonical and every matching paper is auto-tagged.</p>
+        <div id="indexation-counts" style="font-size:12px;color:#555;margin-bottom:8px;">Loading…</div>
+        <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
+          <div><label style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:bold;">Source</label>
+            <select id="idx-source"><option value="Scopus">Scopus</option><option value="WoS">WoS</option><option value="SciELO">SciELO</option></select></div>
+          <div><label style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:bold;">CSV file</label>
+            <input type="file" id="idx-file" accept=".csv,text/csv"></div>
+          <button onclick="idxImport()">Import &amp; Backfill</button>
+        </div>
+        <div id="idx-status" style="margin-top:8px;font-size:12px;"></div>
+      </div>
     </div>
     <div id="tenant-detail">
       <button class="back-btn" id="btn-back">&larr; Back to all tenants</button>
@@ -104,6 +117,7 @@
   <script src="/admin-users.js"></script>
   <script src="/admin-tag-manager.js"></script>
   <script src="/admin-author-import.js"></script>
+  <script src="/admin-indexation.js"></script>
   <script src="/admin-app.js"></script>
 </body>
 </html>

@@ -15138,18 +15138,35 @@ function TenantGraph({ nodes, edges }) {
 }
 
 // public/tenant-builders.ts
+var INDEX_STACK = ["WoS", "Scopus", "SciELO", "Other"];
 function buildYearChart(stats) {
-  const byYear = /* @__PURE__ */ new Map();
-  for (const row of stats.yearSource) {
-    byYear.set(row.year, (byYear.get(row.year) || 0) + parseInt(row.count));
+  const rows = stats.yearByIndex && stats.yearByIndex.length ? stats.yearByIndex : null;
+  if (!rows) {
+    const byYear = /* @__PURE__ */ new Map();
+    for (const row of stats.yearSource) byYear.set(row.year, (byYear.get(row.year) || 0) + parseInt(row.count));
+    const years2 = [...byYear.keys()].filter(Boolean).sort();
+    if (years2.length <= 1) return null;
+    return {
+      type: "bar",
+      title: "Publications by Year",
+      yLabel: "Articles",
+      data: years2.map((y3) => ({ label: y3, value: byYear.get(y3) || 0 }))
+    };
   }
-  const years = [...byYear.keys()].filter(Boolean).sort();
+  const grid = /* @__PURE__ */ new Map();
+  for (const r of rows) {
+    if (!r.year) continue;
+    if (!grid.has(r.year)) grid.set(r.year, { WoS: 0, Scopus: 0, SciELO: 0, Other: 0 });
+    grid.get(r.year)[r.bucket] = (grid.get(r.year)[r.bucket] || 0) + r.count;
+  }
+  const years = [...grid.keys()].sort();
   if (years.length <= 1) return null;
   return {
-    type: "bar",
+    type: "stacked-bar",
     title: "Publications by Year",
     yLabel: "Articles",
-    data: years.map((y3) => ({ label: y3, value: byYear.get(y3) || 0 }))
+    series: INDEX_STACK,
+    data: years.map((y3) => ({ label: y3, ...grid.get(y3) }))
   };
 }
 function buildTypeChart(stats) {

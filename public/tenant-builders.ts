@@ -7,6 +7,7 @@ export interface TypeRow { type: string; count: number; }
 export interface JournalRow { journal: string; count: number; }
 export interface SourceRow { source: string; count: number; }
 export interface TypeYearRow { type: string; year: string; count: number; }
+export interface YearIndexRow { year: string; bucket: string; count: number; }
 
 export interface PublicStats {
   summary: { totalPubs: number; totalCitations: number; oaCount: number; authorCount: number };
@@ -18,20 +19,35 @@ export interface PublicStats {
   yearRange: { minYear: string | null; maxYear: string | null };
   bySource: SourceRow[];
   typeByYear: TypeYearRow[];
+  yearByIndex: YearIndexRow[];
 }
 
+const INDEX_STACK = ['WoS', 'Scopus', 'SciELO', 'Other'];
+
 function buildYearChart(stats: PublicStats): GraphDirective | null {
-  const byYear = new Map<string, number>();
-  for (const row of stats.yearSource) {
-    byYear.set(row.year, (byYear.get(row.year) || 0) + parseInt(row.count));
+  const rows = stats.yearByIndex && stats.yearByIndex.length ? stats.yearByIndex : null;
+  if (!rows) {
+    const byYear = new Map<string, number>();
+    for (const row of stats.yearSource) byYear.set(row.year, (byYear.get(row.year) || 0) + parseInt(row.count));
+    const years = [...byYear.keys()].filter(Boolean).sort();
+    if (years.length <= 1) return null;
+    return { type: 'bar', title: 'Publications by Year', yLabel: 'Articles',
+      data: years.map(y => ({ label: y, value: byYear.get(y) || 0 })) };
   }
-  const years = [...byYear.keys()].filter(Boolean).sort();
+  const grid = new Map<string, Record<string, number>>();
+  for (const r of rows) {
+    if (!r.year) continue;
+    if (!grid.has(r.year)) grid.set(r.year, { WoS: 0, Scopus: 0, SciELO: 0, Other: 0 });
+    grid.get(r.year)![r.bucket] = (grid.get(r.year)![r.bucket] || 0) + r.count;
+  }
+  const years = [...grid.keys()].sort();
   if (years.length <= 1) return null;
   return {
-    type: 'bar',
+    type: 'stacked-bar',
     title: 'Publications by Year',
     yLabel: 'Articles',
-    data: years.map(y => ({ label: y, value: byYear.get(y) || 0 })),
+    series: INDEX_STACK,
+    data: years.map(y => ({ label: y, ...grid.get(y)! })),
   };
 }
 
