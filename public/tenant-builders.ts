@@ -22,7 +22,7 @@ export interface PublicStats {
   yearByIndex: YearIndexRow[];
 }
 
-const INDEX_STACK = ['WoS', 'Scopus', 'SciELO', 'Other'];
+const INDEX_STACK = ['WoS', 'Scopus', 'SciELO', 'DOAJ', 'Crossref', 'indexed', 'Other'];
 
 function buildYearChart(stats: PublicStats): GraphDirective | null {
   const rows = stats.yearByIndex && stats.yearByIndex.length ? stats.yearByIndex : null;
@@ -37,7 +37,11 @@ function buildYearChart(stats: PublicStats): GraphDirective | null {
   const grid = new Map<string, Record<string, number>>();
   for (const r of rows) {
     if (!r.year) continue;
-    if (!grid.has(r.year)) grid.set(r.year, { WoS: 0, Scopus: 0, SciELO: 0, Other: 0 });
+    if (!grid.has(r.year)) {
+      const z: Record<string, number> = {};
+      for (const k of INDEX_STACK) z[k] = 0;
+      grid.set(r.year, z);
+    }
     grid.get(r.year)![r.bucket] = (grid.get(r.year)![r.bucket] || 0) + r.count;
   }
   const years = [...grid.keys()].sort();

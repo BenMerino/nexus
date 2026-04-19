@@ -15109,7 +15109,7 @@ function TenantGraph({ nodes, edges }) {
 }
 
 // public/tenant-builders.ts
-var INDEX_STACK = ["WoS", "Scopus", "SciELO", "Other"];
+var INDEX_STACK = ["WoS", "Scopus", "SciELO", "DOAJ", "Crossref", "indexed", "Other"];
 function buildYearChart(stats) {
   const rows = stats.yearByIndex && stats.yearByIndex.length ? stats.yearByIndex : null;
   if (!rows) {
@@ -15127,7 +15127,11 @@ function buildYearChart(stats) {
   const grid = /* @__PURE__ */ new Map();
   for (const r of rows) {
     if (!r.year) continue;
-    if (!grid.has(r.year)) grid.set(r.year, { WoS: 0, Scopus: 0, SciELO: 0, Other: 0 });
+    if (!grid.has(r.year)) {
+      const z = {};
+      for (const k of INDEX_STACK) z[k] = 0;
+      grid.set(r.year, z);
+    }
     grid.get(r.year)[r.bucket] = (grid.get(r.year)[r.bucket] || 0) + r.count;
   }
   const years = [...grid.keys()].sort();
