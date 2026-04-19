@@ -73,7 +73,10 @@ export function CoAuthorSim({ graph, width, height }: { graph: CoauthorGraph; wi
     return set;
   }, [hoverId, links]);
 
+  const hovered = hoverId ? nodes.find(n => n.id === hoverId) : null;
+
   return (
+    <div style={{ position: 'relative', width, height }}>
     <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none' }}>
       <defs>
         <radialGradient id="coauthor-glow">
@@ -108,7 +111,7 @@ export function CoAuthorSim({ graph, width, height }: { graph: CoauthorGraph; wi
                 fill={n.isMe ? 'var(--accent)' : 'var(--fg-muted)'}
                 stroke={isHov ? '#fff' : 'rgba(255,255,255,0.2)'}
                 strokeWidth={isHov ? 2 : 1} />
-              {(isHov || n.isMe || n.weight > 5) && (
+              {n.isMe && (
                 <text x={0} y={r + 13} textAnchor="middle" fill="rgba(255,255,255,0.85)" fontSize={11} fontFamily="Inter, sans-serif" style={{ pointerEvents: 'none' }}>
                   {n.label}
                 </text>
@@ -118,5 +121,16 @@ export function CoAuthorSim({ graph, width, height }: { graph: CoauthorGraph; wi
         })}
       </g>
     </svg>
+    {hovered && !hovered.isMe && (() => {
+      const tx = Math.min(Math.max(hovered.x + 12, 4), width - 200);
+      const ty = Math.min(Math.max(hovered.y - 28, 4), height - 40);
+      return (
+        <div style={{ position: 'absolute', left: tx, top: ty, pointerEvents: 'none', background: 'var(--bg-card)', border: '1px solid var(--border-soft)', borderRadius: 4, padding: '6px 10px', fontSize: 12, color: 'var(--fg)', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.4)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontWeight: 500 }}>{hovered.label}</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-dim)' }}>{hovered.weight} shared {hovered.weight === 1 ? 'paper' : 'papers'}</div>
+        </div>
+      );
+    })()}
+    </div>
   );
 }

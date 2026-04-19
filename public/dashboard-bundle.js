@@ -14179,63 +14179,78 @@ function CoAuthorSim({ graph, width, height }) {
     }
     return set2;
   }, [hoverId, links]);
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("radialGradient", { id: "coauthor-glow", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
-    ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: links.map((l, i) => {
-      const s = typeof l.source === "object" ? l.source : null;
-      const t = typeof l.target === "object" ? l.target : null;
-      if (!s || !t) return null;
-      const dim = connected && !(connected.has(s.id) && connected.has(t.id));
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
-        "line",
-        {
-          x1: s.x,
-          y1: s.y,
-          x2: t.x,
-          y2: t.y,
-          stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
-          strokeWidth: Math.min(2.5, 0.5 + l.weight * 0.3)
-        },
-        i
-      );
-    }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: nodes.map((n) => {
-      const r = radius(n);
-      const isHov = n.id === hoverId;
-      const dim = connected && !connected.has(n.id);
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
-        "g",
-        {
-          transform: `translate(${n.x}, ${n.y})`,
-          onMouseEnter: () => setHoverId(n.id),
-          onMouseLeave: () => setHoverId(null),
-          onMouseDown: (e) => handleMouseDown(e, n),
-          onClick: (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            window.location.href = `/overview.html?highlight=${encodeURIComponent(n.id)}`;
+  const hovered = hoverId ? nodes.find((n) => n.id === hoverId) : null;
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { position: "relative", width, height }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("radialGradient", { id: "coauthor-glow", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: links.map((l, i) => {
+        const s = typeof l.source === "object" ? l.source : null;
+        const t = typeof l.target === "object" ? l.target : null;
+        if (!s || !t) return null;
+        const dim = connected && !(connected.has(s.id) && connected.has(t.id));
+        return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+          "line",
+          {
+            x1: s.x,
+            y1: s.y,
+            x2: t.x,
+            y2: t.y,
+            stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
+            strokeWidth: Math.min(2.5, 0.5 + l.weight * 0.3)
           },
-          style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
-          children: [
-            isHov && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("circle", { r: r + 10, fill: "url(#coauthor-glow)" }),
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
-              "circle",
-              {
-                r,
-                fill: n.isMe ? "var(--accent)" : "var(--fg-muted)",
-                stroke: isHov ? "#fff" : "rgba(255,255,255,0.2)",
-                strokeWidth: isHov ? 2 : 1
-              }
-            ),
-            (isHov || n.isMe || n.weight > 5) && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("text", { x: 0, y: r + 13, textAnchor: "middle", fill: "rgba(255,255,255,0.85)", fontSize: 11, fontFamily: "Inter, sans-serif", style: { pointerEvents: "none" }, children: n.label })
-          ]
-        },
-        n.id
-      );
-    }) })
+          i
+        );
+      }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: nodes.map((n) => {
+        const r = radius(n);
+        const isHov = n.id === hoverId;
+        const dim = connected && !connected.has(n.id);
+        return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+          "g",
+          {
+            transform: `translate(${n.x}, ${n.y})`,
+            onMouseEnter: () => setHoverId(n.id),
+            onMouseLeave: () => setHoverId(null),
+            onMouseDown: (e) => handleMouseDown(e, n),
+            onClick: (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              window.location.href = `/overview.html?highlight=${encodeURIComponent(n.id)}`;
+            },
+            style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
+            children: [
+              isHov && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("circle", { r: r + 10, fill: "url(#coauthor-glow)" }),
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+                "circle",
+                {
+                  r,
+                  fill: n.isMe ? "var(--accent)" : "var(--fg-muted)",
+                  stroke: isHov ? "#fff" : "rgba(255,255,255,0.2)",
+                  strokeWidth: isHov ? 2 : 1
+                }
+              ),
+              n.isMe && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("text", { x: 0, y: r + 13, textAnchor: "middle", fill: "rgba(255,255,255,0.85)", fontSize: 11, fontFamily: "Inter, sans-serif", style: { pointerEvents: "none" }, children: n.label })
+            ]
+          },
+          n.id
+        );
+      }) })
+    ] }),
+    hovered && !hovered.isMe && (() => {
+      const tx = Math.min(Math.max(hovered.x + 12, 4), width - 200);
+      const ty = Math.min(Math.max(hovered.y - 28, 4), height - 40);
+      return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { position: "absolute", left: tx, top: ty, pointerEvents: "none", background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 4, padding: "6px 10px", fontSize: 12, color: "var(--fg)", whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(0,0,0,0.4)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontWeight: 500 }, children: hovered.label }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }, children: [
+          hovered.weight,
+          " shared ",
+          hovered.weight === 1 ? "paper" : "papers"
+        ] })
+      ] });
+    })()
   ] });
 }
 
