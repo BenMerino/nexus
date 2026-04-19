@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { SectionHead, Ico } from './ui-primitives';
-import { CoAuthorSim, buildCommunityColors } from './coauthor-graph-sim';
+import { CoAuthorSim } from './coauthor-graph-sim';
+import { buildCommunityColors } from './coauthor-communities';
 import type { CoauthorGraph } from './dashboard-builders.js';
 
 function Legend({ graph }: { graph: CoauthorGraph }) {
