@@ -15124,22 +15124,23 @@ function buildYearChart(stats) {
       data: years.map((y3) => ({ label: y3, value: byYearTotal.get(y3) || 0 }))
     };
   }
+  const presentIndexes = INDEXES.filter((k) => (stats.yearByIndex || []).some((r) => r.bucket === k && r.count > 0));
   const grid = /* @__PURE__ */ new Map();
   for (const y3 of years) {
     const z = {};
-    for (const k of INDEXES) z[k] = 0;
+    for (const k of presentIndexes) z[k] = 0;
     grid.set(y3, z);
   }
   for (const r of stats.yearByIndex) {
     if (!r.year || !grid.has(r.year)) continue;
-    if (!INDEXES.includes(r.bucket)) continue;
+    if (!presentIndexes.includes(r.bucket)) continue;
     grid.get(r.year)[r.bucket] += r.count;
   }
   return {
     type: "stacked-bar",
     title: "Publications by Year",
     yLabel: "Articles",
-    series: INDEXES,
+    series: presentIndexes,
     data: years.map((y3) => ({ label: y3, ...grid.get(y3) }))
   };
 }
