@@ -44,7 +44,9 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const slug = new URLSearchParams(window.location.search).get('slug');
+    const qSlug = new URLSearchParams(window.location.search).get('slug');
+    const pathMatch = window.location.pathname.match(/^\/t\/([^\/?#]+)/);
+    const slug = qSlug || (pathMatch ? pathMatch[1] : null);
     if (!slug) { setError('Missing tenant slug.'); return; }
     fetch(`/api/public/${encodeURIComponent(slug)}`)
       .then(async r => {

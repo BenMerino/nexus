@@ -3,6 +3,6 @@
   "outputDirectory": "public",
   "rewrites": [
     { "source": "/api/records/:id", "destination": "/api/records/[id]" },
-    { "source": "/t/:slug", "destination": "/tenant.html?slug=:slug" }
+    { "source": "/t/:slug", "destination": "/tenant.html" }
   ]
 }

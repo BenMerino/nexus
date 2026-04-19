@@ -15904,7 +15904,9 @@ function App() {
   const [data, setData] = (0, import_react16.useState)(null);
   const [error, setError] = (0, import_react16.useState)(null);
   (0, import_react16.useEffect)(() => {
-    const slug = new URLSearchParams(window.location.search).get("slug");
+    const qSlug = new URLSearchParams(window.location.search).get("slug");
+    const pathMatch = window.location.pathname.match(/^\/t\/([^\/?#]+)/);
+    const slug = qSlug || (pathMatch ? pathMatch[1] : null);
     if (!slug) {
       setError("Missing tenant slug.");
       return;
