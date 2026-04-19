@@ -1,7 +1,9 @@
 const { ensureSchema } = require("../lib/db");
 const { requireRole } = require("../lib/auth");
+const { sql } = require("@vercel/postgres");
 const { listCounts } = require("../lib/indexed-journals");
 const { runSeed } = require("../lib/indexation-seed");
+const { backfillIndexationTags } = require("../lib/indexed-backfill");
 
 module.exports = async function handler(req, res) {
   await ensureSchema();
@@ -10,6 +12,12 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "GET") {
     return res.json({ counts: await listCounts() });
+  }
+
+  if (req.method === "POST" && req.query.action === "reconcile") {
+    await sql`DELETE FROM tags WHERE category = 'indexed_in'`;
+    const backfill = await backfillIndexationTags();
+    return res.json({ ok: true, backfill });
   }
 
   if (req.method === "POST" && req.query.action === "seed") {
