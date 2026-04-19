@@ -13328,58 +13328,6 @@ function HoverTooltip({ node, radius: radius2 }) {
 
 // public/coauthor-graph-hulls.tsx
 var import_react5 = __toESM(require_react());
-
-// public/convex-hull.ts
-function convexHull(points) {
-  if (points.length < 3) return points;
-  const sorted = [...points].sort((a2, b) => a2.x - b.x || a2.y - b.y);
-  const cross = (o, a2, b) => (a2.x - o.x) * (b.y - o.y) - (a2.y - o.y) * (b.x - o.x);
-  const lower = [];
-  for (const p of sorted) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
-    lower.push(p);
-  }
-  const upper = [];
-  for (let i = sorted.length - 1; i >= 0; i--) {
-    const p = sorted[i];
-    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
-    upper.push(p);
-  }
-  lower.pop();
-  upper.pop();
-  return lower.concat(upper);
-}
-function paddedHullPath(hull, pad) {
-  if (hull.length < 2) return "";
-  if (hull.length === 2) {
-    const [a2, b] = hull;
-    return `M ${a2.x - pad} ${a2.y - pad} L ${b.x + pad} ${b.y - pad} L ${b.x + pad} ${b.y + pad} L ${a2.x - pad} ${a2.y + pad} Z`;
-  }
-  const cx = hull.reduce((s, p) => s + p.x, 0) / hull.length;
-  const cy = hull.reduce((s, p) => s + p.y, 0) / hull.length;
-  const expanded = hull.map((p) => {
-    const dx = p.x - cx;
-    const dy = p.y - cy;
-    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-    return { x: p.x + dx / dist * pad, y: p.y + dy / dist * pad };
-  });
-  let d = `M ${expanded[0].x} ${expanded[0].y}`;
-  for (let i = 1; i < expanded.length; i++) {
-    const prev = expanded[i - 1];
-    const curr = expanded[i];
-    const mx2 = (prev.x + curr.x) / 2;
-    const my2 = (prev.y + curr.y) / 2;
-    d += ` Q ${prev.x} ${prev.y} ${mx2} ${my2}`;
-  }
-  const last = expanded[expanded.length - 1];
-  const first = expanded[0];
-  const mx = (last.x + first.x) / 2;
-  const my = (last.y + first.y) / 2;
-  d += ` Q ${last.x} ${last.y} ${mx} ${my} Z`;
-  return d;
-}
-
-// public/coauthor-graph-hulls.tsx
 var import_jsx_runtime9 = __toESM(require_jsx_runtime());
 function collectByRor(nodes, myRor) {
   const groups = /* @__PURE__ */ new Map();
@@ -13394,22 +13342,32 @@ function collectByRor(nodes, myRor) {
   }
   return groups;
 }
+function boundingCircle(points, pad) {
+  const cx = points.reduce((s, p) => s + p.x, 0) / points.length;
+  const cy = points.reduce((s, p) => s + p.y, 0) / points.length;
+  let maxDist = 0;
+  for (const p of points) {
+    const d = Math.hypot(p.x - cx, p.y - cy);
+    if (d > maxDist) maxDist = d;
+  }
+  return { cx, cy, r: maxDist + pad };
+}
 function CommunityHulls({ nodes, myRor, colors }) {
-  const bundles = (0, import_react5.useMemo)(() => {
+  const bubbles = (0, import_react5.useMemo)(() => {
     const result = [];
     for (const [ror, group] of collectByRor(nodes, myRor)) {
       if (group.points.length < 2) continue;
-      const hull = convexHull(group.points);
-      const d = paddedHullPath(hull, 18);
-      if (!d) continue;
-      result.push({ ror, name: group.name, color: colors.get(ror) || "#888", d });
+      const { cx, cy, r } = boundingCircle(group.points, 18);
+      result.push({ ror, name: group.name, color: colors.get(ror) || "#888", cx, cy, r });
     }
     return result;
   }, [nodes, myRor, colors]);
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("g", { children: bundles.map((b) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
-    "path",
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("g", { children: bubbles.map((b) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+    "circle",
     {
-      d: b.d,
+      cx: b.cx,
+      cy: b.cy,
+      r: b.r,
       fill: b.color,
       fillOpacity: 0.1,
       stroke: b.color,
@@ -14373,7 +14331,7 @@ function buildAnchors(nodes, myRor, width, height) {
 }
 function createSimulation({ nodes, links, anchors, width, height, onTick }) {
   const anchorFor = (n) => n.affiliation?.ror ? anchors.get(n.affiliation.ror) : null;
-  return simulation_default(nodes).force("link", link_default(links).id((d) => d.id).distance(30).strength(0.15)).force("charge", manyBody_default().strength(-70)).force("clusterX", x_default2((d) => anchorFor(d)?.x ?? width / 2).strength(0.22)).force("clusterY", y_default2((d) => anchorFor(d)?.y ?? height / 2).strength(0.28)).force("collide", collide_default().radius((d) => radius(d) + 3)).alpha(1).alphaDecay(0.025).on("tick", () => {
+  return simulation_default(nodes).force("link", link_default(links).id((d) => d.id).distance(25).strength(0.1)).force("charge", manyBody_default().strength(-40)).force("clusterX", x_default2((d) => anchorFor(d)?.x ?? width / 2).strength(0.4)).force("clusterY", y_default2((d) => anchorFor(d)?.y ?? height / 2).strength(0.45)).force("collide", collide_default().radius((d) => radius(d) + 3)).alpha(1).alphaDecay(0.025).on("tick", () => {
     clampToViewport(nodes, width, height);
     onTick();
   });

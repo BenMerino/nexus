@@ -58,10 +58,10 @@ export function createSimulation({ nodes, links, anchors, width, height, onTick 
   const anchorFor = (n: SimN) => (n.affiliation?.ror ? anchors.get(n.affiliation.ror) : null);
 
   return forceSimulation<SimN, SimL>(nodes)
-    .force('link', forceLink<SimN, SimL>(links).id(d => d.id).distance(30).strength(0.15))
-    .force('charge', forceManyBody<SimN>().strength(-70))
-    .force('clusterX', forceX<SimN>(d => anchorFor(d)?.x ?? width / 2).strength(0.22))
-    .force('clusterY', forceY<SimN>(d => anchorFor(d)?.y ?? height / 2).strength(0.28))
+    .force('link', forceLink<SimN, SimL>(links).id(d => d.id).distance(25).strength(0.1))
+    .force('charge', forceManyBody<SimN>().strength(-40))
+    .force('clusterX', forceX<SimN>(d => anchorFor(d)?.x ?? width / 2).strength(0.4))
+    .force('clusterY', forceY<SimN>(d => anchorFor(d)?.y ?? height / 2).strength(0.45))
     .force('collide', forceCollide<SimN>().radius(d => radius(d) + 3))
     .alpha(1)
     .alphaDecay(0.025)
