@@ -50,11 +50,6 @@ Promise.all([
   }),
   esbuild.build({
     ...shared,
-    entryPoints: ["public/portfolio.tsx"],
-    outfile: "public/portfolio-bundle.js",
-  }),
-  esbuild.build({
-    ...shared,
     entryPoints: ["public/tenant.tsx"],
     outfile: "public/tenant-bundle.js",
   }),
@@ -77,11 +72,6 @@ Promise.all([
         if (updated !== html) fs.writeFileSync(f, updated);
       } catch {}
     }
-    try {
-      const html = fs.readFileSync("public/portfolio.html", "utf8");
-      const updated = html.replace(/portfolio-bundle\.js\?v=\d+/, `portfolio-bundle.js?v=${ts}`);
-      if (updated !== html) fs.writeFileSync("public/portfolio.html", updated);
-    } catch {}
-    console.log("Build complete: charts-bundle.js, relationships-bundle.js, dashboard-bundle.js, portfolio-bundle.js, tenant-bundle.js, shell-mount-bundle.js");
+    console.log("Build complete: charts-bundle.js, relationships-bundle.js, dashboard-bundle.js, tenant-bundle.js, shell-mount-bundle.js");
   })
   .catch(() => process.exit(1));

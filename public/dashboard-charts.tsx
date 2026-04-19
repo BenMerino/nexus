@@ -2,9 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Shell } from './shell';
 import { useCurrentUser } from './shell-helpers';
-import { Stat, Tag } from './ui-primitives';
+import { Stat, Tag, SectionHead } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders.js';
 import { yearlyCounts, greeting, BarChart, TopJournals, PartnerInstitutions, RecentlyIndexed } from './dashboard-panels';
+import { VelocityPanel } from './portfolio-velocity';
+import { CadencePanel } from './portfolio-cadence';
+import { TopCitedPanel } from './portfolio-topcited';
+import { ConceptsPanel } from './portfolio-concepts';
+import { CollaboratorsPanel } from './portfolio-collaborators';
 
 function DashboardContent({ data }: { data: DashboardData }) {
   const { me } = useCurrentUser();
@@ -14,11 +19,16 @@ function DashboardContent({ data }: { data: DashboardData }) {
   const firstName = displayName.split(' ')[0];
   const isPersonal = !!me?.profile.orcid;
 
+  const p = data.portfolio;
+  const pubCount = p?.works.length ?? data.totalPubs;
+  const totalCit = p ? p.works.reduce((s, w) => s + (w.citation_count || 0), 0) : data.totalCitations;
+  const collabCount = p ? p.collaborators.existing.length : data.authorCount;
+
   const heroStats = isPersonal ? [
-    { label: 'Publications', value: data.totalPubs.toLocaleString(), sub: 'indexed via ORCID' },
-    { label: 'Citations',    value: data.totalCitations.toLocaleString(), sub: 'OpenAlex · last sync' },
-    { label: 'h-index',      value: me?.hIndex ?? '—', sub: 'computed · real-time', accent: true },
-    { label: 'Co-authors',   value: data.authorCount.toLocaleString(), sub: 'unique, all years' },
+    { label: 'Publications',   value: pubCount.toLocaleString(), sub: 'indexed via ORCID' },
+    { label: 'Total citations', value: totalCit.toLocaleString(), sub: 'OpenAlex · last sync' },
+    { label: 'h-index',        value: me?.hIndex ?? '—', sub: 'computed · real-time', accent: true },
+    { label: 'Collaborators',  value: collabCount.toLocaleString(), sub: 'unique, all years' },
   ] : [
     { label: 'Publications',    value: data.totalPubs.toLocaleString(), sub: 'indexed records' },
     { label: 'Citations',       value: data.totalCitations.toLocaleString(), sub: 'sum across papers' },
@@ -52,10 +62,54 @@ function DashboardContent({ data }: { data: DashboardData }) {
       </div>
 
       <div className="dash-grid">
-        {years.length > 0 ? <BarChart rows={years} title={isPersonal ? 'Your publications per year' : 'Publications per year'} /> : <div className="card card-chart"><div className="muted">No year data.</div></div>}
-        <TopJournals data={data} />
-        <PartnerInstitutions data={data} />
-        <RecentlyIndexed data={data} />
+        {isPersonal && p ? (
+          <>
+            <section className="card card-chart">
+              <SectionHead eyebrow="Trajectory" title="Citation velocity" />
+              <VelocityPanel velocity={p.velocity} />
+            </section>
+            <section className="card card-chart">
+              <SectionHead eyebrow="Output" title="Publication cadence" />
+              {p.cadence && <CadencePanel cadence={p.cadence} />}
+            </section>
+            <section className="card">
+              <SectionHead eyebrow="Impact" title="Most cited" />
+              <TopCitedPanel items={p.topCited || []} />
+            </section>
+            <section className="card">
+              <SectionHead eyebrow="Field" title="What you're known for" />
+              <ConceptsPanel concepts={p.concepts || []} />
+            </section>
+            <TopJournals data={data} />
+            <PartnerInstitutions data={data} />
+            <section className="card card-span-2">
+              <SectionHead eyebrow="Missing link" title="Suggested collaborators" />
+              <CollaboratorsPanel suggested={p.collaborators.suggested} />
+            </section>
+            <section className="card card-span-2">
+              <SectionHead eyebrow="Ledger" title="Your publications" right={<Tag mono tone="muted">{p.works.length} total</Tag>} />
+              <table className="paper-table">
+                <thead><tr><th>Title</th><th>Year</th><th>Citations</th></tr></thead>
+                <tbody>
+                  {p.works.slice(0, 40).map(w => (
+                    <tr key={w.doi}>
+                      <td className="paper-title">{w.title || '(untitled)'}<div className="mono paper-doi">{w.doi}</div></td>
+                      <td>{w.year || '—'}</td>
+                      <td>{w.citation_count ?? 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          </>
+        ) : (
+          <>
+            {years.length > 0 ? <BarChart rows={years} title="Publications per year" /> : <div className="card card-chart"><div className="muted">No year data.</div></div>}
+            <TopJournals data={data} />
+            <PartnerInstitutions data={data} />
+            <RecentlyIndexed data={data} />
+          </>
+        )}
       </div>
       <div id="import-slot" />
     </div>

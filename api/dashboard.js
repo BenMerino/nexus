@@ -1,9 +1,10 @@
 const { requireRole } = require("../lib/auth");
 const { ensureSchema } = require("../lib/db");
-const { requireScope } = require("../lib/scope");
+const { requireScope, isPersonalScope } = require("../lib/scope");
 const { getSummary, getByYearAndSource, getCollaborations, getCountries, getTopJournals, getRecentPapers } = require("../lib/dashboard-stats");
 const { fetchInstitutionWorks, fetchInstitutionInfo } = require("../lib/fetchers-institution");
 const { importWorksBatch } = require("../lib/store-openalex");
+const { getResearcherPortfolio } = require("../lib/portfolio");
 
 module.exports = async function handler(req, res) {
   await ensureSchema();
@@ -16,7 +17,12 @@ module.exports = async function handler(req, res) {
       getSummary(scope), getByYearAndSource(scope), getCollaborations(scope), getCountries(scope),
       getTopJournals(scope), getRecentPapers(scope),
     ]);
-    return res.json({ ...totals, yearSource, collabs, countries, topJournals, recentPapers });
+    const base = { ...totals, yearSource, collabs, countries, topJournals, recentPapers };
+    if (isPersonalScope(scope) && scope.orcid) {
+      const portfolio = await getResearcherPortfolio(scope.orcid, scope.tenantId);
+      return res.json({ ...base, portfolio });
+    }
+    return res.json(base);
   }
 
   if (action === "institution-info") {

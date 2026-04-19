@@ -12837,7 +12837,6 @@ var DEFAULT_LINKS = [
   { href: "/dashboard.html", label: "Dashboard", icon: "home", section: "Workspace" },
   { href: "/overview.html", label: "Graph explorer", icon: "graph", section: "Workspace" },
   { href: "/explore.html", label: "Explore", icon: "search", section: "Workspace" },
-  { href: "/portfolio.html", label: "Portfolio", icon: "paper", section: "Workspace" },
   { href: "/submit.html", label: "Submit DOI", icon: "submit", section: "Workspace" }
 ];
 var SUPERADMIN_LINKS = [

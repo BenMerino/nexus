@@ -12847,7 +12847,6 @@ var DEFAULT_LINKS = [
   { href: "/dashboard.html", label: "Dashboard", icon: "home", section: "Workspace" },
   { href: "/overview.html", label: "Graph explorer", icon: "graph", section: "Workspace" },
   { href: "/explore.html", label: "Explore", icon: "search", section: "Workspace" },
-  { href: "/portfolio.html", label: "Portfolio", icon: "paper", section: "Workspace" },
   { href: "/submit.html", label: "Submit DOI", icon: "submit", section: "Workspace" }
 ];
 var SUPERADMIN_LINKS = [
@@ -13184,8 +13183,210 @@ function RecentlyIndexed({ data }) {
   ] });
 }
 
-// public/dashboard-charts.tsx
+// public/portfolio-velocity.tsx
 var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+var TREND_SYMBOL = { rising: "\u25B2", flat: "\u2192", falling: "\u25BC" };
+var TREND_COLOR = { rising: "var(--ok)", flat: "var(--fg-dim)", falling: "var(--err)" };
+function VelocityPanel({ velocity }) {
+  const { series, forecast = [], score, trend } = velocity;
+  const histY = (p) => p.partial && p.projected != null ? p.projected : p.total;
+  const allPoints = [
+    ...series.map((p) => ({ year: p.year, y: histY(p), kind: "hist", partial: !!p.partial, raw: p.total })),
+    ...forecast.map((p) => ({ year: p.year, y: p.total, kind: "fc", partial: false, raw: p.total }))
+  ];
+  const max = Math.max(1, ...allPoints.map((p) => p.y));
+  const w = 460, h = 140, pad = 28;
+  const xs = allPoints.map((p) => p.year);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const xScale = (y) => pad + (xs.length > 1 ? (y - minX) / (maxX - minX) * (w - pad * 2) : 0);
+  const yScale = (v) => h - pad - v / max * (h - pad * 2);
+  const histPts = allPoints.filter((p) => p.kind === "hist").map((p) => [xScale(p.year), yScale(p.y)]);
+  const histPath = histPts.map((pt, i) => (i === 0 ? "M" : "L") + pt[0] + "," + pt[1]).join(" ");
+  const lastFull = series.filter((p) => !p.partial).slice(-1)[0];
+  const bridgeStartX = lastFull ? xScale(lastFull.year) : histPts[histPts.length - 1][0];
+  const bridgeStartY = lastFull ? yScale(histY(lastFull)) : histPts[histPts.length - 1][1];
+  const fcSource = [
+    ...series.filter((p) => p.partial).map((p) => ({ year: p.year, y: histY(p) })),
+    ...forecast.map((p) => ({ year: p.year, y: p.total }))
+  ];
+  const fcPath = `M${bridgeStartX},${bridgeStartY}` + fcSource.map((p) => ` L${xScale(p.year)},${yScale(p.y)}`).join("");
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", color: "var(--accent)", lineHeight: 1 }, children: score.toFixed(2) }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "score" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { color: TREND_COLOR[trend], fontSize: 16, fontFamily: "var(--mono)" }, children: [
+        TREND_SYMBOL[trend],
+        " ",
+        trend
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("svg", { width: w, height: h, style: { display: "block", maxWidth: "100%" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: histPath, fill: "none", stroke: "var(--accent)", strokeWidth: 2 }),
+      fcSource.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: fcPath, fill: "none", stroke: "var(--accent)", strokeWidth: 2, strokeDasharray: "4 4", opacity: 0.5 }),
+      allPoints.map((p, i) => {
+        const cx = xScale(p.year), cy = yScale(p.y);
+        const isForecast = p.kind === "fc";
+        const isPartial = p.partial;
+        return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("g", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("circle", { cx, cy, r: 3, fill: isForecast || isPartial ? "var(--bg-card)" : "var(--accent)", stroke: "var(--accent)", strokeWidth: 1.5 }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("text", { x: cx, y: h - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: p.year }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("text", { x: cx, y: cy - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg)", fontFamily: "var(--mono)", children: p.y }),
+          isPartial && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("text", { x: cx, y: cy + 14, fontSize: 8, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: [
+            "(",
+            p.raw,
+            " so far)"
+          ] })
+        ] }, i);
+      })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
+  ] });
+}
+
+// public/portfolio-cadence.tsx
+var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+function CadencePanel({ cadence }) {
+  const { series, meanPerYear } = cadence;
+  if (!series.length) return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No publication years on record." });
+  const max = Math.max(1, ...series.map((p) => p.count));
+  const w = 460, h = 140, pad = 28;
+  const barW = (w - pad * 2) / series.length * 0.7;
+  const step = (w - pad * 2) / Math.max(1, series.length - 1);
+  const xCenter = (i) => series.length === 1 ? w / 2 : pad + i * step;
+  const yScale = (v) => h - pad - v / max * (h - pad * 2);
+  const meanY = yScale(meanPerYear);
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", color: "var(--accent)", lineHeight: 1 }, children: meanPerYear.toFixed(1) }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "papers / year (avg)" })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { width: w, height: h, style: { display: "block", maxWidth: "100%" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: pad, x2: w - pad, y1: meanY, y2: meanY, stroke: "var(--fg-dim)", strokeWidth: 1, strokeDasharray: "3 3", opacity: 0.5 }),
+      series.map((p, i) => {
+        const cx = xCenter(i);
+        const bh = p.count / max * (h - pad * 2);
+        const bx = cx - barW / 2;
+        const by = h - pad - bh;
+        return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("g", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: bx, y: by, width: barW, height: bh, fill: "var(--accent)", opacity: 0.85, rx: 1.5 }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("text", { x: cx, y: h - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: p.year }),
+          p.count > 0 && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("text", { x: cx, y: by - 4, fontSize: 10, textAnchor: "middle", fill: "var(--fg)", fontFamily: "var(--mono)", children: p.count })
+        ] }, p.year);
+      })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: [
+      "Publications per year (",
+      series[0].year,
+      "\u2013",
+      series[series.length - 1].year,
+      "). Dashed line: average."
+    ] })
+  ] });
+}
+
+// public/portfolio-topcited.tsx
+var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+function TopCitedPanel({ items }) {
+  if (!items.length) return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No citation data yet." });
+  const max = Math.max(1, ...items.map((i) => i.citation_count || 0));
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 10 }, children: items.map((w, i) => {
+    const cites = w.citation_count || 0;
+    const pct = cites / max * 100;
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "baseline", minWidth: 0, flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)", minWidth: 18 }, children: [
+            "#",
+            i + 1
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontSize: 13, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }, children: w.title || w.doi })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6, whiteSpace: "nowrap" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontFamily: "var(--mono)", fontSize: 14, color: "var(--accent)", fontWeight: 600 }, children: cites.toLocaleString() }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }, children: w.year || "" })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { height: 3, background: "var(--bg-inset)", borderRadius: 2, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { width: `${pct}%`, height: "100%", background: "var(--accent)", opacity: 0.7 } }) })
+    ] }, w.doi);
+  }) });
+}
+
+// public/portfolio-concepts.tsx
+var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+function ConceptsPanel({ concepts }) {
+  if (!concepts.length) {
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No concepts indexed yet \u2014 backfill needed." });
+  }
+  const max = Math.max(1, ...concepts.map((c) => c.works));
+  const totalWorks = concepts.reduce((s, c) => s + c.works, 0);
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("p", { style: { fontSize: 12, color: "var(--fg-dim)", margin: "0 0 4px 0" }, children: [
+      "Topics on your works, by OpenAlex Concept (top ",
+      concepts.length,
+      ")."
+    ] }),
+    concepts.map((c) => {
+      const pct = c.works / max * 100;
+      const share = totalWorks > 0 ? Math.round(c.works / totalWorks * 100) : 0;
+      return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 3 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: { fontSize: 13 }, children: c.name }),
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("span", { style: { fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)", whiteSpace: "nowrap" }, children: [
+            c.works,
+            " ",
+            c.works === 1 ? "work" : "works",
+            " ",
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("span", { style: { opacity: 0.6 }, children: [
+              "\xB7 ",
+              share,
+              "%"
+            ] })
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { height: 6, background: "var(--bg-inset)", borderRadius: 3, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { width: `${pct}%`, height: "100%", background: "var(--accent)" } }) })
+      ] }, c.name);
+    })
+  ] });
+}
+
+// public/portfolio-collaborators.tsx
+var import_jsx_runtime11 = __toESM(require_jsx_runtime());
+function CollaboratorsPanel({ suggested }) {
+  if (!suggested.length) {
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No potential collaborators found yet. Backfill needs to run, or no one in your tenant shares your concepts (excluding existing co-authors)." });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { style: { fontSize: 13, color: "var(--fg-muted)", marginBottom: 12 }, children: "Researchers in your institution working on similar concepts you haven\u2019t co-authored with yet." }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: suggested.map((s) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { style: { borderLeft: "2px solid var(--accent)", padding: "10px 14px", background: "var(--bg-inset)", borderRadius: 3 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { fontWeight: 500, fontSize: 14 }, children: s.name || s.orcid }),
+          s.faculty && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)" }, children: s.faculty })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+          "a",
+          {
+            href: `/overview.html?highlight=${encodeURIComponent(s.orcid)}`,
+            style: { fontSize: 11, fontFamily: "var(--mono)", color: "var(--accent)" },
+            children: "On graph \u2192"
+          }
+        )
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { style: { marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }, children: [
+        s.sharedConcepts.map((c) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { fontSize: 10, background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 10, padding: "1px 8px", fontFamily: "var(--mono)", color: "var(--fg-muted)" }, children: c }, c)),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { fontSize: 10, color: "var(--fg-dim)", marginLeft: 4 }, children: [
+          s.sharedCount,
+          " shared"
+        ] })
+      ] })
+    ] }, s.orcid)) })
+  ] });
+}
+
+// public/dashboard-charts.tsx
+var import_jsx_runtime12 = __toESM(require_jsx_runtime());
 function DashboardContent({ data }) {
   const { me } = useCurrentUser();
   const years = yearlyCounts(data);
@@ -13193,47 +13394,95 @@ function DashboardContent({ data }) {
   const displayName = me?.profile.name || me?.user || "";
   const firstName = displayName.split(" ")[0];
   const isPersonal = !!me?.profile.orcid;
+  const p = data.portfolio;
+  const pubCount = p?.works.length ?? data.totalPubs;
+  const totalCit = p ? p.works.reduce((s, w) => s + (w.citation_count || 0), 0) : data.totalCitations;
+  const collabCount = p ? p.collaborators.existing.length : data.authorCount;
   const heroStats = isPersonal ? [
-    { label: "Publications", value: data.totalPubs.toLocaleString(), sub: "indexed via ORCID" },
-    { label: "Citations", value: data.totalCitations.toLocaleString(), sub: "OpenAlex \xB7 last sync" },
+    { label: "Publications", value: pubCount.toLocaleString(), sub: "indexed via ORCID" },
+    { label: "Total citations", value: totalCit.toLocaleString(), sub: "OpenAlex \xB7 last sync" },
     { label: "h-index", value: me?.hIndex ?? "\u2014", sub: "computed \xB7 real-time", accent: true },
-    { label: "Co-authors", value: data.authorCount.toLocaleString(), sub: "unique, all years" }
+    { label: "Collaborators", value: collabCount.toLocaleString(), sub: "unique, all years" }
   ] : [
     { label: "Publications", value: data.totalPubs.toLocaleString(), sub: "indexed records" },
     { label: "Citations", value: data.totalCitations.toLocaleString(), sub: "sum across papers" },
     { label: "Open access", value: data.totalPubs > 0 ? `${Math.round(data.oaCount / data.totalPubs * 100)}%` : "\u2014", sub: "of total output", accent: true },
     { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
-  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
     greeting(),
     ", ",
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("em", { children: firstName }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("em", { children: firstName }),
     "."
-  ] }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("em", { children: tenantName }),
+  ] }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("em", { children: tenantName }),
     "."
   ] });
   const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "view dashboard", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("h1", { className: "view-title", children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "view-sub", children: sub })
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "view dashboard", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("header", { className: "view-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h1", { className: "view-title", children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "view-sub", children: sub })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Stat, { ...s }, i)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "dash-grid", children: [
-      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(BarChart, { rows: years, title: isPersonal ? "Your publications per year" : "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "muted", children: "No year data." }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(TopJournals, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(PartnerInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(RecentlyIndexed, { data })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { id: "import-slot" })
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(Stat, { ...s }, i)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(VelocityPanel, { velocity: p.velocity })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
+        p.cadence && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(CadencePanel, { cadence: p.cadence })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(TopCitedPanel, { items: p.topCited || [] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(ConceptsPanel, { concepts: p.concepts || [] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "card card-span-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(SectionHead, { eyebrow: "Missing link", title: "Suggested collaborators" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(CollaboratorsPanel, { suggested: p.collaborators.suggested })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "card card-span-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(SectionHead, { eyebrow: "Ledger", title: "Your publications", right: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(Tag, { mono: true, tone: "muted", children: [
+          p.works.length,
+          " total"
+        ] }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("table", { className: "paper-table", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("tr", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("th", { children: "Title" }),
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("th", { children: "Year" }),
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("th", { children: "Citations" })
+          ] }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("tbody", { children: p.works.slice(0, 40).map((w) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("tr", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("td", { className: "paper-title", children: [
+              w.title || "(untitled)",
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "mono paper-doi", children: w.doi })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("td", { children: w.year || "\u2014" }),
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("td", { children: w.citation_count ?? 0 })
+          ] }, w.doi)) })
+        ] })
+      ] })
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "muted", children: "No year data." }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(RecentlyIndexed, { data })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { id: "import-slot" })
   ] });
 }
 function App() {
@@ -13242,17 +13491,17 @@ function App() {
   (0, import_react5.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Shell, { scroll: true, children: [
-    err && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "status error", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(Shell, { scroll: true, children: [
+    err && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "status error", children: [
       "Error: ",
       err
     ] }) }),
-    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "eyebrow", children: "Loading dashboard\u2026" }) }),
-    data && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(DashboardContent, { data })
+    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "eyebrow", children: "Loading dashboard\u2026" }) }),
+    data && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DashboardContent, { data })
   ] });
 }
 var el = document.getElementById("dashboard-root");
-if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime7.jsx)(App, {}));
+if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime12.jsx)(App, {}));
 /*! Bundled license information:
 
 react/cjs/react.production.js:

@@ -1,4 +1,9 @@
 import type { GraphDirective } from '../architect/graph-composer.types.js';
+import type { Velocity } from './portfolio-velocity';
+import type { Cadence } from './portfolio-cadence';
+import type { TopCitedItem } from './portfolio-topcited';
+import type { Concept } from './portfolio-concepts';
+import type { Suggested } from './portfolio-collaborators';
 
 interface YearSource { year: string; source: string; count: string; }
 interface Collab { value: string; count: string; }
@@ -6,6 +11,15 @@ interface Country { country: string; count: string; }
 
 export interface TopJournal { value: string; key: string; count: string }
 export interface RecentPaper { doi: string; title: string | null; published: string | null; citation_count: number | null; journal: string | null }
+
+export interface Portfolio {
+  works: { doi: string; title: string | null; year: string | null; citation_count: number | null }[];
+  velocity: Velocity;
+  collaborators: { existing: string[]; suggested: Suggested[] };
+  concepts?: Concept[];
+  cadence?: Cadence;
+  topCited?: TopCitedItem[];
+}
 
 interface DashboardData {
   totalPubs: number;
@@ -17,6 +31,7 @@ interface DashboardData {
   countries: Country[];
   topJournals?: TopJournal[];
   recentPapers?: RecentPaper[];
+  portfolio?: Portfolio;
 }
 
 function buildYearSourceChart(data: DashboardData): GraphDirective | null {
