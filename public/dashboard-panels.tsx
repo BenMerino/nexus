@@ -81,6 +81,36 @@ export function PartnerInstitutions({ data }: { data: DashboardData }) {
   );
 }
 
+export function CoAuthorGraph({ data }: { data: DashboardData }) {
+  const p = data.portfolio;
+  const count = p?.collaborators.existing.length ?? 0;
+  const shown = Math.min(count, 18);
+  const W = 520, H = 220, cx = W / 2, cy = H / 2;
+  const nodes = Array.from({ length: shown }, (_, i) => {
+    const a = (i / shown) * Math.PI * 2 - Math.PI / 2;
+    const r = 70 + ((i * 31) % 28);
+    return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
+  });
+  return (
+    <a href="/overview.html" className="card card-graph-preview" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <SectionHead eyebrow="Network" title="Your co-author graph" right={<span className="link-btn">Open explorer {Ico.arrow}</span>} />
+      {count === 0 ? (
+        <div className="muted">No co-authors detected yet.</div>
+      ) : (
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ display: 'block' }}>
+          {nodes.map((n, i) => (
+            <line key={i} x1={cx} y1={cy} x2={n.x} y2={n.y} stroke="rgba(255,255,255,0.12)" strokeWidth={0.7} />
+          ))}
+          {nodes.map((n, i) => (
+            <circle key={i} cx={n.x} cy={n.y} r={5} fill="var(--fg-muted)" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
+          ))}
+          <circle cx={cx} cy={cy} r={10} fill="var(--accent)" stroke="rgba(255,255,255,0.3)" strokeWidth={1.5} />
+        </svg>
+      )}
+    </a>
+  );
+}
+
 export function RecentlyIndexed({ data }: { data: DashboardData }) {
   const papers = data.recentPapers || [];
   return (

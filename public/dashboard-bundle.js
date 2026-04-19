@@ -13157,6 +13157,28 @@ function PartnerInstitutions({ data }) {
     ] })
   ] });
 }
+function CoAuthorGraph({ data }) {
+  const p = data.portfolio;
+  const count = p?.collaborators.existing.length ?? 0;
+  const shown = Math.min(count, 18);
+  const W = 520, H = 220, cx = W / 2, cy = H / 2;
+  const nodes = Array.from({ length: shown }, (_, i) => {
+    const a = i / shown * Math.PI * 2 - Math.PI / 2;
+    const r = 70 + i * 31 % 28;
+    return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
+  });
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("a", { href: "/overview.html", className: "card card-graph-preview", style: { textDecoration: "none", color: "inherit", display: "block" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(SectionHead, { eyebrow: "Network", title: "Your co-author graph", right: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { className: "link-btn", children: [
+      "Open explorer ",
+      Ico.arrow
+    ] }) }),
+    count === 0 ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "muted", children: "No co-authors detected yet." }) : /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", height: "100%", style: { display: "block" }, children: [
+      nodes.map((n, i) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("line", { x1: cx, y1: cy, x2: n.x, y2: n.y, stroke: "rgba(255,255,255,0.12)", strokeWidth: 0.7 }, i)),
+      nodes.map((n, i) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: n.x, cy: n.y, r: 5, fill: "var(--fg-muted)", stroke: "rgba(255,255,255,0.2)", strokeWidth: 1 }, i)),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx, cy, r: 10, fill: "var(--accent)", stroke: "rgba(255,255,255,0.3)", strokeWidth: 1.5 })
+    ] })
+  ] });
+}
 function RecentlyIndexed({ data }) {
   const papers = data.recentPapers || [];
   return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "card card-span-2", children: [
@@ -13408,6 +13430,7 @@ function DashboardContent({ data }) {
         /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
         p.cadence && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CadencePanel, { cadence: p.cadence })
       ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CoAuthorGraph, { data }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("section", { className: "card", children: [
         /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
         /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(TopCitedPanel, { items: p.topCited || [] })
@@ -13420,6 +13443,7 @@ function DashboardContent({ data }) {
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(PartnerInstitutions, { data })
     ] }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
       years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "muted", children: "No year data." }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CoAuthorGraph, { data }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(TopJournals, { data }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(PartnerInstitutions, { data }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(RecentlyIndexed, { data })
