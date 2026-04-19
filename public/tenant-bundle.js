@@ -15153,12 +15153,12 @@ function buildYearChart(stats) {
   };
 }
 function buildTypeChart(stats) {
-  if (!stats.types.length) return null;
-  return {
-    type: "donut",
-    title: "Publications by Type",
-    data: stats.types.slice(0, 8).map((t) => ({ label: t.type, value: t.count }))
-  };
+  if (!stats.typeByYear.length) return null;
+  const topTypes = stats.types.slice(0, 6).map((t) => t.type);
+  const typeSet = new Set(topTypes);
+  const cells = stats.typeByYear.filter((r) => typeSet.has(r.type) && r.year).map((r) => ({ row: r.type, col: r.year, value: r.count, label: `${r.type} ${r.year}` }));
+  if (!cells.length) return null;
+  return { type: "heatmap", title: "Publications by Type", data: cells };
 }
 function buildJournalChart(stats) {
   if (!stats.journals.length) return null;
@@ -15167,9 +15167,18 @@ function buildJournalChart(stats) {
     title: "Top Journals",
     yLabel: "Papers",
     data: stats.journals.map((j) => ({
-      label: (j.journal || "").substring(0, 30),
+      label: (j.journal || "").substring(0, 18),
       value: j.count
     }))
+  };
+}
+function buildSourceChart(stats) {
+  if (!stats.bySource.length) return null;
+  return {
+    type: "bar",
+    title: "Publications by Source",
+    yLabel: "Papers",
+    data: stats.bySource.map((s) => ({ label: s.source, value: s.count }))
   };
 }
 function buildCollabChart(stats) {
@@ -15196,6 +15205,7 @@ function buildCountryChart(stats) {
 function buildTenantCharts(stats) {
   return [
     buildYearChart(stats),
+    buildSourceChart(stats),
     buildTypeChart(stats),
     buildJournalChart(stats),
     buildCollabChart(stats),
@@ -15248,7 +15258,7 @@ function App() {
     /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TenantHeader, { tenant: data.tenant, yearRange: data.stats.yearRange }),
     /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "page", children: [
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SummaryCards, { summary: data.stats.summary }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "section", style: { display: "grid", gridTemplateColumns: "1fr", gap: 16 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: 16, minHeight: 320 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphRender, { chart }) }, i)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "section", style: { display: "grid", gridTemplateColumns: "1fr", gap: 16 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: 16, minHeight: 400 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphRender, { chart }) }, i)) }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "section", children: [
         /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { children: "Collaboration Graph" }),
         /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TenantGraph, { nodes: data.graph.nodes, edges: data.graph.edges })

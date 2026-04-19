@@ -5,6 +5,8 @@ export interface CollabRow { value: string; count: string; }
 export interface CountryRow { country: string; count: string; }
 export interface TypeRow { type: string; count: number; }
 export interface JournalRow { journal: string; count: number; }
+export interface SourceRow { source: string; count: number; }
+export interface TypeYearRow { type: string; year: string; count: number; }
 
 export interface PublicStats {
   summary: { totalPubs: number; totalCitations: number; oaCount: number; authorCount: number };
@@ -14,6 +16,8 @@ export interface PublicStats {
   types: TypeRow[];
   journals: JournalRow[];
   yearRange: { minYear: string | null; maxYear: string | null };
+  bySource: SourceRow[];
+  typeByYear: TypeYearRow[];
 }
 
 function buildYearChart(stats: PublicStats): GraphDirective | null {
@@ -32,12 +36,14 @@ function buildYearChart(stats: PublicStats): GraphDirective | null {
 }
 
 function buildTypeChart(stats: PublicStats): GraphDirective | null {
-  if (!stats.types.length) return null;
-  return {
-    type: 'donut',
-    title: 'Publications by Type',
-    data: stats.types.slice(0, 8).map(t => ({ label: t.type, value: t.count })),
-  };
+  if (!stats.typeByYear.length) return null;
+  const topTypes = stats.types.slice(0, 6).map(t => t.type);
+  const typeSet = new Set(topTypes);
+  const cells = stats.typeByYear
+    .filter(r => typeSet.has(r.type) && r.year)
+    .map(r => ({ row: r.type, col: r.year, value: r.count, label: `${r.type} ${r.year}` }));
+  if (!cells.length) return null;
+  return { type: 'heatmap', title: 'Publications by Type', data: cells as any };
 }
 
 function buildJournalChart(stats: PublicStats): GraphDirective | null {
@@ -47,9 +53,19 @@ function buildJournalChart(stats: PublicStats): GraphDirective | null {
     title: 'Top Journals',
     yLabel: 'Papers',
     data: stats.journals.map(j => ({
-      label: (j.journal || '').substring(0, 30),
+      label: (j.journal || '').substring(0, 18),
       value: j.count,
     })),
+  };
+}
+
+function buildSourceChart(stats: PublicStats): GraphDirective | null {
+  if (!stats.bySource.length) return null;
+  return {
+    type: 'bar',
+    title: 'Publications by Source',
+    yLabel: 'Papers',
+    data: stats.bySource.map(s => ({ label: s.source, value: s.count })),
   };
 }
 
@@ -78,6 +94,7 @@ function buildCountryChart(stats: PublicStats): GraphDirective | null {
 export function buildTenantCharts(stats: PublicStats): GraphDirective[] {
   return [
     buildYearChart(stats),
+    buildSourceChart(stats),
     buildTypeChart(stats),
     buildJournalChart(stats),
     buildCollabChart(stats),

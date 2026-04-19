@@ -75,7 +75,7 @@ function App() {
         <SummaryCards summary={data.stats.summary} />
         <div className="section" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
           {charts.map((chart, i) => (
-            <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 4, padding: 16, minHeight: 320 }}>
+            <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 4, padding: 16, minHeight: 400 }}>
               <GraphRender chart={chart} />
             </div>
           ))}
