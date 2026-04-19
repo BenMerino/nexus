@@ -14387,6 +14387,7 @@ function CoAuthorSim({ graph, width, height }) {
   const major = (0, import_react5.useMemo)(() => majorRors(graph.nodes, myRor), [graph, myRor]);
   const nodeColor = (n) => {
     if (n.isMe) return "var(--accent)";
+    if (myRor && n.affiliation?.ror === myRor) return "var(--accent)";
     const key = communityKeyFor(n, myRor, major);
     if (!key) return "var(--fg-muted)";
     return communityColors.get(key) || "var(--fg-dim)";
@@ -14482,11 +14483,17 @@ function Legend({ graph }) {
     });
   }, [graph, myRor, major]);
   const home = graph.nodes.find((n) => n.isMe)?.affiliation?.name;
+  const homeCount = myRor ? graph.nodes.filter((n) => !n.isMe && n.affiliation?.ror === myRor).length : 0;
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 10, fontSize: 11, color: "var(--fg-muted)" }, children: [
     home && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" } }),
       " ",
-      home
+      home,
+      " ",
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
+        "\xB7",
+        homeCount
+      ] })
     ] }),
     items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key) } }),

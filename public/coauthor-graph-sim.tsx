@@ -23,6 +23,7 @@ export function CoAuthorSim({ graph, width, height }: { graph: CoauthorGraph; wi
 
   const nodeColor = (n: CoauthorNode) => {
     if (n.isMe) return 'var(--accent)';
+    if (myRor && n.affiliation?.ror === myRor) return 'var(--accent)';
     const key = communityKeyFor(n, myRor, major);
     if (!key) return 'var(--fg-muted)';
     return communityColors.get(key) || 'var(--fg-dim)';
