@@ -46,9 +46,9 @@ function buildYearChart(stats: PublicStats): GraphDirective | null {
     grid.get(r.year)![r.bucket] += r.count;
   }
   return {
-    type: 'multi-line',
-    title: 'Index coverage by year',
-    yLabel: 'Papers',
+    type: 'stacked-bar',
+    title: 'Publications by Year',
+    yLabel: 'Articles',
     series: INDEXES,
     data: years.map(y => ({ label: y, ...grid.get(y)! })),
   };
