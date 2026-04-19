@@ -15109,7 +15109,7 @@ function TenantGraph({ nodes, edges }) {
 }
 
 // public/tenant-builders.ts
-var INDEXES = ["WoS", "Scopus", "Core", "SciELO", "DOAJ"];
+var INDEXES = ["WoS", "Scopus", "SciELO", "DOAJ"];
 function buildYearChart(stats) {
   const byYearTotal = /* @__PURE__ */ new Map();
   for (const row of stats.yearSource) byYearTotal.set(row.year, (byYearTotal.get(row.year) || 0) + parseInt(row.count));

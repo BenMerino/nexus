@@ -20,7 +20,7 @@ export interface PublicStats {
   yearByIndex: YearIndexRow[];
 }
 
-const INDEXES = ['WoS', 'Scopus', 'Core', 'SciELO', 'DOAJ'];
+const INDEXES = ['WoS', 'Scopus', 'SciELO', 'DOAJ'];
 
 function buildYearChart(stats: PublicStats): GraphDirective | null {
   const byYearTotal = new Map<string, number>();
