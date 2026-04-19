@@ -766,7 +766,7 @@ var require_scheduler = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React8 = require_react();
+    var React7 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React8.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React7.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React8 = require_react();
+    var React7 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React8.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React7.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React8.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React7.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12747,7 +12747,7 @@ var require_jsx_runtime = __commonJS({
 });
 
 // public/dashboard-charts.tsx
-var import_react8 = __toESM(require_react());
+var import_react7 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
 // public/shell.tsx
@@ -13185,10 +13185,10 @@ function RecentlyIndexed({ data }) {
 }
 
 // public/coauthor-graph-preview.tsx
-var import_react7 = __toESM(require_react());
+var import_react6 = __toESM(require_react());
 
 // public/coauthor-graph-sim.tsx
-var import_react6 = __toESM(require_react());
+var import_react5 = __toESM(require_react());
 
 // public/coauthor-communities.ts
 var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1", "#b0b0b0"];
@@ -13327,7 +13327,6 @@ function HoverTooltip({ node, radius: radius2 }) {
 }
 
 // public/coauthor-graph-hulls.tsx
-var import_react5 = __toESM(require_react());
 var import_jsx_runtime9 = __toESM(require_jsx_runtime());
 function collectByRor(nodes, myRor) {
   const groups = /* @__PURE__ */ new Map();
@@ -13342,26 +13341,22 @@ function collectByRor(nodes, myRor) {
   }
   return groups;
 }
+var MIN_COMMUNITY_SIZE = 3;
 function boundingCircle(points, pad) {
   const cx = points.reduce((s, p) => s + p.x, 0) / points.length;
   const cy = points.reduce((s, p) => s + p.y, 0) / points.length;
-  let maxDist = 0;
-  for (const p of points) {
-    const d = Math.hypot(p.x - cx, p.y - cy);
-    if (d > maxDist) maxDist = d;
-  }
-  return { cx, cy, r: maxDist + pad };
+  const distances = points.map((p) => Math.hypot(p.x - cx, p.y - cy)).sort((a2, b) => a2 - b);
+  const keepIndex = Math.max(0, Math.ceil(distances.length * 0.8) - 1);
+  const trimmedRadius = distances[keepIndex];
+  return { cx, cy, r: trimmedRadius + pad };
 }
 function CommunityHulls({ nodes, myRor, colors }) {
-  const bubbles = (0, import_react5.useMemo)(() => {
-    const result = [];
-    for (const [ror, group] of collectByRor(nodes, myRor)) {
-      if (group.points.length < 2) continue;
-      const { cx, cy, r } = boundingCircle(group.points, 18);
-      result.push({ ror, name: group.name, color: colors.get(ror) || "#888", cx, cy, r });
-    }
-    return result;
-  }, [nodes, myRor, colors]);
+  const bubbles = [];
+  for (const [ror, group] of collectByRor(nodes, myRor)) {
+    if (group.points.length < MIN_COMMUNITY_SIZE) continue;
+    const { cx, cy, r } = boundingCircle(group.points, 18);
+    bubbles.push({ ror, name: group.name, color: colors.get(ror) || "#888", cx, cy, r });
+  }
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("g", { children: bubbles.map((b) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
     "circle",
     {
@@ -14313,14 +14308,18 @@ function initialLinks(edges, nodes) {
   const nmap = new Map(nodes.map((n) => [n.id, n]));
   return edges.filter((e) => nmap.has(e.source) && nmap.has(e.target)).map((e) => ({ ...e }));
 }
+var MIN_COMMUNITY_SIZE2 = 3;
 function buildAnchors(nodes, myRor, width, height) {
-  const externalRors = [...new Set(
-    nodes.filter((n) => !n.isMe && n.affiliation?.ror && n.affiliation.ror !== myRor).map((n) => n.affiliation.ror)
-  )];
+  const counts = /* @__PURE__ */ new Map();
+  for (const n of nodes) {
+    if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
+    counts.set(n.affiliation.ror, (counts.get(n.affiliation.ror) || 0) + 1);
+  }
+  const majorRors = [...counts.entries()].filter(([, count]) => count >= MIN_COMMUNITY_SIZE2).sort((a2, b) => b[1] - a2[1]).map(([ror]) => ror);
   const map = /* @__PURE__ */ new Map();
-  const orbit = Math.min(width, height) * 0.32;
-  externalRors.forEach((ror, i) => {
-    const a2 = i / Math.max(externalRors.length, 1) * Math.PI * 2 - Math.PI / 2;
+  const orbit = Math.min(width, height) * 0.38;
+  majorRors.forEach((ror, i) => {
+    const a2 = i / Math.max(majorRors.length, 1) * Math.PI * 2 - Math.PI / 2;
     map.set(ror, {
       x: width / 2 + Math.cos(a2) * orbit,
       y: height / 2 + Math.sin(a2) * orbit
@@ -14347,28 +14346,28 @@ function clampToViewport(nodes, width, height) {
 // public/coauthor-graph-sim.tsx
 var import_jsx_runtime10 = __toESM(require_jsx_runtime());
 function CoAuthorSim({ graph, width, height }) {
-  const svgRef = (0, import_react6.useRef)(null);
-  const simRef = (0, import_react6.useRef)(null);
-  const [, tick] = (0, import_react6.useState)(0);
-  const [hoverId, setHoverId] = (0, import_react6.useState)(null);
+  const svgRef = (0, import_react5.useRef)(null);
+  const simRef = (0, import_react5.useRef)(null);
+  const [, tick] = (0, import_react5.useState)(0);
+  const [hoverId, setHoverId] = (0, import_react5.useState)(null);
   const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
-  const communityColors = (0, import_react6.useMemo)(() => buildCommunityColors(graph.nodes, myRor), [graph, myRor]);
+  const communityColors = (0, import_react5.useMemo)(() => buildCommunityColors(graph.nodes, myRor), [graph, myRor]);
   const nodeColor = (n) => {
     if (n.isMe) return "var(--accent)";
     if (!n.affiliation?.ror) return "var(--fg-dim)";
     if (n.affiliation.ror === myRor) return "var(--fg-muted)";
     return communityColors.get(n.affiliation.ror) || "var(--fg-dim)";
   };
-  const { nodes, links } = (0, import_react6.useMemo)(() => {
+  const { nodes, links } = (0, import_react5.useMemo)(() => {
     const ns = initialNodes(graph.nodes, width, height);
     const ls = initialLinks(graph.edges, ns);
     return { nodes: ns, links: ls };
   }, [graph, width, height]);
-  const anchors = (0, import_react6.useMemo)(
+  const anchors = (0, import_react5.useMemo)(
     () => buildAnchors(nodes, myRor, width, height),
     [nodes, myRor, width, height]
   );
-  (0, import_react6.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     const sim = createSimulation({
       nodes,
       links,
@@ -14382,7 +14381,7 @@ function CoAuthorSim({ graph, width, height }) {
       sim.stop();
     };
   }, [nodes, links, anchors, width, height]);
-  const connected = (0, import_react6.useMemo)(() => {
+  const connected = (0, import_react5.useMemo)(() => {
     if (!hoverId) return null;
     const set2 = /* @__PURE__ */ new Set([hoverId]);
     for (const l of links) {
@@ -14429,8 +14428,8 @@ function CoAuthorSim({ graph, width, height }) {
 var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function Legend({ graph }) {
   const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
-  const colors = (0, import_react7.useMemo)(() => buildCommunityColors(graph.nodes, myRor), [graph, myRor]);
-  const items = (0, import_react7.useMemo)(() => {
+  const colors = (0, import_react6.useMemo)(() => buildCommunityColors(graph.nodes, myRor), [graph, myRor]);
+  const items = (0, import_react6.useMemo)(() => {
     const byRor = /* @__PURE__ */ new Map();
     for (const n of graph.nodes) {
       if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
@@ -14460,9 +14459,9 @@ function Legend({ graph }) {
   ] });
 }
 function CoAuthorGraphPanel({ graph }) {
-  const ref = (0, import_react7.useRef)(null);
-  const [size, setSize] = (0, import_react7.useState)(null);
-  (0, import_react7.useEffect)(() => {
+  const ref = (0, import_react6.useRef)(null);
+  const [size, setSize] = (0, import_react6.useState)(null);
+  (0, import_react6.useEffect)(() => {
     if (!ref.current) return;
     const el2 = ref.current;
     const measure = () => {
@@ -14739,9 +14738,9 @@ function DashboardContent({ data }) {
   ] });
 }
 function App() {
-  const [data, setData] = (0, import_react8.useState)(null);
-  const [err, setErr] = (0, import_react8.useState)(null);
-  (0, import_react8.useEffect)(() => {
+  const [data, setData] = (0, import_react7.useState)(null);
+  const [err, setErr] = (0, import_react7.useState)(null);
+  (0, import_react7.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
   return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(Shell, { scroll: true, children: [

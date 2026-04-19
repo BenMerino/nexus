@@ -25,17 +25,24 @@ export function initialLinks(edges: CoauthorEdge[], nodes: SimN[]): SimL[] {
     .map(e => ({ ...e }));
 }
 
-/** Community anchor points: one per external university arranged around the ego. */
+const MIN_COMMUNITY_SIZE = 3;
+
+/** Community anchor points: only major communities get anchors, arranged around the ego. */
 export function buildAnchors(nodes: SimN[], myRor: string | null, width: number, height: number) {
-  const externalRors = [...new Set(
-    nodes
-      .filter(n => !n.isMe && n.affiliation?.ror && n.affiliation.ror !== myRor)
-      .map(n => n.affiliation!.ror)
-  )];
+  const counts = new Map<string, number>();
+  for (const n of nodes) {
+    if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
+    counts.set(n.affiliation.ror, (counts.get(n.affiliation.ror) || 0) + 1);
+  }
+  const majorRors = [...counts.entries()]
+    .filter(([, count]) => count >= MIN_COMMUNITY_SIZE)
+    .sort((a, b) => b[1] - a[1])
+    .map(([ror]) => ror);
+
   const map = new Map<string, { x: number; y: number }>();
-  const orbit = Math.min(width, height) * 0.32;
-  externalRors.forEach((ror, i) => {
-    const a = (i / Math.max(externalRors.length, 1)) * Math.PI * 2 - Math.PI / 2;
+  const orbit = Math.min(width, height) * 0.38;
+  majorRors.forEach((ror, i) => {
+    const a = (i / Math.max(majorRors.length, 1)) * Math.PI * 2 - Math.PI / 2;
     map.set(ror, {
       x: width / 2 + Math.cos(a) * orbit,
       y: height / 2 + Math.sin(a) * orbit,

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import type { CoauthorNode } from './dashboard-builders.js';
 
 type Positioned = CoauthorNode & { x: number; y: number };
@@ -32,28 +32,26 @@ function collectByRor(nodes: Positioned[], myRor: string | null) {
   return groups;
 }
 
-/** Bounding circle: centroid + distance to furthest point, padded. */
+const MIN_COMMUNITY_SIZE = 3;
+
+/** Centroid-anchored bounding circle, trimming the furthest 20% as outliers so
+ *  one stray node can't inflate the whole area. */
 function boundingCircle(points: { x: number; y: number }[], pad: number) {
   const cx = points.reduce((s, p) => s + p.x, 0) / points.length;
   const cy = points.reduce((s, p) => s + p.y, 0) / points.length;
-  let maxDist = 0;
-  for (const p of points) {
-    const d = Math.hypot(p.x - cx, p.y - cy);
-    if (d > maxDist) maxDist = d;
-  }
-  return { cx, cy, r: maxDist + pad };
+  const distances = points.map(p => Math.hypot(p.x - cx, p.y - cy)).sort((a, b) => a - b);
+  const keepIndex = Math.max(0, Math.ceil(distances.length * 0.8) - 1);
+  const trimmedRadius = distances[keepIndex];
+  return { cx, cy, r: trimmedRadius + pad };
 }
 
 export function CommunityHulls({ nodes, myRor, colors }: Props) {
-  const bubbles = useMemo<CommunityBubble[]>(() => {
-    const result: CommunityBubble[] = [];
-    for (const [ror, group] of collectByRor(nodes, myRor)) {
-      if (group.points.length < 2) continue;
-      const { cx, cy, r } = boundingCircle(group.points, 18);
-      result.push({ ror, name: group.name, color: colors.get(ror) || '#888', cx, cy, r });
-    }
-    return result;
-  }, [nodes, myRor, colors]);
+  const bubbles: CommunityBubble[] = [];
+  for (const [ror, group] of collectByRor(nodes, myRor)) {
+    if (group.points.length < MIN_COMMUNITY_SIZE) continue;
+    const { cx, cy, r } = boundingCircle(group.points, 18);
+    bubbles.push({ ror, name: group.name, color: colors.get(ror) || '#888', cx, cy, r });
+  }
 
   return (
     <g>
