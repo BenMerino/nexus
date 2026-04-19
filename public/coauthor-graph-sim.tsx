@@ -4,6 +4,7 @@ import type { CoauthorGraph, CoauthorNode } from './dashboard-builders.js';
 import { buildCommunityColors } from './coauthor-communities';
 import { GraphDefs, Links, Nodes, radius } from './coauthor-graph-render';
 import { EgoLabel, HoverTooltip } from './coauthor-graph-labels';
+import { CommunityHulls } from './coauthor-graph-hulls';
 import { startDrag } from './coauthor-graph-drag';
 import {
   initialNodes, initialLinks, buildAnchors, createSimulation,
@@ -73,6 +74,7 @@ export function CoAuthorSim({ graph, width, height }: { graph: CoauthorGraph; wi
     <div style={{ position: 'relative', width, height }}>
       <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none' }}>
         <GraphDefs />
+        <CommunityHulls nodes={nodes} myRor={myRor} colors={communityColors} />
         <Links links={links} connected={connected} />
         <Nodes
           nodes={nodes}
