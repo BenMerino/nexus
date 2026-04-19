@@ -2,7 +2,7 @@ const { ensureSchema } = require("../../lib/db");
 const { getTenantBySlug } = require("../../lib/db-users");
 const { getPublicStats } = require("../../lib/public-stats");
 const { getAuthorsDirectory } = require("../../lib/public-authors");
-const { buildGraph } = require("../../lib/graph-builder");
+const { buildPublicGraph } = require("../../lib/public-graph");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
@@ -15,8 +15,8 @@ module.exports = async function handler(req, res) {
   try {
     const [stats, authors, graph] = await Promise.all([
       getPublicStats(scope),
-      getAuthorsDirectory(tenant.id),
-      buildGraph(scope),
+      getAuthorsDirectory(tenant.id, tenant.ror_id),
+      buildPublicGraph(tenant.id, tenant.ror_id),
     ]);
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
     res.json({

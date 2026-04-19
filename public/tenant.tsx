@@ -3,9 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { GraphRender } from '../graph-engine/index.js';
 import { TenantHeader } from './tenant-header';
 import { AuthorsTable, type AuthorRow } from './tenant-authors';
-import { TenantGraph } from './tenant-graph';
+import { TenantGraph, type PublicGraphNode, type PublicGraphEdge } from './tenant-graph';
 import { buildTenantCharts, type PublicStats } from './tenant-builders';
-import type { RawNode, RawEdge } from './relationship-types';
 
 interface PublicPayload {
   tenant: {
@@ -14,7 +13,7 @@ interface PublicPayload {
   };
   stats: PublicStats;
   authors: AuthorRow[];
-  graph: { nodes: RawNode[]; edges: RawEdge[] };
+  graph: { nodes: PublicGraphNode[]; edges: PublicGraphEdge[] };
 }
 
 function SummaryCards({ summary }: { summary: PublicStats['summary'] }) {
@@ -74,9 +73,9 @@ function App() {
       <TenantHeader tenant={data.tenant} yearRange={data.stats.yearRange} />
       <div className="page">
         <SummaryCards summary={data.stats.summary} />
-        <div className="section">
+        <div className="section" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
           {charts.map((chart, i) => (
-            <div key={i} style={{ marginBottom: 16 }}>
+            <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 4, padding: 16, minHeight: 320 }}>
               <GraphRender chart={chart} />
             </div>
           ))}

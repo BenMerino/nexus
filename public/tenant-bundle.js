@@ -766,7 +766,7 @@ var require_scheduler = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React13 = require_react();
+    var React11 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React13.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React11.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React13 = require_react();
+    var React11 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1127,13 +1127,13 @@ var require_react_dom_client_production = __commonJS({
             type = type._init;
             try {
               return getComponentNameFromType(type(innerType));
-            } catch (x2) {
+            } catch (x3) {
             }
         }
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React13.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React11.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -1206,10 +1206,10 @@ var require_react_dom_client_production = __commonJS({
       if (void 0 === prefix)
         try {
           throw Error();
-        } catch (x2) {
-          var match = x2.stack.trim().match(/\n( *(at )?)/);
+        } catch (x3) {
+          var match = x3.stack.trim().match(/\n( *(at )?)/);
           prefix = match && match[1] || "";
-          suffix = -1 < x2.stack.indexOf("\n    at") ? " (<anonymous>)" : -1 < x2.stack.indexOf("@") ? "@unknown:0:0" : "";
+          suffix = -1 < x3.stack.indexOf("\n    at") ? " (<anonymous>)" : -1 < x3.stack.indexOf("@") ? "@unknown:0:0" : "";
         }
       return "\n" + prefix + name + suffix;
     }
@@ -1235,8 +1235,8 @@ var require_react_dom_client_production = __commonJS({
                 if ("object" === typeof Reflect && Reflect.construct) {
                   try {
                     Reflect.construct(Fake, []);
-                  } catch (x2) {
-                    var control = x2;
+                  } catch (x3) {
+                    var control = x3;
                   }
                   Reflect.construct(fn, [], Fake);
                 } else {
@@ -1336,8 +1336,8 @@ var require_react_dom_client_production = __commonJS({
           info += describeFiber(workInProgress2, previous), previous = workInProgress2, workInProgress2 = workInProgress2.return;
         while (workInProgress2);
         return info;
-      } catch (x2) {
-        return "\nError generating stack: " + x2.message + "\n" + x2.stack;
+      } catch (x3) {
+        return "\nError generating stack: " + x3.message + "\n" + x3.stack;
       }
     }
     var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -1367,9 +1367,9 @@ var require_react_dom_client_production = __commonJS({
     var clz32 = Math.clz32 ? Math.clz32 : clz32Fallback;
     var log = Math.log;
     var LN2 = Math.LN2;
-    function clz32Fallback(x2) {
-      x2 >>>= 0;
-      return 0 === x2 ? 32 : 31 - (log(x2) / LN2 | 0) | 0;
+    function clz32Fallback(x3) {
+      x3 >>>= 0;
+      return 0 === x3 ? 32 : 31 - (log(x3) / LN2 | 0) | 0;
     }
     var nextTransitionUpdateLane = 256;
     var nextTransitionDeferredLane = 262144;
@@ -2561,8 +2561,8 @@ var require_react_dom_client_production = __commonJS({
       if ("input" === domEventName || "change" === domEventName)
         return getInstIfValueChanged(targetInst);
     }
-    function is(x2, y2) {
-      return x2 === y2 && (0 !== x2 || 1 / x2 === 1 / y2) || x2 !== x2 && y2 !== y2;
+    function is(x3, y3) {
+      return x3 === y3 && (0 !== x3 || 1 / x3 === 1 / y3) || x3 !== x3 && y3 !== y3;
     }
     var objectIs = "function" === typeof Object.is ? Object.is : is;
     function shallowEqual(objA, objB) {
@@ -3403,10 +3403,10 @@ var require_react_dom_client_production = __commonJS({
       try {
         var init = lazyType._init;
         return init(lazyType._payload);
-      } catch (x2) {
-        if (null !== x2 && "object" === typeof x2 && "function" === typeof x2.then)
-          throw suspendedThenable = x2, SuspenseException;
-        throw x2;
+      } catch (x3) {
+        if (null !== x3 && "object" === typeof x3 && "function" === typeof x3.then)
+          throw suspendedThenable = x3, SuspenseException;
+        throw x3;
       }
     }
     var suspendedThenable = null;
@@ -3870,9 +3870,9 @@ var require_react_dom_client_production = __commonJS({
           );
           thenableState$1 = null;
           return firstChildFiber;
-        } catch (x2) {
-          if (x2 === SuspenseException || x2 === SuspenseActionException) throw x2;
-          var fiber = createFiberImplClass(29, x2, null, returnFiber.mode);
+        } catch (x3) {
+          if (x3 === SuspenseException || x3 === SuspenseActionException) throw x3;
+          var fiber = createFiberImplClass(29, x3, null, returnFiber.mode);
           fiber.lanes = lanes;
           fiber.return = returnFiber;
           return fiber;
@@ -4682,9 +4682,9 @@ var require_react_dom_client_production = __commonJS({
       if ("object" === typeof currentStateHook && null !== currentStateHook && "function" === typeof currentStateHook.then)
         try {
           var state = useThenable(currentStateHook);
-        } catch (x2) {
-          if (x2 === SuspenseException) throw SuspenseActionException;
-          throw x2;
+        } catch (x3) {
+          if (x3 === SuspenseException) throw SuspenseActionException;
+          throw x3;
         }
       else state = currentStateHook;
       currentStateHook = updateWorkInProgressHook();
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React13.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React11.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12747,7 +12747,7 @@ var require_jsx_runtime = __commonJS({
 });
 
 // public/tenant.tsx
-var import_react16 = __toESM(require_react());
+var import_react13 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
 // graph-engine/GraphRender.tsx
@@ -12937,23 +12937,23 @@ var import_jsx_runtime4 = __toESM(require_jsx_runtime());
 var MARGIN = { top: 8, right: 8, bottom: 20, left: 36 };
 var TICK = { fill: "var(--text-muted)", fontSize: 9, fontWeight: 600 };
 var GRID_STROKE = "var(--border-main)";
-function XAxisBand({ labels, y: y2, range }) {
+function XAxisBand({ labels, y: y3, range }) {
   const step = (range[1] - range[0]) / labels.length;
   const maxChars = Math.max(4, Math.floor(step / 5));
   const rotate = labels.some((l) => l.length > maxChars);
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: labels.map((l, i) => {
     const cx = range[0] + i * step + step / 2;
     const display = l.length > maxChars ? l.slice(0, maxChars - 1) + "\u2026" : l;
-    return rotate ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("text", { x: cx, y: y2 + 6, textAnchor: "end", transform: `rotate(-40,${cx},${y2 + 6})`, ...TICK, children: display }, i) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("text", { x: cx, y: y2 + 14, textAnchor: "middle", ...TICK, children: display }, i);
+    return rotate ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("text", { x: cx, y: y3 + 6, textAnchor: "end", transform: `rotate(-40,${cx},${y3 + 6})`, ...TICK, children: display }, i) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("text", { x: cx, y: y3 + 14, textAnchor: "middle", ...TICK, children: display }, i);
   }) });
 }
-function XAxisLinear({ domain, y: y2, range }) {
+function XAxisLinear({ domain, y: y3, range }) {
   const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("text", { x: s(v), y: y2 + 14, textAnchor: "middle", ...TICK, children: v }, i)) });
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("text", { x: s(v), y: y3 + 14, textAnchor: "middle", ...TICK, children: v }, i)) });
 }
-function YAxis({ domain, range, x: x2 }) {
+function YAxis({ domain, range, x: x3 }) {
   const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("text", { x: x2 - 4, y: s(v) + 3, textAnchor: "end", ...TICK, children: fmtTick(v) }, i)) });
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("text", { x: x3 - 4, y: s(v) + 3, textAnchor: "end", ...TICK, children: fmtTick(v) }, i)) });
 }
 function fmtTick(v) {
   const abs = Math.abs(v);
@@ -12974,10 +12974,10 @@ function GridLines({ domain, range, xRange }) {
 function ThresholdLines({ thresholds, yScale, xRange }) {
   if (!thresholds?.length) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: thresholds.map((t, i) => {
-    const y2 = yScale(t.value);
+    const y3 = yScale(t.value);
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: y2, y2, stroke: t.color, strokeDasharray: "4 4", strokeWidth: 1 }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("text", { x: xRange[1] - 2, y: y2 - 4, textAnchor: "end", fontSize: 9, fontWeight: 600, fill: t.color, children: t.label })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: y3, y2: y3, stroke: t.color, strokeDasharray: "4 4", strokeWidth: 1 }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("text", { x: xRange[1] - 2, y: y3 - 4, textAnchor: "end", fontSize: 9, fontWeight: 600, fill: t.color, children: t.label })
     ] }, i);
   }) });
 }
@@ -13114,14 +13114,14 @@ function useDragRange() {
 function RangeHighlight({ range, yR }) {
   if (!range.start || !range.end) return null;
   const x1 = Math.min(range.start.vbX, range.end.vbX);
-  const x2 = Math.max(range.start.vbX, range.end.vbX);
-  if (x2 - x1 < 1) return null;
+  const x22 = Math.max(range.start.vbX, range.end.vbX);
+  if (x22 - x1 < 1) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
     "rect",
     {
       x: x1,
       y: yR[0],
-      width: x2 - x1,
+      width: x22 - x1,
       height: yR[1] - yR[0],
       fill: "var(--primary)",
       opacity: 0.08,
@@ -13202,11 +13202,11 @@ function renderSeries(t, data, labels, band, yS, baseline, c2, series, pw, chart
     const xMin = parseFloat(labels[0]), xMax = parseFloat(labels[labels.length - 1]);
     const maxY = Math.max(...data.map((d) => d.value ?? 0));
     const scale = maxY / (1 / (g.stddev * Math.sqrt(2 * Math.PI)));
-    const gauss = (x2) => 1 / (g.stddev * Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * ((x2 - g.mean) / g.stddev) ** 2) * scale;
+    const gauss = (x3) => 1 / (g.stddev * Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * ((x3 - g.mean) / g.stddev) ** 2) * scale;
     const x0 = band(labels[0]).x;
     const pts = Array.from({ length: 41 }, (_, i) => {
-      const x2 = xMin + i / 40 * (xMax - xMin);
-      return { x: x0 + i / 40 * pw, y: yS(Math.min(gauss(x2), maxY * 1.1)) };
+      const x3 = xMin + i / 40 * (xMax - xMin);
+      return { x: x0 + i / 40 * pw, y: yS(Math.min(gauss(x3), maxY * 1.1)) };
     });
     return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
       bars,
@@ -13254,10 +13254,10 @@ function renderSeries(t, data, labels, band, yS, baseline, c2, series, pw, chart
     return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: series.map((s, si) => {
       const v = d[s] || 0;
       const h = baseline - yS(v);
-      const y2 = y0 - h;
-      y0 = y2;
+      const y3 = y0 - h;
+      y0 = y3;
       const r = si === series.length - 1 ? 3 : 0;
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: b.x, y: y2, width: b.width, height: Math.max(0, h), rx: r, fill: seriesColor(c2, si), opacity: 0.85 }, s);
+      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: b.x, y: y3, width: b.width, height: Math.max(0, h), rx: r, fill: seriesColor(c2, si), opacity: 0.85 }, s);
     }) }, i);
   });
   if (t === "stacked-area") {
@@ -13690,11 +13690,11 @@ function TreemapSvg({ chart, width, height }) {
   const colors = cs(chart).seriesColors || FALLBACK_SERIES;
   const nodes = chart.data.slice(0, 12);
   const total = nodes.reduce((s, n) => s + (n.value || 0), 0) || 1;
-  let x2 = 0;
+  let x3 = 0;
   const rects = nodes.map((n, i) => {
     const w = (n.value || 0) / total * width;
-    const r = { x: x2, y: 0, w, h: height, name: n.name || "", color: colors[i % colors.length] };
-    x2 += w;
+    const r = { x: x3, y: 0, w, h: height, name: n.name || "", color: colors[i % colors.length] };
+    x3 += w;
     return r;
   });
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: rects.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { children: [
@@ -13712,8 +13712,8 @@ function FunnelSvg({ chart, width, height }) {
     const topW = (d.value || 0) / maxVal * (width - pad * 2);
     const nextW = i < data.length - 1 ? (data[i + 1].value || 0) / maxVal * (width - pad * 2) : topW * 0.8;
     const cx = width / 2;
-    const y1 = i * stepH, y2 = y1 + stepH;
-    const path = `M ${cx - topW / 2} ${y1} L ${cx + topW / 2} ${y1} L ${cx + nextW / 2} ${y2} L ${cx - nextW / 2} ${y2} Z`;
+    const y1 = i * stepH, y22 = y1 + stepH;
+    const path = `M ${cx - topW / 2} ${y1} L ${cx + topW / 2} ${y1} L ${cx + nextW / 2} ${y22} L ${cx - nextW / 2} ${y22} Z`;
     return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("path", { d: path, fill: colors[i % colors.length], opacity: 0.8 }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("text", { x: cx, y: y1 + stepH / 2, textAnchor: "middle", dominantBaseline: "central", fontSize: 9, fontWeight: 600, fill: "#fff", children: d.label })
@@ -14185,151 +14185,75 @@ function AuthorsTable({ authors }) {
 }
 
 // public/tenant-graph.tsx
-var import_react15 = __toESM(require_react());
-
-// public/node-classify.ts
-function percentile(sorted, p) {
-  if (!sorted.length) return 0;
-  const idx = Math.ceil(p * sorted.length) - 1;
-  return sorted[Math.max(0, idx)];
-}
-function classifyNodes(nodes, edges, allNodes, communityMap) {
-  const nodeById = new Map(allNodes.map((n) => [n.id, n]));
-  const profileMap = /* @__PURE__ */ new Map();
-  for (const e of edges) {
-    const sNode = nodeById.get(e.source);
-    const tNode = nodeById.get(e.target);
-    if (!sNode || !tNode) continue;
-    const sMap = profileMap.get(e.source) || /* @__PURE__ */ new Map();
-    sMap.set(tNode.group, (sMap.get(tNode.group) || 0) + e.weight);
-    profileMap.set(e.source, sMap);
-    const tMap = profileMap.get(e.target) || /* @__PURE__ */ new Map();
-    tMap.set(sNode.group, (tMap.get(sNode.group) || 0) + e.weight);
-    profileMap.set(e.target, tMap);
-  }
-  const degrees = nodes.map((n) => n.degree).sort((a2, b) => a2 - b);
-  const weights = nodes.map((n) => n.weight).sort((a2, b) => a2 - b);
-  const degP75 = percentile(degrees, 0.75);
-  const degMedian = percentile(degrees, 0.5);
-  const weightP75 = percentile(weights, 0.75);
-  const avgWeights = nodes.filter((n) => n.degree > 0).map((n) => n.weight / n.degree).sort((a2, b) => a2 - b);
-  const avgWtMedian = percentile(avgWeights, 0.5);
-  return nodes.map((n) => {
-    let role = "default";
-    if (n.degree <= 2) {
-      role = "leaf";
-    } else if (n.degree >= degP75 && n.weight >= weightP75) {
-      role = "hub";
-    } else if (n.degree >= degMedian && n.degree > 0 && n.weight / n.degree < avgWtMedian) {
-      role = "bridge";
-    }
-    const catMap = profileMap.get(n.id) || /* @__PURE__ */ new Map();
-    const categoryProfile = [...catMap.entries()].map(([category, weight]) => ({ category, weight })).sort((a2, b) => b.weight - a2.weight);
-    const community = communityMap?.get(n.id) ?? 0;
-    return { ...n, role, community, categoryProfile };
-  });
-}
-
-// public/project-graph.ts
-function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags, expandedJournal) {
-  const doiToTags = /* @__PURE__ */ new Map();
-  const doiLabels = /* @__PURE__ */ new Map();
-  for (const n of rawNodes) {
-    if (n.group === "doi") doiLabels.set(n.id, n.label);
-  }
-  for (const e of rawEdges) {
-    const list = doiToTags.get(e.source) || [];
-    list.push(e.target);
-    doiToTags.set(e.source, list);
-  }
-  const institutions = rawNodes.filter((n) => n.group === "institution");
-  const authors = rawNodes.filter((n) => n.group === "author");
-  const journals = new Map(rawNodes.filter((n) => n.group === "journal").map((n) => [n.id, n]));
-  const journalPapers = /* @__PURE__ */ new Map();
-  for (const [doiId, tags] of doiToTags) {
-    const jTag = tags.find((t) => journals.has(t));
-    if (jTag) {
-      const list = journalPapers.get(jTag) || [];
-      list.push({ doi: doiId.replace("doi:", ""), title: doiLabels.get(doiId) || doiId });
-      journalPapers.set(jTag, list);
-    }
-  }
-  const allNodes = [];
-  const allEdges = [];
-  const matchingDois = /* @__PURE__ */ new Set();
-  const added = /* @__PURE__ */ new Set();
-  function addNode(id, label, group, w, papers, ext_id) {
-    if (added.has(id)) return;
-    added.add(id);
-    allNodes.push({ id, label, group, ext_id, doiCount: w, degree: 0, weight: w || 1, papers });
-  }
-  for (const inst of institutions) addNode(inst.id, inst.label, "institution", 0, void 0, inst.id.replace(/^[^:]+:/, ""));
-  for (const auth of authors) {
-    addNode(auth.id, auth.label, "author", 0, void 0, auth.id.replace(/^[^:]+:/, ""));
-    for (const inst of institutions) allEdges.push({ source: inst.id, target: auth.id, weight: 1, sharedDois: [] });
-  }
-  for (const [jId, papers] of journalPapers) {
-    if (expandedJournal && expandedJournal !== jId) continue;
-    const j = journals.get(jId);
-    addNode(j.id, j.label, "journal", papers.length, papers, j.id.replace(/^[^:]+:/, ""));
-    for (const auth of authors) allEdges.push({ source: auth.id, target: j.id, weight: papers.length, sharedDois: [] });
-    for (const p of papers) matchingDois.add(p.doi);
-    if (expandedJournal === jId) {
-      for (const p of papers) {
-        addNode("doi:" + p.doi, p.title, "doi", 0);
-        allEdges.push({ source: jId, target: "doi:" + p.doi, weight: 1, sharedDois: [] });
-      }
-    }
-  }
-  const communityMap = /* @__PURE__ */ new Map();
-  allNodes.forEach((n) => {
-    communityMap.set(n.id, n.group === "institution" ? 0 : n.group === "author" ? 1 : n.group === "journal" ? 2 : 3);
-  });
-  const nodes = classifyNodes(allNodes, allEdges, allNodes, communityMap);
-  return { nodes, edges: allEdges, matchingDois };
-}
-
-// public/use-force-layout.ts
 var import_react12 = __toESM(require_react());
+
+// node_modules/d3-force/src/center.js
+function center_default(x3, y3) {
+  var nodes, strength = 1;
+  if (x3 == null) x3 = 0;
+  if (y3 == null) y3 = 0;
+  function force() {
+    var i, n = nodes.length, node, sx = 0, sy = 0;
+    for (i = 0; i < n; ++i) {
+      node = nodes[i], sx += node.x, sy += node.y;
+    }
+    for (sx = (sx / n - x3) * strength, sy = (sy / n - y3) * strength, i = 0; i < n; ++i) {
+      node = nodes[i], node.x -= sx, node.y -= sy;
+    }
+  }
+  force.initialize = function(_) {
+    nodes = _;
+  };
+  force.x = function(_) {
+    return arguments.length ? (x3 = +_, force) : x3;
+  };
+  force.y = function(_) {
+    return arguments.length ? (y3 = +_, force) : y3;
+  };
+  force.strength = function(_) {
+    return arguments.length ? (strength = +_, force) : strength;
+  };
+  return force;
+}
 
 // node_modules/d3-quadtree/src/add.js
 function add_default(d) {
-  const x2 = +this._x.call(null, d), y2 = +this._y.call(null, d);
-  return add(this.cover(x2, y2), x2, y2, d);
+  const x3 = +this._x.call(null, d), y3 = +this._y.call(null, d);
+  return add(this.cover(x3, y3), x3, y3, d);
 }
-function add(tree, x2, y2, d) {
-  if (isNaN(x2) || isNaN(y2)) return tree;
+function add(tree, x3, y3, d) {
+  if (isNaN(x3) || isNaN(y3)) return tree;
   var parent, node = tree._root, leaf = { data: d }, x0 = tree._x0, y0 = tree._y0, x1 = tree._x1, y1 = tree._y1, xm, ym, xp, yp, right, bottom, i, j;
   if (!node) return tree._root = leaf, tree;
   while (node.length) {
-    if (right = x2 >= (xm = (x0 + x1) / 2)) x0 = xm;
+    if (right = x3 >= (xm = (x0 + x1) / 2)) x0 = xm;
     else x1 = xm;
-    if (bottom = y2 >= (ym = (y0 + y1) / 2)) y0 = ym;
+    if (bottom = y3 >= (ym = (y0 + y1) / 2)) y0 = ym;
     else y1 = ym;
     if (parent = node, !(node = node[i = bottom << 1 | right])) return parent[i] = leaf, tree;
   }
   xp = +tree._x.call(null, node.data);
   yp = +tree._y.call(null, node.data);
-  if (x2 === xp && y2 === yp) return leaf.next = node, parent ? parent[i] = leaf : tree._root = leaf, tree;
+  if (x3 === xp && y3 === yp) return leaf.next = node, parent ? parent[i] = leaf : tree._root = leaf, tree;
   do {
     parent = parent ? parent[i] = new Array(4) : tree._root = new Array(4);
-    if (right = x2 >= (xm = (x0 + x1) / 2)) x0 = xm;
+    if (right = x3 >= (xm = (x0 + x1) / 2)) x0 = xm;
     else x1 = xm;
-    if (bottom = y2 >= (ym = (y0 + y1) / 2)) y0 = ym;
+    if (bottom = y3 >= (ym = (y0 + y1) / 2)) y0 = ym;
     else y1 = ym;
   } while ((i = bottom << 1 | right) === (j = (yp >= ym) << 1 | xp >= xm));
   return parent[j] = node, parent[i] = leaf, tree;
 }
 function addAll(data) {
-  var d, i, n = data.length, x2, y2, xz = new Array(n), yz = new Array(n), x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  var d, i, n = data.length, x3, y3, xz = new Array(n), yz = new Array(n), x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (i = 0; i < n; ++i) {
-    if (isNaN(x2 = +this._x.call(null, d = data[i])) || isNaN(y2 = +this._y.call(null, d))) continue;
-    xz[i] = x2;
-    yz[i] = y2;
-    if (x2 < x0) x0 = x2;
-    if (x2 > x1) x1 = x2;
-    if (y2 < y0) y0 = y2;
-    if (y2 > y1) y1 = y2;
+    if (isNaN(x3 = +this._x.call(null, d = data[i])) || isNaN(y3 = +this._y.call(null, d))) continue;
+    xz[i] = x3;
+    yz[i] = y3;
+    if (x3 < x0) x0 = x3;
+    if (x3 > x1) x1 = x3;
+    if (y3 < y0) y0 = y3;
+    if (y3 > y1) y1 = y3;
   }
   if (x0 > x1 || y0 > y1) return this;
   this.cover(x0, y0).cover(x1, y1);
@@ -14340,16 +14264,16 @@ function addAll(data) {
 }
 
 // node_modules/d3-quadtree/src/cover.js
-function cover_default(x2, y2) {
-  if (isNaN(x2 = +x2) || isNaN(y2 = +y2)) return this;
+function cover_default(x3, y3) {
+  if (isNaN(x3 = +x3) || isNaN(y3 = +y3)) return this;
   var x0 = this._x0, y0 = this._y0, x1 = this._x1, y1 = this._y1;
   if (isNaN(x0)) {
-    x1 = (x0 = Math.floor(x2)) + 1;
-    y1 = (y0 = Math.floor(y2)) + 1;
+    x1 = (x0 = Math.floor(x3)) + 1;
+    y1 = (y0 = Math.floor(y3)) + 1;
   } else {
     var z = x1 - x0 || 1, node = this._root, parent, i;
-    while (x0 > x2 || x2 >= x1 || y0 > y2 || y2 >= y1) {
-      i = (y2 < y0) << 1 | x2 < x0;
+    while (x0 > x3 || x3 >= x1 || y0 > y3 || y3 >= y1) {
+      i = (y3 < y0) << 1 | x3 < x0;
       parent = new Array(4), parent[i] = node, node = parent, z *= 2;
       switch (i) {
         case 0:
@@ -14401,17 +14325,17 @@ function quad_default(node, x0, y0, x1, y1) {
 }
 
 // node_modules/d3-quadtree/src/find.js
-function find_default(x2, y2, radius) {
-  var data, x0 = this._x0, y0 = this._y0, x1, y1, x22, y22, x3 = this._x1, y3 = this._y1, quads = [], node = this._root, q, i;
-  if (node) quads.push(new quad_default(node, x0, y0, x3, y3));
+function find_default(x3, y3, radius) {
+  var data, x0 = this._x0, y0 = this._y0, x1, y1, x22, y22, x32 = this._x1, y32 = this._y1, quads = [], node = this._root, q, i;
+  if (node) quads.push(new quad_default(node, x0, y0, x32, y32));
   if (radius == null) radius = Infinity;
   else {
-    x0 = x2 - radius, y0 = y2 - radius;
-    x3 = x2 + radius, y3 = y2 + radius;
+    x0 = x3 - radius, y0 = y3 - radius;
+    x32 = x3 + radius, y32 = y3 + radius;
     radius *= radius;
   }
   while (q = quads.pop()) {
-    if (!(node = q.node) || (x1 = q.x0) > x3 || (y1 = q.y0) > y3 || (x22 = q.x1) < x0 || (y22 = q.y1) < y0) continue;
+    if (!(node = q.node) || (x1 = q.x0) > x32 || (y1 = q.y0) > y32 || (x22 = q.x1) < x0 || (y22 = q.y1) < y0) continue;
     if (node.length) {
       var xm = (x1 + x22) / 2, ym = (y1 + y22) / 2;
       quads.push(
@@ -14420,17 +14344,17 @@ function find_default(x2, y2, radius) {
         new quad_default(node[1], xm, y1, x22, ym),
         new quad_default(node[0], x1, y1, xm, ym)
       );
-      if (i = (y2 >= ym) << 1 | x2 >= xm) {
+      if (i = (y3 >= ym) << 1 | x3 >= xm) {
         q = quads[quads.length - 1];
         quads[quads.length - 1] = quads[quads.length - 1 - i];
         quads[quads.length - 1 - i] = q;
       }
     } else {
-      var dx = x2 - +this._x.call(null, node.data), dy = y2 - +this._y.call(null, node.data), d2 = dx * dx + dy * dy;
+      var dx = x3 - +this._x.call(null, node.data), dy = y3 - +this._y.call(null, node.data), d2 = dx * dx + dy * dy;
       if (d2 < radius) {
         var d = Math.sqrt(radius = d2);
-        x0 = x2 - d, y0 = y2 - d;
-        x3 = x2 + d, y3 = y2 + d;
+        x0 = x3 - d, y0 = y3 - d;
+        x32 = x3 + d, y32 = y3 + d;
         data = node.data;
       }
     }
@@ -14440,13 +14364,13 @@ function find_default(x2, y2, radius) {
 
 // node_modules/d3-quadtree/src/remove.js
 function remove_default(d) {
-  if (isNaN(x2 = +this._x.call(null, d)) || isNaN(y2 = +this._y.call(null, d))) return this;
-  var parent, node = this._root, retainer, previous, next, x0 = this._x0, y0 = this._y0, x1 = this._x1, y1 = this._y1, x2, y2, xm, ym, right, bottom, i, j;
+  if (isNaN(x3 = +this._x.call(null, d)) || isNaN(y3 = +this._y.call(null, d))) return this;
+  var parent, node = this._root, retainer, previous, next, x0 = this._x0, y0 = this._y0, x1 = this._x1, y1 = this._y1, x3, y3, xm, ym, right, bottom, i, j;
   if (!node) return this;
   if (node.length) while (true) {
-    if (right = x2 >= (xm = (x0 + x1) / 2)) x0 = xm;
+    if (right = x3 >= (xm = (x0 + x1) / 2)) x0 = xm;
     else x1 = xm;
-    if (bottom = y2 >= (ym = (y0 + y1) / 2)) y0 = ym;
+    if (bottom = y3 >= (ym = (y0 + y1) / 2)) y0 = ym;
     else y1 = ym;
     if (!(parent = node, node = node[i = bottom << 1 | right])) return this;
     if (!node.length) break;
@@ -14538,13 +14462,13 @@ function y_default(_) {
 }
 
 // node_modules/d3-quadtree/src/quadtree.js
-function quadtree(nodes, x2, y2) {
-  var tree = new Quadtree(x2 == null ? defaultX : x2, y2 == null ? defaultY : y2, NaN, NaN, NaN, NaN);
+function quadtree(nodes, x3, y3) {
+  var tree = new Quadtree(x3 == null ? defaultX : x3, y3 == null ? defaultY : y3, NaN, NaN, NaN, NaN);
   return nodes == null ? tree : tree.addAll(nodes);
 }
-function Quadtree(x2, y2, x0, y0, x1, y1) {
-  this._x = x2;
-  this._y = y2;
+function Quadtree(x3, y3, x0, y0, x1, y1) {
+  this._x = x3;
+  this._y = y3;
   this._x0 = x0;
   this._y0 = y0;
   this._x1 = x1;
@@ -14588,9 +14512,9 @@ treeProto.x = x_default;
 treeProto.y = y_default;
 
 // node_modules/d3-force/src/constant.js
-function constant_default(x2) {
+function constant_default(x3) {
   return function() {
-    return x2;
+    return x3;
   };
 }
 
@@ -14625,15 +14549,15 @@ function collide_default(radius) {
       var data = quad.data, rj = quad.r, r = ri + rj;
       if (data) {
         if (data.index > node.index) {
-          var x2 = xi - data.x - data.vx, y2 = yi - data.y - data.vy, l = x2 * x2 + y2 * y2;
+          var x3 = xi - data.x - data.vx, y3 = yi - data.y - data.vy, l = x3 * x3 + y3 * y3;
           if (l < r * r) {
-            if (x2 === 0) x2 = jiggle_default(random), l += x2 * x2;
-            if (y2 === 0) y2 = jiggle_default(random), l += y2 * y2;
+            if (x3 === 0) x3 = jiggle_default(random), l += x3 * x3;
+            if (y3 === 0) y3 = jiggle_default(random), l += y3 * y3;
             l = (r - (l = Math.sqrt(l))) / l * strength;
-            node.vx += (x2 *= l) * (r = (rj *= rj) / (ri2 + rj));
-            node.vy += (y2 *= l) * r;
-            data.vx -= x2 * (r = 1 - r);
-            data.vy -= y2 * r;
+            node.vx += (x3 *= l) * (r = (rj *= rj) / (ri2 + rj));
+            node.vy += (y3 *= l) * r;
+            data.vx -= x3 * (r = 1 - r);
+            data.vy -= y3 * r;
           }
         }
         return;
@@ -14689,17 +14613,17 @@ function link_default(links) {
   }
   function force(alpha) {
     for (var k = 0, n = links.length; k < iterations; ++k) {
-      for (var i = 0, link, source, target, x2, y2, l, b; i < n; ++i) {
+      for (var i = 0, link, source, target, x3, y3, l, b; i < n; ++i) {
         link = links[i], source = link.source, target = link.target;
-        x2 = target.x + target.vx - source.x - source.vx || jiggle_default(random);
-        y2 = target.y + target.vy - source.y - source.vy || jiggle_default(random);
-        l = Math.sqrt(x2 * x2 + y2 * y2);
+        x3 = target.x + target.vx - source.x - source.vx || jiggle_default(random);
+        y3 = target.y + target.vy - source.y - source.vy || jiggle_default(random);
+        l = Math.sqrt(x3 * x3 + y3 * y3);
         l = (l - distances[i]) / l * alpha * strengths[i];
-        x2 *= l, y2 *= l;
-        target.vx -= x2 * (b = bias[i]);
-        target.vy -= y2 * b;
-        source.vx += x2 * (b = 1 - b);
-        source.vy += y2 * b;
+        x3 *= l, y3 *= l;
+        target.vx -= x3 * (b = bias[i]);
+        target.vy -= y3 * b;
+        source.vx += x3 * (b = 1 - b);
+        source.vy += y3 * b;
       }
     }
   }
@@ -14936,6 +14860,12 @@ function lcg_default() {
 }
 
 // node_modules/d3-force/src/simulation.js
+function x2(d) {
+  return d.x;
+}
+function y2(d) {
+  return d.y;
+}
 var initialRadius = 10;
 var initialAngle = Math.PI * (3 - Math.sqrt(5));
 function simulation_default(nodes) {
@@ -15019,14 +14949,14 @@ function simulation_default(nodes) {
     force: function(name, _) {
       return arguments.length > 1 ? (_ == null ? forces.delete(name) : forces.set(name, initializeForce(_)), simulation) : forces.get(name);
     },
-    find: function(x2, y2, radius) {
+    find: function(x3, y3, radius) {
       var i = 0, n = nodes.length, dx, dy, d2, node, closest;
       if (radius == null) radius = Infinity;
       else radius *= radius;
       for (i = 0; i < n; ++i) {
         node = nodes[i];
-        dx = x2 - node.x;
-        dy = y2 - node.y;
+        dx = x3 - node.x;
+        dy = y3 - node.y;
         d2 = dx * dx + dy * dy;
         if (d2 < radius) closest = node, radius = d2;
       }
@@ -15038,735 +14968,95 @@ function simulation_default(nodes) {
   };
 }
 
-// node_modules/d3-force/src/x.js
-function x_default2(x2) {
-  var strength = constant_default(0.1), nodes, strengths, xz;
-  if (typeof x2 !== "function") x2 = constant_default(x2 == null ? 0 : +x2);
-  function force(alpha) {
-    for (var i = 0, n = nodes.length, node; i < n; ++i) {
-      node = nodes[i], node.vx += (xz[i] - node.x) * strengths[i] * alpha;
-    }
+// node_modules/d3-force/src/manyBody.js
+function manyBody_default() {
+  var nodes, node, random, alpha, strength = constant_default(-30), strengths, distanceMin2 = 1, distanceMax2 = Infinity, theta2 = 0.81;
+  function force(_) {
+    var i, n = nodes.length, tree = quadtree(nodes, x2, y2).visitAfter(accumulate);
+    for (alpha = _, i = 0; i < n; ++i) node = nodes[i], tree.visit(apply);
   }
   function initialize() {
     if (!nodes) return;
-    var i, n = nodes.length;
+    var i, n = nodes.length, node2;
     strengths = new Array(n);
-    xz = new Array(n);
-    for (i = 0; i < n; ++i) {
-      strengths[i] = isNaN(xz[i] = +x2(nodes[i], i, nodes)) ? 0 : +strength(nodes[i], i, nodes);
-    }
+    for (i = 0; i < n; ++i) node2 = nodes[i], strengths[node2.index] = +strength(node2, i, nodes);
   }
-  force.initialize = function(_) {
-    nodes = _;
+  function accumulate(quad) {
+    var strength2 = 0, q, c2, weight = 0, x3, y3, i;
+    if (quad.length) {
+      for (x3 = y3 = i = 0; i < 4; ++i) {
+        if ((q = quad[i]) && (c2 = Math.abs(q.value))) {
+          strength2 += q.value, weight += c2, x3 += c2 * q.x, y3 += c2 * q.y;
+        }
+      }
+      quad.x = x3 / weight;
+      quad.y = y3 / weight;
+    } else {
+      q = quad;
+      q.x = q.data.x;
+      q.y = q.data.y;
+      do
+        strength2 += strengths[q.data.index];
+      while (q = q.next);
+    }
+    quad.value = strength2;
+  }
+  function apply(quad, x1, _, x22) {
+    if (!quad.value) return true;
+    var x3 = quad.x - node.x, y3 = quad.y - node.y, w = x22 - x1, l = x3 * x3 + y3 * y3;
+    if (w * w / theta2 < l) {
+      if (l < distanceMax2) {
+        if (x3 === 0) x3 = jiggle_default(random), l += x3 * x3;
+        if (y3 === 0) y3 = jiggle_default(random), l += y3 * y3;
+        if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
+        node.vx += x3 * quad.value * alpha / l;
+        node.vy += y3 * quad.value * alpha / l;
+      }
+      return true;
+    } else if (quad.length || l >= distanceMax2) return;
+    if (quad.data !== node || quad.next) {
+      if (x3 === 0) x3 = jiggle_default(random), l += x3 * x3;
+      if (y3 === 0) y3 = jiggle_default(random), l += y3 * y3;
+      if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
+    }
+    do
+      if (quad.data !== node) {
+        w = strengths[quad.data.index] * alpha / l;
+        node.vx += x3 * w;
+        node.vy += y3 * w;
+      }
+    while (quad = quad.next);
+  }
+  force.initialize = function(_nodes, _random) {
+    nodes = _nodes;
+    random = _random;
     initialize();
   };
   force.strength = function(_) {
     return arguments.length ? (strength = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : strength;
   };
-  force.x = function(_) {
-    return arguments.length ? (x2 = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : x2;
+  force.distanceMin = function(_) {
+    return arguments.length ? (distanceMin2 = _ * _, force) : Math.sqrt(distanceMin2);
+  };
+  force.distanceMax = function(_) {
+    return arguments.length ? (distanceMax2 = _ * _, force) : Math.sqrt(distanceMax2);
+  };
+  force.theta = function(_) {
+    return arguments.length ? (theta2 = _ * _, force) : Math.sqrt(theta2);
   };
   return force;
-}
-
-// node_modules/d3-force/src/y.js
-function y_default2(y2) {
-  var strength = constant_default(0.1), nodes, strengths, yz;
-  if (typeof y2 !== "function") y2 = constant_default(y2 == null ? 0 : +y2);
-  function force(alpha) {
-    for (var i = 0, n = nodes.length, node; i < n; ++i) {
-      node = nodes[i], node.vy += (yz[i] - node.y) * strengths[i] * alpha;
-    }
-  }
-  function initialize() {
-    if (!nodes) return;
-    var i, n = nodes.length;
-    strengths = new Array(n);
-    yz = new Array(n);
-    for (i = 0; i < n; ++i) {
-      strengths[i] = isNaN(yz[i] = +y2(nodes[i], i, nodes)) ? 0 : +strength(nodes[i], i, nodes);
-    }
-  }
-  force.initialize = function(_) {
-    nodes = _;
-    initialize();
-  };
-  force.strength = function(_) {
-    return arguments.length ? (strength = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : strength;
-  };
-  force.y = function(_) {
-    return arguments.length ? (y2 = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : y2;
-  };
-  return force;
-}
-
-// public/relationship-types.ts
-var COLORS = {
-  institution: "#f57f17",
-  author: "#c62828",
-  journal: "#2e7d32"
-};
-var BG_COLORS = {
-  institution: "#fff8e1",
-  author: "#fce4ec",
-  journal: "#e8f5e9"
-};
-function nodeRadius(weight, role) {
-  const base = Math.max(4, Math.min(18, 4 + Math.sqrt(weight) * 2));
-  if (role === "hub") return Math.min(22, base * 1.3);
-  if (role === "leaf") return Math.max(4, base * 0.8);
-  return base;
-}
-
-// public/use-force-layout.ts
-function useForceLayout(inputNodes, edges, width, height) {
-  const simRef = (0, import_react12.useRef)(null);
-  const nodesRef = (0, import_react12.useRef)([]);
-  const [snapshot, setSnapshot] = (0, import_react12.useState)([]);
-  const inputKeyRef = (0, import_react12.useRef)("");
-  const rafRef = (0, import_react12.useRef)(0);
-  const dirtyRef = (0, import_react12.useRef)(false);
-  const pinTimer = (0, import_react12.useRef)(null);
-  const inputKey = inputNodes.map((n) => n.id).join(",");
-  (0, import_react12.useEffect)(() => {
-    if (inputKey === inputKeyRef.current && simRef.current) return;
-    inputKeyRef.current = inputKey;
-    if (simRef.current) simRef.current.stop();
-    cancelAnimationFrame(rafRef.current);
-    if (pinTimer.current) clearTimeout(pinTimer.current);
-    const prevPos = /* @__PURE__ */ new Map();
-    for (const n of nodesRef.current) prevPos.set(n.id, { x: n.x, y: n.y });
-    const journals = inputNodes.filter((n) => n.group === "journal");
-    const jCount = journals.length;
-    const pos = /* @__PURE__ */ new Map();
-    const cols = Math.min(jCount, 4);
-    const padX = 140;
-    const colW = (width - padX * 2) / Math.max(cols - 1, 1);
-    const rowH = 90;
-    const gridTop = 130;
-    journals.sort((a2, b) => (b.weight || 0) - (a2.weight || 0));
-    journals.forEach((j, idx) => {
-      const col = idx % cols;
-      const row = Math.floor(idx / cols);
-      pos.set(j.id, {
-        x: cols === 1 ? width / 2 : padX + col * colW,
-        y: gridTop + row * rowH
-      });
-    });
-    const inst = inputNodes.find((n) => n.group === "institution");
-    const auth = inputNodes.find((n) => n.group === "author");
-    if (inst) pos.set(inst.id, { x: width / 2, y: 25 });
-    if (auth) pos.set(auth.id, { x: width / 2, y: 75 });
-    const alwaysPin = /* @__PURE__ */ new Set(["institution", "author"]);
-    const nodes = inputNodes.map((n) => {
-      const target = pos.get(n.id) || { x: width / 2, y: height / 2 };
-      const prev = prevPos.get(n.id);
-      if (alwaysPin.has(n.group)) {
-        return { ...n, x: target.x, y: target.y, vx: 0, vy: 0, fx: target.x, fy: target.y };
-      }
-      const start = prev && n.group === "journal" ? prev : target;
-      return { ...n, x: start.x, y: start.y, vx: 0, vy: 0, fx: null, fy: null };
-    });
-    nodesRef.current = nodes;
-    const nodeIndex = new Map(nodes.map((n, i) => [n.id, i]));
-    const links = edges.filter((e) => nodeIndex.has(e.source) && nodeIndex.has(e.target)).map((e) => ({ source: nodeIndex.get(e.source), target: nodeIndex.get(e.target) }));
-    const flush = () => {
-      if (dirtyRef.current) {
-        dirtyRef.current = false;
-        setSnapshot(nodes.map((n) => ({ ...n })));
-      }
-      rafRef.current = requestAnimationFrame(flush);
-    };
-    rafRef.current = requestAnimationFrame(flush);
-    const sim = simulation_default(nodes).force("link", link_default(links).distance(50).strength(0.03)).force("x", x_default2((n) => pos.get(n.id)?.x ?? width / 2).strength((n) => n.group === "doi" ? 0.4 : 0.9)).force("y", y_default2((n) => pos.get(n.id)?.y ?? height / 2).strength((n) => n.group === "doi" ? 0.4 : 0.9)).force("collide", collide_default().radius((n) => nodeRadius(n.weight || 0) + 12).strength(0.5).iterations(2)).alphaDecay(0.08).velocityDecay(0.6).on("tick", () => {
-      dirtyRef.current = true;
-    });
-    simRef.current = sim;
-    pinTimer.current = setTimeout(() => {
-      for (const n of nodes) {
-        if (!pinGroups.has(n.group)) continue;
-        const p = pos.get(n.id);
-        if (p) {
-          n.fx = p.x;
-          n.fy = p.y;
-          n.x = p.x;
-          n.y = p.y;
-        }
-      }
-      dirtyRef.current = true;
-    }, 600);
-    return () => {
-      sim.stop();
-      cancelAnimationFrame(rafRef.current);
-      clearTimeout(pinTimer.current);
-    };
-  }, [inputKey, edges, width, height]);
-  const reheat = (0, import_react12.useCallback)(() => {
-    if (simRef.current) simRef.current.alpha(0.3).restart();
-  }, []);
-  return { simNodes: snapshot, nodesRef, simRef, reheat };
-}
-
-// public/graph-canvas.tsx
-var import_react14 = __toESM(require_react());
-
-// public/node-shapes.ts
-function shapePath(group, cx, cy, r) {
-  switch (group) {
-    case "institution": {
-      return `M ${cx} ${cy - r} L ${cx + r} ${cy} L ${cx} ${cy + r} L ${cx - r} ${cy} Z`;
-    }
-    case "author": {
-      const pts = [];
-      for (let i = 0; i < 6; i++) {
-        const a2 = Math.PI / 3 * i - Math.PI / 2;
-        pts.push(`${cx + r * Math.cos(a2)} ${cy + r * Math.sin(a2)}`);
-      }
-      return `M ${pts[0]} L ${pts.slice(1).join(" L ")} Z`;
-    }
-    case "doi": {
-      const h = r * 0.8;
-      const rr = r * 0.2;
-      return [
-        `M ${cx - h + rr} ${cy - h}`,
-        `L ${cx + h - rr} ${cy - h} Q ${cx + h} ${cy - h} ${cx + h} ${cy - h + rr}`,
-        `L ${cx + h} ${cy + h - rr} Q ${cx + h} ${cy + h} ${cx + h - rr} ${cy + h}`,
-        `L ${cx - h + rr} ${cy + h} Q ${cx - h} ${cy + h} ${cx - h} ${cy + h - rr}`,
-        `L ${cx - h} ${cy - h + rr} Q ${cx - h} ${cy - h} ${cx - h + rr} ${cy - h}`,
-        "Z"
-      ].join(" ");
-    }
-    default:
-      return null;
-  }
-}
-
-// public/node-glyph.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function wrapLabel(text, maxChars) {
-  const words = text.split(" ");
-  const lines = [];
-  let line = "";
-  for (const word of words) {
-    if (line && (line + " " + word).length > maxChars) {
-      lines.push(line);
-      line = word;
-    } else line = line ? line + " " + word : word;
-  }
-  if (line) lines.push(line);
-  return lines;
-}
-function NodeGlyph({
-  node,
-  highlighted,
-  collaboratorHint,
-  dimmed,
-  selected,
-  hovered,
-  expanded,
-  showLabel = true,
-  dense,
-  pinIndex,
-  onClick,
-  onDragStart,
-  onMouseEnter,
-  onMouseLeave
-}) {
-  const cColor = COLORS[node.group] || "#666";
-  const cBg = BG_COLORS[node.group] || "#eee";
-  const r = nodeRadius(node.weight || 0, node.role);
-  const isDoi = node.group === "doi";
-  const label = isDoi ? hovered || selected ? node.label : node.label.length > 22 ? node.label.substring(0, 20) + "\u2026" : node.label : node.label.length > 28 ? node.label.substring(0, 25) + "..." : node.label;
-  const fontSize = isDoi ? 9 : r >= 10 ? 11 : 10;
-  const d = shapePath(node.group, node.x, node.y, r);
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
-    "g",
-    {
-      onClick,
-      onMouseEnter,
-      onMouseLeave,
-      onMouseDown: (e) => {
-        e.stopPropagation();
-        onDragStart(e);
-      },
-      style: { cursor: "grab", transition: "opacity 200ms ease" },
-      opacity: dimmed ? 0.1 : 1,
-      children: [
-        collaboratorHint && (d ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: shapePath(node.group, node.x, node.y, r + 9), fill: "none", stroke: "#f9a825", strokeWidth: 2, strokeDasharray: "3 3" }) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("circle", { cx: node.x, cy: node.y, r: r + 9, fill: "none", stroke: "#f9a825", strokeWidth: 2, strokeDasharray: "3 3" })),
-        (selected || highlighted || hovered) && (d ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: shapePath(node.group, node.x, node.y, r + 5), fill: "none", stroke: cColor, strokeWidth: hovered ? 2 : 1.5, opacity: 0.5 }) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("circle", { cx: node.x, cy: node.y, r: r + 5, fill: "none", stroke: cColor, strokeWidth: hovered ? 2 : 1.5, opacity: 0.5 })),
-        d ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d, fill: selected ? cColor : cBg, stroke: cColor, strokeWidth: r >= 8 ? 2 : 1.5 }) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("circle", { cx: node.x, cy: node.y, r, fill: selected ? cColor : cBg, stroke: cColor, strokeWidth: r >= 8 ? 2 : 1.5 }),
-        !dimmed && isDoi && (hovered || selected) && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("text", { x: node.x + r + 4, y: node.y - 4, fontSize, fontFamily: "monospace", fill: "#333", children: wrapLabel(label, 30).map((line, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("tspan", { x: node.x + r + 4, dy: i === 0 ? 0 : 11, children: line }, i)) }),
-        !dimmed && isDoi && !hovered && !selected && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("text", { x: node.x + r + 4, y: node.y + 3.5, fontSize, fontFamily: "monospace", fill: "#333", opacity: 0.5, children: label }),
-        !dimmed && !isDoi && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
-          "text",
-          {
-            x: node.x + r + 4,
-            y: node.y + 3.5,
-            fontSize,
-            fontFamily: "monospace",
-            fontWeight: selected || node.role === "hub" ? 700 : 400,
-            fill: selected ? cColor : "#333",
-            children: label
-          }
-        )
-      ]
-    }
-  );
-}
-
-// public/edge-render.tsx
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
-function edgeStrokeWidth(weight) {
-  return Math.min(6, 0.3 + Math.log2(weight + 1) * 1.5);
-}
-function edgeOpacity(weight, isConnected, hasSelection) {
-  if (hasSelection && !isConnected) return 0.03;
-  if (hasSelection && isConnected) return Math.min(0.7, 0.15 + weight * 0.1);
-  return Math.min(0.6, 0.08 + weight * 0.08);
-}
-function EdgeDefs({ edges, nodeMap }) {
-  const seen = /* @__PURE__ */ new Set();
-  const gradients = [];
-  for (const e of edges) {
-    const s = nodeMap.get(e.source);
-    const t = nodeMap.get(e.target);
-    if (!s || !t || s.group === t.group) continue;
-    const key = s.group < t.group ? `${s.group}-${t.group}` : `${t.group}-${s.group}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const [g1, g2] = s.group < t.group ? [s.group, t.group] : [t.group, s.group];
-    gradients.push(
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("linearGradient", { id: `eg-${key}`, gradientUnits: "userSpaceOnUse", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("stop", { offset: "0%", stopColor: COLORS[g1] }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("stop", { offset: "100%", stopColor: COLORS[g2] })
-      ] }, key)
-    );
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("defs", { children: gradients });
-}
-function EdgeLine({ edge, nodeMap, selectedNodeId, connectedIds, hovered, onMouseEnter, onMouseLeave }) {
-  const s = nodeMap.get(edge.source);
-  const t = nodeMap.get(edge.target);
-  if (!s || !t) return null;
-  const isConn = selectedNodeId ? connectedIds.has(edge.source) && connectedIds.has(edge.target) : true;
-  const w = edge.weight;
-  const sw = edgeStrokeWidth(w) + (hovered ? 2 : 0);
-  const op = hovered ? 0.9 : edgeOpacity(w, isConn, !!selectedNodeId);
-  const gradKey = s.group !== t.group ? `eg-${s.group < t.group ? `${s.group}-${t.group}` : `${t.group}-${s.group}`}` : null;
-  const stroke = gradKey ? `url(#${gradKey})` : isConn && selectedNodeId ? COLORS[t.group] || "#ccc" : "#bbb";
-  const showWeight = w > 1 && op > 0.05;
-  const mx = (s.x + t.x) / 2, my = (s.y + t.y) / 2;
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("g", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-      "line",
-      {
-        x1: s.x,
-        y1: s.y,
-        x2: t.x,
-        y2: t.y,
-        stroke,
-        strokeWidth: sw,
-        opacity: op,
-        pathLength: 1,
-        strokeDasharray: 1,
-        strokeDashoffset: 0,
-        style: { cursor: "pointer" },
-        onMouseEnter,
-        onMouseLeave,
-        children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("animate", { attributeName: "stroke-dashoffset", from: "1", to: "0", dur: "0.4s", fill: "freeze" })
-      }
-    ),
-    showWeight && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-      "text",
-      {
-        x: mx,
-        y: my - 4,
-        textAnchor: "middle",
-        fontSize: 8,
-        fontFamily: "monospace",
-        fill: "#888",
-        opacity: Math.min(op * 1.5, 0.7),
-        fontWeight: 600,
-        style: { pointerEvents: "none" },
-        children: w
-      }
-    )
-  ] });
-}
-
-// public/node-card.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
-function NodeCard({ node, cColor, selected, hovered, expanded, dimmed, collaboratorHint, isJournal, handlers, style, onSelectPaper, onUnhoverPaper }) {
-  const papers = isJournal && node.papers ? node.papers : [];
-  const open = hovered || expanded;
-  const visiblePapers = papers.slice(0, 6);
-  const cw = open ? 280 : isJournal ? 160 : 220;
-  const maxC = Math.floor(cw / 7.5);
-  const trunc = node.label.length > maxC ? node.label.substring(0, maxC - 1) + "\u2026" : node.label;
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { ...handlers, style: {
-    ...style,
-    width: cw,
-    transform: "translate(-50%, -50%)",
-    boxSizing: "border-box",
-    cursor: isJournal ? "pointer" : "default",
-    background: "rgba(255,255,255,0.35)",
-    backdropFilter: "blur(12px)",
-    WebkitBackdropFilter: "blur(12px)",
-    border: collaboratorHint ? `2px dashed #f9a825` : `1.5px solid ${cColor}`,
-    borderRadius: 8,
-    padding: "6px 0",
-    boxShadow: collaboratorHint ? "0 0 0 3px rgba(249,168,37,0.25), 0 8px 24px rgba(0,0,0,0.12)" : open ? "0 8px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.6)" : "0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)",
-    opacity: dimmed ? 0.1 : 1,
-    transition: "opacity 200ms, box-shadow 300ms",
-    fontFamily: "monospace"
-  }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { textAlign: "center", fontSize: 12, fontWeight: 700, color: "#222", lineHeight: "16px", padding: "0 8px" }, children: trunc }),
-    isJournal && /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: {
-      textAlign: "center",
-      fontSize: 10,
-      color: cColor,
-      marginTop: 2,
-      fontWeight: 600,
-      maxHeight: open ? 0 : 16,
-      opacity: open ? 0 : 1,
-      overflow: "hidden",
-      transition: "max-height 250ms ease, opacity 200ms ease"
-    }, children: [
-      papers.length,
-      " paper",
-      papers.length !== 1 ? "s" : ""
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: {
-      maxHeight: open ? 400 : 0,
-      opacity: open ? 1 : 0,
-      overflow: "hidden",
-      transition: "max-height 300ms ease, opacity 250ms ease"
-    }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: { padding: "6px 12px 4px", borderTop: "1px solid rgba(0,0,0,0.06)", marginTop: 6 }, children: [
-        node.ext_id && /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: { fontSize: 11, color: "#777", marginBottom: 5 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { textTransform: "uppercase", fontSize: 9, letterSpacing: 0.5, color: cColor, fontWeight: 700 }, children: node.group === "journal" ? "ISSN-L" : node.group === "author" ? "ORCID" : "ROR" }),
-          " ",
-          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { color: "#333" }, children: node.ext_id })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: { display: "flex", gap: 12, fontSize: 11, marginBottom: 5 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("strong", { style: { color: cColor, fontSize: 13 }, children: node.doiCount }),
-            " ",
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { color: "#888" }, children: "papers" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("strong", { style: { color: cColor, fontSize: 13 }, children: node.degree }),
-            " ",
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { color: "#888" }, children: "links" })
-          ] })
-        ] }),
-        node.topKeywords && node.topKeywords.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { fontSize: 11, color: "#666", fontStyle: "italic" }, children: node.topKeywords.join(" \xB7 ") })
-      ] }),
-      visiblePapers.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: { borderTop: "1px solid rgba(0,0,0,0.06)", padding: "6px 0 2px", marginTop: 2 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: cColor, fontWeight: 700, padding: "0 12px 4px" }, children: "Papers" }),
-        visiblePapers.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
-          "div",
-          {
-            onMouseEnter: (e) => {
-              e.currentTarget.style.background = "rgba(0,0,0,0.04)";
-              onSelectPaper?.(p.doi);
-            },
-            onMouseLeave: (e) => {
-              e.currentTarget.style.background = "transparent";
-              onUnhoverPaper?.();
-            },
-            style: { fontSize: 11, color: "#444", lineHeight: "16px", padding: "3px 12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "1px solid rgba(0,0,0,0.03)", cursor: "pointer" },
-            children: p.title
-          },
-          i
-        )),
-        papers.length > 6 && /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: { fontSize: 11, color: cColor, padding: "4px 12px", fontWeight: 600 }, children: [
-          "+",
-          papers.length - 6,
-          " more"
-        ] })
-      ] })
-    ] })
-  ] });
-}
-
-// public/paper-card.tsx
-var import_react13 = __toESM(require_react());
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
-function PaperCard({ doi, onClose, style, onHoverEnter, onHoverLeave }) {
-  const [record, setRecord] = (0, import_react13.useState)(null);
-  const [loading, setLoading] = (0, import_react13.useState)(true);
-  (0, import_react13.useEffect)(() => {
-    fetch(`/api/records/${encodeURIComponent(doi)}`).then((r) => r.json()).then((d) => {
-      if (d && !d.error) setRecord(d);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [doi]);
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { onMouseEnter: onHoverEnter, onMouseLeave: onHoverLeave, style: {
-    ...style,
-    width: 340,
-    boxSizing: "border-box",
-    background: "rgba(255,255,255,0.4)",
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
-    border: "1.5px solid rgba(100,100,100,0.3)",
-    borderRadius: 10,
-    padding: "12px 14px",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.6)",
-    fontFamily: "monospace",
-    zIndex: 20,
-    animation: "card-expand 250ms ease-out"
-  }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { fontSize: 13, fontWeight: 700, color: "#222", lineHeight: "18px", flex: 1, wordBreak: "break-word" }, children: record?.title || doi }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
-        "button",
-        {
-          onClick: (e) => {
-            e.stopPropagation();
-            onClose();
-          },
-          style: { background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#999", padding: "0 0 0 8px", lineHeight: 1 },
-          children: "x"
-        }
-      )
-    ] }),
-    loading && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { fontSize: 11, color: "#999" }, children: "Loading..." }),
-    record && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { fontSize: 11, color: "#555" }, children: [
-      record.authors && record.authors.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { marginBottom: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#c62828", fontWeight: 700 }, children: "Authors" }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { color: "#444", marginTop: 2 }, children: [
-          record.authors.slice(0, 5).join(", "),
-          record.authors.length > 5 ? ` +${record.authors.length - 5}` : ""
-        ] })
-      ] }),
-      record.journal && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { marginBottom: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#2e7d32", fontWeight: 700 }, children: "Journal" }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { color: "#444", marginTop: 2 }, children: record.journal })
-      ] }),
-      record.abstract && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { marginBottom: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#1565c0", fontWeight: 700 }, children: "Abstract" }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { color: "#444", marginTop: 2, maxHeight: 120, overflowY: "auto", lineHeight: "15px", fontFamily: "system-ui, sans-serif", fontSize: 11 }, children: record.abstract.length > 600 ? record.abstract.substring(0, 600) + "\u2026" : record.abstract })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { display: "flex", gap: 14, marginBottom: 6, flexWrap: "wrap" }, children: [
-        record.published && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }, children: "Year " }),
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("strong", { style: { color: "#333" }, children: record.published.substring(0, 4) })
-        ] }),
-        record.citation_count > 0 && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }, children: "Citations " }),
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("strong", { style: { color: "#333" }, children: record.citation_count })
-        ] }),
-        record.type && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }, children: "Type " }),
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { color: "#333" }, children: record.type })
-        ] })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(
-      "a",
-      {
-        href: `https://doi.org/${doi}`,
-        target: "_blank",
-        rel: "noopener noreferrer",
-        style: { display: "inline-block", fontSize: 10, color: "#1565c0", marginTop: 4, textDecoration: "none" },
-        children: [
-          doi,
-          " \u2197"
-        ]
-      }
-    )
-  ] });
-}
-
-// public/graph-canvas.tsx
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
-var CARD_GROUPS = /* @__PURE__ */ new Set(["institution", "author", "journal"]);
-function GraphCanvas({
-  dims,
-  projectedEdges,
-  layoutNodes,
-  nodeMap,
-  selectedNodeId,
-  connectedIds,
-  highlightedIds,
-  simMutableRef,
-  d3SimRef,
-  onSelect,
-  categoryOrder,
-  expandedJournal
-}) {
-  const dragRef = (0, import_react14.useRef)(null);
-  const [hoveredNodeId, setHoveredNodeId] = (0, import_react14.useState)(null);
-  const [hoveredEdgeIdx, setHoveredEdgeIdx] = (0, import_react14.useState)(null);
-  const [selectedPaper, setSelectedPaper] = (0, import_react14.useState)(null);
-  const hoverTimeoutRef = (0, import_react14.useRef)(null);
-  const clearPaperSoon = () => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    hoverTimeoutRef.current = window.setTimeout(() => setSelectedPaper(null), 120);
-  };
-  const cancelClear = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-  };
-  const onNodeDragStart = (0, import_react14.useCallback)((nodeId, clientX, clientY, svgEl) => {
-    const node = simMutableRef.current.find((n) => n.id === nodeId);
-    if (!node) return;
-    const rect = svgEl.getBoundingClientRect();
-    node.fx = node.x;
-    node.fy = node.y;
-    dragRef.current = { node, offsetX: node.x - (clientX - rect.left) / rect.width * dims.width, offsetY: node.y - (clientY - rect.top) / rect.height * dims.height };
-    if (d3SimRef.current) d3SimRef.current.alphaTarget(0.3).restart();
-  }, [simMutableRef, d3SimRef, dims]);
-  const onNodeDrag = (0, import_react14.useCallback)((clientX, clientY, svgEl) => {
-    const drag = dragRef.current;
-    if (!drag) return;
-    const rect = svgEl.getBoundingClientRect();
-    drag.node.fx = (clientX - rect.left) / rect.width * dims.width + drag.offsetX;
-    drag.node.fy = (clientY - rect.top) / rect.height * dims.height + drag.offsetY;
-  }, [dims]);
-  const onNodeDragEnd = (0, import_react14.useCallback)(() => {
-    const drag = dragRef.current;
-    if (!drag) return;
-    drag.node.fx = null;
-    drag.node.fy = null;
-    dragRef.current = null;
-    if (d3SimRef.current) d3SimRef.current.alphaTarget(0);
-  }, [d3SimRef]);
-  const catIndexMap = (0, import_react14.useMemo)(() => new Map(categoryOrder.map((cat, i) => [cat, i])), [categoryOrder]);
-  const hoveredEdge = hoveredEdgeIdx !== null ? projectedEdges[hoveredEdgeIdx] : null;
-  const dense = layoutNodes.length > 80;
-  const pad = 60;
-  const inView = (x2, y2) => x2 >= -pad && x2 <= dims.width + pad && y2 >= -pad && y2 <= dims.height + pad;
-  const visibleNodes = (0, import_react14.useMemo)(() => layoutNodes.filter((n) => inView(n.x, n.y)), [layoutNodes, dims.width, dims.height]);
-  const visibleEdges = (0, import_react14.useMemo)(() => projectedEdges.filter((e) => {
-    const s = nodeMap.get(e.source), t = nodeMap.get(e.target);
-    return s && t && (inView(s.x, s.y) || inView(t.x, t.y));
-  }), [projectedEdges, nodeMap, dims.width, dims.height]);
-  const cardNodes = (0, import_react14.useMemo)(() => visibleNodes.filter((n) => CARD_GROUPS.has(n.group)), [visibleNodes]);
-  const nonCardNodes = (0, import_react14.useMemo)(() => visibleNodes.filter((n) => !CARD_GROUPS.has(n.group)), [visibleNodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { position: "relative" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("style", { children: `@keyframes card-in { from { opacity: 0; transform: translate(-50%,-50%) scale(0.85); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
-@keyframes card-expand { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }` }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
-      "svg",
-      {
-        width: dims.width,
-        height: dims.height,
-        viewBox: `0 0 ${dims.width} ${dims.height}`,
-        style: { display: "block", width: "100%", height: "auto" },
-        onMouseMove: (e) => {
-          if (dragRef.current) onNodeDrag(e.clientX, e.clientY, e.currentTarget);
-        },
-        onMouseUp: () => onNodeDragEnd(),
-        onMouseLeave: () => onNodeDragEnd(),
-        onClick: (e) => {
-          if (e.target === e.currentTarget) onSelect(null);
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(EdgeDefs, { edges: visibleEdges, nodeMap }),
-          visibleEdges.map((e, i) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
-            EdgeLine,
-            {
-              edge: e,
-              nodeMap,
-              selectedNodeId,
-              connectedIds,
-              hovered: hoveredEdgeIdx === i,
-              onMouseEnter: () => setHoveredEdgeIdx(i),
-              onMouseLeave: () => setHoveredEdgeIdx(null)
-            },
-            `${e.source}-${e.target}`
-          )),
-          nonCardNodes.map((n) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
-            NodeGlyph,
-            {
-              node: n,
-              highlighted: connectedIds.has(n.id) && n.id !== selectedNodeId,
-              collaboratorHint: !!highlightedIds?.has(n.id),
-              dimmed: !!selectedNodeId && !connectedIds.has(n.id),
-              selected: n.id === selectedNodeId,
-              hovered: hoveredNodeId === n.id,
-              expanded: false,
-              showLabel: true,
-              dense,
-              pinIndex: catIndexMap.has(n.group) ? catIndexMap.get(n.group) : null,
-              onClick: () => onSelect(selectedNodeId === n.id ? null : n.id),
-              onDragStart: (e) => {
-                const svg = e.target.ownerSVGElement;
-                if (svg) onNodeDragStart(n.id, e.clientX, e.clientY, svg);
-              },
-              onMouseEnter: () => setHoveredNodeId(n.id),
-              onMouseLeave: () => setHoveredNodeId(null)
-            },
-            n.id
-          ))
-        ]
-      }
-    ),
-    hoveredNodeId && CARD_GROUPS.has(nodeMap.get(hoveredNodeId)?.group || "") && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: {
-      position: "absolute",
-      inset: 0,
-      backdropFilter: "blur(2px)",
-      WebkitBackdropFilter: "blur(2px)",
-      background: "rgba(255,255,255,0.1)",
-      pointerEvents: "none",
-      zIndex: 5
-    } }),
-    cardNodes.map((n) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
-      NodeCard,
-      {
-        node: n,
-        cColor: COLORS[n.group] || "#666",
-        selected: n.id === selectedNodeId,
-        hovered: hoveredNodeId === n.id,
-        expanded: expandedJournal === n.id,
-        dimmed: !!selectedNodeId && !connectedIds.has(n.id),
-        collaboratorHint: !!highlightedIds?.has(n.id),
-        isJournal: n.group === "journal",
-        style: {
-          position: "absolute",
-          left: `${n.x / dims.width * 100}%`,
-          top: `${n.y / dims.height * 100}%`,
-          zIndex: hoveredNodeId === n.id || expandedJournal === n.id ? 10 : 1,
-          animation: "card-in 350ms ease-out"
-        },
-        onSelectPaper: (doi) => {
-          cancelClear();
-          setSelectedPaper({ doi, x: n.x / dims.width * 100, y: n.y / dims.height * 100 });
-        },
-        onUnhoverPaper: clearPaperSoon,
-        handlers: {
-          onClick: () => onSelect(selectedNodeId === n.id ? null : n.id),
-          onMouseEnter: () => setHoveredNodeId(n.id),
-          onMouseLeave: () => setHoveredNodeId(null)
-        }
-      },
-      n.id
-    )),
-    selectedPaper && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
-      PaperCard,
-      {
-        doi: selectedPaper.doi,
-        onClose: () => setSelectedPaper(null),
-        onHoverEnter: cancelClear,
-        onHoverLeave: clearPaperSoon,
-        style: { position: "absolute", left: `calc(${selectedPaper.x}% + 140px)`, top: `${selectedPaper.y}%`, transform: "translateY(-50%)" }
-      }
-    )
-  ] });
 }
 
 // public/tenant-graph.tsx
-var import_jsx_runtime22 = __toESM(require_jsx_runtime());
-var DEFAULT_CATEGORIES = ["institution", "author", "journal"];
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var COLORS = { author: "#2e7d32", institution: "#1565c0" };
 function TenantGraph({ nodes, edges }) {
-  const containerRef = (0, import_react15.useRef)(null);
-  const [dims, setDims] = (0, import_react15.useState)({ width: 1100, height: 560 });
-  const [selectedNodeId, setSelectedNodeId] = (0, import_react15.useState)(null);
-  (0, import_react15.useEffect)(() => {
+  const containerRef = (0, import_react12.useRef)(null);
+  const [dims, setDims] = (0, import_react12.useState)({ width: 1e3, height: 520 });
+  const [tick, setTick] = (0, import_react12.useState)(0);
+  const [hovered, setHovered] = (0, import_react12.useState)(null);
+  const simNodesRef = (0, import_react12.useRef)([]);
+  (0, import_react12.useEffect)(() => {
     const el2 = containerRef.current;
     if (!el2) return;
     const obs = new ResizeObserver((entries) => {
@@ -15776,47 +15066,75 @@ function TenantGraph({ nodes, edges }) {
     obs.observe(el2);
     return () => obs.disconnect();
   }, []);
-  const activeCategories = (0, import_react15.useMemo)(() => new Set(DEFAULT_CATEGORIES), []);
-  const { nodes: projectedNodes, edges: projectedEdges } = (0, import_react15.useMemo)(
-    () => projectGraph(nodes, edges, activeCategories, [], null),
-    [nodes, edges, activeCategories]
-  );
-  const { simNodes: layoutNodes, nodesRef, simRef } = useForceLayout(
-    projectedNodes,
-    projectedEdges,
-    dims.width,
-    dims.height
-  );
-  const nodeMap = (0, import_react15.useMemo)(() => new Map(layoutNodes.map((n) => [n.id, n])), [layoutNodes]);
-  const { connectedIds } = (0, import_react15.useMemo)(() => {
-    if (!selectedNodeId) return { connectedIds: /* @__PURE__ */ new Set() };
-    const ids = /* @__PURE__ */ new Set([selectedNodeId]);
-    for (const e of projectedEdges) {
-      if (e.source === selectedNodeId) ids.add(e.target);
-      if (e.target === selectedNodeId) ids.add(e.source);
+  (0, import_react12.useEffect)(() => {
+    const sn = nodes.map((n) => ({ ...n }));
+    const se = edges.map((e) => ({ ...e }));
+    simNodesRef.current = sn;
+    const sim = simulation_default(sn).force("link", link_default(se).id((n) => n.id).distance(80).strength(0.3)).force("charge", manyBody_default().strength(-180)).force("center", center_default(dims.width / 2, dims.height / 2)).force("collide", collide_default(18)).alpha(0.8).alphaDecay(0.05);
+    sim.on("tick", () => setTick((t) => t + 1));
+    return () => {
+      sim.stop();
+    };
+  }, [nodes, edges, dims.width, dims.height]);
+  const nodeMap = (0, import_react12.useMemo)(() => new Map(simNodesRef.current.map((n) => [n.id, n])), [tick]);
+  const connected = (0, import_react12.useMemo)(() => {
+    if (!hovered) return null;
+    const s = /* @__PURE__ */ new Set([hovered]);
+    for (const e of edges) {
+      if (e.source === hovered) s.add(e.target);
+      if (e.target === hovered) s.add(e.source);
     }
-    return { connectedIds: ids };
-  }, [selectedNodeId, projectedEdges]);
-  if (!projectedNodes.length) {
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { padding: 24, color: "#999" }, children: "No collaboration data yet." });
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { ref: containerRef, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
-    GraphCanvas,
-    {
-      dims,
-      projectedEdges,
-      layoutNodes,
-      nodeMap,
-      selectedNodeId,
-      connectedIds,
-      highlightedIds: /* @__PURE__ */ new Set(),
-      simMutableRef: nodesRef,
-      d3SimRef: simRef,
-      onSelect: setSelectedNodeId,
-      categoryOrder: DEFAULT_CATEGORIES,
-      expandedJournal: null
-    }
-  ) });
+    return s;
+  }, [hovered, edges]);
+  if (!nodes.length) return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { padding: 24, color: "#999" }, children: "No collaboration data yet." });
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { ref: containerRef, style: { background: "#fff", border: "1px solid #ddd", borderRadius: 4 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("svg", { width: dims.width, height: dims.height, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("g", { children: edges.map((e, i) => {
+        const s = nodeMap.get(e.source);
+        const t = nodeMap.get(e.target);
+        if (!s || !t) return null;
+        const dim = connected && !(connected.has(e.source) && connected.has(e.target));
+        return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+          "line",
+          {
+            x1: s.x,
+            y1: s.y,
+            x2: t.x,
+            y2: t.y,
+            stroke: "#bbb",
+            strokeOpacity: dim ? 0.1 : 0.5,
+            strokeWidth: Math.min(1 + Math.log(e.weight + 1), 3)
+          },
+          i
+        );
+      }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("g", { children: simNodesRef.current.map((n) => {
+        const dim = connected && !connected.has(n.id);
+        const r = n.group === "institution" ? 10 : 6;
+        return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+          "g",
+          {
+            transform: `translate(${n.x || 0}, ${n.y || 0})`,
+            onMouseEnter: () => setHovered(n.id),
+            onMouseLeave: () => setHovered(null),
+            style: { cursor: "pointer", opacity: dim ? 0.25 : 1 },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("circle", { r, fill: COLORS[n.group], stroke: "#fff", strokeWidth: 1.5 }),
+              (hovered === n.id || n.group === "institution") && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("text", { x: r + 4, y: 4, fontSize: 11, fontFamily: "monospace", fill: "#333", children: n.label.length > 32 ? n.label.slice(0, 32) + "\u2026" : n.label })
+            ]
+          },
+          n.id
+        );
+      }) })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { padding: "6px 12px", fontSize: 11, color: "#666", borderTop: "1px solid #eee" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { color: COLORS.author }, children: "\u25CF" }),
+      " Author \xA0",
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { color: COLORS.institution }, children: "\u25CF" }),
+      " Collaborating institution \xA0",
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { marginLeft: 8 }, children: "Hover a node to highlight its connections." })
+    ] })
+  ] });
 }
 
 // public/tenant-builders.ts
@@ -15831,7 +15149,7 @@ function buildYearChart(stats) {
     type: "bar",
     title: "Publications by Year",
     yLabel: "Articles",
-    data: years.map((y2) => ({ label: y2, value: byYear.get(y2) || 0 }))
+    data: years.map((y3) => ({ label: y3, value: byYear.get(y3) || 0 }))
   };
 }
 function buildTypeChart(stats) {
@@ -15886,7 +15204,7 @@ function buildTenantCharts(stats) {
 }
 
 // public/tenant.tsx
-var import_jsx_runtime23 = __toESM(require_jsx_runtime());
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 function SummaryCards({ summary }) {
   const oaPct = summary.totalPubs > 0 ? Math.round(summary.oaCount / summary.totalPubs * 100) : 0;
   const cards = [
@@ -15895,15 +15213,15 @@ function SummaryCards({ summary }) {
     { label: "Open Access", value: `${oaPct}%` },
     { label: "Authors", value: summary.authorCount.toLocaleString() }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: "1.5rem" }, children: cards.map((c2, i) => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 6, padding: 16, textAlign: "center" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { fontSize: 28, fontWeight: "bold" }, children: c2.value }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { fontSize: 12, color: "#666", marginTop: 4 }, children: c2.label })
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: "1.5rem" }, children: cards.map((c2, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 6, padding: 16, textAlign: "center" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { fontSize: 28, fontWeight: "bold" }, children: c2.value }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { fontSize: 12, color: "#666", marginTop: 4 }, children: c2.label })
   ] }, i)) });
 }
 function App() {
-  const [data, setData] = (0, import_react16.useState)(null);
-  const [error, setError] = (0, import_react16.useState)(null);
-  (0, import_react16.useEffect)(() => {
+  const [data, setData] = (0, import_react13.useState)(null);
+  const [error, setError] = (0, import_react13.useState)(null);
+  (0, import_react13.useEffect)(() => {
     const qSlug = new URLSearchParams(window.location.search).get("slug");
     const pathMatch = window.location.pathname.match(/^\/t\/([^\/?#]+)/);
     const slug = qSlug || (pathMatch ? pathMatch[1] : null);
@@ -15923,27 +15241,27 @@ function App() {
       document.title = `${d.tenant.name} \u2014 Research`;
     }).catch((e) => setError(e.message));
   }, []);
-  if (error) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { padding: 24, color: "#c00" }, children: error });
-  if (!data) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { padding: 24, color: "#999" }, children: "Loading\u2026" });
+  if (error) return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 24, color: "#c00" }, children: error });
+  if (!data) return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 24, color: "#999" }, children: "Loading\u2026" });
   const charts = buildTenantCharts(data.stats);
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(TenantHeader, { tenant: data.tenant, yearRange: data.stats.yearRange }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "page", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SummaryCards, { summary: data.stats.summary }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "section", children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { marginBottom: 16 }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphRender, { chart }) }, i)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "section", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("h2", { children: "Collaboration Graph" }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(TenantGraph, { nodes: data.graph.nodes, edges: data.graph.edges })
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TenantHeader, { tenant: data.tenant, yearRange: data.stats.yearRange }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "page", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SummaryCards, { summary: data.stats.summary }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "section", style: { display: "grid", gridTemplateColumns: "1fr", gap: 16 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: 16, minHeight: 320 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphRender, { chart }) }, i)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "section", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { children: "Collaboration Graph" }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TenantGraph, { nodes: data.graph.nodes, edges: data.graph.edges })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "section", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("h2", { children: "Authors Directory" }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(AuthorsTable, { authors: data.authors })
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "section", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { children: "Authors Directory" }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(AuthorsTable, { authors: data.authors })
       ] })
     ] })
   ] });
 }
 var el = document.getElementById("tenant-root");
-if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime23.jsx)(App, {}));
+if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime18.jsx)(App, {}));
 /*! Bundled license information:
 
 react/cjs/react.production.js:
