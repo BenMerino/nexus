@@ -34,6 +34,16 @@
   --radius-sm: 3px;
   --radius:    6px;
   --radius-lg: 10px;
+
+  /* Aliases consumed by graph-engine/*.tsx */
+  --text-main:    var(--fg);
+  --text-muted:   var(--fg-muted);
+  --text-subtle:  var(--fg-dim);
+  --border-main:  var(--border);
+  --border-ghost: var(--border-soft);
+  --status-warning: var(--warn);
+  --status-error:   var(--err);
+  --status-success: var(--ok);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

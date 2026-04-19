@@ -14154,23 +14154,24 @@ function formatAuthors(authors) {
   return `${authors.slice(0, 3).join(", ")} et al.`;
 }
 var btnStyle = {
-  background: "none",
-  border: "1px solid #ddd",
+  background: "var(--bg-inset)",
+  border: "1px solid var(--border-soft)",
   borderRadius: 4,
   cursor: "pointer",
   fontSize: 12,
-  color: "#555",
-  fontFamily: "monospace",
-  padding: "4px 10px"
+  color: "var(--fg-muted)",
+  fontFamily: "var(--mono)",
+  padding: "6px 12px"
 };
 var cellStyle = {
-  padding: "4px 8px",
-  fontSize: 11,
-  fontFamily: "monospace",
-  borderBottom: "1px solid #f0f0f0",
+  padding: "8px 10px",
+  fontSize: 12,
+  fontFamily: "var(--mono)",
+  borderBottom: "1px solid var(--border-soft)",
   whiteSpace: "nowrap",
   overflow: "hidden",
-  textOverflow: "ellipsis"
+  textOverflow: "ellipsis",
+  color: "var(--fg-muted)"
 };
 function FilteredPaperList({ papers }) {
   const [expanded, setExpanded] = (0, import_react11.useState)(false);
@@ -14179,39 +14180,39 @@ function FilteredPaperList({ papers }) {
   const sorted = [...papers].sort((a2, b) => (b.citation_count || 0) - (a2.citation_count || 0));
   const visible = showAll ? sorted : sorted.slice(0, PAGE_SIZE);
   const hasMore = sorted.length > PAGE_SIZE;
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { marginTop: 12 }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { marginTop: 14 }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("button", { onClick: () => setExpanded(!expanded), style: btnStyle, children: expanded ? "Hide papers" : `Show ${papers.length} paper${papers.length !== 1 ? "s" : ""}` }),
-    expanded && /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { marginTop: 8, border: "1px solid #eee", borderRadius: 6, overflow: "auto", maxHeight: 500 }, children: [
+    expanded && /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { marginTop: 10, border: "1px solid var(--border-soft)", borderRadius: "var(--radius)", overflow: "auto", maxHeight: 500, background: "var(--bg-card)" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("tr", { style: { background: "#fafafa", textAlign: "left" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 700, width: "40%" }, children: "Title" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 700, width: "25%" }, children: "Authors" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 700, width: "10%" }, children: "Year" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 700, width: "15%" }, children: "Journal" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 700, width: "10%", textAlign: "right" }, children: "Cited" })
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("tr", { style: { background: "var(--bg-inset)", textAlign: "left" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 500, width: "40%", color: "var(--fg-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 11 }, children: "Title" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 500, width: "25%", color: "var(--fg-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 11 }, children: "Authors" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 500, width: "10%", color: "var(--fg-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 11 }, children: "Year" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 500, width: "15%", color: "var(--fg-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 11 }, children: "Journal" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { style: { ...cellStyle, fontWeight: 500, width: "10%", textAlign: "right", color: "var(--fg-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 11 }, children: "Cited" })
         ] }) }),
         /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("tbody", { children: visible.map((r) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("tr", { style: { cursor: "default" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: { ...cellStyle, whiteSpace: "normal", maxWidth: 300 }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: { ...cellStyle, whiteSpace: "normal", maxWidth: 300, color: "var(--fg)" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
             "a",
             {
               href: `https://doi.org/${r.doi}`,
               target: "_blank",
               rel: "noopener noreferrer",
-              style: { color: "#2563eb", textDecoration: "none" },
+              style: { color: "var(--accent)", textDecoration: "none" },
               title: r.title || r.doi,
               children: [
                 (r.title || r.doi).substring(0, 80),
-                (r.title || r.doi).length > 80 ? "..." : ""
+                (r.title || r.doi).length > 80 ? "\u2026" : ""
               ]
             }
           ) }),
           /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: cellStyle, title: r.authors?.join(", "), children: formatAuthors(r.authors) }),
           /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: cellStyle, children: r.published ? r.published.substring(0, 4) : "\u2014" }),
           /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: cellStyle, title: r.journal, children: r.journal ? r.journal.substring(0, 25) : "\u2014" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: { ...cellStyle, textAlign: "right" }, children: r.citation_count ?? "\u2014" })
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { style: { ...cellStyle, textAlign: "right", color: "var(--fg)" }, children: r.citation_count ?? "\u2014" })
         ] }, r.doi)) })
       ] }),
-      hasMore && !showAll && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 8, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("button", { onClick: () => setShowAll(true), style: { ...btnStyle, border: "none", color: "#2563eb" }, children: [
+      hasMore && !showAll && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 10, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("button", { onClick: () => setShowAll(true), style: { ...btnStyle, border: "none", color: "var(--accent)" }, children: [
         "Show all ",
         sorted.length,
         " papers"
@@ -14224,13 +14225,13 @@ function FilteredPaperList({ papers }) {
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
 function ChartCard({ chart }) {
   const isDonut = chart.type === "donut" || chart.type === "pie";
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { background: "#fff", border: "1px solid #eee", borderRadius: 8, padding: "8px 10px 4px", overflow: "hidden" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", marginBottom: 4 }, children: chart.title }),
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: "var(--radius)", padding: "14px 16px 10px", overflow: "hidden" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { fontFamily: "var(--mono)", fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--fg-dim)", marginBottom: 10 }, children: chart.title }),
     isDonut ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RadialRender, { chart, size: 200 }) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(CartesianRender, { chart, width: 340, height: 160 })
   ] });
 }
 function StatsBar({ nodes, edges, doiCount }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", gap: 16, fontSize: 12, color: "#666", fontFamily: "monospace", padding: "8px 0", flexWrap: "wrap" }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", gap: 18, fontSize: 12, color: "var(--fg-muted)", fontFamily: "var(--mono)", padding: "10px 0", flexWrap: "wrap" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { children: [
       nodes.length,
       " tags"
@@ -14239,7 +14240,7 @@ function StatsBar({ nodes, edges, doiCount }) {
       edges.length,
       " connections"
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { color: "#333" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { color: "var(--fg)" }, children: [
       doiCount,
       " papers"
     ] }),
@@ -14312,13 +14313,13 @@ function FilteredCharts({ matchingDois, totalDois }) {
   }, []);
   const filtered = records.filter((r) => matchingDois.has(r.doi));
   const isFiltered = matchingDois.size < totalDois;
-  if (!loaded) return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { padding: 12, color: "#999", fontFamily: "monospace", fontSize: 12 }, children: "Loading charts..." });
-  if (!filtered.length) return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { padding: 12, color: "#999", fontFamily: "monospace", fontSize: 12 }, children: "No matching papers for current selection." });
+  if (!loaded) return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { padding: 12, color: "var(--fg-dim)", fontFamily: "var(--mono)", fontSize: 13 }, children: "Loading charts\u2026" });
+  if (!filtered.length) return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { padding: 12, color: "var(--fg-dim)", fontFamily: "var(--mono)", fontSize: 13 }, children: "No matching papers for current selection." });
   const charts = buildCharts(filtered);
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { children: [
     charts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_jsx_runtime17.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { fontSize: 11, color: "#666", fontFamily: "monospace", marginBottom: 8 }, children: isFiltered ? `Charts for ${filtered.length} of ${totalDois} papers (filtered)` : `Charts for all ${filtered.length} papers` }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 8 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ChartCard, { chart }, `${chart.title}-${filtered.length}-${i}`)) })
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { fontSize: 12, color: "var(--fg-muted)", fontFamily: "var(--mono)", marginBottom: 12, letterSpacing: "0.08em" }, children: isFiltered ? `Charts for ${filtered.length} of ${totalDois} papers (filtered)` : `Charts for all ${filtered.length} papers` }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 12 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ChartCard, { chart }, `${chart.title}-${filtered.length}-${i}`)) })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(FilteredPaperList, { papers: filtered })
   ] });

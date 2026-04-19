@@ -9,8 +9,8 @@ import { FilteredPaperList } from './filtered-paper-list';
 function ChartCard({ chart }: { chart: GraphDirective }) {
   const isDonut = chart.type === 'donut' || chart.type === 'pie';
   return (
-    <div style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '8px 10px 4px', overflow: 'hidden' }}>
-      <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#888', marginBottom: 4 }}>{chart.title}</div>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', padding: '14px 16px 10px', overflow: 'hidden' }}>
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-dim)', marginBottom: 10 }}>{chart.title}</div>
       {isDonut ? <RadialRender chart={chart} size={200} /> : <CartesianRender chart={chart} width={340} height={160} />}
     </div>
   );
@@ -18,10 +18,10 @@ function ChartCard({ chart }: { chart: GraphDirective }) {
 
 export function StatsBar({ nodes, edges, doiCount }: { nodes: TagNode[]; edges: { weight: number }[]; doiCount: number }) {
   return (
-    <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#666', fontFamily: 'monospace', padding: '8px 0', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: 18, fontSize: 12, color: 'var(--fg-muted)', fontFamily: 'var(--mono)', padding: '10px 0', flexWrap: 'wrap' }}>
       <span>{nodes.length} tags</span>
       <span>{edges.length} connections</span>
-      <span style={{ color: '#333' }}>{doiCount} papers</span>
+      <span style={{ color: 'var(--fg)' }}>{doiCount} papers</span>
       {TAG_CATEGORIES.map(cat => {
         const count = nodes.filter(n => n.group === cat).length;
         if (!count) return null;
@@ -94,18 +94,18 @@ export function FilteredCharts({ matchingDois, totalDois }: { matchingDois: Set<
   const filtered = records.filter(r => matchingDois.has(r.doi));
   const isFiltered = matchingDois.size < totalDois;
 
-  if (!loaded) return <div style={{ padding: 12, color: '#999', fontFamily: 'monospace', fontSize: 12 }}>Loading charts...</div>;
-  if (!filtered.length) return <div style={{ padding: 12, color: '#999', fontFamily: 'monospace', fontSize: 12 }}>No matching papers for current selection.</div>;
+  if (!loaded) return <div style={{ padding: 12, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>Loading charts…</div>;
+  if (!filtered.length) return <div style={{ padding: 12, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>No matching papers for current selection.</div>;
 
   const charts = buildCharts(filtered);
 
   return (
     <div>
       {charts.length > 0 && <>
-        <div style={{ fontSize: 11, color: '#666', fontFamily: 'monospace', marginBottom: 8 }}>
+        <div style={{ fontSize: 12, color: 'var(--fg-muted)', fontFamily: 'var(--mono)', marginBottom: 12, letterSpacing: '0.08em' }}>
           {isFiltered ? `Charts for ${filtered.length} of ${totalDois} papers (filtered)` : `Charts for all ${filtered.length} papers`}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 12 }}>
           {charts.map((chart, i) => <ChartCard key={`${chart.title}-${filtered.length}-${i}`} chart={chart} />)}
         </div>
       </>}

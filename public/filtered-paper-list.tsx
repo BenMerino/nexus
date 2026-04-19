@@ -10,13 +10,14 @@ function formatAuthors(authors: string[]): string {
 }
 
 const btnStyle: React.CSSProperties = {
-  background: 'none', border: '1px solid #ddd', borderRadius: 4,
-  cursor: 'pointer', fontSize: 12, color: '#555', fontFamily: 'monospace', padding: '4px 10px',
+  background: 'var(--bg-inset)', border: '1px solid var(--border-soft)', borderRadius: 4,
+  cursor: 'pointer', fontSize: 12, color: 'var(--fg-muted)', fontFamily: 'var(--mono)', padding: '6px 12px',
 };
 
 const cellStyle: React.CSSProperties = {
-  padding: '4px 8px', fontSize: 11, fontFamily: 'monospace',
-  borderBottom: '1px solid #f0f0f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  padding: '8px 10px', fontSize: 12, fontFamily: 'var(--mono)',
+  borderBottom: '1px solid var(--border-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  color: 'var(--fg-muted)',
 };
 
 export function FilteredPaperList({ papers }: { papers: DoiRecord[] }) {
@@ -30,43 +31,43 @@ export function FilteredPaperList({ papers }: { papers: DoiRecord[] }) {
   const hasMore = sorted.length > PAGE_SIZE;
 
   return (
-    <div style={{ marginTop: 12 }}>
+    <div style={{ marginTop: 14 }}>
       <button onClick={() => setExpanded(!expanded)} style={btnStyle}>
         {expanded ? 'Hide papers' : `Show ${papers.length} paper${papers.length !== 1 ? 's' : ''}`}
       </button>
       {expanded && (
-        <div style={{ marginTop: 8, border: '1px solid #eee', borderRadius: 6, overflow: 'auto', maxHeight: 500 }}>
+        <div style={{ marginTop: 10, border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'auto', maxHeight: 500, background: 'var(--bg-card)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#fafafa', textAlign: 'left' }}>
-                <th style={{ ...cellStyle, fontWeight: 700, width: '40%' }}>Title</th>
-                <th style={{ ...cellStyle, fontWeight: 700, width: '25%' }}>Authors</th>
-                <th style={{ ...cellStyle, fontWeight: 700, width: '10%' }}>Year</th>
-                <th style={{ ...cellStyle, fontWeight: 700, width: '15%' }}>Journal</th>
-                <th style={{ ...cellStyle, fontWeight: 700, width: '10%', textAlign: 'right' }}>Cited</th>
+              <tr style={{ background: 'var(--bg-inset)', textAlign: 'left' }}>
+                <th style={{ ...cellStyle, fontWeight: 500, width: '40%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 11 }}>Title</th>
+                <th style={{ ...cellStyle, fontWeight: 500, width: '25%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 11 }}>Authors</th>
+                <th style={{ ...cellStyle, fontWeight: 500, width: '10%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 11 }}>Year</th>
+                <th style={{ ...cellStyle, fontWeight: 500, width: '15%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 11 }}>Journal</th>
+                <th style={{ ...cellStyle, fontWeight: 500, width: '10%', textAlign: 'right', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 11 }}>Cited</th>
               </tr>
             </thead>
             <tbody>
               {visible.map(r => (
                 <tr key={r.doi} style={{ cursor: 'default' }}>
-                  <td style={{ ...cellStyle, whiteSpace: 'normal', maxWidth: 300 }}>
+                  <td style={{ ...cellStyle, whiteSpace: 'normal', maxWidth: 300, color: 'var(--fg)' }}>
                     <a href={`https://doi.org/${r.doi}`} target="_blank" rel="noopener noreferrer"
-                      style={{ color: '#2563eb', textDecoration: 'none' }}
+                      style={{ color: 'var(--accent)', textDecoration: 'none' }}
                       title={r.title || r.doi}>
-                      {(r.title || r.doi).substring(0, 80)}{(r.title || r.doi).length > 80 ? '...' : ''}
+                      {(r.title || r.doi).substring(0, 80)}{(r.title || r.doi).length > 80 ? '…' : ''}
                     </a>
                   </td>
                   <td style={cellStyle} title={r.authors?.join(', ')}>{formatAuthors(r.authors)}</td>
                   <td style={cellStyle}>{r.published ? r.published.substring(0, 4) : '—'}</td>
                   <td style={cellStyle} title={r.journal}>{r.journal ? r.journal.substring(0, 25) : '—'}</td>
-                  <td style={{ ...cellStyle, textAlign: 'right' }}>{r.citation_count ?? '—'}</td>
+                  <td style={{ ...cellStyle, textAlign: 'right', color: 'var(--fg)' }}>{r.citation_count ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           {hasMore && !showAll && (
-            <div style={{ padding: 8, textAlign: 'center' }}>
-              <button onClick={() => setShowAll(true)} style={{ ...btnStyle, border: 'none', color: '#2563eb' }}>
+            <div style={{ padding: 10, textAlign: 'center' }}>
+              <button onClick={() => setShowAll(true)} style={{ ...btnStyle, border: 'none', color: 'var(--accent)' }}>
                 Show all {sorted.length} papers
               </button>
             </div>
