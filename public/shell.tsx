@@ -11,7 +11,7 @@ interface ShellProps {
 }
 
 export function Shell({ children, scroll = false, currentPath, tweaks = false }: ShellProps) {
-  const { me, loading } = useCurrentUser();
+  const { me } = useCurrentUser();
   const path = currentPath ?? window.location.pathname;
 
   useEffect(() => {
@@ -27,24 +27,11 @@ export function Shell({ children, scroll = false, currentPath, tweaks = false }:
     }
   }, [scroll]);
 
-  if (loading && !me) {
-    return (
-      <div className="app">
-        <aside className="sidebar" />
-        <main className="main"><div className="view"><div className="eyebrow">Loading…</div></div></main>
-      </div>
-    );
-  }
-
   return (
     <div className={`app ${scroll ? 'app-scroll' : ''}`}>
-      <Sidebar
-        me={me}
-        currentPath={path}
-        roleSwitcher={<RoleSwitcher me={me} />}
-      />
+      <Sidebar me={me} currentPath={path} roleSwitcher={<RoleSwitcher me={me} />} />
       <main className="main">{children}</main>
-      {tweaks && me?.role === 'superadmin' && <TweaksPanel open={true} onClose={() => { /* optional toggle */ }} />}
+      {tweaks && me?.role === 'superadmin' && <TweaksPanel open={true} onClose={() => {}} />}
     </div>
   );
 }

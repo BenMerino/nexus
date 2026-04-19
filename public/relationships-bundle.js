@@ -13063,7 +13063,7 @@ function TweaksPanel({ open, onClose }) {
 // public/shell.tsx
 var import_jsx_runtime5 = __toESM(require_jsx_runtime());
 function Shell({ children, scroll = false, currentPath, tweaks = false }) {
-  const { me, loading } = useCurrentUser();
+  const { me } = useCurrentUser();
   const path = currentPath ?? window.location.pathname;
   (0, import_react4.useEffect)(() => {
     const body = document.body;
@@ -13077,21 +13077,8 @@ function Shell({ children, scroll = false, currentPath, tweaks = false }) {
       };
     }
   }, [scroll]);
-  if (loading && !me) {
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "app", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("aside", { className: "sidebar" }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("main", { className: "main", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "eyebrow", children: "Loading\u2026" }) }) })
-    ] });
-  }
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: `app ${scroll ? "app-scroll" : ""}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-      Sidebar,
-      {
-        me,
-        currentPath: path,
-        roleSwitcher: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RoleSwitcher, { me })
-      }
-    ),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Sidebar, { me, currentPath: path, roleSwitcher: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RoleSwitcher, { me }) }),
     /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("main", { className: "main", children }),
     tweaks && me?.role === "superadmin" && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(TweaksPanel, { open: true, onClose: () => {
     } })
