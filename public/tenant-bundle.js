@@ -12935,7 +12935,7 @@ function seriesColor(scheme, i) {
 // graph-engine/svg-parts.tsx
 var import_jsx_runtime4 = __toESM(require_jsx_runtime());
 var MARGIN = { top: 8, right: 8, bottom: 20, left: 36 };
-var TICK = { fill: "var(--text-muted)", fontSize: 9, fontWeight: 600 };
+var TICK = { fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 };
 var GRID_STROKE = "var(--border-main)";
 function XAxisBand({ labels, y: y3, range }) {
   const step = (range[1] - range[0]) / labels.length;
@@ -12969,7 +12969,7 @@ function fmtValue(v, c2) {
 }
 function GridLines({ domain, range, xRange }) {
   const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: s(v), y2: s(v), stroke: GRID_STROKE, strokeOpacity: 0.08 }, i)) });
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: s(v), y2: s(v), stroke: GRID_STROKE, strokeOpacity: 0.45 }, i)) });
 }
 function ThresholdLines({ thresholds, yScale, xRange }) {
   if (!thresholds?.length) return null;
@@ -13448,7 +13448,7 @@ function GaugeSvg({ chart, size }) {
   const fgPath = arcPath(cx, cy, r, Math.PI, Math.PI + pct * Math.PI);
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { textAlign: "center" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { viewBox: `0 0 ${size} ${size * 0.6}`, width: "100%", height: size * 0.55, style: { display: "block" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: bgPath, fill: "none", stroke: "var(--border-main)", strokeWidth: 8, strokeLinecap: "round", opacity: 0.15 }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: bgPath, fill: "none", stroke: "var(--border-main)", strokeWidth: 8, strokeLinecap: "round", opacity: 0.4 }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: fgPath, fill: "none", stroke: c2.primary, strokeWidth: 8, strokeLinecap: "round" })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(BaseText, { weight: "bold", style: { fontSize: 18, marginTop: -4, color: c2.primary }, children: [
@@ -13468,7 +13468,7 @@ function RingSvg({ chart, size }) {
   const cx = size / 2, cy = size / 2, r = size * 0.38, sw = 8;
   const circ = Math.PI * 2 * r;
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("circle", { cx, cy, r, fill: "none", stroke: "var(--border-main)", strokeWidth: sw, opacity: 0.15 }),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("circle", { cx, cy, r, fill: "none", stroke: "var(--border-main)", strokeWidth: sw, opacity: 0.4 }),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       "circle",
       {
@@ -13507,7 +13507,7 @@ function PolarRender({ chart, size = 170 }) {
   const maxVal = Math.max(...allVals, 1);
   const rings = [0.25, 0.5, 0.75, 1];
   return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
-    rings.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("circle", { cx, cy, r: maxR * r, fill: "none", stroke: "var(--border-main)", strokeOpacity: 0.15 }, i)),
+    rings.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("circle", { cx, cy, r: maxR * r, fill: "none", stroke: "var(--border-main)", strokeOpacity: 0.45 }, i)),
     data.map((_, i) => {
       const a2 = axisAngle(i);
       const ex = cx + maxR * Math.cos(a2);
@@ -13515,7 +13515,7 @@ function PolarRender({ chart, size = 170 }) {
       const lx = cx + (maxR + 12) * Math.cos(a2);
       const ly = cy + (maxR + 12) * Math.sin(a2);
       return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("line", { x1: cx, y1: cy, x2: ex, y2: ey, stroke: "var(--border-main)", strokeOpacity: 0.15 }),
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("line", { x1: cx, y1: cy, x2: ex, y2: ey, stroke: "var(--border-main)", strokeOpacity: 0.45 }),
         /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: lx, y: ly, textAnchor: "middle", dominantBaseline: "central", fontSize: 8, fontWeight: 600, fill: "var(--text-muted)", children: data[i].label })
       ] }, i);
     }),

@@ -67,7 +67,7 @@ function GaugeSvg({ chart, size }: { chart: GraphDirective; size: number }) {
     return (
         <div style={{ textAlign: 'center' }}>
             <svg viewBox={`0 0 ${size} ${size * 0.6}`} width="100%" height={size * 0.55} style={{ display: 'block' }}>
-                <path d={bgPath} fill="none" stroke="var(--border-main)" strokeWidth={8} strokeLinecap="round" opacity={0.15} />
+                <path d={bgPath} fill="none" stroke="var(--border-main)" strokeWidth={8} strokeLinecap="round" opacity={0.4} />
                 <path d={fgPath} fill="none" stroke={c.primary} strokeWidth={8} strokeLinecap="round" />
             </svg>
             <BaseText weight="bold" style={{ fontSize: 18, marginTop: -4, color: c.primary }}>{chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value}{chart.yLabel === '%' ? '%' : ''}</BaseText>
@@ -89,7 +89,7 @@ function RingSvg({ chart, size }: { chart: GraphDirective; size: number }) {
     return (
         <div style={{ textAlign: 'center' }}>
             <svg viewBox={`0 0 ${size} ${size}`} width="100%" height={size} style={{ display: 'block' }}>
-                <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--border-main)" strokeWidth={sw} opacity={0.15} />
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--border-main)" strokeWidth={sw} opacity={0.4} />
                 <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.primary} strokeWidth={sw}
                     strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} />
                 <text x={cx} y={cy - 4} textAnchor="middle" fontSize={22} fontWeight={700} fill="var(--text-main)">{chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value}</text>

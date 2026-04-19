@@ -29,7 +29,7 @@ export function PolarRender({ chart, size = 170 }: { chart: GraphDirective; size
         <svg viewBox={`0 0 ${size} ${size}`} width="100%" height={size} style={{ display: 'block' }}>
             {/* Concentric grid rings */}
             {rings.map((r, i) => (
-                <circle key={i} cx={cx} cy={cy} r={maxR * r} fill="none" stroke="var(--border-main)" strokeOpacity={0.15} />
+                <circle key={i} cx={cx} cy={cy} r={maxR * r} fill="none" stroke="var(--border-main)" strokeOpacity={0.45} />
             ))}
             {/* Axis spokes + labels */}
             {data.map((_: any, i: number) => {
@@ -40,7 +40,7 @@ export function PolarRender({ chart, size = 170 }: { chart: GraphDirective; size
                 const ly = cy + (maxR + 12) * Math.sin(a);
                 return (
                     <g key={i}>
-                        <line x1={cx} y1={cy} x2={ex} y2={ey} stroke="var(--border-main)" strokeOpacity={0.15} />
+                        <line x1={cx} y1={cy} x2={ex} y2={ey} stroke="var(--border-main)" strokeOpacity={0.45} />
                         <text x={lx} y={ly} textAnchor="middle" dominantBaseline="central" fontSize={8} fontWeight={600} fill="var(--text-muted)">
                             {data[i].label}
                         </text>

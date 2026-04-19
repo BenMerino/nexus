@@ -13585,7 +13585,7 @@ function seriesColor(scheme2, i) {
 // graph-engine/svg-parts.tsx
 var import_jsx_runtime10 = __toESM(require_jsx_runtime());
 var MARGIN = { top: 8, right: 8, bottom: 20, left: 36 };
-var TICK = { fill: "var(--text-muted)", fontSize: 9, fontWeight: 600 };
+var TICK = { fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 };
 var GRID_STROKE = "var(--border-main)";
 function XAxisBand({ labels, y: y3, range }) {
   const step = (range[1] - range[0]) / labels.length;
@@ -13619,7 +13619,7 @@ function fmtValue(v, c2) {
 }
 function GridLines({ domain, range, xRange }) {
   const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: s(v), y2: s(v), stroke: GRID_STROKE, strokeOpacity: 0.08 }, i)) });
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: s(v), y2: s(v), stroke: GRID_STROKE, strokeOpacity: 0.45 }, i)) });
 }
 function ThresholdLines({ thresholds, yScale, xRange }) {
   if (!thresholds?.length) return null;
@@ -14090,7 +14090,7 @@ function GaugeSvg({ chart, size }) {
   const fgPath = arcPath(cx, cy, r, Math.PI, Math.PI + pct * Math.PI);
   return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { textAlign: "center" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("svg", { viewBox: `0 0 ${size} ${size * 0.6}`, width: "100%", height: size * 0.55, style: { display: "block" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("path", { d: bgPath, fill: "none", stroke: "var(--border-main)", strokeWidth: 8, strokeLinecap: "round", opacity: 0.15 }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("path", { d: bgPath, fill: "none", stroke: "var(--border-main)", strokeWidth: 8, strokeLinecap: "round", opacity: 0.4 }),
       /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("path", { d: fgPath, fill: "none", stroke: c2.primary, strokeWidth: 8, strokeLinecap: "round" })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(BaseText, { weight: "bold", style: { fontSize: 18, marginTop: -4, color: c2.primary }, children: [
@@ -14110,7 +14110,7 @@ function RingSvg({ chart, size }) {
   const cx = size / 2, cy = size / 2, r = size * 0.38, sw = 8;
   const circ = Math.PI * 2 * r;
   return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { cx, cy, r, fill: "none", stroke: "var(--border-main)", strokeWidth: sw, opacity: 0.15 }),
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { cx, cy, r, fill: "none", stroke: "var(--border-main)", strokeWidth: sw, opacity: 0.4 }),
     /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
       "circle",
       {

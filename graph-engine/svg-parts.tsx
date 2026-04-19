@@ -10,7 +10,7 @@ export { cs, seriesColor, FALLBACK_SERIES } from './svg-color-schemes.js';
  * ──────────────────────────────────────────────────────────── */
 
 export const MARGIN = { top: 8, right: 8, bottom: 20, left: 36 };
-const TICK = { fill: 'var(--text-muted)', fontSize: 9, fontWeight: 600 };
+const TICK = { fill: 'var(--text-muted)', fontSize: 11, fontWeight: 500 };
 const GRID_STROKE = 'var(--border-main)';
 
 export function XAxisBand({ labels, y, range }: { labels: string[]; y: number; range: [number, number] }) {
@@ -57,7 +57,7 @@ export function fmtValue(v: number, c?: { currency?: string; currencyFormat?: st
 export function GridLines({ domain, range, xRange }: { domain: { min: number; max: number; step: number }; range: [number, number]; xRange: [number, number] }) {
     const s = linearScale([domain.min, domain.max], range);
     return <>{genTicks(domain).map((v, i) => (
-        <line key={i} x1={xRange[0]} x2={xRange[1]} y1={s(v)} y2={s(v)} stroke={GRID_STROKE} strokeOpacity={0.08} />
+        <line key={i} x1={xRange[0]} x2={xRange[1]} y1={s(v)} y2={s(v)} stroke={GRID_STROKE} strokeOpacity={0.45} />
     ))}</>;
 }
 
