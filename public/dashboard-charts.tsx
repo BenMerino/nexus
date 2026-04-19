@@ -4,7 +4,8 @@ import { Shell } from './shell';
 import { useCurrentUser } from './shell-helpers';
 import { Stat, Tag, SectionHead } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders.js';
-import { yearlyCounts, greeting, BarChart, TopJournals, PartnerInstitutions, RecentlyIndexed, CoAuthorGraph } from './dashboard-panels';
+import { yearlyCounts, greeting, BarChart, TopJournals, PartnerInstitutions, RecentlyIndexed } from './dashboard-panels';
+import { CoAuthorGraphPanel } from './coauthor-graph-preview';
 import { VelocityPanel } from './portfolio-velocity';
 import { CadencePanel } from './portfolio-cadence';
 import { TopCitedPanel } from './portfolio-topcited';
@@ -71,7 +72,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
               <SectionHead eyebrow="Output" title="Publication cadence" />
               {p.cadence && <CadencePanel cadence={p.cadence} />}
             </section>
-            <CoAuthorGraph data={data} />
+            <CoAuthorGraphPanel graph={p?.coauthorGraph} />
             <section className="card">
               <SectionHead eyebrow="Impact" title="Most cited" />
               <TopCitedPanel items={p.topCited || []} />
@@ -86,7 +87,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
         ) : (
           <>
             {years.length > 0 ? <BarChart rows={years} title="Publications per year" /> : <div className="card card-chart"><div className="muted">No year data.</div></div>}
-            <CoAuthorGraph data={data} />
+            <CoAuthorGraphPanel graph={p?.coauthorGraph} />
             <TopJournals data={data} />
             <PartnerInstitutions data={data} />
             <RecentlyIndexed data={data} />
