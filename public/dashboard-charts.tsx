@@ -9,7 +9,6 @@ import { VelocityPanel } from './portfolio-velocity';
 import { CadencePanel } from './portfolio-cadence';
 import { TopCitedPanel } from './portfolio-topcited';
 import { ConceptsPanel } from './portfolio-concepts';
-import { CollaboratorsPanel } from './portfolio-collaborators';
 
 function DashboardContent({ data }: { data: DashboardData }) {
   const { me } = useCurrentUser();
@@ -82,25 +81,6 @@ function DashboardContent({ data }: { data: DashboardData }) {
             </section>
             <TopJournals data={data} />
             <PartnerInstitutions data={data} />
-            <section className="card card-span-2">
-              <SectionHead eyebrow="Missing link" title="Suggested collaborators" />
-              <CollaboratorsPanel suggested={p.collaborators.suggested} />
-            </section>
-            <section className="card card-span-2">
-              <SectionHead eyebrow="Ledger" title="Your publications" right={<Tag mono tone="muted">{p.works.length} total</Tag>} />
-              <table className="paper-table">
-                <thead><tr><th>Title</th><th>Year</th><th>Citations</th></tr></thead>
-                <tbody>
-                  {p.works.slice(0, 40).map(w => (
-                    <tr key={w.doi}>
-                      <td className="paper-title">{w.title || '(untitled)'}<div className="mono paper-doi">{w.doi}</div></td>
-                      <td>{w.year || '—'}</td>
-                      <td>{w.citation_count ?? 0}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
           </>
         ) : (
           <>

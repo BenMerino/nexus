@@ -58,6 +58,11 @@ Promise.all([
     entryPoints: ["public/shell-mount.tsx"],
     outfile: "public/shell-mount-bundle.js",
   }),
+  esbuild.build({
+    ...shared,
+    entryPoints: ["public/collaborators.tsx"],
+    outfile: "public/collaborators-bundle.js",
+  }),
 ])
   .then(() => {
     const fs = require("fs");
@@ -72,6 +77,6 @@ Promise.all([
         if (updated !== html) fs.writeFileSync(f, updated);
       } catch {}
     }
-    console.log("Build complete: charts-bundle.js, relationships-bundle.js, dashboard-bundle.js, tenant-bundle.js, shell-mount-bundle.js");
+    console.log("Build complete: charts-bundle.js, relationships-bundle.js, dashboard-bundle.js, tenant-bundle.js, shell-mount-bundle.js, collaborators-bundle.js");
   })
   .catch(() => process.exit(1));

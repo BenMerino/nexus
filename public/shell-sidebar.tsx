@@ -6,10 +6,11 @@ import type { CurrentUser } from './shell-helpers';
 export interface NavLink { href: string; label: string; icon: keyof typeof Ico; section?: string; }
 
 const DEFAULT_LINKS: NavLink[] = [
-  { href: '/dashboard.html', label: 'Dashboard',      icon: 'home',   section: 'Workspace' },
-  { href: '/overview.html',  label: 'Graph explorer', icon: 'graph',  section: 'Workspace' },
-  { href: '/explore.html',   label: 'Explore',        icon: 'search', section: 'Workspace' },
-  { href: '/submit.html',    label: 'Submit DOI',     icon: 'submit', section: 'Workspace' },
+  { href: '/dashboard.html',      label: 'Dashboard',      icon: 'home',   section: 'Workspace' },
+  { href: '/overview.html',       label: 'Graph explorer', icon: 'graph',  section: 'Workspace' },
+  { href: '/explore.html',        label: 'Explore',        icon: 'search', section: 'Workspace' },
+  { href: '/collaborators.html',  label: 'Collaborators',  icon: 'people', section: 'Workspace' },
+  { href: '/submit.html',         label: 'Submit DOI',     icon: 'submit', section: 'Workspace' },
 ];
 const SUPERADMIN_LINKS: NavLink[] = [
   { href: '/admin.html',         label: 'Admin',         icon: 'build',  section: 'Admin' },

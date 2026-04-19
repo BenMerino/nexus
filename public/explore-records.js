@@ -1,8 +1,20 @@
 let allRecords = [];
+let myOrcid = null;
 
 async function loadRecords() {
-  const resp = await fetch("/api/records");
-  allRecords = await resp.json();
+  const [recs, me] = await Promise.all([
+    fetch("/api/records").then(r => r.json()),
+    fetch("/api/auth?action=me").then(r => r.ok ? r.json() : null).catch(() => null),
+  ]);
+  allRecords = recs;
+  myOrcid = me?.profile?.orcid || null;
+  const mineToggle = document.getElementById("mine-toggle");
+  if (mineToggle) {
+    mineToggle.style.display = myOrcid ? "inline-flex" : "none";
+    if (new URLSearchParams(location.search).get("mine") === "1") {
+      document.getElementById("mine-check").checked = true;
+    }
+  }
   renderTable();
 }
 
@@ -10,6 +22,11 @@ function renderTable() {
   let records = [...allRecords];
   const query = document.getElementById("rec-search").value.trim().toLowerCase();
   const sort = document.getElementById("sort-select").value;
+  const mineOnly = document.getElementById("mine-check")?.checked;
+
+  if (mineOnly && myOrcid) {
+    records = records.filter(r => (r.affiliations || []).some(a => a.orcid === myOrcid));
+  }
 
   if (query) {
     records = records.filter(r =>
@@ -110,4 +127,5 @@ async function deleteRecord(id, doi, event) {
 
 document.getElementById("rec-search").addEventListener("input", renderTable);
 document.getElementById("sort-select").addEventListener("change", renderTable);
+document.getElementById("mine-check")?.addEventListener("change", renderTable);
 loadRecords();
