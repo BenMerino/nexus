@@ -14239,18 +14239,14 @@ function CoAuthorSim({ graph, width, height }) {
         );
       }) })
     ] }),
-    hovered && !hovered.isMe && (() => {
-      const tx = Math.min(Math.max(hovered.x + 12, 4), width - 200);
-      const ty = Math.min(Math.max(hovered.y - 28, 4), height - 40);
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { position: "absolute", left: tx, top: ty, pointerEvents: "none", background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 4, padding: "6px 10px", fontSize: 12, color: "var(--fg)", whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(0,0,0,0.4)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontWeight: 500 }, children: hovered.label }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }, children: [
-          hovered.weight,
-          " shared ",
-          hovered.weight === 1 ? "paper" : "papers"
-        ] })
-      ] });
-    })()
+    hovered && !hovered.isMe && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { position: "absolute", left: hovered.x, top: hovered.y - radius(hovered) - 8, transform: "translate(-50%, -100%)", pointerEvents: "none", background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 4, padding: "6px 10px", fontSize: 12, color: "var(--fg)", whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(0,0,0,0.4)", zIndex: 2 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontWeight: 500 }, children: hovered.label }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }, children: [
+        hovered.weight,
+        " shared ",
+        hovered.weight === 1 ? "paper" : "papers"
+      ] })
+    ] })
   ] });
 }
 
