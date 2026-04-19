@@ -48,6 +48,16 @@ Promise.all([
     entryPoints: ["public/dashboard-charts.tsx"],
     outfile: "public/dashboard-bundle.js",
   }),
+  esbuild.build({
+    ...shared,
+    entryPoints: ["public/portfolio.tsx"],
+    outfile: "public/portfolio-bundle.js",
+  }),
+  esbuild.build({
+    ...shared,
+    entryPoints: ["public/tenant.tsx"],
+    outfile: "public/tenant-bundle.js",
+  }),
 ])
   .then(() => {
     const fs = require("fs");
@@ -62,6 +72,11 @@ Promise.all([
         if (updated !== html) fs.writeFileSync(f, updated);
       } catch {}
     }
-    console.log("Build complete: charts-bundle.js, relationships-bundle.js, dashboard-bundle.js");
+    try {
+      const html = fs.readFileSync("public/portfolio.html", "utf8");
+      const updated = html.replace(/portfolio-bundle\.js\?v=\d+/, `portfolio-bundle.js?v=${ts}`);
+      if (updated !== html) fs.writeFileSync("public/portfolio.html", updated);
+    } catch {}
+    console.log("Build complete: charts-bundle.js, relationships-bundle.js, dashboard-bundle.js, portfolio-bundle.js, tenant-bundle.js");
   })
   .catch(() => process.exit(1));

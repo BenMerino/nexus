@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Research — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    body { --primary: #333333; --secondary: #1565c0; }
+    .tenant-header { background: var(--primary); color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+    .tenant-header img { height: 48px; object-fit: contain; background: #fff; border-radius: 4px; padding: 4px; }
+    .tenant-header .title { font-size: 20px; font-weight: bold; }
+    .tenant-header .ror { font-size: 12px; opacity: 0.8; margin-left: 8px; }
+    .tenant-header a { color: #fff; font-size: 13px; }
+    .tenant-header a:hover { opacity: 0.8; }
+    .tenant-header .spacer { flex: 1; }
+    .section { margin-bottom: 2rem; }
+    .section h2 { font-size: 16px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #ddd; }
+    .authors-toolbar { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .authors-toolbar input { flex: 1; }
+    .authors-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
+    .authors-table th, .authors-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; }
+    .authors-table th { cursor: pointer; background: #f8f9fa; font-size: 12px; text-transform: uppercase; color: #555; user-select: none; }
+    .authors-table th:hover { background: #eee; }
+    .authors-table tr:last-child td { border-bottom: none; }
+    .authors-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <div id="tenant-root">
+    <div style="padding: 24px; color: #999;">Loading…</div>
+  </div>
+  <script type="module" src="/tenant-bundle.js"></script>
+</body>
+</html>

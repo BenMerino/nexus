@@ -69,9 +69,9 @@ module.exports = async function handler(req, res) {
     if (!sa) return res.status(403).json({ error: "Superadmin required" });
     if (req.method === "GET") return res.json(await listTenants());
     if (req.method === "POST") {
-      const { name, ror_id, parent_id } = req.body;
+      const { name, ror_id, parent_id, slug } = req.body;
       if (!ror_id) return res.status(400).json({ error: "ROR ID is required" });
-      const id = await createTenant(name, ror_id, parent_id);
+      const id = await createTenant(name, ror_id, parent_id, slug);
       return res.json({ ok: true, id });
     }
     if (req.method === "PUT") {

@@ -8,6 +8,7 @@ window.adminTenantForm = {
   renderForm: function (t) {
     var html = '<div class="form-row"><label>Name</label><input id="t-name" value="' + esc(t.name) + '"></div>';
     html += '<div class="form-row"><label>ROR ID</label><input id="t-ror" value="' + esc(t.ror_id || "") + '"></div>';
+    html += '<div class="form-row"><label>Public URL Slug</label><input id="t-slug" value="' + esc(t.slug || "") + '" placeholder="e.g. utalca"><div style="font-size:11px;color:#999;margin-top:2px;">Lowercase letters, numbers, hyphens. Empty disables the public page.</div></div>';
     html += '<h4 style="margin:16px 0 8px;">Branding</h4>';
     html += '<div class="branding-grid"><div>';
     html += '<div class="logo-box" id="logo-preview" onclick="document.getElementById(\'t-logo\').click()" title="Click to upload logo">';
@@ -40,6 +41,7 @@ window.adminTenantForm = {
     var html = '<h3>New Tenant</h3>' +
       '<div class="form-row"><label>Name</label><input id="nt-name"></div>' +
       '<div class="form-row"><label>ROR ID</label><input id="nt-ror"></div>' +
+      '<div class="form-row"><label>Public URL Slug</label><input id="nt-slug" placeholder="e.g. utalca"></div>' +
       '<div class="form-row"><label>Parent Tenant (optional)</label><select id="nt-parent"><option value="">None (top-level)</option>';
     (window._allTenants || []).filter(function (t) { return !t.parent_id; }).forEach(function (t) {
       html += '<option value="' + t.id + '">' + esc(t.name) + '</option>';
@@ -51,13 +53,14 @@ window.adminTenantForm = {
   create: function (callback) {
     var name = document.getElementById("nt-name").value;
     var ror = document.getElementById("nt-ror").value;
+    var slug = document.getElementById("nt-slug").value;
     var parentEl = document.getElementById("nt-parent");
     var parentId = parentEl && parentEl.value ? parseInt(parentEl.value) : null;
     if (!name) return alert("Name required");
     if (!ror) return alert("ROR ID is required");
     fetch("/api/auth?action=tenants", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name, ror_id: ror, parent_id: parentId }),
+      body: JSON.stringify({ name: name, ror_id: ror, slug: slug, parent_id: parentId }),
     }).then(r => r.json()).then(function () {
       document.getElementById("new-tenant-card").style.display = "none";
       if (callback) callback();
@@ -68,6 +71,7 @@ window.adminTenantForm = {
     var fields = {
       id: tenant.id, name: document.getElementById("t-name").value,
       ror_id: document.getElementById("t-ror").value,
+      slug: document.getElementById("t-slug").value,
       primary_color: document.getElementById("t-primary").value,
       secondary_color: document.getElementById("t-secondary").value,
     };
