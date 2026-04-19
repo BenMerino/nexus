@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import type { ProjectedEdge, EnrichedSimNode } from './relationship-types';
+import type { EnrichedSimNode } from './relationship-types';
 import { enrichWithMeta } from './enrich-meta';
 import { projectGraph } from './project-graph';
-import { DetailPane } from './graph-detail-pane';
+import { NodeDetail } from './node-detail';
 import { StatsBar, FilteredCharts } from './filtered-charts';
 import { ForceGraph } from './force-graph';
 import { GraphSearch } from './graph-search';
@@ -83,22 +83,6 @@ export function GraphExplorerBody() {
   }, [projectedEdgesAll, projectedNodes]);
 
   const doiCount = useMemo(() => rawNodes.filter(n => n.group === 'doi').length, [rawNodes]);
-  const nodeMap = useMemo(() => new Map(projectedNodes.map(n => [n.id, n])), [projectedNodes]);
-  const { connectedIds, edgesForNode } = useMemo(() => {
-    if (!selectedNodeId) return { connectedIds: new Set<string>(), edgesForNode: [] as ProjectedEdge[] };
-    const ids = new Set<string>([selectedNodeId]); const matching: ProjectedEdge[] = [];
-    for (const e of projectedEdges) {
-      if (e.source === selectedNodeId) { ids.add(e.target); matching.push(e); }
-      if (e.target === selectedNodeId) { ids.add(e.source); matching.push(e); }
-    }
-    return { connectedIds: ids, edgesForNode: matching };
-  }, [selectedNodeId, projectedEdges]);
-
-  const selectedNode = selectedNodeId ? nodeMap.get(selectedNodeId) : null;
-  const selectedConnections = useMemo(() => {
-    if (!selectedNodeId) return [];
-    return [...connectedIds].filter(id => id !== selectedNodeId).map(id => nodeMap.get(id)).filter(Boolean) as EnrichedSimNode[];
-  }, [selectedNodeId, connectedIds, nodeMap]);
 
   const chartDois = useMemo(() => {
     if (!selectedNodeId) return matchingDois;
@@ -139,7 +123,9 @@ export function GraphExplorerBody() {
             : <ForceGraph nodes={projectedNodes} links={projectedEdges} width={dims.width} height={dims.height} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} />}
         </div>
 
-        <DetailPane node={selectedNode} connections={selectedConnections} edgesForNode={edgesForNode} onClose={() => setSelectedNodeId(null)} onSelect={id => setSelectedNodeId(id)} />
+        <aside className="detail-panel">
+          <NodeDetail nodeId={selectedNodeId} onClose={() => setSelectedNodeId(null)} />
+        </aside>
       </div>
 
       <StatsBar nodes={projectedNodes} edges={projectedEdges} doiCount={doiCount} />

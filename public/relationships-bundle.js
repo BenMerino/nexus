@@ -13216,205 +13216,207 @@ function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags, expanded
   return { nodes, edges: allEdges, matchingDois };
 }
 
-// public/detail-panel.tsx
+// public/node-detail.tsx
 var import_react5 = __toESM(require_react());
 
-// public/relationship-types.ts
-var TAG_CATEGORIES = ["institution", "author", "journal"];
-var COLORS = {
-  institution: "#f57f17",
-  author: "#c62828",
-  journal: "#2e7d32"
-};
-var BG_COLORS = {
-  institution: "#fff8e1",
-  author: "#fce4ec",
-  journal: "#e8f5e9"
-};
-var COMMUNITY_COLORS = [
-  "#e6194b",
-  "#3cb44b",
-  "#4363d8",
-  "#f58231",
-  "#911eb4",
-  "#42d4f4",
-  "#f032e6",
-  "#bfef45",
-  "#fabebe",
-  "#469990",
-  "#dcbeff",
-  "#9A6324"
-];
-var COMMUNITY_BG = [
-  "#fde0e6",
-  "#e4f5e4",
-  "#dfe6f8",
-  "#fde9d4",
-  "#ecdaf5",
-  "#d8f4fb",
-  "#f8d6f6",
-  "#f2fad6",
-  "#fde8e8",
-  "#d6edea",
-  "#f0e6ff",
-  "#f0e4d0"
-];
-function communityColor(id) {
-  return COMMUNITY_COLORS[id % COMMUNITY_COLORS.length];
-}
-function communityBg(id) {
-  return COMMUNITY_BG[id % COMMUNITY_BG.length];
-}
-function nodeRadius(weight, role) {
-  const base = Math.max(4, Math.min(18, 4 + Math.sqrt(weight) * 2));
-  if (role === "hub") return Math.min(22, base * 1.3);
-  if (role === "leaf") return Math.max(4, base * 0.8);
-  return base;
-}
-
-// public/detail-panel.tsx
+// public/node-detail-views.tsx
 var import_jsx_runtime6 = __toESM(require_jsx_runtime());
-function DetailPanel({
-  node,
-  connections,
-  edgesForNode,
-  onClose,
-  onSelectNode
-}) {
-  const grouped = (0, import_react5.useMemo)(() => {
-    const g = {};
-    for (const c2 of connections) {
-      const edge = edgesForNode.find(
-        (e) => e.source === node.id && e.target === c2.id || e.target === node.id && e.source === c2.id
-      );
-      const entry = { node: c2, weight: edge?.weight || 0, dois: edge?.sharedDois || [] };
-      (g[c2.group] ||= []).push(entry);
-    }
-    for (const k of Object.keys(g)) g[k].sort((a2, b) => b.weight - a2.weight);
-    return g;
-  }, [connections, edgesForNode, node.id]);
-  const allDois = (0, import_react5.useMemo)(() => {
-    const set2 = /* @__PURE__ */ new Set();
-    for (const e of edgesForNode) for (const d of e.sharedDois) set2.add(d);
-    return [...set2];
-  }, [edgesForNode]);
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-panel", style: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 320,
-    maxHeight: "calc(100% - 24px)",
-    padding: 20,
-    fontSize: 13
-  }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-head", style: { paddingBottom: 14 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "tag mono", style: { color: COLORS[node.group], background: BG_COLORS[node.group], marginRight: 4 }, children: node.group }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { className: "tag mono", style: { color: communityColor(node.community), background: communityBg(node.community) }, children: [
-          "Community ",
-          node.community + 1
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { style: { marginTop: 8, wordBreak: "break-word" }, children: node.label }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 6, display: "flex", gap: 10, flexWrap: "wrap", fontFamily: "var(--mono)" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
-            "weight: ",
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("strong", { style: { color: COLORS[node.group] }, children: node.weight })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
-            node.degree,
-            " connection",
-            node.degree !== 1 ? "s" : ""
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
-            node.doiCount,
-            " paper",
-            node.doiCount !== 1 ? "s" : ""
-          ] })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { className: "close", onClick: onClose, "aria-label": "Close", children: "\xD7" })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-section-label", children: [
-      "Connected tags (",
-      connections.length,
-      ")"
-    ] }),
-    Object.entries(grouped).sort(([a2], [b]) => a2.localeCompare(b)).map(([group, items]) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { marginBottom: 10 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 500, color: COLORS[group], marginBottom: 4, fontFamily: "var(--mono)" }, children: [
-        group,
-        " (",
-        items.length,
-        ")"
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 }, children: [
-        items.slice(0, 25).map(({ node: item, weight }) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
-          "span",
-          {
-            onClick: () => onSelectNode(item.id),
-            title: `${weight} shared paper${weight !== 1 ? "s" : ""}`,
-            style: {
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              background: BG_COLORS[group],
-              color: COLORS[group],
-              padding: "2px 8px",
-              borderRadius: 3,
-              fontSize: 11,
-              cursor: "pointer",
-              maxWidth: 220,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap"
-            },
-            children: [
-              item.label,
-              weight > 1 && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: { fontSize: 9, opacity: 0.75, fontWeight: 500 }, children: weight })
-            ]
-          },
-          item.id
-        )),
-        items.length > 25 && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { style: { fontSize: 11, color: "var(--fg-dim)" }, children: [
-          "+",
-          items.length - 25,
-          " more"
-        ] })
-      ] })
-    ] }, group)),
-    allDois.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { marginTop: 14, borderTop: "1px solid var(--border-soft)", paddingTop: 10 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-section-label", children: [
-        "Papers (",
-        allDois.length,
-        ")"
-      ] }),
-      allDois.slice(0, 15).map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", padding: "3px 0", borderBottom: "1px solid var(--border-soft)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "var(--mono)" }, children: d }, i)),
-      allDois.length > 15 && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 6 }, children: [
-        "+",
-        allDois.length - 15,
-        " more"
-      ] })
+function PaperRow({ p }) {
+  const year = p.published?.slice(0, 4);
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-item", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { children: p.title || "(untitled)" }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "mono muted", children: [
+      p.doi,
+      year ? ` \xB7 ${year}` : ""
     ] })
   ] });
 }
-
-// public/graph-detail-pane.tsx
-var import_jsx_runtime7 = __toESM(require_jsx_runtime());
-function DetailPane({ node, connections, edgesForNode, onClose, onSelect }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "detail-panel", children: node ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(DetailPanel, { node, connections, edgesForNode, onClose, onSelectNode: onSelect }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "detail-empty", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "detail-empty-glyph", children: "\u25CE" }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "detail-empty-head", children: "Select a node" }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("p", { children: [
-      "Every node carries a canonical identifier \u2014 ",
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "mono", children: "ORCID" }),
-      " for authors, ",
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "mono", children: "ROR" }),
-      " for institutions, ",
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "mono", children: "ISSN-L" }),
-      " for journals, ",
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "mono", children: "DOI" }),
-      " for papers."
+var CloseBtn = ({ onClose }) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { className: "close", onClick: onClose, "aria-label": "Close", children: Ico.close });
+function AuthorView({ d, onClose }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "eyebrow", children: "Author" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { children: d.name }),
+        d.orcid && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "mono detail-id", children: [
+          "ORCID ",
+          d.orcid
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(CloseBtn, { onClose })
+    ] }),
+    (d.faculty || d.role) && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-meta", children: [
+      d.faculty && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "muted", children: "Faculty" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: d.faculty })
+      ] }),
+      d.role && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "muted", children: "Role" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: d.role })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-stats", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "mono", children: d.papersCount }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("label", { children: "papers" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "mono", children: d.citations }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("label", { children: "citations" })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-section-label", children: "Recent papers" }),
+      d.papers.slice(0, 6).map((p) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(PaperRow, { p }, p.doi))
     ] })
+  ] });
+}
+function InstitutionView({ d, onClose }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "eyebrow", children: "Institution" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { children: d.name }),
+        d.ror && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "mono detail-id", children: [
+          "ROR ",
+          d.ror
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(CloseBtn, { onClose })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-meta", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "muted", children: "Shared papers" }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: d.papersCount })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-section-label", children: "Joint publications" }),
+      d.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(PaperRow, { p }, p.doi))
+    ] })
+  ] });
+}
+function JournalView({ d, onClose }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "eyebrow", children: "Journal" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { children: d.name }),
+        d.issn && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "mono detail-id", children: [
+          "ISSN-L ",
+          d.issn
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(CloseBtn, { onClose })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-meta", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "muted", children: "Our papers" }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: d.papersCount })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-section-label", children: "Published here" }),
+      d.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(PaperRow, { p }, p.doi))
+    ] })
+  ] });
+}
+function PaperView({ d, onClose }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "eyebrow", children: "Paper" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { className: "paper-detail-title", children: d.title || "(untitled)" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "mono detail-id", children: [
+          "DOI ",
+          d.doi
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(CloseBtn, { onClose })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-meta", children: [
+      d.journal && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "muted", children: "Journal" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: d.journal })
+      ] }),
+      d.published && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "muted", children: "Year" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: d.published.slice(0, 4) })
+      ] }),
+      d.citations != null && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "muted", children: "Citations" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: d.citations })
+      ] })
+    ] }),
+    d.authors.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-section-label", children: "Authors" }),
+      d.authors.slice(0, 20).map((a2, i) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-item", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { children: a2.name || a2.orcid || "\u2014" }),
+        a2.orcid && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "mono muted", children: [
+          "ORCID ",
+          a2.orcid
+        ] })
+      ] }, i))
+    ] })
+  ] });
+}
+function EmptyState() {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-empty", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-empty-glyph", children: "\u25CE" }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-empty-head", children: "Select a node" }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("p", { children: [
+      "Every node carries a canonical identifier \u2014 ",
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "mono", children: "ORCID" }),
+      " for authors, ",
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "mono", children: "ROR" }),
+      " for institutions, ",
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "mono", children: "ISSN-L" }),
+      " for journals, ",
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "mono", children: "DOI" }),
+      " for papers."
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { children: "No canonical ID, no tag. That\u2019s how the graph stays clean." })
+  ] });
+}
+
+// public/node-detail.tsx
+var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+function useNodeDetail(id) {
+  const [data, setData] = (0, import_react5.useState)(null);
+  const [loading, setLoading] = (0, import_react5.useState)(false);
+  const [error, setError] = (0, import_react5.useState)(null);
+  (0, import_react5.useEffect)(() => {
+    if (!id) {
+      setData(null);
+      setError(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/node-detail?id=${encodeURIComponent(id)}`).then(async (r) => r.ok ? r.json() : Promise.reject((await r.json()).error || r.statusText)).then((d) => {
+      if (!cancelled) setData(d);
+    }).catch((e) => {
+      if (!cancelled) setError(String(e));
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+  return { data, loading, error };
+}
+function NodeDetail({ nodeId, onClose }) {
+  const { data, loading, error } = useNodeDetail(nodeId);
+  if (!nodeId) return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(EmptyState, {});
+  if (loading && !data) return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "eyebrow", children: "Loading\u2026" }) });
+  if (error) return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "status error", children: [
+    "Error: ",
+    error
   ] }) });
+  if (!data) return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(EmptyState, {});
+  if (data.type === "author") return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(AuthorView, { d: data, onClose });
+  if (data.type === "institution") return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(InstitutionView, { d: data, onClose });
+  if (data.type === "journal") return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(JournalView, { d: data, onClose });
+  if (data.type === "paper") return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(PaperView, { d: data, onClose });
+  return null;
 }
 
 // public/filtered-charts.tsx
@@ -14139,6 +14141,20 @@ function RingSvg({ chart, size }) {
     /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("text", { x: cx, y: cy - 4, textAnchor: "middle", fontSize: 22, fontWeight: 700, fill: "var(--text-main)", children: chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value }),
     /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("text", { x: cx, y: cy + 14, textAnchor: "middle", fontSize: 9, fill: "var(--text-muted)", children: d.label || chart.title })
   ] }) });
+}
+
+// public/relationship-types.ts
+var TAG_CATEGORIES = ["institution", "author", "journal"];
+var COLORS = {
+  institution: "#f57f17",
+  author: "#c62828",
+  journal: "#2e7d32"
+};
+function nodeRadius(weight, role) {
+  const base = Math.max(4, Math.min(18, 4 + Math.sqrt(weight) * 2));
+  if (role === "hub") return Math.min(22, base * 1.3);
+  if (role === "leaf") return Math.max(4, base * 0.8);
+  return base;
 }
 
 // public/filtered-paper-list.tsx
@@ -15603,28 +15619,6 @@ function GraphExplorerBody() {
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
   const doiCount = (0, import_react17.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
-  const nodeMap = (0, import_react17.useMemo)(() => new Map(projectedNodes.map((n) => [n.id, n])), [projectedNodes]);
-  const { connectedIds, edgesForNode } = (0, import_react17.useMemo)(() => {
-    if (!selectedNodeId) return { connectedIds: /* @__PURE__ */ new Set(), edgesForNode: [] };
-    const ids = /* @__PURE__ */ new Set([selectedNodeId]);
-    const matching = [];
-    for (const e of projectedEdges) {
-      if (e.source === selectedNodeId) {
-        ids.add(e.target);
-        matching.push(e);
-      }
-      if (e.target === selectedNodeId) {
-        ids.add(e.source);
-        matching.push(e);
-      }
-    }
-    return { connectedIds: ids, edgesForNode: matching };
-  }, [selectedNodeId, projectedEdges]);
-  const selectedNode = selectedNodeId ? nodeMap.get(selectedNodeId) : null;
-  const selectedConnections = (0, import_react17.useMemo)(() => {
-    if (!selectedNodeId) return [];
-    return [...connectedIds].filter((id) => id !== selectedNodeId).map((id) => nodeMap.get(id)).filter(Boolean);
-  }, [selectedNodeId, connectedIds, nodeMap]);
   const chartDois = (0, import_react17.useMemo)(() => {
     if (!selectedNodeId) return matchingDois;
     const nodeDois = /* @__PURE__ */ new Set();
@@ -15677,7 +15671,7 @@ function GraphExplorerBody() {
         ] }),
         projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(ForceGraph, { nodes: projectedNodes, links: projectedEdges, width: dims.width, height: dims.height, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(DetailPane, { node: selectedNode, connections: selectedConnections, edgesForNode, onClose: () => setSelectedNodeId(null), onSelect: (id) => setSelectedNodeId(id) })
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeDetail, { nodeId: selectedNodeId, onClose: () => setSelectedNodeId(null) }) })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatsBar, { nodes: projectedNodes, edges: projectedEdges, doiCount }),
     /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { marginTop: 20, borderTop: "1px solid var(--border-soft)", paddingTop: 20 }, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(FilteredCharts, { matchingDois: chartDois, totalDois: doiCount }) })

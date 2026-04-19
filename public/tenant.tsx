@@ -108,6 +108,7 @@ function App() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
               {charts.map((chart, i) => (
                 <div key={i} className="card" style={{ minHeight: 400 }}>
+                  {chart.type === 'stacked-bar' && chart.series ? <StackLegend series={chart.series} /> : null}
                   <GraphRender chart={chart} />
                 </div>
               ))}
