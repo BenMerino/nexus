@@ -23,6 +23,21 @@ const NAV: PublicNavItem[] = [
   { id: 'authors',  label: 'Authors directory' },
 ];
 
+const STACK_COLORS = ['#06b6d4', '#8b5cf6', '#10b981', '#f59e0b'];
+
+function StackLegend({ series }: { series: string[] }) {
+  return (
+    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 8, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-dim)' }}>
+      {series.map((s, i) => (
+        <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: STACK_COLORS[i % STACK_COLORS.length], display: 'inline-block' }} />
+          {s}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function SummaryCards({ summary }: { summary: PublicStats['summary'] }) {
   const oaPct = summary.totalPubs > 0 ? Math.round((summary.oaCount / summary.totalPubs) * 100) : 0;
   const cards = [

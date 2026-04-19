@@ -15286,6 +15286,13 @@ var NAV = [
   { id: "graph", label: "Collaboration graph" },
   { id: "authors", label: "Authors directory" }
 ];
+var STACK_COLORS = ["#06b6d4", "#8b5cf6", "#10b981", "#f59e0b"];
+function StackLegend({ series }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 8, fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)" }, children: series.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { width: 10, height: 10, borderRadius: 2, background: STACK_COLORS[i % STACK_COLORS.length], display: "inline-block" } }),
+    s
+  ] }, s)) });
+}
 function SummaryCards({ summary }) {
   const oaPct = summary.totalPubs > 0 ? Math.round(summary.oaCount / summary.totalPubs * 100) : 0;
   const cards = [
@@ -15362,7 +15369,10 @@ function App() {
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("section", { id: "overview", style: { marginBottom: 24 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SummaryCards, { summary: data.stats.summary }) }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { id: "charts", style: { marginBottom: 32 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { style: { fontFamily: "var(--display)", fontWeight: 400, fontSize: 22, marginBottom: 12 }, children: "Charts" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 16 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "card", style: { minHeight: 400 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphRender, { chart }) }, i)) })
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 16 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "card", style: { minHeight: 400 }, children: [
+          chart.type === "stacked-bar" && chart.series ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(StackLegend, { series: chart.series }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphRender, { chart })
+        ] }, i)) })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { id: "graph", style: { marginBottom: 32 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { style: { fontFamily: "var(--display)", fontWeight: 400, fontSize: 22, marginBottom: 12 }, children: "Collaboration graph" }),
