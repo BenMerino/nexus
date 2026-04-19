@@ -2,12 +2,11 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import type { ProjectedEdge, EnrichedSimNode } from './relationship-types';
 import { enrichWithMeta } from './enrich-meta';
 import { projectGraph } from './project-graph';
-import { useForceLayout } from './use-force-layout';
 import { useFilterState } from './use-filter-state';
 import { CategoryStrip, TagPicker } from './graph-controls';
 import { DetailPanel } from './detail-panel';
 import { StatsBar, FilteredCharts } from './filtered-charts';
-import { GraphCanvas } from './graph-canvas';
+import { ForceGraph } from './force-graph';
 import { GraphSearch } from './graph-search';
 import { GraphLegend } from './graph-legend';
 import { useTagCounts } from './use-tag-counts';
@@ -72,7 +71,7 @@ export function GraphExplorerBody() {
     ...n, weight: totalCounts.get(n.id) || n.weight, doiCount: totalCounts.get(n.id) || n.doiCount,
   })), [projectedNodesRaw, tagMeta, totalCounts]);
   const doiCount = useMemo(() => rawNodes.filter(n => n.group === 'doi').length, [rawNodes]);
-  const { simNodes: layoutNodes, nodesRef: simMutableRef, simRef: d3SimRef } = useForceLayout(projectedNodes, projectedEdges, dims.width, dims.height);
+  const layoutNodes = projectedNodes as EnrichedSimNode[];
   const nodeMap = useMemo(() => new Map(layoutNodes.map(n => [n.id, n])), [layoutNodes]);
   const { connectedIds, edgesForNode } = useMemo(() => {
     if (!selectedNodeId) return { connectedIds: new Set<string>(), edgesForNode: [] as ProjectedEdge[] };
@@ -138,7 +137,7 @@ export function GraphExplorerBody() {
         </div>
         {projectedNodes.length === 0
           ? <div style={{ padding: 40, textAlign: 'center' }} className="muted">No data.</div>
-          : <GraphCanvas dims={dims} projectedEdges={projectedEdges} layoutNodes={layoutNodes} nodeMap={nodeMap} selectedNodeId={selectedNodeId} connectedIds={connectedIds} highlightedIds={highlightedIds} simMutableRef={simMutableRef} d3SimRef={d3SimRef} onSelect={handleSelect} categoryOrder={categoryOrder.filter(c => activeCategories.has(c))} expandedJournal={expandedJournal} />}
+          : <ForceGraph nodes={layoutNodes} links={projectedEdges} width={dims.width} height={dims.height} selectedId={selectedNodeId} onNodeClick={n => handleSelect(n.id)} />}
         {selectedNode && <DetailPanel node={selectedNode} connections={selectedConnections} edgesForNode={edgesForNode} onClose={() => setSelectedNodeId(null)} onSelectNode={id => setSelectedNodeId(id)} />}
       </div>
       <StatsBar nodes={projectedNodes} edges={projectedEdges} doiCount={doiCount} />
