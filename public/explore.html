@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <title>Explore — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
+  <link rel="preload" href="/api/auth?action=me" as="fetch" crossorigin="use-credentials">
+  <link rel="modulepreload" href="/shell-mount-bundle.js">
   <style>
     .section-tabs {
       display: flex; gap: 0; margin-bottom: 18px;
@@ -131,9 +133,9 @@
     function escHtml(s) { if (!s) return ""; return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
     function escAttr(s) { return escHtml(s).replace(/'/g, "&#39;"); }
   </script>
+  <script type="module" src="/shell-mount-bundle.js"></script>
   <script src="/explore-records.js"></script>
   <script src="/explore-search.js"></script>
   <script src="/explore-tags.js"></script>
-  <script type="module" src="/shell-mount-bundle.js"></script>
 </body>
 </html>

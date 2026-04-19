@@ -81,7 +81,14 @@ em {
 .app.app-scroll { grid-template-rows: auto; height: auto; min-height: 100vh; }
 
 /* ═══ SIDEBAR ═══ */
-#sidebar-mount { display: contents; }
+#sidebar-mount {
+  display: contents;
+  background: var(--bg-inset);
+  border-right: 1px solid var(--border-soft);
+}
+#sidebar-mount:empty {
+  display: block;
+}
 .sidebar {
   background: var(--bg-inset);
   border-right: 1px solid var(--border-soft);
