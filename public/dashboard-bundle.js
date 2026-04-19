@@ -14117,11 +14117,26 @@ var import_jsx_runtime7 = __toESM(require_jsx_runtime());
 function radius(n) {
   return n.isMe ? 12 : 5 + Math.min(10, Math.sqrt(n.weight) * 1.5);
 }
+var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1", "#b0b0b0"];
+function buildCommunityColors(nodes, myRor) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const n of nodes) {
+    if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
+    counts.set(n.affiliation.ror, (counts.get(n.affiliation.ror) || 0) + 1);
+  }
+  const sorted = [...counts.entries()].sort((a2, b) => b[1] - a2[1]);
+  const map = /* @__PURE__ */ new Map();
+  sorted.forEach(([ror], i) => map.set(ror, COMMUNITY_PALETTE[i % COMMUNITY_PALETTE.length]));
+  return map;
+}
 function CoAuthorSim({ graph, width, height }) {
   const svgRef = (0, import_react5.useRef)(null);
   const simRef = (0, import_react5.useRef)(null);
   const [, tick] = (0, import_react5.useState)(0);
   const [hoverId, setHoverId] = (0, import_react5.useState)(null);
+  const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
+  const communityColors = (0, import_react5.useMemo)(() => buildCommunityColors(graph.nodes, myRor), [graph, myRor]);
+  const nodeColor = (n) => n.isMe ? "var(--accent)" : !n.affiliation?.ror ? "var(--fg-dim)" : n.affiliation.ror === myRor ? "var(--fg-muted)" : communityColors.get(n.affiliation.ror) || "var(--fg-dim)";
   const { nodes, links } = (0, import_react5.useMemo)(() => {
     const ns = graph.nodes.map((n) => ({
       ...n,
@@ -14227,7 +14242,7 @@ function CoAuthorSim({ graph, width, height }) {
                 "circle",
                 {
                   r,
-                  fill: n.isMe ? "var(--accent)" : "var(--fg-muted)",
+                  fill: nodeColor(n),
                   stroke: isHov ? "#fff" : "rgba(255,255,255,0.2)",
                   strokeWidth: isHov ? 2 : 1
                 }
@@ -14241,7 +14256,8 @@ function CoAuthorSim({ graph, width, height }) {
     ] }),
     hovered && !hovered.isMe && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { position: "absolute", left: hovered.x, top: hovered.y - radius(hovered) - 8, transform: "translate(-50%, -100%)", pointerEvents: "none", background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 4, padding: "6px 10px", fontSize: 12, color: "var(--fg)", whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(0,0,0,0.4)", zIndex: 2 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontWeight: 500 }, children: hovered.label }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }, children: [
+      hovered.affiliation && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", marginTop: 2 }, children: hovered.affiliation.name }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)", marginTop: 2 }, children: [
         hovered.weight,
         " shared ",
         hovered.weight === 1 ? "paper" : "papers"
@@ -14252,6 +14268,38 @@ function CoAuthorSim({ graph, width, height }) {
 
 // public/coauthor-graph-preview.tsx
 var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+function Legend({ graph }) {
+  const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
+  const colors = (0, import_react6.useMemo)(() => buildCommunityColors(graph.nodes, myRor), [graph, myRor]);
+  const items = (0, import_react6.useMemo)(() => {
+    const byRor = /* @__PURE__ */ new Map();
+    for (const n of graph.nodes) {
+      if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
+      const e = byRor.get(n.affiliation.ror) || { name: n.affiliation.name, count: 0 };
+      e.count += 1;
+      byRor.set(n.affiliation.ror, e);
+    }
+    return [...byRor.entries()].sort((a2, b) => b[1].count - a2[1].count).slice(0, 5);
+  }, [graph, myRor]);
+  const home = graph.nodes.find((n) => n.isMe)?.affiliation?.name;
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 10, fontSize: 11, color: "var(--fg-muted)" }, children: [
+    home && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" } }),
+      " ",
+      home
+    ] }),
+    items.map(([ror, info]) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(ror) } }),
+      " ",
+      info.name,
+      " ",
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
+        "\xB7",
+        info.count
+      ] })
+    ] }, ror))
+  ] });
+}
 function CoAuthorGraphPanel({ graph }) {
   const ref = (0, import_react6.useRef)(null);
   const [size, setSize] = (0, import_react6.useState)(null);
@@ -14281,7 +14329,8 @@ function CoAuthorGraphPanel({ graph }) {
         ] })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { ref, style: { position: "relative", width: "100%", flex: 1, minHeight: 260 }, children: emptyMsg ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "muted", children: emptyMsg }) : size && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(CoAuthorSim, { graph, width: size.w, height: size.h }) })
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { ref, style: { position: "relative", width: "100%", flex: 1, minHeight: 260 }, children: emptyMsg ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "muted", children: emptyMsg }) : size && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(CoAuthorSim, { graph, width: size.w, height: size.h }) }),
+    !emptyMsg && graph && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Legend, { graph })
   ] });
 }
 
