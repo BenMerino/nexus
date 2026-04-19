@@ -5,7 +5,6 @@ export interface CollabRow { value: string; count: string; }
 export interface CountryRow { country: string; count: string; }
 export interface TypeRow { type: string; count: number; }
 export interface JournalRow { journal: string; count: number; }
-export interface SourceRow { source: string; count: number; }
 export interface TypeYearRow { type: string; year: string; count: number; }
 export interface YearIndexRow { year: string; bucket: string; count: number; }
 
@@ -17,40 +16,40 @@ export interface PublicStats {
   types: TypeRow[];
   journals: JournalRow[];
   yearRange: { minYear: string | null; maxYear: string | null };
-  bySource: SourceRow[];
   typeByYear: TypeYearRow[];
   yearByIndex: YearIndexRow[];
 }
 
-const INDEX_STACK = ['WoS', 'Scopus', 'SciELO', 'DOAJ', 'Crossref', 'indexed', 'Other'];
+const INDEXES = ['WoS', 'Scopus', 'SciELO', 'DOAJ'];
 
 function buildYearChart(stats: PublicStats): GraphDirective | null {
-  const rows = stats.yearByIndex && stats.yearByIndex.length ? stats.yearByIndex : null;
-  if (!rows) {
-    const byYear = new Map<string, number>();
-    for (const row of stats.yearSource) byYear.set(row.year, (byYear.get(row.year) || 0) + parseInt(row.count));
-    const years = [...byYear.keys()].filter(Boolean).sort();
-    if (years.length <= 1) return null;
-    return { type: 'bar', title: 'Publications by Year', yLabel: 'Articles',
-      data: years.map(y => ({ label: y, value: byYear.get(y) || 0 })) };
-  }
-  const grid = new Map<string, Record<string, number>>();
-  for (const r of rows) {
-    if (!r.year) continue;
-    if (!grid.has(r.year)) {
-      const z: Record<string, number> = {};
-      for (const k of INDEX_STACK) z[k] = 0;
-      grid.set(r.year, z);
-    }
-    grid.get(r.year)![r.bucket] = (grid.get(r.year)![r.bucket] || 0) + r.count;
-  }
-  const years = [...grid.keys()].sort();
+  const byYearTotal = new Map<string, number>();
+  for (const row of stats.yearSource) byYearTotal.set(row.year, (byYearTotal.get(row.year) || 0) + parseInt(row.count));
+  const years = [...byYearTotal.keys()].filter(Boolean).sort();
   if (years.length <= 1) return null;
+
+  const hasIndexData = (stats.yearByIndex || []).some(r => INDEXES.includes(r.bucket));
+  if (!hasIndexData) {
+    return { type: 'bar', title: 'Publications by Year', yLabel: 'Articles',
+      data: years.map(y => ({ label: y, value: byYearTotal.get(y) || 0 })) };
+  }
+
+  const grid = new Map<string, Record<string, number>>();
+  for (const y of years) {
+    const z: Record<string, number> = {};
+    for (const k of INDEXES) z[k] = 0;
+    grid.set(y, z);
+  }
+  for (const r of stats.yearByIndex) {
+    if (!r.year || !grid.has(r.year)) continue;
+    if (!INDEXES.includes(r.bucket)) continue;
+    grid.get(r.year)![r.bucket] += r.count;
+  }
   return {
-    type: 'stacked-bar',
-    title: 'Publications by Year',
-    yLabel: 'Articles',
-    series: INDEX_STACK,
+    type: 'multi-line',
+    title: 'Index coverage by year',
+    yLabel: 'Papers',
+    series: INDEXES,
     data: years.map(y => ({ label: y, ...grid.get(y)! })),
   };
 }
@@ -79,16 +78,6 @@ function buildJournalChart(stats: PublicStats): GraphDirective | null {
   };
 }
 
-function buildSourceChart(stats: PublicStats): GraphDirective | null {
-  if (!stats.bySource.length) return null;
-  return {
-    type: 'bar',
-    title: 'Publications by Source',
-    yLabel: 'Papers',
-    data: stats.bySource.map(s => ({ label: s.source, value: s.count })),
-  };
-}
-
 function buildCollabChart(stats: PublicStats): GraphDirective | null {
   const top = stats.collabs.slice(0, 15);
   if (!top.length) return null;
@@ -114,7 +103,6 @@ function buildCountryChart(stats: PublicStats): GraphDirective | null {
 export function buildTenantCharts(stats: PublicStats): GraphDirective[] {
   return [
     buildYearChart(stats),
-    buildSourceChart(stats),
     buildTypeChart(stats),
     buildJournalChart(stats),
     buildCollabChart(stats),

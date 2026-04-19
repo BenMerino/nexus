@@ -15109,38 +15109,37 @@ function TenantGraph({ nodes, edges }) {
 }
 
 // public/tenant-builders.ts
-var INDEX_STACK = ["WoS", "Scopus", "SciELO", "DOAJ", "Crossref", "indexed", "Other"];
+var INDEXES = ["WoS", "Scopus", "SciELO", "DOAJ"];
 function buildYearChart(stats) {
-  const rows = stats.yearByIndex && stats.yearByIndex.length ? stats.yearByIndex : null;
-  if (!rows) {
-    const byYear = /* @__PURE__ */ new Map();
-    for (const row of stats.yearSource) byYear.set(row.year, (byYear.get(row.year) || 0) + parseInt(row.count));
-    const years2 = [...byYear.keys()].filter(Boolean).sort();
-    if (years2.length <= 1) return null;
+  const byYearTotal = /* @__PURE__ */ new Map();
+  for (const row of stats.yearSource) byYearTotal.set(row.year, (byYearTotal.get(row.year) || 0) + parseInt(row.count));
+  const years = [...byYearTotal.keys()].filter(Boolean).sort();
+  if (years.length <= 1) return null;
+  const hasIndexData = (stats.yearByIndex || []).some((r) => INDEXES.includes(r.bucket));
+  if (!hasIndexData) {
     return {
       type: "bar",
       title: "Publications by Year",
       yLabel: "Articles",
-      data: years2.map((y3) => ({ label: y3, value: byYear.get(y3) || 0 }))
+      data: years.map((y3) => ({ label: y3, value: byYearTotal.get(y3) || 0 }))
     };
   }
   const grid = /* @__PURE__ */ new Map();
-  for (const r of rows) {
-    if (!r.year) continue;
-    if (!grid.has(r.year)) {
-      const z = {};
-      for (const k of INDEX_STACK) z[k] = 0;
-      grid.set(r.year, z);
-    }
-    grid.get(r.year)[r.bucket] = (grid.get(r.year)[r.bucket] || 0) + r.count;
+  for (const y3 of years) {
+    const z = {};
+    for (const k of INDEXES) z[k] = 0;
+    grid.set(y3, z);
   }
-  const years = [...grid.keys()].sort();
-  if (years.length <= 1) return null;
+  for (const r of stats.yearByIndex) {
+    if (!r.year || !grid.has(r.year)) continue;
+    if (!INDEXES.includes(r.bucket)) continue;
+    grid.get(r.year)[r.bucket] += r.count;
+  }
   return {
-    type: "stacked-bar",
-    title: "Publications by Year",
-    yLabel: "Articles",
-    series: INDEX_STACK,
+    type: "multi-line",
+    title: "Index coverage by year",
+    yLabel: "Papers",
+    series: INDEXES,
     data: years.map((y3) => ({ label: y3, ...grid.get(y3) }))
   };
 }
@@ -15162,15 +15161,6 @@ function buildJournalChart(stats) {
       label: (j.journal || "").substring(0, 18),
       value: j.count
     }))
-  };
-}
-function buildSourceChart(stats) {
-  if (!stats.bySource.length) return null;
-  return {
-    type: "bar",
-    title: "Publications by Source",
-    yLabel: "Papers",
-    data: stats.bySource.map((s) => ({ label: s.source, value: s.count }))
   };
 }
 function buildCollabChart(stats) {
@@ -15197,7 +15187,6 @@ function buildCountryChart(stats) {
 function buildTenantCharts(stats) {
   return [
     buildYearChart(stats),
-    buildSourceChart(stats),
     buildTypeChart(stats),
     buildJournalChart(stats),
     buildCollabChart(stats),
@@ -15290,13 +15279,6 @@ var NAV = [
   { id: "graph", label: "Collaboration graph" },
   { id: "authors", label: "Authors directory" }
 ];
-var STACK_COLORS = ["#06b6d4", "#8b5cf6", "#10b981", "#f59e0b"];
-function StackLegend({ series }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 8, fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)" }, children: series.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { width: 10, height: 10, borderRadius: 2, background: STACK_COLORS[i % STACK_COLORS.length], display: "inline-block" } }),
-    s
-  ] }, s)) });
-}
 function SummaryCards({ summary }) {
   const oaPct = summary.totalPubs > 0 ? Math.round(summary.oaCount / summary.totalPubs * 100) : 0;
   const cards = [
@@ -15373,10 +15355,7 @@ function App() {
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("section", { id: "overview", style: { marginBottom: 24 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SummaryCards, { summary: data.stats.summary }) }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { id: "charts", style: { marginBottom: 32 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { style: { fontFamily: "var(--display)", fontWeight: 400, fontSize: 22, marginBottom: 12 }, children: "Charts" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 16 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "card", style: { minHeight: 400 }, children: [
-          chart.type === "stacked-bar" && chart.series ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(StackLegend, { series: chart.series }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphRender, { chart })
-        ] }, i)) })
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 16 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "card", style: { minHeight: 400 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphRender, { chart }) }, i)) })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { id: "graph", style: { marginBottom: 32 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { style: { fontFamily: "var(--display)", fontWeight: 400, fontSize: 22, marginBottom: 12 }, children: "Collaboration graph" }),
