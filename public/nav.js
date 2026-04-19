@@ -27,7 +27,6 @@
     renderLogo(d);
     var html = '<div style="display:flex;align-items:center;gap:8px;">';
     html += '<div id="nav-avatar" style="display:flex;align-items:center;gap:8px;cursor:pointer;">';
-    if (d.logo && d.role !== "superadmin") html += '<img src="' + d.logo + '" style="height:24px;width:24px;object-fit:contain;border-radius:3px;">';
     var p = d.profile || {};
     var displayName = p.name || d.user;
     var subParts = [p.position, p.faculty, d.tenant].filter(Boolean);
@@ -62,9 +61,13 @@
     }
     card += '</div>';
     card += '<table class="profile-table">';
+    card += '<tr><td>ORCID</td><td>' + (p.orcid ? esc(p.orcid) : '<span style="color:#999;">—</span>') + '</td></tr>';
+    if (currentData.userPapers != null) card += '<tr><td>My Papers</td><td>' + currentData.userPapers + '</td></tr>';
     card += '<tr><td>Position</td><td>' + esc(p.position) + '</td></tr>';
     card += '<tr><td>Faculty</td><td>' + esc(p.faculty) + '</td></tr>';
     card += '<tr><td>Affiliation</td><td>' + esc(p.affiliation) + '</td></tr>';
+    card += '<tr><td>ROR</td><td>' + (p.ror ? esc(p.ror) : '<span style="color:#999;">—</span>') + '</td></tr>';
+    if (currentData.tenantPapers != null) card += '<tr><td>Institutional Papers</td><td>' + currentData.tenantPapers + '</td></tr>';
     card += '</table>';
     card += '<button class="profile-close">Close</button>';
     card += '</div>';
@@ -78,34 +81,36 @@
     });
   }
 
+  var SUPERADMIN_LINKS = [
+    ["/admin.html", "Admin"],
+  ];
+  var DEFAULT_LINKS = [
+    ["/dashboard.html", "Dashboard"], ["/overview.html", "Overview"],
+    ["/explore.html", "Explore"], ["/tag-manager.html", "Tags"],
+  ];
+
+  function buildNav(role) {
+    var linksSlot = document.getElementById("nav-links");
+    if (!linksSlot) return;
+    var links = role === "superadmin" ? SUPERADMIN_LINKS : DEFAULT_LINKS;
+    var html = "";
+    links.forEach(function (l) {
+      var cls = location.pathname === l[0] ? ' class="active"' : "";
+      html += '<a href="' + l[0] + '"' + cls + '>' + l[1] + '</a>';
+    });
+    linksSlot.innerHTML = html;
+  }
+
   // Render immediately from cache to prevent jitter
   var cached = localStorage.getItem("nexus_nav");
-  if (cached) { try { var c = JSON.parse(cached); renderLogo(c); render(c); } catch (e) {} }
+  if (cached) { try { var c = JSON.parse(cached); buildNav(c.role); renderLogo(c); render(c); } catch (e) {} }
 
   // Then refresh from API and update cache
   fetch("/api/auth?action=me")
     .then(function (r) { return r.json(); })
     .then(function (d) {
       localStorage.setItem("nexus_nav", JSON.stringify(d));
+      buildNav(d.role);
       render(d);
-      showAdminLink(d.role);
     }).catch(function () {});
-
-  function showAdminLink(role) {
-    if (role !== "superadmin" && role !== "director") return;
-    var nav = document.querySelector("nav");
-    var userSlot = document.getElementById("nav-user");
-    if (!nav || !userSlot) return;
-    addNavLink(nav, userSlot, "/settings.html", "Settings");
-    addNavLink(nav, userSlot, "/admin.html", "Admin");
-  }
-
-  function addNavLink(nav, before, href, text) {
-    if (nav.querySelector('a[href="' + href + '"]')) return;
-    var link = document.createElement("a");
-    link.href = href;
-    link.textContent = text;
-    if (location.pathname === href) link.className = "active";
-    nav.insertBefore(link, before);
-  }
 })();

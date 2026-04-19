@@ -1,5 +1,12 @@
-// Bulk institution import with cursor pagination
+// Bulk institution import with cursor pagination (superadmin only)
 var DEFAULT_ROR = "https://ror.org/03gawms58"; // UTalca
+
+fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
+  if (d.role === "superadmin") {
+    var el = document.getElementById("import-section");
+    if (el) el.style.display = "";
+  }
+});
 
 function startImport() {
   var btn = document.getElementById("import-btn");

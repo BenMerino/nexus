@@ -13186,103 +13186,8 @@ function defaultInteraction(type) {
   };
 }
 
-// graph-engine/cartesian-render.tsx
+// graph-engine/cartesian-series.tsx
 var import_jsx_runtime7 = __toESM(require_jsx_runtime());
-var CARTESIAN = /* @__PURE__ */ new Set(["bar", "stacked-bar", "area", "stacked-area", "line", "multi-line", "sparkline", "distribution", "waterfall", "scatter", "bubble"]);
-function isCartesian(type) {
-  return CARTESIAN.has(type);
-}
-function CartesianRender({ chart, width = 320, height = 150 }) {
-  const ref = (0, import_react4.useRef)(null);
-  const { tip, show, hide } = useTooltip();
-  const { range, onDown: dragDown, onDrag, onUp: dragUp, clear: dragClear } = useDragRange();
-  const c = cs(chart);
-  const data = chart.data;
-  const t = chart.type;
-  const spark = t === "sparkline";
-  const h = spark ? 40 : height;
-  const m = spark ? { top: 4, right: 4, bottom: 4, left: 4 } : MARGIN;
-  const pw = width - m.left - m.right;
-  const ph = h - m.top - m.bottom;
-  const xR = [m.left, m.left + pw];
-  const yR = [m.top, m.top + ph];
-  if (t === "scatter" || t === "bubble") return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(ScatterSvg, { chart, width, height });
-  if (t === "waterfall") return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(WaterfallSvg, { chart, width, height });
-  const isStacked = t === "stacked-bar" || t === "stacked-area";
-  const isMulti = t === "multi-line";
-  const series = chart.series || [];
-  const labels = data.map((d) => String(d.label ?? ""));
-  const band = bandScale(labels, xR, t === "line" || t === "multi-line" || t === "area" || t === "stacked-area" || spark ? 0 : 0.2);
-  const allVals = isStacked ? data.map((d) => series.reduce((s, k) => s + (d[k] || 0), 0)) : isMulti ? data.flatMap((d) => series.map((k) => d[k] || 0)) : data.map((d) => d.value ?? 0);
-  const yDom = niceDomain(0, Math.max(...allVals, 1));
-  const yS = linearScale([yDom.min, yDom.max], [yR[1], yR[0]]);
-  const resolve = (e) => {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0) return null;
-    const scaleX = rect.width / width;
-    const scaleY = rect.height / h;
-    const vbX = (e.clientX - rect.left) / scaleX;
-    const idx = Math.min(data.length - 1, Math.max(0, Math.floor((vbX - xR[0]) / pw * data.length)));
-    const d = data[idx];
-    if (!d) return null;
-    const b = band(labels[idx]);
-    const pX = b.x + b.width / 2;
-    const pY = yS(allVals[idx]);
-    return { idx, label: labels[idx], value: allVals[idx], vbX: pX, pY, scaleX, scaleY };
-  };
-  const onMove = (e) => {
-    const r = resolve(e);
-    if (!r) return;
-    if (range.dragging) {
-      onDrag({ idx: r.idx, label: r.label, value: r.value, vbX: r.vbX });
-      return;
-    }
-    const vals = isStacked || isMulti ? series.map((s, i) => ({ name: s, value: data[r.idx][s] || 0, color: seriesColor(c, i) })) : [{ name: "value", value: r.value, color: c.primary }];
-    show({ x: r.vbX * r.scaleX, y: r.pY * r.scaleY, vbX: r.vbX, vbY: r.pY, label: r.label, values: vals });
-  };
-  const ix = chart.interaction ?? defaultInteraction(t);
-  const scX = ref.current ? ref.current.getBoundingClientRect().width / width : 1;
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
-      "svg",
-      {
-        ref,
-        viewBox: `0 0 ${width} ${h}`,
-        width: "100%",
-        height: h,
-        onMouseMove: onMove,
-        onMouseLeave: () => {
-          if (!range.dragging) hide();
-        },
-        onMouseDown: ix.dragRange ? (e) => {
-          const r = resolve(e);
-          if (r) {
-            dragClear();
-            hide();
-            dragDown({ idx: r.idx, label: r.label, value: r.value, vbX: r.vbX });
-          }
-        } : void 0,
-        onMouseUp: ix.dragRange ? dragUp : void 0,
-        style: { display: "block", cursor: spark ? void 0 : ix.dragRange ? "crosshair" : void 0 },
-        children: [
-          c.gradient && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("linearGradient", { id: "gr-bar", x1: "0", y1: "0", x2: "0", y2: "1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "0%", stopColor: c.gradient[0] }),
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "100%", stopColor: c.gradient[1] })
-          ] }) }),
-          ix.dragRange && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(RangeHighlight, { range, yR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(GridLines, { domain: yDom, range: [yR[1], yR[0]], xRange: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(XAxisBand, { labels, y: yR[1], range: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(YAxis, { domain: yDom, range: [yR[1], yR[0]], x: m.left }),
-          renderSeries(t, data, labels, band, yS, yR[1], c, series, pw, chart),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(ThresholdLines, { thresholds: chart.thresholds, yScale: yS, xRange: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Crosshairs, { tip, xR, yR, mode: ix.crosshair, ms: ix.transitionMs })
-        ]
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(TooltipOverlay, { tip, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig, svgRef: ref, ms: ix.transitionMs }),
-    ix.dragRange && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(RangeBadge, { range, svgRef: ref, scaleX: scX, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig })
-  ] });
-}
 function renderSeries(t, data, labels, band, yS, baseline, c, series, pw, chart) {
   const isBar = t === "bar";
   const isArea = t === "area" || t === "sparkline";
@@ -13386,18 +13291,116 @@ function renderSeries(t, data, labels, band, yS, baseline, c, series, pw, chart)
   return null;
 }
 
+// graph-engine/cartesian-render.tsx
+var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+var CARTESIAN = /* @__PURE__ */ new Set(["bar", "stacked-bar", "area", "stacked-area", "line", "multi-line", "sparkline", "distribution", "waterfall", "scatter", "bubble"]);
+function isCartesian(type) {
+  return CARTESIAN.has(type);
+}
+function CartesianRender({ chart, width = 320, height = 150 }) {
+  const ref = (0, import_react4.useRef)(null);
+  const { tip, show, hide } = useTooltip();
+  const { range, onDown: dragDown, onDrag, onUp: dragUp, clear: dragClear } = useDragRange();
+  const c = cs(chart);
+  const data = chart.data;
+  const t = chart.type;
+  const spark = t === "sparkline";
+  const h = spark ? 40 : height;
+  const m = spark ? { top: 4, right: 4, bottom: 4, left: 4 } : MARGIN;
+  const pw = width - m.left - m.right;
+  const ph = h - m.top - m.bottom;
+  const xR = [m.left, m.left + pw];
+  const yR = [m.top, m.top + ph];
+  if (t === "scatter" || t === "bubble") return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(ScatterSvg, { chart, width, height });
+  if (t === "waterfall") return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(WaterfallSvg, { chart, width, height });
+  const isStacked = t === "stacked-bar" || t === "stacked-area";
+  const isMulti = t === "multi-line";
+  const series = chart.series || [];
+  const labels = data.map((d) => String(d.label ?? ""));
+  const band = bandScale(labels, xR, t === "line" || t === "multi-line" || t === "area" || t === "stacked-area" || spark ? 0 : 0.2);
+  const allVals = isStacked ? data.map((d) => series.reduce((s, k) => s + (d[k] || 0), 0)) : isMulti ? data.flatMap((d) => series.map((k) => d[k] || 0)) : data.map((d) => d.value ?? 0);
+  const yDom = niceDomain(0, Math.max(...allVals, 1));
+  const yS = linearScale([yDom.min, yDom.max], [yR[1], yR[0]]);
+  const resolve = (e) => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return null;
+    const scaleX = rect.width / width;
+    const scaleY = rect.height / h;
+    const vbX = (e.clientX - rect.left) / scaleX;
+    const idx = Math.min(data.length - 1, Math.max(0, Math.floor((vbX - xR[0]) / pw * data.length)));
+    const d = data[idx];
+    if (!d) return null;
+    const b = band(labels[idx]);
+    const pX = b.x + b.width / 2;
+    const pY = yS(allVals[idx]);
+    return { idx, label: labels[idx], value: allVals[idx], vbX: pX, pY, scaleX, scaleY };
+  };
+  const onMove = (e) => {
+    const r = resolve(e);
+    if (!r) return;
+    if (range.dragging) {
+      onDrag({ idx: r.idx, label: r.label, value: r.value, vbX: r.vbX });
+      return;
+    }
+    const vals = isStacked || isMulti ? series.map((s, i) => ({ name: s, value: data[r.idx][s] || 0, color: seriesColor(c, i) })) : [{ name: "value", value: r.value, color: c.primary }];
+    show({ x: r.vbX * r.scaleX, y: r.pY * r.scaleY, vbX: r.vbX, vbY: r.pY, label: r.label, values: vals });
+  };
+  const ix = chart.interaction ?? defaultInteraction(t);
+  const scX = ref.current ? ref.current.getBoundingClientRect().width / width : 1;
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+      "svg",
+      {
+        ref,
+        viewBox: `0 0 ${width} ${h}`,
+        width: "100%",
+        height: h,
+        onMouseMove: onMove,
+        onMouseLeave: () => {
+          if (!range.dragging) hide();
+        },
+        onMouseDown: ix.dragRange ? (e) => {
+          const r = resolve(e);
+          if (r) {
+            dragClear();
+            hide();
+            dragDown({ idx: r.idx, label: r.label, value: r.value, vbX: r.vbX });
+          }
+        } : void 0,
+        onMouseUp: ix.dragRange ? dragUp : void 0,
+        style: { display: "block", cursor: spark ? void 0 : ix.dragRange ? "crosshair" : void 0 },
+        children: [
+          c.gradient && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("linearGradient", { id: "gr-bar", x1: "0", y1: "0", x2: "0", y2: "1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("stop", { offset: "0%", stopColor: c.gradient[0] }),
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("stop", { offset: "100%", stopColor: c.gradient[1] })
+          ] }) }),
+          ix.dragRange && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(RangeHighlight, { range, yR }),
+          !spark && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(GridLines, { domain: yDom, range: [yR[1], yR[0]], xRange: xR }),
+          !spark && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(XAxisBand, { labels, y: yR[1], range: xR }),
+          !spark && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(YAxis, { domain: yDom, range: [yR[1], yR[0]], x: m.left }),
+          renderSeries(t, data, labels, band, yS, yR[1], c, series, pw, chart),
+          !spark && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(ThresholdLines, { thresholds: chart.thresholds, yScale: yS, xRange: xR }),
+          !spark && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Crosshairs, { tip, xR, yR, mode: ix.crosshair, ms: ix.transitionMs })
+        ]
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(TooltipOverlay, { tip, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig, svgRef: ref, ms: ix.transitionMs }),
+    ix.dragRange && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(RangeBadge, { range, svgRef: ref, scaleX: scX, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig })
+  ] });
+}
+
 // graph-engine/radial-render.tsx
 var import_react5 = __toESM(require_react());
-var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+var import_jsx_runtime9 = __toESM(require_jsx_runtime());
 var RADIAL = /* @__PURE__ */ new Set(["pie", "donut", "gauge", "progress-ring"]);
 function isRadial(type) {
   return RADIAL.has(type);
 }
 function RadialRender({ chart, size = 150 }) {
   const t = chart.type;
-  if (t === "gauge") return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(GaugeSvg, { chart, size });
-  if (t === "progress-ring") return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(RingSvg, { chart, size });
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(PieSvg, { chart, size, donut: t === "donut" });
+  if (t === "gauge") return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GaugeSvg, { chart, size });
+  if (t === "progress-ring") return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(RingSvg, { chart, size });
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(PieSvg, { chart, size, donut: t === "donut" });
 }
 function PieSvg({ chart, size, donut }) {
   const ref = (0, import_react5.useRef)(null);
@@ -13408,15 +13411,15 @@ function PieSvg({ chart, size, donut }) {
   const outer = size * 0.38, inner = donut ? size * 0.23 : 0;
   const values = data.map((d) => d.value ?? 0);
   const arcs = arcScale(values, -Math.PI / 2, Math.PI * 1.5);
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ref, viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, onMouseLeave: hide, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref, viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, onMouseLeave: hide, children: [
       arcs.map((arc, i) => {
         const color = colors[i % colors.length];
         const mid = (arc.startAngle + arc.endAngle) / 2;
         const hx = cx + outer * 0.7 * Math.cos(mid);
         const hy = cy + outer * 0.7 * Math.sin(mid);
         const d = donut ? donutArc(cx, cy, outer, inner, arc.startAngle, arc.endAngle) : donutArc(cx, cy, outer, 0, arc.startAngle, arc.endAngle);
-        return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
           "path",
           {
             d,
@@ -13428,9 +13431,9 @@ function PieSvg({ chart, size, donut }) {
           i
         );
       }),
-      donut && chart.yLabel && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("text", { x: cx, y: cy, textAnchor: "middle", dominantBaseline: "central", fontSize: 14, fontWeight: 700, fill: "var(--text-main)", children: chart.yLabel })
+      donut && chart.yLabel && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("text", { x: cx, y: cy, textAnchor: "middle", dominantBaseline: "central", fontSize: 14, fontWeight: 700, fill: "var(--text-main)", children: chart.yLabel })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(TooltipOverlay, { tip, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig, svgRef: ref })
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(TooltipOverlay, { tip, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig, svgRef: ref })
   ] });
 }
 function GaugeSvg({ chart, size }) {
@@ -13443,16 +13446,16 @@ function GaugeSvg({ chart, size }) {
   const cx = size / 2, cy = size * 0.55, r = size * 0.38;
   const bgPath = arcPath(cx, cy, r, Math.PI, 0);
   const fgPath = arcPath(cx, cy, r, Math.PI, Math.PI + pct * Math.PI);
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: { textAlign: "center" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { viewBox: `0 0 ${size} ${size * 0.6}`, width: "100%", height: size * 0.55, style: { display: "block" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: bgPath, fill: "none", stroke: "var(--border-main)", strokeWidth: 8, strokeLinecap: "round", opacity: 0.15 }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: fgPath, fill: "none", stroke: c.primary, strokeWidth: 8, strokeLinecap: "round" })
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { textAlign: "center" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { viewBox: `0 0 ${size} ${size * 0.6}`, width: "100%", height: size * 0.55, style: { display: "block" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: bgPath, fill: "none", stroke: "var(--border-main)", strokeWidth: 8, strokeLinecap: "round", opacity: 0.15 }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: fgPath, fill: "none", stroke: c.primary, strokeWidth: 8, strokeLinecap: "round" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(BaseText, { weight: "bold", style: { fontSize: 18, marginTop: -4, color: c.primary }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(BaseText, { weight: "bold", style: { fontSize: 18, marginTop: -4, color: c.primary }, children: [
       chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value,
       chart.yLabel === "%" ? "%" : ""
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(BaseText, { variant: "detail", color: "muted", style: { fontSize: 9 }, children: d.label || chart.title })
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(BaseText, { variant: "detail", color: "muted", style: { fontSize: 9 }, children: d.label || chart.title })
   ] });
 }
 function RingSvg({ chart, size }) {
@@ -13464,9 +13467,9 @@ function RingSvg({ chart, size }) {
   const pct = Math.min(value / max, 1);
   const cx = size / 2, cy = size / 2, r = size * 0.38, sw = 8;
   const circ = Math.PI * 2 * r;
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: { textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx, cy, r, fill: "none", stroke: "var(--border-main)", strokeWidth: sw, opacity: 0.15 }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("circle", { cx, cy, r, fill: "none", stroke: "var(--border-main)", strokeWidth: sw, opacity: 0.15 }),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       "circle",
       {
         cx,
@@ -13480,13 +13483,13 @@ function RingSvg({ chart, size }) {
         transform: `rotate(-90 ${cx} ${cy})`
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("text", { x: cx, y: cy - 4, textAnchor: "middle", fontSize: 22, fontWeight: 700, fill: "var(--text-main)", children: chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("text", { x: cx, y: cy + 14, textAnchor: "middle", fontSize: 9, fill: "var(--text-muted)", children: d.label || chart.title })
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("text", { x: cx, y: cy - 4, textAnchor: "middle", fontSize: 22, fontWeight: 700, fill: "var(--text-main)", children: chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value }),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("text", { x: cx, y: cy + 14, textAnchor: "middle", fontSize: 9, fill: "var(--text-muted)", children: d.label || chart.title })
   ] }) });
 }
 
 // graph-engine/polar-render.tsx
-var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+var import_jsx_runtime10 = __toESM(require_jsx_runtime());
 var POLAR = /* @__PURE__ */ new Set(["radar"]);
 function isPolar(type) {
   return POLAR.has(type);
@@ -13503,17 +13506,17 @@ function PolarRender({ chart, size = 170 }) {
   const allVals = data.flatMap((d) => series.map((s) => d[s] ?? 0));
   const maxVal = Math.max(...allVals, 1);
   const rings = [0.25, 0.5, 0.75, 1];
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
-    rings.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("circle", { cx, cy, r: maxR * r, fill: "none", stroke: "var(--border-main)", strokeOpacity: 0.15 }, i)),
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
+    rings.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("circle", { cx, cy, r: maxR * r, fill: "none", stroke: "var(--border-main)", strokeOpacity: 0.15 }, i)),
     data.map((_, i) => {
       const a = axisAngle(i);
       const ex = cx + maxR * Math.cos(a);
       const ey = cy + maxR * Math.sin(a);
       const lx = cx + (maxR + 12) * Math.cos(a);
       const ly = cy + (maxR + 12) * Math.sin(a);
-      return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("line", { x1: cx, y1: cy, x2: ex, y2: ey, stroke: "var(--border-main)", strokeOpacity: 0.15 }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("text", { x: lx, y: ly, textAnchor: "middle", dominantBaseline: "central", fontSize: 8, fontWeight: 600, fill: "var(--text-muted)", children: data[i].label })
+      return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("line", { x1: cx, y1: cy, x2: ex, y2: ey, stroke: "var(--border-main)", strokeOpacity: 0.15 }),
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: lx, y: ly, textAnchor: "middle", dominantBaseline: "central", fontSize: 8, fontWeight: 600, fill: "var(--text-muted)", children: data[i].label })
       ] }, i);
     }),
     series.map((s, si) => {
@@ -13523,9 +13526,9 @@ function PolarRender({ chart, size = 170 }) {
         return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
       });
       const color = seriesColor(c, si);
-      return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("polygon", { points: pts.map((p) => `${p.x},${p.y}`).join(" "), fill: color, fillOpacity: 0.12, stroke: color, strokeWidth: 1.5 }),
-        pts.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("circle", { cx: p.x, cy: p.y, r: 2.5, fill: color }, i))
+      return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("polygon", { points: pts.map((p) => `${p.x},${p.y}`).join(" "), fill: color, fillOpacity: 0.12, stroke: color, strokeWidth: 1.5 }),
+        pts.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("circle", { cx: p.x, cy: p.y, r: 2.5, fill: color }, i))
       ] }, s);
     })
   ] });
@@ -13533,7 +13536,8 @@ function PolarRender({ chart, size = 170 }) {
 
 // graph-engine/grid-render.tsx
 var import_react6 = __toESM(require_react());
-var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+
+// graph-engine/color-ramp.ts
 function parseHex(hex) {
   const h = hex.replace("#", "");
   return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
@@ -13545,6 +13549,9 @@ function rampColor(stops, t) {
   const [ar, ag, ab] = parseHex(stops[i]), [br, bg, bb] = parseHex(stops[i + 1]);
   return `rgb(${Math.round(ar + (br - ar) * f)},${Math.round(ag + (bg - ag) * f)},${Math.round(ab + (bb - ab) * f)})`;
 }
+
+// graph-engine/grid-render.tsx
+var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 var GRID = /* @__PURE__ */ new Set(["heatmap", "treemap", "funnel"]);
 function isGrid(type) {
   return GRID.has(type);
@@ -13552,11 +13559,11 @@ function isGrid(type) {
 function GridRender({ chart, width = 320, height = 150, axesOverride }) {
   switch (chart.type) {
     case "heatmap":
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(HeatmapSvg, { chart, width, height, axesOverride });
+      return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(HeatmapSvg, { chart, width, height, axesOverride });
     case "treemap":
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(TreemapSvg, { chart, width, height });
+      return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(TreemapSvg, { chart, width, height });
     case "funnel":
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(FunnelSvg, { chart, width, height });
+      return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(FunnelSvg, { chart, width, height });
     default:
       return null;
   }
@@ -13583,8 +13590,8 @@ function HeatmapSvg({ chart, width, height, axesOverride }) {
   const maxColSum = Math.max(...colSums, 1);
   const gridRight = labelW + cols.length * cellW;
   const gridBottom = labelH + rows.length * cellH;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, onMouseLeave: () => setHover(null), children: [
-    cols.map((col, ci) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, onMouseLeave: () => setHover(null), children: [
+    cols.map((col, ci) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
       "text",
       {
         x: labelW + ci * cellW + cellW / 2,
@@ -13598,8 +13605,8 @@ function HeatmapSvg({ chart, width, height, axesOverride }) {
       },
       ci
     )),
-    rows.map((row, ri) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    rows.map((row, ri) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         "text",
         {
           x: labelW - 3,
@@ -13618,7 +13625,7 @@ function HeatmapSvg({ chart, width, height, axesOverride }) {
         const isHovered = hover?.ri === ri && hover?.ci === ci;
         const isAxis = useCell && hover && (hover.ri === ri || hover.ci === ci);
         const cellColor = ratio === 0 && !isAxis ? "transparent" : rampColor(ramp, ratio);
-        return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
           "rect",
           {
             x: labelW + ci * cellW + 0.5,
@@ -13637,7 +13644,7 @@ function HeatmapSvg({ chart, width, height, axesOverride }) {
         );
       })
     ] }, ri)),
-    useCell && hover && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    useCell && hover && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
       "text",
       {
         x: labelW + hover.ci * cellW + cellW / 2,
@@ -13649,7 +13656,7 @@ function HeatmapSvg({ chart, width, height, axesOverride }) {
         children: fmtValue(hover.val, chart.currencyConfig)
       }
     ),
-    showMarginal && rows.map((_, ri) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    showMarginal && rows.map((_, ri) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
       "rect",
       {
         x: gridRight + 3,
@@ -13663,7 +13670,7 @@ function HeatmapSvg({ chart, width, height, axesOverride }) {
       },
       `mr-${ri}`
     )),
-    showMarginal && cols.map((_, ci) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    showMarginal && cols.map((_, ci) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
       "rect",
       {
         x: labelW + ci * cellW + 1,
@@ -13690,9 +13697,9 @@ function TreemapSvg({ chart, width, height }) {
     x += w;
     return r;
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: rects.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("rect", { x: r.x + 1, y: 1, width: Math.max(0, r.w - 2), height: r.h - 2, rx: 4, fill: r.color, opacity: 0.8 }),
-    r.w > 24 && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: r.x + r.w / 2, y: r.h / 2, textAnchor: "middle", dominantBaseline: "central", fontSize: 8, fontWeight: 600, fill: "#fff", children: r.name })
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: rects.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("rect", { x: r.x + 1, y: 1, width: Math.max(0, r.w - 2), height: r.h - 2, rx: 4, fill: r.color, opacity: 0.8 }),
+    r.w > 24 && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("text", { x: r.x + r.w / 2, y: r.h / 2, textAnchor: "middle", dominantBaseline: "central", fontSize: 8, fontWeight: 600, fill: "#fff", children: r.name })
   ] }, i)) });
 }
 function FunnelSvg({ chart, width, height }) {
@@ -13701,15 +13708,15 @@ function FunnelSvg({ chart, width, height }) {
   const maxVal = data[0]?.value || 1;
   const stepH = height / data.length;
   const pad = 8;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: data.map((d, i) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: data.map((d, i) => {
     const topW = (d.value || 0) / maxVal * (width - pad * 2);
     const nextW = i < data.length - 1 ? (data[i + 1].value || 0) / maxVal * (width - pad * 2) : topW * 0.8;
     const cx = width / 2;
     const y1 = i * stepH, y2 = y1 + stepH;
     const path = `M ${cx - topW / 2} ${y1} L ${cx + topW / 2} ${y1} L ${cx + nextW / 2} ${y2} L ${cx - nextW / 2} ${y2} Z`;
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: path, fill: colors[i % colors.length], opacity: 0.8 }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: cx, y: y1 + stepH / 2, textAnchor: "middle", dominantBaseline: "central", fontSize: 9, fontWeight: 600, fill: "#fff", children: d.label })
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("path", { d: path, fill: colors[i % colors.length], opacity: 0.8 }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("text", { x: cx, y: y1 + stepH / 2, textAnchor: "middle", dominantBaseline: "central", fontSize: 9, fontWeight: 600, fill: "#fff", children: d.label })
     ] }, i);
   }) });
 }
@@ -13908,7 +13915,7 @@ function bucketKey(label, level) {
 }
 
 // graph-engine/LegibilityAlert.tsx
-var import_jsx_runtime11 = __toESM(require_jsx_runtime());
+var import_jsx_runtime12 = __toESM(require_jsx_runtime());
 function summarize(data) {
   const vals = data.map((d) => d.value ?? 0).filter((v) => typeof v === "number");
   if (vals.length === 0) return { count: data.length, min: 0, max: 0, avg: 0 };
@@ -13919,7 +13926,7 @@ function summarize(data) {
 }
 function LegibilityAlert({ chart }) {
   const stats = summarize(chart.data);
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
     BaseBox,
     {
       p: "3",
@@ -13930,8 +13937,8 @@ function LegibilityAlert({ chart }) {
         textAlign: "center"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(BaseText, { variant: "detail", weight: "semibold", style: { color: "var(--status-warning, #f59e0b)", textTransform: "uppercase", letterSpacing: "0.05em" }, children: chart.title }),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(BaseText, { variant: "detail", color: "muted", style: { marginTop: "var(--space-1, 0.25rem)" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(BaseText, { variant: "detail", weight: "semibold", style: { color: "var(--status-warning, #f59e0b)", textTransform: "uppercase", letterSpacing: "0.05em" }, children: chart.title }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(BaseText, { variant: "detail", color: "muted", style: { marginTop: "var(--space-1, 0.25rem)" }, children: [
           stats.count,
           " points \xB7 Min ",
           stats.min,
@@ -13940,17 +13947,17 @@ function LegibilityAlert({ chart }) {
           " \xB7 Avg ",
           stats.avg
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(BaseText, { variant: "detail", color: "muted", style: { marginTop: "var(--space-1, 0.25rem)", opacity: 0.6 }, children: "Expand to view chart" })
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(BaseText, { variant: "detail", color: "muted", style: { marginTop: "var(--space-1, 0.25rem)", opacity: 0.6 }, children: "Expand to view chart" })
       ]
     }
   );
 }
 
 // graph-engine/ToggleBar.tsx
-var import_jsx_runtime12 = __toESM(require_jsx_runtime());
+var import_jsx_runtime13 = __toESM(require_jsx_runtime());
 function ToggleBar({ filters, onToggle }) {
   if (filters.length < 2) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
     BaseBox,
     {
       direction: "row",
@@ -13958,7 +13965,7 @@ function ToggleBar({ filters, onToggle }) {
       wrap: "wrap",
       py: "1",
       style: { justifyContent: "center" },
-      children: filters.map((f) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+      children: filters.map((f) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
         BaseAction,
         {
           onClick: () => onToggle(f.key),
@@ -13975,7 +13982,7 @@ function ToggleBar({ filters, onToggle }) {
             transition: "opacity 150ms ease"
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
               BaseBox,
               {
                 style: {
@@ -13987,7 +13994,7 @@ function ToggleBar({ filters, onToggle }) {
                 }
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(BaseText, { variant: "detail", style: { fontSize: "9px", fontWeight: 600, whiteSpace: "nowrap" }, children: f.label })
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(BaseText, { variant: "detail", style: { fontSize: "9px", fontWeight: 600, whiteSpace: "nowrap" }, children: f.label })
           ]
         },
         f.key
@@ -13997,7 +14004,7 @@ function ToggleBar({ filters, onToggle }) {
 }
 
 // graph-engine/GraphRender.tsx
-var import_jsx_runtime13 = __toESM(require_jsx_runtime());
+var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 function GraphRender({ chart }) {
   const containerRef = (0, import_react10.useRef)(null);
   const container = useContainerSize(containerRef);
@@ -14017,7 +14024,7 @@ function GraphRender({ chart }) {
   const tightBorder = legibility === "tight" ? "var(--status-warning, #f59e0b)" : "var(--border-ghost, var(--border-main))";
   const contextBorder = isChat ? `1px solid ${tightBorder}` : `1px solid var(--border-subtle, var(--border-main))`;
   const contextBg = isChat ? "var(--glass-bg, var(--bg-card))" : "var(--bg-card)";
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
     BaseBox,
     {
       ref: containerRef,
@@ -14032,14 +14039,14 @@ function GraphRender({ chart }) {
         maxHeight: isCompact ? void 0 : "22rem"
       },
       children: [
-        t !== "sparkline" && /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(BaseText, { variant: "detail", weight: "semibold", style: { fontSize: "10px", marginBottom: "0.25rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }, children: [
+        t !== "sparkline" && /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(BaseText, { variant: "detail", weight: "semibold", style: { fontSize: "10px", marginBottom: "0.25rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }, children: [
           chart.title,
           zoom.compressed ? ` (${["", "weekly", "monthly", "quarterly"][zoom.level]})` : ""
         ] }),
-        legibility === "illegible" ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(LegibilityAlert, { chart }) : /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(RenderFamily, { chart: resolved, w: container.width, h: container.height, axesOverride }),
-        (filters.length >= 2 || canToggleAxes) && /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(BaseBox, { direction: "row", gap: "2", style: { justifyContent: "center", flexWrap: "wrap" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(ToggleBar, { filters, onToggle: toggle }),
-          canToggleAxes && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(AxesToggle, { current: axesOverride ?? ix?.axes ?? "none", onToggle: () => {
+        legibility === "illegible" ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(LegibilityAlert, { chart }) : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(RenderFamily, { chart: resolved, w: container.width, h: container.height, axesOverride }),
+        (filters.length >= 2 || canToggleAxes) && /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(BaseBox, { direction: "row", gap: "2", style: { justifyContent: "center", flexWrap: "wrap" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(ToggleBar, { filters, onToggle: toggle }),
+          canToggleAxes && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(AxesToggle, { current: axesOverride ?? ix?.axes ?? "none", onToggle: () => {
             const cur = axesOverride ?? ix?.axes ?? "none";
             setAxesOverride(cur === "marginal" ? "standard" : "marginal");
           } })
@@ -14050,14 +14057,14 @@ function GraphRender({ chart }) {
 }
 function RenderFamily({ chart, w, h, axesOverride }) {
   const t = chart.type;
-  if (isCartesian(t)) return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(CartesianRender, { chart, width: Math.max(100, w), height: Math.max(60, h) });
-  if (isRadial(t)) return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(RadialRender, { chart, size: Math.max(60, Math.min(w, h)) });
-  if (isPolar(t)) return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(PolarRender, { chart, size: Math.max(60, Math.min(w, h)) });
-  if (isGrid(t)) return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(GridRender, { chart, width: Math.max(100, w), height: Math.max(60, h), axesOverride });
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(CartesianRender, { chart, width: Math.max(100, w), height: Math.max(60, h) });
+  if (isCartesian(t)) return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(CartesianRender, { chart, width: Math.max(100, w), height: Math.max(60, h) });
+  if (isRadial(t)) return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(RadialRender, { chart, size: Math.max(60, Math.min(w, h)) });
+  if (isPolar(t)) return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(PolarRender, { chart, size: Math.max(60, Math.min(w, h)) });
+  if (isGrid(t)) return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(GridRender, { chart, width: Math.max(100, w), height: Math.max(60, h), axesOverride });
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(CartesianRender, { chart, width: Math.max(100, w), height: Math.max(60, h) });
 }
 function AxesToggle({ current, onToggle }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(BaseAction, { onClick: onToggle, style: {
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(BaseAction, { onClick: onToggle, style: {
     display: "inline-flex",
     alignItems: "center",
     gap: "var(--space-1, 0.25rem)",
@@ -14068,7 +14075,7 @@ function AxesToggle({ current, onToggle }) {
     background: current === "marginal" ? "var(--bg-card)" : "transparent",
     opacity: current === "marginal" ? 1 : 0.4,
     transition: "opacity 150ms ease"
-  }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(BaseText, { variant: "detail", style: { fontSize: "9px", fontWeight: 600 }, children: "\u03A3" }) });
+  }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(BaseText, { variant: "detail", style: { fontSize: "9px", fontWeight: 600 }, children: "\u03A3" }) });
 }
 
 // public/chart-builders.ts
@@ -14178,7 +14185,7 @@ function buildCharts(records) {
 }
 
 // public/charts.tsx
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 function App() {
   const [records, setRecords] = (0, import_react11.useState)([]);
   const [loading, setLoading] = (0, import_react11.useState)(true);
@@ -14188,13 +14195,13 @@ function App() {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { children: "Loading..." });
-  if (!records.length) return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { children: "No records. Submit some DOIs first." });
+  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { children: "Loading..." });
+  if (!records.length) return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { children: "No records. Submit some DOIs first." });
   const charts = buildCharts(records);
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { marginBottom: "1rem" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(GraphRender, { chart }) }, i)) });
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { marginBottom: "1rem" }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(GraphRender, { chart }) }, i)) });
 }
 var root = (0, import_client.createRoot)(document.getElementById("chart-root"));
-root.render(/* @__PURE__ */ (0, import_jsx_runtime14.jsx)(App, {}));
+root.render(/* @__PURE__ */ (0, import_jsx_runtime15.jsx)(App, {}));
 /*! Bundled license information:
 
 react/cjs/react.production.js:

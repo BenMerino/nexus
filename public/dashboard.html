@@ -19,19 +19,14 @@
 
   <nav>
     <span class="logo">Nexus</span>
-    <a href="/dashboard.html" class="active">Dashboard</a>
-    <a href="/overview.html">Overview</a>
-    <a href="/explore.html">Explore</a>
-    <a href="/submit.html">Submit</a>
-    <a href="/author-import.html">Author Import</a>
-    <a href="/tag-manager.html">Tags</a>
+    <span id="nav-links"></span>
     <div id="nav-user" style="margin-left: auto; min-height: 28px;"><a href="/api/auth?action=logout">Logout</a></div>
   </nav>
 
   <div class="page">
     <h1>Institutional Dashboard</h1>
 
-    <div class="import-section">
+    <div class="import-section" id="import-section" style="display:none;">
       <h3>Bulk Import from OpenAlex</h3>
       <p style="font-size:12px;color:#666;margin:0 0 8px;">Import all publications affiliated with your institution.</p>
       <button class="import-btn" id="import-btn" onclick="startImport()">Import Publications</button>

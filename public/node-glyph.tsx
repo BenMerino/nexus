@@ -1,101 +1,65 @@
 import React from 'react';
 import type { EnrichedSimNode } from './relationship-types';
 import { COLORS, BG_COLORS, nodeRadius } from './relationship-types';
+import { shapePath } from './node-shapes';
 
-function DiamondShape({ node, r, color, bg }: { node: EnrichedSimNode; r: number; color: string; bg: string }) {
-  const d = r * 1.2;
-  const points = `${node.x},${node.y - d} ${node.x + d},${node.y} ${node.x},${node.y + d} ${node.x - d},${node.y}`;
-  return (
-    <polygon points={points} fill={bg} stroke={color} strokeWidth={2} />
-  );
+function wrapLabel(text: string, maxChars: number): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    if (line && (line + ' ' + word).length > maxChars) { lines.push(line); line = word; }
+    else line = line ? line + ' ' + word : word;
+  }
+  if (line) lines.push(line);
+  return lines;
 }
 
 export function NodeGlyph({
-  node, highlighted, dimmed, selected, hovered, dense, pinIndex,
+  node, highlighted, dimmed, selected, hovered, expanded, showLabel = true, dense, pinIndex,
   onClick, onDragStart, onMouseEnter, onMouseLeave,
 }: {
   node: EnrichedSimNode;
   highlighted: boolean; dimmed: boolean; selected: boolean; hovered: boolean;
-  dense?: boolean;
-  pinIndex: number | null;
+  expanded?: boolean; showLabel?: boolean; dense?: boolean; pinIndex: number | null;
   onClick: () => void;
   onDragStart: (e: React.MouseEvent) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
-  const r = nodeRadius(node.weight || 0, node.role);
-  const label = node.label.length > 28 ? node.label.substring(0, 25) + '...' : node.label;
-  const fontSize = r >= 10 ? 11 : 10;
-  const isBridge = node.role === 'bridge';
-  const isHub = node.role === 'hub';
-  const showDetail = !dense || selected || hovered;
   const cColor = COLORS[node.group] || '#666';
   const cBg = BG_COLORS[node.group] || '#eee';
+  const r = nodeRadius(node.weight || 0, node.role);
+  const isDoi = node.group === 'doi';
+  const label = isDoi
+    ? (hovered || selected ? node.label : (node.label.length > 22 ? node.label.substring(0, 20) + '\u2026' : node.label))
+    : (node.label.length > 28 ? node.label.substring(0, 25) + '...' : node.label);
+  const fontSize = isDoi ? 9 : (r >= 10 ? 11 : 10);
+  const d = shapePath(node.group, node.x, node.y, r);
 
   return (
-    <g onClick={onClick}
+    <g onClick={onClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
       onMouseDown={(e) => { e.stopPropagation(); onDragStart(e); }}
-      onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
-      style={{ cursor: 'grab' }}
-      opacity={dimmed ? 0.1 : 1}>
-
-      {/* Halo for citation intensity — skip in dense mode */}
-      {showDetail && node.haloIntensity && node.haloIntensity > 0 && !dimmed && (
-        <circle cx={node.x} cy={node.y} r={r + 8 + node.haloIntensity * 6}
-          fill={cColor} opacity={0.06 + node.haloIntensity * 0.04} />
-      )}
-
-      {/* Selection / highlight ring */}
+      style={{ cursor: 'grab', transition: 'opacity 200ms ease' }} opacity={dimmed ? 0.1 : 1}>
       {(selected || highlighted || hovered) && (
-        <circle cx={node.x} cy={node.y} r={r + 5}
-          fill="none" stroke={cColor}
-          strokeWidth={selected ? 2.5 : hovered ? 2 : 1.5}
-          opacity={0.5}
-          strokeDasharray={hovered && !selected ? '3 2' : undefined} />
+        d ? <path d={shapePath(node.group, node.x, node.y, r + 5)!} fill="none" stroke={cColor} strokeWidth={hovered ? 2 : 1.5} opacity={0.5} />
+          : <circle cx={node.x} cy={node.y} r={r + 5} fill="none" stroke={cColor} strokeWidth={hovered ? 2 : 1.5} opacity={0.5} />
       )}
-
-      {/* Main shape — colored by category */}
-      {isBridge
-        ? <DiamondShape node={node} r={r} color={cColor} bg={cBg} />
-        : <circle cx={node.x} cy={node.y} r={r}
-            fill={selected ? cColor : cBg}
-            stroke={cColor} strokeWidth={r >= 8 ? 2 : 1.5} />
-      }
-
-      {/* Open access indicator — skip in dense mode */}
-      {showDetail && node.openAccess && !dimmed && (
-        <circle cx={node.x + r * 0.6} cy={node.y - r * 0.6} r={2.5}
-          fill="#2e7d32" stroke="#fff" strokeWidth={0.5} />
-      )}
-
-      {/* Weight label inside node */}
-      {(node.weight || 0) > 1 && !dimmed && (
-        <text x={node.x} y={node.y + 3.5} textAnchor="middle"
-          fontSize={Math.max(7, Math.min(10, r))} fontFamily="monospace" fontWeight={700}
-          fill={selected ? '#fff' : cColor} opacity={0.8}>
-          {node.weight}
+      {d ? <path d={d} fill={selected ? cColor : cBg} stroke={cColor} strokeWidth={r >= 8 ? 2 : 1.5} />
+         : <circle cx={node.x} cy={node.y} r={r} fill={selected ? cColor : cBg} stroke={cColor} strokeWidth={r >= 8 ? 2 : 1.5} />}
+      {!dimmed && isDoi && (hovered || selected) && (
+        <text x={node.x + r + 4} y={node.y - 4} fontSize={fontSize} fontFamily="monospace" fill="#333">
+          {wrapLabel(label, 30).map((line, i) => (
+            <tspan key={i} x={node.x + r + 4} dy={i === 0 ? 0 : 11}>{line}</tspan>
+          ))}
         </text>
       )}
-
-      {/* Pin order badge — skip in dense mode */}
-      {showDetail && pinIndex !== null && !dimmed && (
-        <g>
-          <circle cx={node.x - r * 0.5} cy={node.y - r - 4} r={7}
-            fill={cColor} stroke="#fff" strokeWidth={1.5} />
-          <text x={node.x - r * 0.5} y={node.y - r - 0.5} textAnchor="middle"
-            fontSize={8} fontFamily="monospace" fontWeight={700} fill="#fff">
-            {pinIndex + 1}
-          </text>
-        </g>
+      {!dimmed && isDoi && !hovered && !selected && (
+        <text x={node.x + r + 4} y={node.y + 3.5} fontSize={fontSize} fontFamily="monospace" fill="#333" opacity={0.5}>{label}</text>
       )}
-
-      {/* Label */}
-      {!dimmed && (
+      {!dimmed && !isDoi && (
         <text x={node.x + r + 4} y={node.y + 3.5} fontSize={fontSize} fontFamily="monospace"
-          fontWeight={selected || isHub ? 700 : (node.weight || 0) >= 5 ? 600 : 400}
-          fill={selected ? cColor : '#333'}>
-          {label}
-        </text>
+          fontWeight={selected || node.role === 'hub' ? 700 : 400} fill={selected ? cColor : '#333'}>{label}</text>
       )}
     </g>
   );

@@ -5,8 +5,10 @@
   <title>Admin — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
   <style>
-    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .card h3 { margin: 0 0 12px; font-size: 14px; }
+    #tenant-detail { display: none; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .back-btn { cursor: pointer; font-size: 13px; color: #1565c0; background: none; border: none; padding: 0; margin-bottom: 12px; }
+    .back-btn:hover { text-decoration: underline; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #eee; }
     th { font-weight: bold; text-transform: uppercase; font-size: 11px; color: #999; }
@@ -21,33 +23,87 @@
     .form-row { margin: 8px 0; }
     .form-row label { display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; font-weight: bold; }
     .form-row input, .form-row select { width: 100%; }
+    .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
+    .logo-box { width: 80px; height: 80px; border: 1px dashed #ccc; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
+    .logo-box:hover { border-color: #999; }
+    .logo-box img { max-width: 80px; max-height: 80px; object-fit: contain; }
+    .tm-card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 8px; }
+    .tm-vals { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+    .tm-vals .tag { cursor: pointer; border: 2px solid transparent; }
+    .tm-vals .tag.selected { border-color: #333; font-weight: bold; }
+    .synonym-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 12px; }
   </style>
 </head>
 <body>
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
   <nav>
     <span class="logo">Nexus</span>
-    <a href="/dashboard.html">Dashboard</a>
-    <a href="/overview.html">Overview</a>
-    <a href="/explore.html">Explore</a>
-    <a href="/admin.html" class="active">Admin</a>
+    <span id="nav-links"></span>
     <div id="nav-user" style="margin-left: auto; min-height: 28px;"><a href="/api/auth?action=logout">Logout</a></div>
   </nav>
   <div class="page">
     <h1>Platform Admin</h1>
-    <div id="no-access" style="display:none;" class="card"><p>Superadmin or director access required.</p></div>
-    <div id="admin-content" style="display:none;">
-      <div class="admin-grid">
-        <div class="card"><h3>Tenants</h3><div id="tenants-list"></div></div>
-        <div class="card"><h3>Users</h3><div id="users-list"></div></div>
+    <div id="no-access" style="display:none;" class="card"><p>Superadmin access required.</p></div>
+    <div id="tenant-overview" style="display:none;">
+      <div class="card" id="tenants-grid"></div>
+      <button class="btn" style="margin-top:16px;" id="btn-new-tenant">+ New Tenant</button>
+      <div class="card" id="new-tenant-card" style="display:none;margin-top:16px;"></div>
+    </div>
+    <div id="tenant-detail">
+      <button class="back-btn" id="btn-back">&larr; Back to all tenants</button>
+      <h2 id="detail-title"></h2>
+      <div class="card" style="margin-bottom:16px;">
+        <h3>Subtenants</h3>
+        <div id="subtenants-list"></div>
+        <div style="display:flex;gap:8px;align-items:end;margin-top:10px;">
+          <div><label style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:bold;">Name</label><input id="st-name" placeholder="e.g. Faculty of Engineering"></div>
+          <div><label style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:bold;">ROR ID</label><input id="st-ror" placeholder="Optional"></div>
+          <button onclick="addSubtenant()">Add</button>
+        </div>
       </div>
-      <div class="admin-grid" style="margin-top:16px;">
-        <div class="card" id="tenant-edit" style="display:none;"><h3>Edit Tenant</h3><div id="tenant-form"></div></div>
-        <div class="card" id="user-add"><h3>Add User</h3><div id="user-form"></div></div>
+      <div class="detail-grid">
+        <div class="card"><h3>Users</h3><div id="users-list"></div></div>
+        <div class="card"><h3>Add User</h3><div id="user-form"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>Tag Manager</h3>
+        <p style="font-size:12px;color:#666;margin:0 0 8px;">Detect and merge duplicate tags. Click a tag to pick the canonical name.</p>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+          <select id="tm-category"><option value="">All</option><option value="author">Author</option><option value="institution">Institution</option><option value="journal">Journal</option><option value="publisher">Publisher</option><option value="venue">Venue</option></select>
+          <button onclick="tmScan()">Scan</button>
+          <button onclick="tmRorResolve()">Auto-resolve Institutions (ROR)</button>
+          <button class="secondary" onclick="tmShowSynonyms()">Active Synonyms</button>
+          <span id="tm-status" style="font-size:12px;color:#666;"></span>
+        </div>
+        <div id="tm-content"></div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>Submit DOI</h3>
+        <div style="display:flex;gap:8px;align-items:end;">
+          <div style="flex:1;"><label style="display:block;font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:bold;">DOI</label><input id="doi-input" type="text" placeholder="e.g. 10.1038/nature12373" style="width:100%;"></div>
+          <button onclick="submitDoi()">Submit</button>
+        </div>
+        <div id="doi-status" style="margin-top:8px;"></div>
+        <div id="doi-results" style="margin-top:8px;"></div>
+      </div>
+      <div class="detail-grid" style="margin-top:16px;">
+        <div class="card"><h3>Edit Tenant</h3><div id="tenant-form"></div></div>
+        <div class="card">
+          <h3>OpenAlex Import</h3>
+          <p style="font-size:12px;color:#666;margin:0 0 8px;">Fetch all affiliated academics, ORCIDs, and DOIs for this institution via its ROR.</p>
+          <button id="btn-institution-import">Import from OpenAlex</button>
+          <div id="import-status" style="margin-top:8px;"></div>
+          <div id="import-results" style="margin-top:8px;"></div>
+        </div>
       </div>
     </div>
   </div>
   <script src="/nav.js"></script>
+  <script src="/color-extract.js"></script>
+  <script src="/admin-tenant-form.js"></script>
+  <script src="/admin-users.js"></script>
+  <script src="/admin-tag-manager.js"></script>
+  <script src="/admin-author-import.js"></script>
   <script src="/admin-app.js"></script>
 </body>
 </html>

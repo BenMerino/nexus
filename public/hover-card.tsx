@@ -10,9 +10,10 @@ function NodeHoverCard({ node, edges }: { node: EnrichedSimNode; edges: Projecte
 
   return (
     <div style={{
-      background: '#fff', border: `1px solid ${COLORS[node.group]}`, borderRadius: 6,
+      background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+      border: `1px solid rgba(255,255,255,0.6)`, borderRadius: 8,
       padding: '8px 12px', fontFamily: 'monospace', fontSize: 11, minWidth: 160,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.12)', pointerEvents: 'none',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.08)', pointerEvents: 'none',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
         <span style={{
@@ -27,6 +28,11 @@ function NodeHoverCard({ node, edges }: { node: EnrichedSimNode; edges: Projecte
         }}>C{node.community + 1}</span>
         <strong style={{ fontSize: 12 }}>{node.label}</strong>
       </div>
+      {node.ext_id && (
+        <div style={{ color: '#555', fontSize: 10, marginBottom: 4 }}>
+          {node.group === 'journal' ? 'ISSN-L' : node.group === 'author' ? 'ORCID' : 'ROR'}: {node.ext_id}
+        </div>
+      )}
       <div style={{ color: '#777', fontSize: 10, marginBottom: 4 }}>
         {node.doiCount} paper{node.doiCount !== 1 ? 's' : ''} · {node.degree} connections
       </div>
@@ -53,9 +59,10 @@ function EdgeHoverCard({ edge, nodeMap }: { edge: ProjectedEdge; nodeMap: Map<st
   const t = nodeMap.get(edge.target);
   return (
     <div style={{
-      background: '#fff', border: '1px solid #ccc', borderRadius: 6,
+      background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+      border: '1px solid rgba(255,255,255,0.6)', borderRadius: 8,
       padding: '8px 12px', fontFamily: 'monospace', fontSize: 11, minWidth: 180,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.12)', pointerEvents: 'none',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.08)', pointerEvents: 'none',
     }}>
       <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 11 }}>
         {s?.label || edge.source} ↔ {t?.label || edge.target}
@@ -75,22 +82,26 @@ function EdgeHoverCard({ edge, nodeMap }: { edge: ProjectedEdge; nodeMap: Map<st
   );
 }
 
-export function HoverCard({ hoveredNode, hoveredEdge, nodeMap, projectedEdges, dims }: {
+export function HoverCard({ hoveredNode, hoveredEdge, nodeMap, projectedEdges, dims, mousePos }: {
   hoveredNode: EnrichedSimNode | null | undefined;
   hoveredEdge: ProjectedEdge | null;
   nodeMap: Map<string, EnrichedSimNode>;
   projectedEdges: ProjectedEdge[];
   dims: { width: number; height: number };
+  mousePos?: { x: number; y: number };
 }) {
   if (!hoveredNode && !hoveredEdge) return null;
 
-  let x = 0; let y = 0;
-  if (hoveredNode) {
-    x = hoveredNode.x + 20; y = hoveredNode.y - 10;
-  } else if (hoveredEdge) {
-    const s = nodeMap.get(hoveredEdge.source);
-    const t = nodeMap.get(hoveredEdge.target);
-    if (s && t) { x = (s.x + t.x) / 2 + 10; y = (s.y + t.y) / 2 - 10; }
+  let x = mousePos ? mousePos.x + 16 : 0;
+  let y = mousePos ? mousePos.y - 10 : 0;
+
+  if (!mousePos) {
+    if (hoveredNode) { x = hoveredNode.x + 20; y = hoveredNode.y - 10; }
+    else if (hoveredEdge) {
+      const s = nodeMap.get(hoveredEdge.source);
+      const t = nodeMap.get(hoveredEdge.target);
+      if (s && t) { x = (s.x + t.x) / 2 + 10; y = (s.y + t.y) / 2 - 10; }
+    }
   }
 
   // Clamp to viewport
@@ -102,7 +113,7 @@ export function HoverCard({ hoveredNode, hoveredEdge, nodeMap, projectedEdges, d
     : [];
 
   return (
-    <foreignObject x={x} y={y} width={260} height={200} style={{ overflow: 'visible', pointerEvents: 'none' }}>
+    <foreignObject x={x} y={y} width={260} height={200} style={{ overflow: 'visible', pointerEvents: 'none', transition: 'x 120ms ease-out, y 120ms ease-out' }}>
       <div xmlns="http://www.w3.org/1999/xhtml">
         {hoveredNode && <NodeHoverCard node={hoveredNode} edges={nodeEdges} />}
         {hoveredEdge && !hoveredNode && <EdgeHoverCard edge={hoveredEdge} nodeMap={nodeMap} />}

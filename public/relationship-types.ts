@@ -2,6 +2,8 @@ export interface RawNode {
   id: string;
   label: string;
   group: string;
+  ext_id?: string;
+  published?: string | null;
 }
 
 export interface RawEdge {
@@ -9,13 +11,17 @@ export interface RawEdge {
   target: string;
 }
 
+export interface PaperEntry { doi: string; title: string }
+
 export interface TagNode {
   id: string;
   label: string;
   group: string;
+  ext_id?: string;
   doiCount: number;
   degree: number;
   weight: number;
+  papers?: PaperEntry[];
   x?: number;
   y?: number;
   vx?: number;
@@ -48,27 +54,19 @@ export interface DoiRecord {
   published: string;
 }
 
-export const TAG_CATEGORIES = ['author', 'journal', 'publisher', 'type', 'institution', 'venue', 'year'] as const;
+export const TAG_CATEGORIES = ['institution', 'author', 'journal'] as const;
 export type Category = (typeof TAG_CATEGORIES)[number];
 
 export const COLORS: Record<string, string> = {
+  institution: '#f57f17',
   author: '#c62828',
   journal: '#2e7d32',
-  publisher: '#1565c0',
-  type: '#7b1fa2',
-  institution: '#f57f17',
-  venue: '#e65100',
-  year: '#00695c',
 };
 
 export const BG_COLORS: Record<string, string> = {
+  institution: '#fff8e1',
   author: '#fce4ec',
   journal: '#e8f5e9',
-  publisher: '#e3f2fd',
-  type: '#f3e5f5',
-  institution: '#fff8e1',
-  venue: '#fff3e0',
-  year: '#e0f2f1',
 };
 
 /** 12 visually distinct community colors (stroke / fill) */

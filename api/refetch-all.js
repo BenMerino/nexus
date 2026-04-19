@@ -1,12 +1,16 @@
 const { ensureSchema, getAllRecords } = require("../lib/db");
 const { fetchAndStore } = require("../lib/store");
+const { requireScope } = require("../lib/scope");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   await ensureSchema();
+  const scope = await requireScope(req, res);
+  if (!scope) return;
+  if (scope.role !== "superadmin") return res.status(403).json({ error: "Superadmin required" });
   try {
-    const records = await getAllRecords();
+    const records = await getAllRecords(scope);
     const results = [];
     for (const r of records) {
       try {

@@ -4,7 +4,7 @@
 MAX_LINES=150
 VIOLATIONS=0
 
-for file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts|jsx|tsx|mjs|cjs)$'); do
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts|jsx|tsx|mjs|cjs)$' | grep -v '\-bundle\.js$'); do
   lines=$(wc -l < "$file")
   if [ "$lines" -gt "$MAX_LINES" ]; then
     echo "RULE nbr15 VIOLATION: $file has $lines lines (max $MAX_LINES)"

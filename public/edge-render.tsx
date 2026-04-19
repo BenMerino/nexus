@@ -72,23 +72,21 @@ export function EdgeLine({ edge, nodeMap, selectedNodeId, connectedIds, hovered,
     : null;
   const stroke = gradKey ? `url(#${gradKey})` : (isConn && selectedNodeId ? COLORS[t.group] || '#ccc' : '#bbb');
 
-  // Use bezier curve for strong edges
-  if (w >= 3) {
-    const offset = Math.min(20, w * 3);
-    const { cx, cy } = bezierControlPoint(s.x, s.y, t.x, t.y, offset);
-    return (
-      <path d={`M ${s.x} ${s.y} Q ${cx} ${cy} ${t.x} ${t.y}`}
-        fill="none" stroke={stroke} strokeWidth={sw} opacity={op}
-        strokeLinecap="round"
-        style={{ cursor: 'pointer', transition: 'opacity 150ms' }}
-        onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />
-    );
-  }
+  const showWeight = w > 1 && op > 0.05;
+  const mx = (s.x + t.x) / 2, my = (s.y + t.y) / 2;
 
   return (
-    <line x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-      stroke={stroke} strokeWidth={sw} opacity={op}
-      style={{ cursor: 'pointer', transition: 'opacity 150ms' }}
-      onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />
+    <g>
+      <line x1={s.x} y1={s.y} x2={t.x} y2={t.y}
+        stroke={stroke} strokeWidth={sw} opacity={op}
+        pathLength={1} strokeDasharray={1} strokeDashoffset={0}
+        style={{ cursor: 'pointer' }}
+        onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+        <animate attributeName="stroke-dashoffset" from="1" to="0" dur="0.4s" fill="freeze" />
+      </line>
+      {showWeight && <text x={mx} y={my - 4} textAnchor="middle" fontSize={8}
+        fontFamily="monospace" fill="#888" opacity={Math.min(op * 1.5, 0.7)}
+        fontWeight={600} style={{ pointerEvents: 'none' }}>{w}</text>}
+    </g>
   );
 }

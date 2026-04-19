@@ -31,8 +31,9 @@ export function DetailPanel({
   return (
     <div style={{
       position: 'absolute', top: 12, right: 12, width: 320, maxHeight: 'calc(100% - 24px)',
-      overflow: 'auto', background: '#fff', border: '1px solid #ddd', borderRadius: 6,
-      padding: 16, fontFamily: 'monospace', fontSize: 13, boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      overflow: 'auto', background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+      border: '1px solid rgba(255,255,255,0.6)', borderRadius: 8,
+      padding: 16, fontFamily: 'monospace', fontSize: 13, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div>

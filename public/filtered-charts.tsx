@@ -4,6 +4,7 @@ import { RadialRender } from '../graph-engine/radial-render.js';
 import type { GraphDirective } from '../architect/graph-composer.types.js';
 import type { TagNode, DoiRecord } from './relationship-types';
 import { TAG_CATEGORIES, COLORS } from './relationship-types';
+import { FilteredPaperList } from './filtered-paper-list';
 
 function ChartCard({ chart }: { chart: GraphDirective }) {
   const isDonut = chart.type === 'donut' || chart.type === 'pie';
@@ -86,7 +87,7 @@ export function FilteredCharts({ matchingDois, totalDois }: { matchingDois: Set<
   useEffect(() => {
     fetch('/api/records')
       .then(r => r.json())
-      .then(data => { setRecords(data); setLoaded(true); })
+      .then(data => { if (Array.isArray(data)) setRecords(data); setLoaded(true); })
       .catch(() => setLoaded(true));
   }, []);
 
@@ -97,16 +98,18 @@ export function FilteredCharts({ matchingDois, totalDois }: { matchingDois: Set<
   if (!filtered.length) return <div style={{ padding: 12, color: '#999', fontFamily: 'monospace', fontSize: 12 }}>No matching papers for current selection.</div>;
 
   const charts = buildCharts(filtered);
-  if (!charts.length) return <div style={{ padding: 12, color: '#999', fontFamily: 'monospace', fontSize: 12 }}>{filtered.length} paper{filtered.length !== 1 ? 's' : ''} — not enough data for charts.</div>;
 
   return (
     <div>
-      <div style={{ fontSize: 11, color: '#666', fontFamily: 'monospace', marginBottom: 8 }}>
-        {isFiltered ? `Charts for ${filtered.length} of ${totalDois} papers (filtered)` : `Charts for all ${filtered.length} papers`}
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 8 }}>
-        {charts.map((chart, i) => <ChartCard key={`${chart.title}-${filtered.length}-${i}`} chart={chart} />)}
-      </div>
+      {charts.length > 0 && <>
+        <div style={{ fontSize: 11, color: '#666', fontFamily: 'monospace', marginBottom: 8 }}>
+          {isFiltered ? `Charts for ${filtered.length} of ${totalDois} papers (filtered)` : `Charts for all ${filtered.length} papers`}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 8 }}>
+          {charts.map((chart, i) => <ChartCard key={`${chart.title}-${filtered.length}-${i}`} chart={chart} />)}
+        </div>
+      </>}
+      <FilteredPaperList papers={filtered} />
     </div>
   );
 }

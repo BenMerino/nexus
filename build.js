@@ -43,6 +43,25 @@ Promise.all([
     entryPoints: ["public/relationships.tsx"],
     outfile: "public/relationships-bundle.js",
   }),
+  esbuild.build({
+    ...shared,
+    entryPoints: ["public/dashboard-charts.tsx"],
+    outfile: "public/dashboard-bundle.js",
+  }),
 ])
-  .then(() => console.log("Build complete: charts-bundle.js, relationships-bundle.js"))
+  .then(() => {
+    const fs = require("fs");
+    const ts = String(Date.now());
+    // Write version file for live reload polling
+    fs.writeFileSync("public/build-version.txt", ts);
+    // Auto-bump cache buster in HTML files
+    for (const f of ["public/overview.html", "public/explore.html"]) {
+      try {
+        const html = fs.readFileSync(f, "utf8");
+        const updated = html.replace(/relationships-bundle\.js\?v=\d+/, `relationships-bundle.js?v=${ts}`);
+        if (updated !== html) fs.writeFileSync(f, updated);
+      } catch {}
+    }
+    console.log("Build complete: charts-bundle.js, relationships-bundle.js, dashboard-bundle.js");
+  })
   .catch(() => process.exit(1));

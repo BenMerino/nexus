@@ -4,6 +4,9 @@
 
   fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
     tenantId = d.tenantId;
+    if (d.role === "superadmin") {
+      document.getElementById("branding-card").style.display = "";
+    }
     document.getElementById("branding-title").textContent = (d.tenant || "University") + " Branding";
     if (d.logo) showPreview(d.logo);
     if (d.primaryColor) {

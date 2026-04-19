@@ -10,10 +10,7 @@
 
   <nav>
     <span class="logo">Nexus</span>
-    <a href="/overview.html" class="active">Overview</a>
-    <a href="/explore.html">Explore</a>
-    <a href="/submit.html">Submit</a>
-    <a href="/author-import.html">Author Import</a>
+    <span id="nav-links"></span>
     <div id="nav-user" style="margin-left: auto; min-height: 28px;"><a href="/api/auth?action=logout">Logout</a></div>
   </nav>
 
@@ -23,6 +20,7 @@
   </div>
 
   <script src="/nav.js"></script>
-  <script type="module" src="/relationships-bundle.js"></script>
+  <script type="module" src="/relationships-bundle.js?v=1776039100460"></script>
+  <script>(function(){var v='';setInterval(function(){fetch('/build-version.txt?_='+Date.now()).then(function(r){return r.text()}).then(function(t){t=t.trim();if(v&&t!==v)location.reload();v=t}).catch(function(){})},1500)})()</script>
 </body>
 </html>

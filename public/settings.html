@@ -4,78 +4,60 @@
   <meta charset="utf-8">
   <title>Settings — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
+  <style>
+    .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
+    .logo-box { width: 80px; height: 80px; border: 1px dashed #ccc; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
+    .logo-box:hover { border-color: #999; }
+    .logo-box img { max-width: 80px; max-height: 80px; object-fit: contain; }
+    .color-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+    .color-row label { width: 130px; font-size: 12px; }
+    .color-row input[type="color"] { width: 36px; height: 28px; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 0; }
+    .color-row .hex { font-size: 11px; color: #999; font-family: monospace; }
+  </style>
 </head>
 <body>
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
 
   <nav>
     <span class="logo">Nexus</span>
-    <a href="/overview.html">Overview</a>
-    <a href="/explore.html">Explore</a>
-    <a href="/submit.html">Submit</a>
-    <a href="/author-import.html">Author Import</a>
+    <span id="nav-links"></span>
     <div id="nav-user" style="margin-left: auto; min-height: 28px;"><a href="/api/auth?action=logout">Logout</a></div>
   </nav>
 
   <div class="page">
     <h1>Settings</h1>
 
-    <div class="card">
-      <h3>Tenant Logo</h3>
-      <div class="mt-8" style="display: flex; align-items: center; gap: 16px;">
-        <div id="logo-preview" style="width: 64px; height: 64px; border: 1px dashed #ccc; border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-          <span class="text-muted text-small">No logo</span>
+    <div class="card" id="branding-card" style="display:none;">
+      <h3 id="branding-title">University Branding</h3>
+      <div class="branding-grid">
+        <div>
+          <div class="logo-box" id="logo-preview" onclick="document.getElementById('logo-input').click()" title="Click to upload logo">
+            <span class="text-muted text-small">No logo</span>
+          </div>
+          <input type="file" id="logo-input" accept="image/*" style="display: none;">
+          <div id="upload-status" class="text-small mt-8" style="width:80px;text-align:center;"></div>
         </div>
         <div>
-          <input type="file" id="logo-input" accept="image/*" style="display: none;">
-          <button onclick="document.getElementById('logo-input').click()">Upload Logo</button>
-          <div id="upload-status" class="text-small mt-8"></div>
+          <div class="color-row">
+            <label>Primary Color</label>
+            <input type="color" id="primary-color" value="#333333">
+            <span class="hex" id="primary-hex">#333333</span>
+          </div>
+          <div class="color-row">
+            <label>Secondary Color</label>
+            <input type="color" id="secondary-color" value="#1565c0">
+            <span class="hex" id="secondary-hex">#1565c0</span>
+          </div>
+          <div id="color-suggestions" style="margin-top:10px;"></div>
+          <button onclick="saveColors()" style="margin-top:8px;">Save Colors</button>
+          <span id="color-status" class="text-small" style="margin-left:8px;"></span>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    // Load current logo
-    fetch("/api/auth?action=me").then(r => r.json()).then(d => {
-      if (d.logo) showPreview(d.logo);
-    });
-
-    function showPreview(src) {
-      document.getElementById("logo-preview").innerHTML =
-        `<img src="${src}" style="max-width: 64px; max-height: 64px; object-fit: contain;">`;
-    }
-
-    document.getElementById("logo-input").addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const status = document.getElementById("upload-status");
-      if (file.size > 512000) { status.textContent = "File too large (max 500KB)"; return; }
-
-      status.textContent = "Uploading...";
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const resp = await fetch("/api/auth?action=upload-logo", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: reader.result }),
-          });
-          const result = await resp.json();
-          if (result.ok) {
-            status.textContent = "Logo updated!";
-            showPreview(reader.result);
-          } else {
-            status.textContent = "Error: " + result.error;
-          }
-        } catch (err) {
-          status.textContent = "Error: " + err.message;
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  </script>
   <script src="/nav.js"></script>
+  <script src="/color-extract.js"></script>
+  <script src="/settings-app.js"></script>
 </body>
 </html>
