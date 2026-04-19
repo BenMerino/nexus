@@ -1,15 +1,44 @@
 import type { CoauthorNode } from './dashboard-builders.js';
 
-export const COMMUNITY_PALETTE = ['#6ba4d6', '#b57ad1', '#8fcb9b', '#d68a6b', '#d1c57a', '#c67ad1', '#6bd6c5', '#d66b8a', '#7a8ed1', '#b0b0b0'];
+export const COMMUNITY_PALETTE = ['#6ba4d6', '#b57ad1', '#8fcb9b', '#d68a6b', '#d1c57a', '#c67ad1', '#6bd6c5', '#d66b8a', '#7a8ed1'];
+export const OTHER_KEY = '__other__';
+export const OTHER_COLOR = '#b0b0b0';
+export const OTHER_LABEL = 'Other institutions';
 
-export function buildCommunityColors(nodes: CoauthorNode[], myRor: string | null): Map<string, string> {
+const MIN_COMMUNITY_SIZE = 3;
+
+/** Which RORs have enough co-authors to be their own community. */
+export function majorRors(nodes: CoauthorNode[], myRor: string | null): Set<string> {
   const counts = new Map<string, number>();
   for (const n of nodes) {
     if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
     counts.set(n.affiliation.ror, (counts.get(n.affiliation.ror) || 0) + 1);
   }
-  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const set = new Set<string>();
+  for (const [ror, count] of counts) {
+    if (count >= MIN_COMMUNITY_SIZE) set.add(ror);
+  }
+  return set;
+}
+
+/** Community key for a node: its ROR if major, '__other__' if minor/missing, null if ego or home. */
+export function communityKeyFor(n: CoauthorNode, myRor: string | null, major: Set<string>): string | null {
+  if (n.isMe) return null;
+  const ror = n.affiliation?.ror;
+  if (ror === myRor) return null;
+  if (ror && major.has(ror)) return ror;
+  return OTHER_KEY;
+}
+
+export function buildCommunityColors(nodes: CoauthorNode[], myRor: string | null): Map<string, string> {
+  const major = majorRors(nodes, myRor);
+  const sorted = [...major].sort((a, b) => {
+    const ca = nodes.filter(n => n.affiliation?.ror === a).length;
+    const cb = nodes.filter(n => n.affiliation?.ror === b).length;
+    return cb - ca;
+  });
   const map = new Map<string, string>();
-  sorted.forEach(([ror], i) => map.set(ror, COMMUNITY_PALETTE[i % COMMUNITY_PALETTE.length]));
+  sorted.forEach((ror, i) => map.set(ror, COMMUNITY_PALETTE[i % COMMUNITY_PALETTE.length]));
+  map.set(OTHER_KEY, OTHER_COLOR);
   return map;
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Simulation } from 'd3-force';
 import type { CoauthorGraph, CoauthorNode } from './dashboard-builders.js';
-import { buildCommunityColors } from './coauthor-communities';
+import { buildCommunityColors, majorRors, communityKeyFor } from './coauthor-communities';
 import { GraphDefs, Links, Nodes, radius } from './coauthor-graph-render';
 import { EgoLabel, HoverTooltip } from './coauthor-graph-labels';
 import { CommunityHulls } from './coauthor-graph-hulls';
@@ -19,12 +19,13 @@ export function CoAuthorSim({ graph, width, height }: { graph: CoauthorGraph; wi
 
   const myRor = graph.nodes.find(n => n.isMe)?.affiliation?.ror || null;
   const communityColors = useMemo(() => buildCommunityColors(graph.nodes, myRor), [graph, myRor]);
+  const major = useMemo(() => majorRors(graph.nodes, myRor), [graph, myRor]);
 
   const nodeColor = (n: CoauthorNode) => {
     if (n.isMe) return 'var(--accent)';
-    if (!n.affiliation?.ror) return 'var(--fg-dim)';
-    if (n.affiliation.ror === myRor) return 'var(--fg-muted)';
-    return communityColors.get(n.affiliation.ror) || 'var(--fg-dim)';
+    const key = communityKeyFor(n, myRor, major);
+    if (!key) return 'var(--fg-muted)';
+    return communityColors.get(key) || 'var(--fg-dim)';
   };
 
   const { nodes, links } = useMemo(() => {
@@ -40,12 +41,12 @@ export function CoAuthorSim({ graph, width, height }: { graph: CoauthorGraph; wi
 
   useEffect(() => {
     const sim = createSimulation({
-      nodes, links, anchors, width, height,
+      nodes, links, anchors, myRor, width, height,
       onTick: () => tick(v => v + 1),
     });
     simRef.current = sim;
     return () => { sim.stop(); };
-  }, [nodes, links, anchors, width, height]);
+  }, [nodes, links, anchors, myRor, width, height]);
 
   const connected = useMemo(() => {
     if (!hoverId) return null;

@@ -4,6 +4,7 @@ import {
 } from 'd3-force';
 import type { CoauthorNode, CoauthorEdge } from './dashboard-builders.js';
 import { radius } from './coauthor-graph-render';
+import { majorRors, communityKeyFor, OTHER_KEY } from './coauthor-communities';
 
 export type SimN = CoauthorNode & { x: number; y: number; fx?: number | null; fy?: number | null };
 export type SimL = CoauthorEdge & { source: SimN | string; target: SimN | string };
@@ -25,25 +26,22 @@ export function initialLinks(edges: CoauthorEdge[], nodes: SimN[]): SimL[] {
     .map(e => ({ ...e }));
 }
 
-const MIN_COMMUNITY_SIZE = 3;
-
-/** Community anchor points: only major communities get anchors, arranged around the ego. */
+/** Community anchor points: major communities + one shared "Other" slot arranged around the ego. */
 export function buildAnchors(nodes: SimN[], myRor: string | null, width: number, height: number) {
+  const major = majorRors(nodes, myRor);
   const counts = new Map<string, number>();
-  for (const n of nodes) {
-    if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
-    counts.set(n.affiliation.ror, (counts.get(n.affiliation.ror) || 0) + 1);
+  for (const ror of major) {
+    counts.set(ror, nodes.filter(n => n.affiliation?.ror === ror).length);
   }
-  const majorRors = [...counts.entries()]
-    .filter(([, count]) => count >= MIN_COMMUNITY_SIZE)
-    .sort((a, b) => b[1] - a[1])
-    .map(([ror]) => ror);
+  const hasOther = nodes.some(n => communityKeyFor(n, myRor, major) === OTHER_KEY);
+  const slots: string[] = [...major].sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0));
+  if (hasOther) slots.push(OTHER_KEY);
 
   const map = new Map<string, { x: number; y: number }>();
   const orbit = Math.min(width, height) * 0.38;
-  majorRors.forEach((ror, i) => {
-    const a = (i / Math.max(majorRors.length, 1)) * Math.PI * 2 - Math.PI / 2;
-    map.set(ror, {
+  slots.forEach((key, i) => {
+    const a = (i / Math.max(slots.length, 1)) * Math.PI * 2 - Math.PI / 2;
+    map.set(key, {
       x: width / 2 + Math.cos(a) * orbit,
       y: height / 2 + Math.sin(a) * orbit,
     });
@@ -56,13 +54,19 @@ interface SimulationOptions {
   nodes: SimN[];
   links: SimL[];
   anchors: Map<string, { x: number; y: number }>;
+  myRor: string | null;
   width: number;
   height: number;
   onTick: () => void;
 }
 
-export function createSimulation({ nodes, links, anchors, width, height, onTick }: SimulationOptions): Simulation<SimN, SimL> {
-  const anchorFor = (n: SimN) => (n.affiliation?.ror ? anchors.get(n.affiliation.ror) : null);
+export function createSimulation({ nodes, links, anchors, myRor, width, height, onTick }: SimulationOptions): Simulation<SimN, SimL> {
+  const major = majorRors(nodes, myRor);
+  const anchorFor = (n: SimN) => {
+    if (n.isMe && myRor) return anchors.get(myRor);
+    const key = communityKeyFor(n, myRor, major);
+    return key ? anchors.get(key) : null;
+  };
 
   return forceSimulation<SimN, SimL>(nodes)
     .force('link', forceLink<SimN, SimL>(links).id(d => d.id).distance(25).strength(0.1))

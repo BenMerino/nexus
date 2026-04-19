@@ -1,28 +1,36 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { SectionHead, Ico } from './ui-primitives';
 import { CoAuthorSim } from './coauthor-graph-sim';
-import { buildCommunityColors } from './coauthor-communities';
+import { buildCommunityColors, majorRors, communityKeyFor, OTHER_KEY, OTHER_LABEL } from './coauthor-communities';
 import type { CoauthorGraph } from './dashboard-builders.js';
 
 function Legend({ graph }: { graph: CoauthorGraph }) {
   const myRor = graph.nodes.find(n => n.isMe)?.affiliation?.ror || null;
   const colors = useMemo(() => buildCommunityColors(graph.nodes, myRor), [graph, myRor]);
+  const major = useMemo(() => majorRors(graph.nodes, myRor), [graph, myRor]);
   const items = useMemo(() => {
-    const byRor = new Map<string, { name: string; count: number }>();
+    const byKey = new Map<string, { name: string; count: number }>();
     for (const n of graph.nodes) {
-      if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
-      const e = byRor.get(n.affiliation.ror) || { name: n.affiliation.name, count: 0 };
-      e.count += 1; byRor.set(n.affiliation.ror, e);
+      const key = communityKeyFor(n, myRor, major);
+      if (!key) continue;
+      const name = key === OTHER_KEY ? OTHER_LABEL : (n.affiliation?.name || key);
+      const e = byKey.get(key) || { name, count: 0 };
+      e.count += 1; byKey.set(key, e);
     }
-    return [...byRor.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, 5);
-  }, [graph, myRor]);
+    const list = [...byKey.entries()];
+    return list.sort((a, b) => {
+      if (a[0] === OTHER_KEY) return 1;
+      if (b[0] === OTHER_KEY) return -1;
+      return b[1].count - a[1].count;
+    });
+  }, [graph, myRor, major]);
   const home = graph.nodes.find(n => n.isMe)?.affiliation?.name;
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: 10, fontSize: 11, color: 'var(--fg-muted)' }}>
       {home && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} /> {home}</span>}
-      {items.map(([ror, info]) => (
-        <span key={ror} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: colors.get(ror) }} /> {info.name} <span style={{ color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>·{info.count}</span>
+      {items.map(([key, info]) => (
+        <span key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: colors.get(key) }} /> {info.name} <span style={{ color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>·{info.count}</span>
         </span>
       ))}
     </div>

@@ -13191,16 +13191,40 @@ var import_react6 = __toESM(require_react());
 var import_react5 = __toESM(require_react());
 
 // public/coauthor-communities.ts
-var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1", "#b0b0b0"];
-function buildCommunityColors(nodes, myRor) {
+var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1"];
+var OTHER_KEY = "__other__";
+var OTHER_COLOR = "#b0b0b0";
+var OTHER_LABEL = "Other institutions";
+var MIN_COMMUNITY_SIZE = 3;
+function majorRors(nodes, myRor) {
   const counts = /* @__PURE__ */ new Map();
   for (const n of nodes) {
     if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
     counts.set(n.affiliation.ror, (counts.get(n.affiliation.ror) || 0) + 1);
   }
-  const sorted = [...counts.entries()].sort((a2, b) => b[1] - a2[1]);
+  const set2 = /* @__PURE__ */ new Set();
+  for (const [ror, count] of counts) {
+    if (count >= MIN_COMMUNITY_SIZE) set2.add(ror);
+  }
+  return set2;
+}
+function communityKeyFor(n, myRor, major) {
+  if (n.isMe) return null;
+  const ror = n.affiliation?.ror;
+  if (ror === myRor) return null;
+  if (ror && major.has(ror)) return ror;
+  return OTHER_KEY;
+}
+function buildCommunityColors(nodes, myRor) {
+  const major = majorRors(nodes, myRor);
+  const sorted = [...major].sort((a2, b) => {
+    const ca = nodes.filter((n) => n.affiliation?.ror === a2).length;
+    const cb = nodes.filter((n) => n.affiliation?.ror === b).length;
+    return cb - ca;
+  });
   const map = /* @__PURE__ */ new Map();
-  sorted.forEach(([ror], i) => map.set(ror, COMMUNITY_PALETTE[i % COMMUNITY_PALETTE.length]));
+  sorted.forEach((ror, i) => map.set(ror, COMMUNITY_PALETTE[i % COMMUNITY_PALETTE.length]));
+  map.set(OTHER_KEY, OTHER_COLOR);
   return map;
 }
 
@@ -13328,20 +13352,22 @@ function HoverTooltip({ node, radius: radius2 }) {
 
 // public/coauthor-graph-hulls.tsx
 var import_jsx_runtime9 = __toESM(require_jsx_runtime());
-function collectByRor(nodes, myRor) {
+function collectByCommunity(nodes, myRor) {
+  const major = majorRors(nodes, myRor);
   const groups = /* @__PURE__ */ new Map();
   for (const n of nodes) {
-    if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
-    const existing = groups.get(n.affiliation.ror);
+    const key = communityKeyFor(n, myRor, major);
+    if (!key) continue;
+    const name = key === OTHER_KEY ? OTHER_LABEL : n.affiliation?.name || key;
+    const existing = groups.get(key);
     if (existing) {
       existing.points.push({ x: n.x, y: n.y });
     } else {
-      groups.set(n.affiliation.ror, { name: n.affiliation.name, points: [{ x: n.x, y: n.y }] });
+      groups.set(key, { name, points: [{ x: n.x, y: n.y }] });
     }
   }
   return groups;
 }
-var MIN_COMMUNITY_SIZE = 3;
 function boundingCircle(points, pad) {
   const cx = points.reduce((s, p) => s + p.x, 0) / points.length;
   const cy = points.reduce((s, p) => s + p.y, 0) / points.length;
@@ -13352,10 +13378,10 @@ function boundingCircle(points, pad) {
 }
 function CommunityHulls({ nodes, myRor, colors }) {
   const bubbles = [];
-  for (const [ror, group] of collectByRor(nodes, myRor)) {
-    if (group.points.length < MIN_COMMUNITY_SIZE) continue;
+  for (const [key, group] of collectByCommunity(nodes, myRor)) {
+    if (group.points.length < 2) continue;
     const { cx, cy, r } = boundingCircle(group.points, 18);
-    bubbles.push({ ror, name: group.name, color: colors.get(ror) || "#888", cx, cy, r });
+    bubbles.push({ key, name: group.name, color: colors.get(key) || "#888", cx, cy, r });
   }
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("g", { children: bubbles.map((b) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
     "circle",
@@ -13369,7 +13395,7 @@ function CommunityHulls({ nodes, myRor, colors }) {
       strokeOpacity: 0.35,
       strokeWidth: 1
     },
-    b.ror
+    b.key
   )) });
 }
 
@@ -14308,19 +14334,20 @@ function initialLinks(edges, nodes) {
   const nmap = new Map(nodes.map((n) => [n.id, n]));
   return edges.filter((e) => nmap.has(e.source) && nmap.has(e.target)).map((e) => ({ ...e }));
 }
-var MIN_COMMUNITY_SIZE2 = 3;
 function buildAnchors(nodes, myRor, width, height) {
+  const major = majorRors(nodes, myRor);
   const counts = /* @__PURE__ */ new Map();
-  for (const n of nodes) {
-    if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
-    counts.set(n.affiliation.ror, (counts.get(n.affiliation.ror) || 0) + 1);
+  for (const ror of major) {
+    counts.set(ror, nodes.filter((n) => n.affiliation?.ror === ror).length);
   }
-  const majorRors = [...counts.entries()].filter(([, count]) => count >= MIN_COMMUNITY_SIZE2).sort((a2, b) => b[1] - a2[1]).map(([ror]) => ror);
+  const hasOther = nodes.some((n) => communityKeyFor(n, myRor, major) === OTHER_KEY);
+  const slots = [...major].sort((a2, b) => (counts.get(b) || 0) - (counts.get(a2) || 0));
+  if (hasOther) slots.push(OTHER_KEY);
   const map = /* @__PURE__ */ new Map();
   const orbit = Math.min(width, height) * 0.38;
-  majorRors.forEach((ror, i) => {
-    const a2 = i / Math.max(majorRors.length, 1) * Math.PI * 2 - Math.PI / 2;
-    map.set(ror, {
+  slots.forEach((key, i) => {
+    const a2 = i / Math.max(slots.length, 1) * Math.PI * 2 - Math.PI / 2;
+    map.set(key, {
       x: width / 2 + Math.cos(a2) * orbit,
       y: height / 2 + Math.sin(a2) * orbit
     });
@@ -14328,8 +14355,13 @@ function buildAnchors(nodes, myRor, width, height) {
   if (myRor) map.set(myRor, { x: width / 2, y: height / 2 });
   return map;
 }
-function createSimulation({ nodes, links, anchors, width, height, onTick }) {
-  const anchorFor = (n) => n.affiliation?.ror ? anchors.get(n.affiliation.ror) : null;
+function createSimulation({ nodes, links, anchors, myRor, width, height, onTick }) {
+  const major = majorRors(nodes, myRor);
+  const anchorFor = (n) => {
+    if (n.isMe && myRor) return anchors.get(myRor);
+    const key = communityKeyFor(n, myRor, major);
+    return key ? anchors.get(key) : null;
+  };
   return simulation_default(nodes).force("link", link_default(links).id((d) => d.id).distance(25).strength(0.1)).force("charge", manyBody_default().strength(-40)).force("clusterX", x_default2((d) => anchorFor(d)?.x ?? width / 2).strength(0.4)).force("clusterY", y_default2((d) => anchorFor(d)?.y ?? height / 2).strength(0.45)).force("collide", collide_default().radius((d) => radius(d) + 3)).alpha(1).alphaDecay(0.025).on("tick", () => {
     clampToViewport(nodes, width, height);
     onTick();
@@ -14352,11 +14384,12 @@ function CoAuthorSim({ graph, width, height }) {
   const [hoverId, setHoverId] = (0, import_react5.useState)(null);
   const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
   const communityColors = (0, import_react5.useMemo)(() => buildCommunityColors(graph.nodes, myRor), [graph, myRor]);
+  const major = (0, import_react5.useMemo)(() => majorRors(graph.nodes, myRor), [graph, myRor]);
   const nodeColor = (n) => {
     if (n.isMe) return "var(--accent)";
-    if (!n.affiliation?.ror) return "var(--fg-dim)";
-    if (n.affiliation.ror === myRor) return "var(--fg-muted)";
-    return communityColors.get(n.affiliation.ror) || "var(--fg-dim)";
+    const key = communityKeyFor(n, myRor, major);
+    if (!key) return "var(--fg-muted)";
+    return communityColors.get(key) || "var(--fg-dim)";
   };
   const { nodes, links } = (0, import_react5.useMemo)(() => {
     const ns = initialNodes(graph.nodes, width, height);
@@ -14372,6 +14405,7 @@ function CoAuthorSim({ graph, width, height }) {
       nodes,
       links,
       anchors,
+      myRor,
       width,
       height,
       onTick: () => tick((v) => v + 1)
@@ -14380,7 +14414,7 @@ function CoAuthorSim({ graph, width, height }) {
     return () => {
       sim.stop();
     };
-  }, [nodes, links, anchors, width, height]);
+  }, [nodes, links, anchors, myRor, width, height]);
   const connected = (0, import_react5.useMemo)(() => {
     if (!hoverId) return null;
     const set2 = /* @__PURE__ */ new Set([hoverId]);
@@ -14429,16 +14463,24 @@ var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function Legend({ graph }) {
   const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
   const colors = (0, import_react6.useMemo)(() => buildCommunityColors(graph.nodes, myRor), [graph, myRor]);
+  const major = (0, import_react6.useMemo)(() => majorRors(graph.nodes, myRor), [graph, myRor]);
   const items = (0, import_react6.useMemo)(() => {
-    const byRor = /* @__PURE__ */ new Map();
+    const byKey = /* @__PURE__ */ new Map();
     for (const n of graph.nodes) {
-      if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
-      const e = byRor.get(n.affiliation.ror) || { name: n.affiliation.name, count: 0 };
+      const key = communityKeyFor(n, myRor, major);
+      if (!key) continue;
+      const name = key === OTHER_KEY ? OTHER_LABEL : n.affiliation?.name || key;
+      const e = byKey.get(key) || { name, count: 0 };
       e.count += 1;
-      byRor.set(n.affiliation.ror, e);
+      byKey.set(key, e);
     }
-    return [...byRor.entries()].sort((a2, b) => b[1].count - a2[1].count).slice(0, 5);
-  }, [graph, myRor]);
+    const list = [...byKey.entries()];
+    return list.sort((a2, b) => {
+      if (a2[0] === OTHER_KEY) return 1;
+      if (b[0] === OTHER_KEY) return -1;
+      return b[1].count - a2[1].count;
+    });
+  }, [graph, myRor, major]);
   const home = graph.nodes.find((n) => n.isMe)?.affiliation?.name;
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 10, fontSize: 11, color: "var(--fg-muted)" }, children: [
     home && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
@@ -14446,8 +14488,8 @@ function Legend({ graph }) {
       " ",
       home
     ] }),
-    items.map(([ror, info]) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(ror) } }),
+    items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key) } }),
       " ",
       info.name,
       " ",
@@ -14455,7 +14497,7 @@ function Legend({ graph }) {
         "\xB7",
         info.count
       ] })
-    ] }, ror))
+    ] }, key))
   ] });
 }
 function CoAuthorGraphPanel({ graph }) {
