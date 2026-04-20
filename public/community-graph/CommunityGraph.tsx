@@ -53,8 +53,8 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   }, [inNodes, inLinks, adapter, width, height]);
 
   const anchors = useMemo(
-    () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize),
-    [nodes, adapter, primaryKey, width, height, config.minCommunitySize],
+    () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
+    [nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius],
   );
 
   useEffect(() => {

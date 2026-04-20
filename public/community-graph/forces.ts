@@ -40,6 +40,7 @@ export function buildAnchors<N>(
   width: number,
   height: number,
   minSize: number,
+  orbitFraction: number,
 ): Map<string, { x: number; y: number }> {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const counts = new Map<string, number>();
@@ -53,7 +54,7 @@ export function buildAnchors<N>(
   if (hasOther) slots.push(OTHER_KEY);
 
   const map = new Map<string, { x: number; y: number }>();
-  const orbit = Math.min(width, height) * 0.38;
+  const orbit = Math.min(width, height) * orbitFraction;
   slots.forEach((key, i) => {
     const a = (i / Math.max(slots.length, 1)) * Math.PI * 2 - Math.PI / 2;
     map.set(key, {

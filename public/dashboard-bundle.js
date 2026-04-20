@@ -14267,7 +14267,7 @@ function initialLinks(edges, nodes, adapter) {
   const nmap = new Map(nodes.map((n) => [adapter.getId(n), n]));
   return edges.filter((e) => nmap.has(e.source) && nmap.has(e.target)).map((e) => ({ ...e }));
 }
-function buildAnchors(nodes, adapter, primaryKey, width, height, minSize) {
+function buildAnchors(nodes, adapter, primaryKey, width, height, minSize, orbitFraction) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const counts = /* @__PURE__ */ new Map();
   for (const key of major) {
@@ -14277,7 +14277,7 @@ function buildAnchors(nodes, adapter, primaryKey, width, height, minSize) {
   const slots = [...major].filter((k) => k !== primaryKey).sort((a2, b) => (counts.get(b) || 0) - (counts.get(a2) || 0));
   if (hasOther) slots.push(OTHER_KEY);
   const map = /* @__PURE__ */ new Map();
-  const orbit = Math.min(width, height) * 0.38;
+  const orbit = Math.min(width, height) * orbitFraction;
   slots.forEach((key, i) => {
     const a2 = i / Math.max(slots.length, 1) * Math.PI * 2 - Math.PI / 2;
     map.set(key, {
@@ -14327,7 +14327,8 @@ var DEFAULT_FORCE_CONFIG = {
   clusterStrengthX: 0.4,
   clusterStrengthY: 0.45,
   collidePad: 3,
-  minCommunitySize: 3
+  minCommunitySize: 3,
+  orbitRadius: 0.38
 };
 
 // public/community-graph/CommunityGraph.tsx
@@ -14363,8 +14364,8 @@ function CommunityGraph({
     return { nodes: ns, links: ls };
   }, [inNodes, inLinks, adapter, width, height]);
   const anchors = (0, import_react4.useMemo)(
-    () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize),
-    [nodes, adapter, primaryKey, width, height, config.minCommunitySize]
+    () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
+    [nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
   );
   (0, import_react4.useEffect)(() => {
     const sim = createSimulation({

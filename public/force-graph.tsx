@@ -81,11 +81,12 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       forceConfig={{
         linkDistance: 35,
         linkStrength: 0.15,
-        charge: g => (g === 'doi' ? -30 : -80),
-        clusterStrengthX: 0.35,
-        clusterStrengthY: 0.4,
-        collidePad: 4,
-        minCommunitySize: 3,
+        charge: g => (g === 'doi' ? -40 : -140),
+        clusterStrengthX: 0.25,
+        clusterStrengthY: 0.28,
+        collidePad: 6,
+        minCommunitySize: 2,
+        orbitRadius: 0.55,
       }}
     />
   );

@@ -25,6 +25,8 @@ export interface ForceConfig {
   collidePad: number;
   /** Minimum number of members for a grouping key to earn its own community. */
   minCommunitySize: number;
+  /** Fraction of min(width, height) used as the community-anchor orbit radius. */
+  orbitRadius: number;
 }
 
 export const DEFAULT_FORCE_CONFIG: ForceConfig = {
@@ -35,4 +37,5 @@ export const DEFAULT_FORCE_CONFIG: ForceConfig = {
   clusterStrengthY: 0.45,
   collidePad: 3,
   minCommunitySize: 3,
+  orbitRadius: 0.38,
 };
