@@ -18,6 +18,3 @@ export const TYPE_METAL: Record<string, TypeMetal> = {
 export const typeColor = (t: string) => `var(${TYPE_METAL[t]?.token || '--metal-unknown'})`;
 export const typeRank = (t: string) => TYPE_METAL[t]?.rank ?? 99;
 export const typeMetalName = (t: string) => TYPE_METAL[t]?.name || '';
-export const typeGradientId = (t: string) => `metal-gradient-${t}`;
-export const typeGradientUrl = (t: string) =>
-  TYPE_METAL[t] ? `url(#${typeGradientId(t)})` : typeColor(t);

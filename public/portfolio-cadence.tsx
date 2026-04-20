@@ -1,7 +1,6 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { TYPE_DISPLAY_LABELS } from './type-labels.js';
-import { typeColor, typeRank, typeMetalName, typeGradientUrl } from './type-metals.js';
-import { MetalGradientDefs } from './type-metals-defs.js';
+import { typeColor, typeRank, typeMetalName } from './type-metals.js';
 
 export type CadenceSegment = { type: string; count: number };
 export type CadencePoint = { year: number; count: number; segments: CadenceSegment[] };
@@ -53,7 +52,6 @@ export function CadencePanel({ cadence }: { cadence: Cadence }) {
       </div>
 
       <svg width={w} height={h} style={{ display: 'block' }}>
-        <MetalGradientDefs />
         <line x1={pad} x2={w - pad} y1={meanY} y2={meanY} stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 3" opacity={0.5} />
 
         {series.map((p, i) => {
@@ -68,7 +66,6 @@ export function CadencePanel({ cadence }: { cadence: Cadence }) {
                 if (!seg.count) return null;
                 const segH = (seg.count / max) * (h - pad * 2);
                 yCursor -= segH;
-                const fill = segH >= 8 ? typeGradientUrl(seg.type) : typeColor(seg.type);
                 return (
                   <rect
                     key={seg.type}
@@ -76,7 +73,8 @@ export function CadencePanel({ cadence }: { cadence: Cadence }) {
                     y={yCursor}
                     width={barW}
                     height={segH}
-                    fill={fill}
+                    fill={typeColor(seg.type)}
+                    opacity={0.85}
                   >
                     <title>{`${p.year} · ${typeLabel(seg.type)}: ${seg.count}`}</title>
                   </rect>

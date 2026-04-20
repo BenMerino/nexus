@@ -27,64 +27,20 @@
   --warn:       oklch(0.80 0.14 80);
   --err:        oklch(0.68 0.18 25);
 
-  /* Precious-metal palette — paper-type colors, ordered by prestige.
-     Each metal has three tones: shadow / base / highlight. The base
-     token is the canonical flat color (legends, badges). The shadow
-     and highlight tokens drive the gradient fills in type-metals-defs;
-     their hues drift from the base so the gradient reads as light
-     interacting with the metal, not a brightness ramp. */
-
-  --metal-18k-gold:            oklch(0.82 0.14 85);
-  --metal-18k-gold-shadow:     oklch(0.45 0.12 55);
-  --metal-18k-gold-highlight:  oklch(0.94 0.06 95);
-
-  --metal-platinum:            oklch(0.88 0.02 250);
-  --metal-platinum-shadow:     oklch(0.52 0.02 240);
-  --metal-platinum-highlight:  oklch(0.96 0.01 255);
-
-  --metal-silver:              oklch(0.76 0.01 250);
-  --metal-silver-shadow:       oklch(0.48 0.02 245);
-  --metal-silver-highlight:    oklch(0.94 0.005 250);
-
-  --metal-gold-plated:           oklch(0.75 0.09 80);
-  --metal-gold-plated-shadow:    oklch(0.42 0.08 65);
-  --metal-gold-plated-highlight: oklch(0.90 0.05 90);
-
-  --metal-rose-gold:           oklch(0.78 0.08 30);
-  --metal-rose-gold-shadow:    oklch(0.45 0.09 20);
-  --metal-rose-gold-highlight: oklch(0.92 0.04 40);
-
-  --metal-copper:              oklch(0.60 0.13 35);
-  --metal-copper-shadow:       oklch(0.38 0.11 30);
-  --metal-copper-highlight:    oklch(0.88 0.08 50);
-
-  --metal-bronze:              oklch(0.58 0.10 50);
-  --metal-bronze-shadow:       oklch(0.36 0.09 40);
-  --metal-bronze-highlight:    oklch(0.78 0.07 60);
-
-  --metal-tin:                 oklch(0.70 0.01 250);
-  --metal-tin-shadow:          oklch(0.42 0.01 245);
-  --metal-tin-highlight:       oklch(0.86 0.005 255);
-
-  --metal-nickel:              oklch(0.62 0.02 250);
-  --metal-nickel-shadow:       oklch(0.38 0.02 245);
-  --metal-nickel-highlight:    oklch(0.80 0.01 255);
-
-  --metal-lead:                oklch(0.48 0.01 260);
-  --metal-lead-shadow:         oklch(0.26 0.01 258);
-  --metal-lead-highlight:      oklch(0.66 0.008 262);
-
-  --metal-zinc:                oklch(0.55 0.02 220);
-  --metal-zinc-shadow:         oklch(0.32 0.02 215);
-  --metal-zinc-highlight:      oklch(0.74 0.015 225);
-
-  --metal-rust:                oklch(0.50 0.12 30);
-  --metal-rust-shadow:         oklch(0.30 0.10 25);
-  --metal-rust-highlight:      oklch(0.70 0.10 40);
-
-  --metal-unknown:             oklch(0.55 0.005 260);
-  --metal-unknown-shadow:      oklch(0.34 0.005 260);
-  --metal-unknown-highlight:   oklch(0.74 0.005 260);
+  /* Precious-metal palette — paper-type colors, ordered by prestige. */
+  --metal-18k-gold:    oklch(0.82 0.14 85);
+  --metal-platinum:    oklch(0.88 0.02 250);
+  --metal-silver:      oklch(0.76 0.01 250);
+  --metal-gold-plated: oklch(0.75 0.09 80);
+  --metal-rose-gold:   oklch(0.78 0.08 30);
+  --metal-bronze:      oklch(0.58 0.10 50);
+  --metal-copper:      oklch(0.60 0.13 35);
+  --metal-tin:         oklch(0.70 0.01 250);
+  --metal-nickel:      oklch(0.62 0.02 250);
+  --metal-lead:        oklch(0.48 0.01 260);
+  --metal-zinc:        oklch(0.55 0.02 220);
+  --metal-rust:        oklch(0.50 0.12 30);
+  --metal-unknown:     oklch(0.55 0.005 260);
 
   --display: 'Instrument Serif', 'Times New Roman', serif;
   --sans:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
