@@ -1,26 +1,11 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { TYPE_DISPLAY_LABELS } from './type-labels.js';
+import { typeColor, typeRank, typeMetalName } from './type-metals.js';
 
 export type CadenceSegment = { type: string; count: number };
 export type CadencePoint = { year: number; count: number; segments: CadenceSegment[] };
 export type Cadence = { series: CadencePoint[]; types: string[]; meanPerYear: number };
 
-const TYPE_HUE: Record<string, number> = {
-  'journal-article': 145,
-  'conference-paper': 50,
-  'preprint': 180,
-  'review': 300,
-  'book-chapter': 80,
-  'book': 80,
-  'dataset': 245,
-  'editorial': 20,
-  'letter': 20,
-  'erratum': 20,
-  'paratext': 260,
-  'unknown': 260,
-};
-
-const typeColor = (t: string) => `oklch(0.72 0.12 ${TYPE_HUE[t] ?? 260})`;
 const typeLabel = (t: string) => TYPE_DISPLAY_LABELS[t] || (t === 'unknown' ? 'Unknown' : t);
 
 export function CadencePanel({ cadence }: { cadence: Cadence }) {
@@ -109,12 +94,15 @@ export function CadencePanel({ cadence }: { cadence: Cadence }) {
       </svg>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', marginTop: 10, fontSize: 11 }}>
-        {types.map(t => (
-          <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)' }}>
-            <span style={{ width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: 'inline-block' }} />
-            {typeLabel(t)}
-          </span>
-        ))}
+        {[...types].sort((a, b) => typeRank(a) - typeRank(b)).map(t => {
+          const metal = typeMetalName(t);
+          return (
+            <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)' }}>
+              <span style={{ width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: 'inline-block' }} />
+              {typeLabel(t)}{metal ? <span style={{ color: 'var(--fg-muted)', opacity: 0.7 }}> · {metal}</span> : null}
+            </span>
+          );
+        })}
       </div>
 
       <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 8 }}>

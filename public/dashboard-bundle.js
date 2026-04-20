@@ -14656,22 +14656,28 @@ function VelocityPanel({ velocity }) {
 
 // public/portfolio-cadence.tsx
 var import_react9 = __toESM(require_react());
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
-var TYPE_HUE = {
-  "journal-article": 145,
-  "conference-paper": 50,
-  "preprint": 180,
-  "review": 300,
-  "book-chapter": 80,
-  "book": 80,
-  "dataset": 245,
-  "editorial": 20,
-  "letter": 20,
-  "erratum": 20,
-  "paratext": 260,
-  "unknown": 260
+
+// public/type-metals.ts
+var TYPE_METAL = {
+  "journal-article": { token: "--metal-18k-gold", name: "18k Gold", rank: 1 },
+  "review": { token: "--metal-platinum", name: "Platinum", rank: 2 },
+  "conference-paper": { token: "--metal-silver", name: "Silver", rank: 3 },
+  "book-chapter": { token: "--metal-gold-plated", name: "Gold-plated", rank: 4 },
+  "book": { token: "--metal-rose-gold", name: "Rose Gold", rank: 5 },
+  "preprint": { token: "--metal-bronze", name: "Bronze", rank: 6 },
+  "dataset": { token: "--metal-copper", name: "Copper", rank: 7 },
+  "editorial": { token: "--metal-tin", name: "Tin", rank: 8 },
+  "letter": { token: "--metal-nickel", name: "Nickel", rank: 9 },
+  "erratum": { token: "--metal-lead", name: "Lead", rank: 10 },
+  "paratext": { token: "--metal-zinc", name: "Zinc", rank: 11 },
+  "peer-review": { token: "--metal-rust", name: "Rust", rank: 12 }
 };
-var typeColor = (t) => `oklch(0.72 0.12 ${TYPE_HUE[t] ?? 260})`;
+var typeColor = (t) => `var(${TYPE_METAL[t]?.token || "--metal-unknown"})`;
+var typeRank = (t) => TYPE_METAL[t]?.rank ?? 99;
+var typeMetalName = (t) => TYPE_METAL[t]?.name || "";
+
+// public/portfolio-cadence.tsx
+var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 var typeLabel = (t) => TYPE_DISPLAY_LABELS[t] || (t === "unknown" ? "Unknown" : t);
 function CadencePanel({ cadence }) {
   const { series, types, meanPerYear } = cadence;
@@ -14735,10 +14741,17 @@ function CadencePanel({ cadence }) {
         ] }, p.year);
       })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: types.map((t) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: "inline-block" } }),
-      typeLabel(t)
-    ] }, t)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: [...types].sort((a2, b) => typeRank(a2) - typeRank(b)).map((t) => {
+      const metal = typeMetalName(t);
+      return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: "inline-block" } }),
+        typeLabel(t),
+        metal ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { color: "var(--fg-muted)", opacity: 0.7 }, children: [
+          " \xB7 ",
+          metal
+        ] }) : null
+      ] }, t);
+    }) }),
     /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: [
       "Publications per year (",
       series[0].year,
