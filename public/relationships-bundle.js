@@ -766,7 +766,7 @@ var require_react = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React17 = require_react();
+    var React6 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React17.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React6.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React17 = require_react();
+    var React6 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React17.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React6.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React17.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React6.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12749,1355 +12749,14 @@ var require_jsx_runtime = __commonJS({
 // public/relationships.tsx
 var import_client = __toESM(require_client());
 
-// public/graph-explorer-body.tsx
-var import_react19 = __toESM(require_react());
-
-// public/enrich-meta.ts
-function enrichWithMeta(nodes, tagMeta) {
-  if (!Object.keys(tagMeta).length) return nodes;
-  const citValues = nodes.map((n) => tagMeta[n.id]?.avgCitations || 0).sort((a2, b) => a2 - b);
-  const citP70 = citValues[Math.floor(citValues.length * 0.7)] || 0;
-  return nodes.map((n) => {
-    const meta = tagMeta[n.id];
-    if (!meta) return n;
-    const haloIntensity = meta.avgCitations > citP70 ? Math.min(1, (meta.avgCitations - citP70) / (citP70 || 1)) : 0;
-    return { ...n, haloIntensity, openAccess: meta.openAccessPct > 0.5, topKeywords: meta.topKeywords };
-  });
-}
-
-// public/node-classify.ts
-function percentile(sorted, p) {
-  if (!sorted.length) return 0;
-  const idx = Math.ceil(p * sorted.length) - 1;
-  return sorted[Math.max(0, idx)];
-}
-function classifyNodes(nodes, edges, allNodes, communityMap) {
-  const nodeById = new Map(allNodes.map((n) => [n.id, n]));
-  const profileMap = /* @__PURE__ */ new Map();
-  for (const e of edges) {
-    const sNode = nodeById.get(e.source);
-    const tNode = nodeById.get(e.target);
-    if (!sNode || !tNode) continue;
-    const sMap = profileMap.get(e.source) || /* @__PURE__ */ new Map();
-    sMap.set(tNode.group, (sMap.get(tNode.group) || 0) + e.weight);
-    profileMap.set(e.source, sMap);
-    const tMap = profileMap.get(e.target) || /* @__PURE__ */ new Map();
-    tMap.set(sNode.group, (tMap.get(sNode.group) || 0) + e.weight);
-    profileMap.set(e.target, tMap);
-  }
-  const degrees = nodes.map((n) => n.degree).sort((a2, b) => a2 - b);
-  const weights = nodes.map((n) => n.weight).sort((a2, b) => a2 - b);
-  const degP75 = percentile(degrees, 0.75);
-  const degMedian = percentile(degrees, 0.5);
-  const weightP75 = percentile(weights, 0.75);
-  const avgWeights = nodes.filter((n) => n.degree > 0).map((n) => n.weight / n.degree).sort((a2, b) => a2 - b);
-  const avgWtMedian = percentile(avgWeights, 0.5);
-  return nodes.map((n) => {
-    let role = "default";
-    if (n.degree <= 2) {
-      role = "leaf";
-    } else if (n.degree >= degP75 && n.weight >= weightP75) {
-      role = "hub";
-    } else if (n.degree >= degMedian && n.degree > 0 && n.weight / n.degree < avgWtMedian) {
-      role = "bridge";
-    }
-    const catMap = profileMap.get(n.id) || /* @__PURE__ */ new Map();
-    const categoryProfile = [...catMap.entries()].map(([category, weight]) => ({ category, weight })).sort((a2, b) => b.weight - a2.weight);
-    const community = communityMap?.get(n.id) ?? 0;
-    return { ...n, role, community, categoryProfile };
-  });
-}
-
-// public/project-graph.ts
-function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags, expandedJournal) {
-  const doiToTags = /* @__PURE__ */ new Map();
-  const doiLabels = /* @__PURE__ */ new Map();
-  for (const n of rawNodes) {
-    if (n.group === "doi") doiLabels.set(n.id, n.label);
-  }
-  for (const e of rawEdges) {
-    const list = doiToTags.get(e.source) || [];
-    list.push(e.target);
-    doiToTags.set(e.source, list);
-  }
-  const institutions = rawNodes.filter((n) => n.group === "institution");
-  const authors = rawNodes.filter((n) => n.group === "author");
-  const journals = new Map(rawNodes.filter((n) => n.group === "journal").map((n) => [n.id, n]));
-  const journalPapers = /* @__PURE__ */ new Map();
-  for (const [doiId, tags] of doiToTags) {
-    const jTag = tags.find((t) => journals.has(t));
-    if (jTag) {
-      const list = journalPapers.get(jTag) || [];
-      list.push({ doi: doiId.replace("doi:", ""), title: doiLabels.get(doiId) || doiId });
-      journalPapers.set(jTag, list);
-    }
-  }
-  const allNodes = [];
-  const allEdges = [];
-  const matchingDois = /* @__PURE__ */ new Set();
-  const added = /* @__PURE__ */ new Set();
-  function addNode(id, label, group, w, papers, ext_id) {
-    if (added.has(id)) return;
-    added.add(id);
-    allNodes.push({ id, label, group, ext_id, doiCount: w, degree: 0, weight: w || 1, papers });
-  }
-  for (const inst of institutions) addNode(inst.id, inst.label, "institution", 0, void 0, inst.id.replace(/^[^:]+:/, ""));
-  for (const auth of authors) {
-    addNode(auth.id, auth.label, "author", 0, void 0, auth.id.replace(/^[^:]+:/, ""));
-    for (const inst of institutions) allEdges.push({ source: inst.id, target: auth.id, weight: 1, sharedDois: [] });
-  }
-  for (const [jId, papers] of journalPapers) {
-    if (expandedJournal && expandedJournal !== jId) continue;
-    const j = journals.get(jId);
-    addNode(j.id, j.label, "journal", papers.length, papers, j.id.replace(/^[^:]+:/, ""));
-    for (const auth of authors) allEdges.push({ source: auth.id, target: j.id, weight: papers.length, sharedDois: [] });
-    for (const p of papers) matchingDois.add(p.doi);
-    if (expandedJournal === jId) {
-      for (const p of papers) {
-        addNode("doi:" + p.doi, p.title, "doi", 0);
-        allEdges.push({ source: jId, target: "doi:" + p.doi, weight: 1, sharedDois: [] });
-      }
-    }
-  }
-  const communityMap = /* @__PURE__ */ new Map();
-  allNodes.forEach((n) => {
-    communityMap.set(n.id, n.group === "institution" ? 0 : n.group === "author" ? 1 : n.group === "journal" ? 2 : 3);
-  });
-  const nodes = classifyNodes(allNodes, allEdges, allNodes, communityMap);
-  return { nodes, edges: allEdges, matchingDois };
-}
-
-// public/node-detail.tsx
-var import_react = __toESM(require_react());
-
-// public/shell-icons.tsx
-var import_jsx_runtime = __toESM(require_jsx_runtime());
-var S = { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6 };
-var Ico = {
-  home: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { ...S, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M4 11 L12 4 L20 11 L20 20 L14 20 L14 14 L10 14 L10 20 L4 20 Z" }) }),
-  graph: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "6", cy: "6", r: "2" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "18", cy: "6", r: "2" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "12", cy: "18", r: "2" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "7.4", y1: "7.4", x2: "10.8", y2: "16.6" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "16.6", y1: "7.4", x2: "13.2", y2: "16.6" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "8", y1: "6", x2: "16", y2: "6" })
-  ] }),
-  paper: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M6 3 H15 L19 7 V21 H6 Z" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "9", y1: "9", x2: "16", y2: "9" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "9", y1: "13", x2: "16", y2: "13" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "9", y1: "17", x2: "13", y2: "17" })
-  ] }),
-  people: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "9", cy: "8", r: "3" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "17", cy: "9", r: "2.5" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M3 20 C3 16 5 14 9 14 C13 14 15 16 15 20" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M14 20 C14 17 15.5 15.5 18 15.5 C20.5 15.5 22 17 22 20" })
-  ] }),
-  build: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", { x: "4", y: "4", width: "7", height: "7" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", { x: "13", y: "4", width: "7", height: "7" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", { x: "4", y: "13", width: "7", height: "7" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", { x: "13", y: "13", width: "7", height: "7" })
-  ] }),
-  submit: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "12", y1: "4", x2: "12", y2: "16" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "7,9 12,4 17,9" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "4", y1: "20", x2: "20", y2: "20" })
-  ] }),
-  search: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "10", cy: "10", r: "6" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "14.5", y1: "14.5", x2: "20", y2: "20" })
-  ] }),
-  gear: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "12", cy: "12", r: "3" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 2 L13 5 L16 4 L16 7 L19 8 L18 11 L21 12 L18 13 L19 16 L16 17 L16 20 L13 19 L12 22 L11 19 L8 20 L8 17 L5 16 L6 13 L3 12 L6 11 L5 8 L8 7 L8 4 L11 5 Z" })
-  ] }),
-  tag: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M3 12 L12 3 L21 3 L21 12 L12 21 Z" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "16", cy: "8", r: "1.4" })
-  ] }),
-  close: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "6", y1: "6", x2: "18", y2: "18" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "18", y1: "6", x2: "6", y2: "18" })
-  ] }),
-  arrow: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, strokeWidth: 1.8, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "4", y1: "12", x2: "20", y2: "12" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "14,6 20,12 14,18" })
-  ] }),
-  check: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.5, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "4,12 10,18 20,6" }) }),
-  ext: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M7 17 L17 7" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "9,7 17,7 17,15" })
-  ] })
-};
-
-// public/ui-primitives.tsx
-var import_jsx_runtime2 = __toESM(require_jsx_runtime());
-function Tag({ children, tone = "default", mono = false }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: `tag tag-${tone} ${mono ? "mono" : ""}`, children });
-}
-function Check({ checked, onChange, label, color }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("label", { className: "check", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: `check-box ${checked ? "on" : ""}`, style: checked && color ? { background: color, borderColor: color } : void 0, children: checked && Ico.check }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("input", { type: "checkbox", checked, onChange: (e) => onChange(e.target.checked), style: { display: "none" } }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: label })
-  ] });
-}
-
-// public/node-detail-views.tsx
-var import_jsx_runtime3 = __toESM(require_jsx_runtime());
-function PaperRow({ p }) {
-  const year = p.published?.slice(0, 4);
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-item", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { children: p.title || "(untitled)" }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "mono muted", children: [
-      p.doi,
-      year ? ` \xB7 ${year}` : ""
-    ] })
-  ] });
-}
-var CloseBtn = ({ onClose }) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { className: "close", onClick: onClose, "aria-label": "Close", children: Ico.close });
-function AuthorView({ d, onClose }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "eyebrow", children: "Author" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { children: d.name }),
-        d.orcid && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "mono detail-id", children: [
-          "ORCID ",
-          d.orcid
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(CloseBtn, { onClose })
-    ] }),
-    (d.faculty || d.role) && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-meta", children: [
-      d.faculty && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "muted", children: "Faculty" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: d.faculty })
-      ] }),
-      d.role && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "muted", children: "Role" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: d.role })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-stats", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: d.papersCount }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { children: "papers" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: d.citations }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { children: "citations" })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "detail-section-label", children: "Recent papers" }),
-      d.papers.slice(0, 6).map((p) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(PaperRow, { p }, p.doi))
-    ] })
-  ] });
-}
-function InstitutionView({ d, onClose }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "eyebrow", children: "Institution" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { children: d.name }),
-        d.ror && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "mono detail-id", children: [
-          "ROR ",
-          d.ror
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(CloseBtn, { onClose })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "detail-meta", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "muted", children: "Shared papers" }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: d.papersCount })
-    ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "detail-section-label", children: "Joint publications" }),
-      d.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(PaperRow, { p }, p.doi))
-    ] })
-  ] });
-}
-function JournalView({ d, onClose }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "eyebrow", children: "Journal" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { children: d.name }),
-        d.issn && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "mono detail-id", children: [
-          "ISSN-L ",
-          d.issn
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(CloseBtn, { onClose })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "detail-meta", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "muted", children: "Our papers" }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: d.papersCount })
-    ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "detail-section-label", children: "Published here" }),
-      d.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(PaperRow, { p }, p.doi))
-    ] })
-  ] });
-}
-function PaperView({ d, onClose }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "eyebrow", children: "Paper" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "paper-detail-title", children: d.title || "(untitled)" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "mono detail-id", children: [
-          "DOI ",
-          d.doi
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(CloseBtn, { onClose })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-meta", children: [
-      d.journal && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "muted", children: "Journal" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: d.journal })
-      ] }),
-      d.published && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "muted", children: "Year" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: d.published.slice(0, 4) })
-      ] }),
-      d.citations != null && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "muted", children: "Citations" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: d.citations })
-      ] })
-    ] }),
-    d.authors.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "detail-section-label", children: "Authors" }),
-      d.authors.slice(0, 20).map((a2, i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-item", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { children: a2.name || a2.orcid || "\u2014" }),
-        a2.orcid && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "mono muted", children: [
-          "ORCID ",
-          a2.orcid
-        ] })
-      ] }, i))
-    ] })
-  ] });
-}
-function EmptyState() {
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-empty", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "detail-empty-glyph", children: "\u25CE" }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "detail-empty-head", children: "Select a node" }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("p", { children: [
-      "Every node carries a canonical identifier \u2014 ",
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: "ORCID" }),
-      " for authors, ",
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: "ROR" }),
-      " for institutions, ",
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: "ISSN-L" }),
-      " for journals, ",
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: "DOI" }),
-      " for papers."
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { children: "No canonical ID, no tag. That\u2019s how the graph stays clean." })
-  ] });
-}
-
-// public/node-detail.tsx
-var import_jsx_runtime4 = __toESM(require_jsx_runtime());
-function useNodeDetail(id) {
-  const [data, setData] = (0, import_react.useState)(null);
-  const [loading, setLoading] = (0, import_react.useState)(false);
-  const [error, setError] = (0, import_react.useState)(null);
-  (0, import_react.useEffect)(() => {
-    if (!id) {
-      setData(null);
-      setError(null);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    fetch(`/api/node-detail?id=${encodeURIComponent(id)}`).then(async (r) => r.ok ? r.json() : Promise.reject((await r.json()).error || r.statusText)).then((d) => {
-      if (!cancelled) setData(d);
-    }).catch((e) => {
-      if (!cancelled) setError(String(e));
-    }).finally(() => {
-      if (!cancelled) setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-  return { data, loading, error };
-}
-function NodeDetail({ nodeId, onClose }) {
-  const { data, loading, error } = useNodeDetail(nodeId);
-  if (!nodeId) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(EmptyState, {});
-  if (loading && !data) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "eyebrow", children: "Loading\u2026" }) });
-  if (error) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "status error", children: [
-    "Error: ",
-    error
-  ] }) });
-  if (!data) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(EmptyState, {});
-  if (data.type === "author") return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuthorView, { d: data, onClose });
-  if (data.type === "institution") return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InstitutionView, { d: data, onClose });
-  if (data.type === "journal") return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(JournalView, { d: data, onClose });
-  if (data.type === "paper") return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperView, { d: data, onClose });
-  return null;
-}
-
-// public/filtered-charts.tsx
-var import_react8 = __toESM(require_react());
-
-// graph-engine/cartesian-render.tsx
-var import_react5 = __toESM(require_react());
-
-// graph-engine/scales.ts
-function linearScale(domain, range) {
-  const [d0, d1] = domain;
-  const [r0, r1] = range;
-  const span = d1 - d0 || 1;
-  return (value) => r0 + (value - d0) / span * (r1 - r0);
-}
-function bandScale(labels, range, padding = 0.2) {
-  const [r0, r1] = range;
-  const total = r1 - r0;
-  const step = total / labels.length;
-  const bandW = step * (1 - padding);
-  const offset = step * padding * 0.5;
-  const map = new Map(labels.map((l, i) => [l, { x: r0 + i * step + offset, width: bandW }]));
-  return (label) => map.get(label) ?? { x: r0, width: bandW };
-}
-function arcScale(values, startAngle = 0, endAngle = Math.PI * 2) {
-  const total = values.reduce((s, v) => s + v, 0) || 1;
-  const span = endAngle - startAngle;
-  let cursor = startAngle;
-  return values.map((v) => {
-    const sweep = v / total * span;
-    const arc = { startAngle: cursor, endAngle: cursor + sweep };
-    cursor += sweep;
-    return arc;
-  });
-}
-function niceDomain(min, max, ticks2 = 5) {
-  if (min === max) return { min: 0, max: max || 1, step: (max || 1) / ticks2 };
-  const rawStep = (max - min) / ticks2;
-  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const residual = rawStep / mag;
-  const niceStep = residual <= 1.5 ? 1 : residual <= 3 ? 2 : residual <= 7 ? 5 : 10;
-  const step = niceStep * mag;
-  return { min: Math.floor(min / step) * step, max: Math.ceil(max / step) * step, step };
-}
-function ticks(domain) {
-  const result = [];
-  for (let v = domain.min; v <= domain.max + domain.step * 1e-3; v += domain.step) {
-    result.push(Math.round(v * 1e6) / 1e6);
-  }
-  return result;
-}
-function arcPath(cx, cy, r, start, end) {
-  const s = { x: cx + r * Math.cos(start), y: cy + r * Math.sin(start) };
-  const e = { x: cx + r * Math.cos(end), y: cy + r * Math.sin(end) };
-  const large = end - start > Math.PI ? 1 : 0;
-  return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
-}
-function donutArc(cx, cy, outer, inner, start, end) {
-  const os = { x: cx + outer * Math.cos(start), y: cy + outer * Math.sin(start) };
-  const oe = { x: cx + outer * Math.cos(end), y: cy + outer * Math.sin(end) };
-  const ie = { x: cx + inner * Math.cos(end), y: cy + inner * Math.sin(end) };
-  const is_ = { x: cx + inner * Math.cos(start), y: cy + inner * Math.sin(start) };
-  const large = end - start > Math.PI ? 1 : 0;
-  return `M ${os.x} ${os.y} A ${outer} ${outer} 0 ${large} 1 ${oe.x} ${oe.y} L ${ie.x} ${ie.y} A ${inner} ${inner} 0 ${large} 0 ${is_.x} ${is_.y} Z`;
-}
-function linePath(points) {
-  const n = points.length;
-  if (n === 0) return "";
-  if (n === 1) return `M ${points[0].x} ${points[0].y}`;
-  if (n === 2) return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
-  const ms = monotoneSlopes(points);
-  let d = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 0; i < n - 1; i++) {
-    const dx = (points[i + 1].x - points[i].x) / 3;
-    d += ` C ${points[i].x + dx} ${points[i].y + ms[i] * dx}, ${points[i + 1].x - dx} ${points[i + 1].y - ms[i + 1] * dx}, ${points[i + 1].x} ${points[i + 1].y}`;
-  }
-  return d;
-}
-function monotoneSlopes(pts) {
-  const n = pts.length;
-  const d = [];
-  const m2 = [];
-  for (let i = 0; i < n - 1; i++) {
-    const dx = pts[i + 1].x - pts[i].x;
-    d.push(dx === 0 ? 0 : (pts[i + 1].y - pts[i].y) / dx);
-  }
-  m2.push(d[0]);
-  for (let i = 1; i < n - 1; i++) m2.push(d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2);
-  m2.push(d[n - 2]);
-  for (let i = 0; i < n - 1; i++) {
-    if (d[i] === 0) {
-      m2[i] = 0;
-      m2[i + 1] = 0;
-      continue;
-    }
-    const a2 = m2[i] / d[i], b = m2[i + 1] / d[i];
-    const s = a2 * a2 + b * b;
-    if (s > 9) {
-      const t = 3 / Math.sqrt(s);
-      m2[i] = t * a2 * d[i];
-      m2[i + 1] = t * b * d[i];
-    }
-  }
-  return m2;
-}
-function areaPath(points, baseline) {
-  if (!points.length) return "";
-  const last = points[points.length - 1], first = points[0];
-  return `${linePath(points)} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`;
-}
-
-// graph-engine/svg-parts.tsx
-var import_react3 = __toESM(require_react());
-
-// primitives/BaseBox.tsx
-var import_react2 = __toESM(require_react());
-var import_jsx_runtime5 = __toESM(require_jsx_runtime());
-var BaseBox = import_react2.default.forwardRef(
-  ({ children, direction, gap, px, py, surfaceRadius, shadow, style, ...rest }, ref) => {
-    const s = {
-      display: direction === "row" ? "flex" : void 0,
-      flexDirection: direction === "row" ? "row" : void 0,
-      gap: gap ? `${Number(gap) * 0.25}rem` : void 0,
-      ...style
-    };
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { ref, style: s, ...rest, children });
-  }
-);
-
-// primitives/BaseText.tsx
-var import_jsx_runtime6 = __toESM(require_jsx_runtime());
-function BaseText({ children, variant, weight, color, style, ...rest }) {
-  const s = {
-    fontWeight: weight === "semibold" ? 600 : void 0,
-    color: color === "muted" ? "#888" : void 0,
-    ...style
-  };
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: s, ...rest, children });
-}
-
-// graph-engine/svg-color-schemes.ts
-var CTX_S = [
-  "var(--primary)",
-  // warm gold
-  "var(--secondary)",
-  // blue
-  "var(--journal)",
-  // magenta
-  "var(--ok)",
-  // green
-  "var(--accent-dim)",
-  // muted gold
-  "var(--warn)",
-  // gold (slightly cooler than primary)
-  "var(--paper)",
-  // near-neutral
-  "var(--err)"
-  // red — last so it only appears in busy stacks
-];
-var N = (p, s) => ({ sentiment: "neutral", primary: p, fill: p, seriesColors: s });
-var PRIMARY_G = { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: ["var(--primary)", "var(--accent-dim)"] };
-var OK = { sentiment: "positive", primary: "var(--ok)", fill: "var(--ok)" };
-var TYPE_SCHEME = {
-  heatmap: { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: [
-    "var(--chart-heatmap-from, #3a2a14)",
-    "var(--chart-heatmap-low, #7a5320)",
-    "var(--chart-heatmap-mid, #c08a35)",
-    "var(--chart-heatmap-to, #e8c870)"
-  ] },
-  bubble: N(CTX_S[0], CTX_S),
-  scatter: N(CTX_S[0], CTX_S),
-  bar: PRIMARY_G,
-  line: PRIMARY_G,
-  area: PRIMARY_G,
-  "stacked-bar": N(CTX_S[0], CTX_S),
-  pie: N(CTX_S[0], CTX_S),
-  donut: N(CTX_S[0], CTX_S),
-  funnel: N(CTX_S[0], CTX_S),
-  treemap: N(CTX_S[0], CTX_S),
-  radar: N(CTX_S[0], CTX_S),
-  gauge: OK,
-  "progress-ring": OK
-};
-var DNA_FALLBACK = { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)" };
-function cs(chart) {
-  return chart.colorScheme ?? (chart.type ? TYPE_SCHEME[chart.type] : void 0) ?? DNA_FALLBACK;
-}
-var FALLBACK_SERIES = CTX_S;
-function seriesColor(scheme2, i) {
-  return scheme2.seriesColors?.[i % (scheme2.seriesColors?.length || 1)] ?? FALLBACK_SERIES[i % FALLBACK_SERIES.length];
-}
-
-// graph-engine/svg-parts.tsx
-var import_jsx_runtime7 = __toESM(require_jsx_runtime());
-var MARGIN = { top: 8, right: 8, bottom: 20, left: 36 };
-var TICK = { fill: "var(--text-muted)", fontSize: 11, fontWeight: 500 };
-var GRID_STROKE = "var(--border-main)";
-function XAxisBand({ labels, y: y3, range }) {
-  const step = (range[1] - range[0]) / labels.length;
-  const maxChars = Math.max(4, Math.floor(step / 5));
-  const rotate = labels.some((l) => l.length > maxChars);
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: labels.map((l, i) => {
-    const cx = range[0] + i * step + step / 2;
-    const display = l.length > maxChars ? l.slice(0, maxChars - 1) + "\u2026" : l;
-    return rotate ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("text", { x: cx, y: y3 + 6, textAnchor: "end", transform: `rotate(-40,${cx},${y3 + 6})`, ...TICK, children: display }, i) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("text", { x: cx, y: y3 + 14, textAnchor: "middle", ...TICK, children: display }, i);
-  }) });
-}
-function XAxisLinear({ domain, y: y3, range }) {
-  const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("text", { x: s(v), y: y3 + 14, textAnchor: "middle", ...TICK, children: v }, i)) });
-}
-function YAxis({ domain, range, x: x3 }) {
-  const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("text", { x: x3 - 4, y: s(v) + 3, textAnchor: "end", ...TICK, children: fmtTick(v) }, i)) });
-}
-function fmtTick(v) {
-  const abs = Math.abs(v);
-  if (abs >= 1e6) return `${+(v / 1e6).toPrecision(3)}M`;
-  if (abs >= 1e4) return `${+(v / 1e3).toPrecision(3)}k`;
-  return String(v);
-}
-function fmtValue(v, c2) {
-  const s = v.toLocaleString(void 0, { maximumFractionDigits: 0 });
-  if (!c2) return s;
-  const sym = c2.currency || "$";
-  return c2.currencyFormat === "suffix" ? `${s} ${sym}` : `${sym}${s}`;
-}
-function GridLines({ domain, range, xRange }) {
-  const s = linearScale([domain.min, domain.max], range);
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: ticks(domain).map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: s(v), y2: s(v), stroke: GRID_STROKE, strokeOpacity: 0.45 }, i)) });
-}
-function ThresholdLines({ thresholds, yScale, xRange }) {
-  if (!thresholds?.length) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: thresholds.map((t, i) => {
-    const y3 = yScale(t.value);
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("line", { x1: xRange[0], x2: xRange[1], y1: y3, y2: y3, stroke: t.color, strokeDasharray: "4 4", strokeWidth: 1 }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("text", { x: xRange[1] - 2, y: y3 - 4, textAnchor: "end", fontSize: 9, fontWeight: 600, fill: t.color, children: t.label })
-    ] }, i);
-  }) });
-}
-function useTooltip() {
-  const [tip, setTip] = (0, import_react3.useState)(null);
-  const show = (0, import_react3.useCallback)((state) => setTip(state), []);
-  const hide = (0, import_react3.useCallback)(() => setTip(null), []);
-  return { tip, show, hide };
-}
-function Crosshairs({ tip, xR, yR, mode, ms = 0 }) {
-  if (!tip || mode === "none") return null;
-  const stroke = "var(--text-muted)";
-  const t = ms > 0 ? `all ${ms}ms ease-out` : void 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("g", { opacity: 0.4, pointerEvents: "none", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("line", { x1: tip.vbX, x2: tip.vbX, y1: tip.vbY, y2: yR[1], stroke, strokeDasharray: "3 3", strokeWidth: 0.75, style: { transition: t } }),
-    mode === "both" && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("line", { x1: xR[0], x2: tip.vbX, y1: tip.vbY, y2: tip.vbY, stroke, strokeDasharray: "3 3", strokeWidth: 0.75, style: { transition: t } }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("circle", { cx: tip.vbX, cy: tip.vbY, r: 3, fill: stroke, opacity: 0.8, style: { transition: t } })
-  ] });
-}
-function TooltipOverlay({ tip, yLabel, currencyCfg, ms = 0 }) {
-  if (!tip) return null;
-  const t = ms > 0 ? `left ${ms}ms ease-out, top ${ms}ms ease-out` : void 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
-    BaseBox,
-    {
-      style: {
-        position: "absolute",
-        left: tip.x,
-        top: tip.y - 8,
-        transform: "translate(-50%, -100%)",
-        zIndex: 50,
-        padding: "8px 12px",
-        borderRadius: 8,
-        background: "var(--glass-bg, var(--bg-card))",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        border: "1px solid var(--border-ghost, var(--border-main))",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
-        pointerEvents: "none",
-        transition: t
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(BaseText, { color: "muted", style: { display: "block", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, marginBottom: 2 }, children: tip.label }),
-        tip.values.map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(BaseText, { style: { display: "block", color: v.color, fontSize: 12, fontWeight: 600 }, children: [
-          v.name !== "value" ? `${v.name}: ` : "",
-          fmtValue(v.value, currencyCfg),
-          i === 0 && !currencyCfg ? ` ${yLabel || ""}` : ""
-        ] }, i))
-      ]
-    }
-  );
-}
-
-// graph-engine/cartesian-special.tsx
-var import_jsx_runtime8 = __toESM(require_jsx_runtime());
-function ScatterSvg({ chart, width = 320, height = 150 }) {
-  const data = chart.data;
-  const xDom = niceDomain(Math.min(...data.map((d) => d.x)), Math.max(...data.map((d) => d.x)));
-  const yDom = niceDomain(Math.min(...data.map((d) => d.y)), Math.max(...data.map((d) => d.y)));
-  const xR = [MARGIN.left, width - MARGIN.right];
-  const yR = [height - MARGIN.bottom, MARGIN.top];
-  const xS = linearScale([xDom.min, xDom.max], xR);
-  const yS = linearScale([yDom.min, yDom.max], yR);
-  const maxZ = data.reduce((m2, d) => Math.max(m2, d.z ?? 1), 1);
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(GridLines, { domain: yDom, range: yR, xRange: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(XAxisLinear, { domain: xDom, y: height - MARGIN.bottom, range: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(YAxis, { domain: yDom, range: yR, x: MARGIN.left }),
-    data.map((d, i) => {
-      const r = chart.type === "bubble" ? 4 + (d.z ?? 1) / maxZ * 16 : 4;
-      return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: xS(d.x), cy: yS(d.y), r, fill: "var(--primary)", opacity: 0.6 }, i);
-    })
-  ] });
-}
-function WaterfallSvg({ chart, width = 320, height = 150 }) {
-  const data = chart.data;
-  const labels = data.map((d) => d.label);
-  const xR = [MARGIN.left, width - MARGIN.right];
-  const yR = [height - MARGIN.bottom, MARGIN.top];
-  const band_ = bandScale(labels, xR);
-  let running = 0;
-  const bars = data.map((d) => {
-    if (d.type === "total") {
-      running = d.value;
-      return { base: 0, h: d.value, color: "var(--primary)", label: d.label };
-    }
-    const prev = running;
-    running += d.type === "subtract" ? -d.value : d.value;
-    return { base: d.type === "subtract" ? running : prev, h: Math.abs(d.value), color: d.type === "subtract" ? "var(--status-error, #ef4444)" : "var(--status-success, #10b981)", label: d.label };
-  });
-  const maxV = Math.max(...bars.map((b) => b.base + b.h));
-  const yDom = niceDomain(0, maxV);
-  const yS = linearScale([yDom.min, yDom.max], yR);
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(GridLines, { domain: yDom, range: yR, xRange: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(XAxisBand, { labels, y: yR[0], range: xR }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(YAxis, { domain: yDom, range: yR, x: MARGIN.left }),
-    bars.map((b, i) => {
-      const bn = band_(b.label);
-      return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: bn.x, y: yS(b.base + b.h), width: bn.width, height: Math.max(0, yS(b.base) - yS(b.base + b.h)), rx: 3, fill: b.color, opacity: 0.85 }, i);
-    })
-  ] });
-}
-
-// graph-engine/drag-range.tsx
-var import_react4 = __toESM(require_react());
-var import_jsx_runtime9 = __toESM(require_jsx_runtime());
-var INIT = { start: null, end: null, dragging: false };
-function useDragRange() {
-  const [range, setRange] = (0, import_react4.useState)(INIT);
-  const startRef = (0, import_react4.useRef)(null);
-  const onDown = (0, import_react4.useCallback)((ep) => {
-    startRef.current = ep;
-    setRange({ start: ep, end: ep, dragging: true });
-  }, []);
-  const onDrag = (0, import_react4.useCallback)((ep) => {
-    if (!startRef.current) return;
-    setRange({ start: startRef.current, end: ep, dragging: true });
-  }, []);
-  const onUp = (0, import_react4.useCallback)(() => {
-    setRange((prev) => {
-      if (!prev.start || !prev.end || prev.start.idx === prev.end.idx) return INIT;
-      const [s, e] = prev.start.idx < prev.end.idx ? [prev.start, prev.end] : [prev.end, prev.start];
-      return { start: s, end: e, dragging: false };
-    });
-    startRef.current = null;
-  }, []);
-  const clear = (0, import_react4.useCallback)(() => {
-    startRef.current = null;
-    setRange(INIT);
-  }, []);
-  return { range, onDown, onDrag, onUp, clear };
-}
-function RangeHighlight({ range, yR }) {
-  if (!range.start || !range.end) return null;
-  const x1 = Math.min(range.start.vbX, range.end.vbX);
-  const x22 = Math.max(range.start.vbX, range.end.vbX);
-  if (x22 - x1 < 1) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
-    "rect",
-    {
-      x: x1,
-      y: yR[0],
-      width: x22 - x1,
-      height: yR[1] - yR[0],
-      fill: "var(--primary)",
-      opacity: 0.08,
-      pointerEvents: "none",
-      rx: 2
-    }
-  );
-}
-function RangeBadge({ range, scaleX, yLabel, currencyCfg }) {
-  if (!range.start || !range.end || range.dragging) return null;
-  if (range.start.idx === range.end.idx) return null;
-  const [s, e] = range.start.idx < range.end.idx ? [range.start, range.end] : [range.end, range.start];
-  const delta = e.value - s.value;
-  const pct = s.value !== 0 ? Math.round(delta / s.value * 100) : 0;
-  const sign = delta >= 0 ? "+" : "";
-  const color = delta >= 0 ? "var(--status-success, #10b981)" : "var(--status-error, #ef4444)";
-  const midX = (s.vbX + e.vbX) / 2 * scaleX;
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
-    BaseBox,
-    {
-      px: "3",
-      py: "2",
-      surfaceRadius: "sm",
-      shadow: "lg",
-      style: {
-        position: "absolute",
-        left: midX,
-        top: -4,
-        transform: "translate(-50%, -100%)",
-        zIndex: 50,
-        background: "var(--glass-bg, var(--bg-card))",
-        backdropFilter: "blur(12px)",
-        border: `1px solid ${color}`,
-        pointerEvents: "none"
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(BaseText, { variant: "detail", style: { fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }, children: [
-          s.label,
-          " \u2192 ",
-          e.label
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(BaseText, { style: { color, fontSize: 13, fontWeight: 700 }, children: [
-          delta < 0 ? "-" : "+",
-          fmtValue(Math.abs(delta), currencyCfg),
-          " (",
-          sign,
-          pct,
-          "%) ",
-          yLabel || ""
-        ] })
-      ]
-    }
-  );
-}
-
-// architect/graph-composer.types.ts
-function defaultInteraction(type) {
-  return {
-    crosshair: type === "sparkline" ? "none" : "both",
-    dragRange: false,
-    transitionMs: 120
-  };
-}
-
-// graph-engine/cartesian-series.tsx
-var import_jsx_runtime10 = __toESM(require_jsx_runtime());
-function topRoundedBar(key, x3, y3, w, h, fill, opacity) {
-  const r = Math.min(3, h, w / 2);
-  if (r <= 0) return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("rect", { x: x3, y: y3, width: w, height: h, fill, opacity }, key);
-  const d = `M${x3},${y3 + h} L${x3},${y3 + r} Q${x3},${y3} ${x3 + r},${y3} L${x3 + w - r},${y3} Q${x3 + w},${y3} ${x3 + w},${y3 + r} L${x3 + w},${y3 + h} Z`;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d, fill, opacity }, key);
-}
-function renderSeries(t, data, labels, band, yS, baseline, c2, series, pw, chart) {
-  const isBar = t === "bar";
-  const isArea = t === "area" || t === "sparkline";
-  if (t === "distribution") {
-    const bars = data.map((d, i) => {
-      const b = band(labels[i]);
-      const h = Math.max(0, baseline - yS(d.value ?? 0));
-      return topRoundedBar(i, b.x, yS(d.value ?? 0), b.width, h, c2.primary, 0.5);
-    });
-    const g = chart?.gaussian;
-    if (!g) return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: bars });
-    const xMin = parseFloat(labels[0]), xMax = parseFloat(labels[labels.length - 1]);
-    const maxY = Math.max(...data.map((d) => d.value ?? 0));
-    const scale = maxY / (1 / (g.stddev * Math.sqrt(2 * Math.PI)));
-    const gauss = (x3) => 1 / (g.stddev * Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * ((x3 - g.mean) / g.stddev) ** 2) * scale;
-    const x0 = band(labels[0]).x;
-    const pts = Array.from({ length: 41 }, (_, i) => {
-      const x3 = xMin + i / 40 * (xMax - xMin);
-      return { x: x0 + i / 40 * pw, y: yS(Math.min(gauss(x3), maxY * 1.1)) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_jsx_runtime10.Fragment, { children: [
-      bars,
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: linePath(pts), fill: "none", stroke: c2.primary, strokeWidth: 2, opacity: 0.9 })
-    ] });
-  }
-  if (isBar) return data.map((d, i) => {
-    const b = band(labels[i]);
-    const h = Math.max(0, baseline - yS(d.value ?? 0));
-    return topRoundedBar(i, b.x, yS(d.value ?? 0), b.width, h, c2.gradient ? "url(#gr-bar)" : c2.primary, 0.85);
-  });
-  if (isArea) {
-    const pts = data.map((d, i) => {
-      const b = band(labels[i]);
-      return { x: b.x + b.width / 2, y: yS(d.value ?? 0) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_jsx_runtime10.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: areaPath(pts, baseline), fill: c2.fill, opacity: 0.12 }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: linePath(pts), fill: "none", stroke: c2.primary, strokeWidth: 2 })
-    ] });
-  }
-  if (t === "line") {
-    const pts = data.map((d, i) => {
-      const b = band(labels[i]);
-      return { x: b.x + b.width / 2, y: yS(d.value ?? 0) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_jsx_runtime10.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: linePath(pts), fill: "none", stroke: c2.primary, strokeWidth: 2 }),
-      pts.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("circle", { cx: p.x, cy: p.y, r: 2.5, fill: c2.primary }, i))
-    ] });
-  }
-  if (t === "multi-line") return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: series.map((s, si) => {
-    const pts = data.map((d, i) => {
-      const b = band(labels[i]);
-      return { x: b.x + b.width / 2, y: yS(d[s] || 0) };
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: linePath(pts), fill: "none", stroke: seriesColor(c2, si), strokeWidth: 1.5 }),
-      pts.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("circle", { cx: p.x, cy: p.y, r: 2, fill: seriesColor(c2, si) }, i))
-    ] }, s);
-  }) });
-  if (t === "stacked-bar") return data.map((d, i) => {
-    const b = band(labels[i]);
-    let y0 = baseline;
-    let topIdx = -1;
-    for (let si = series.length - 1; si >= 0; si--) {
-      if ((d[series[si]] || 0) > 0) {
-        topIdx = si;
-        break;
-      }
-    }
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("g", { children: series.map((s, si) => {
-      const v = d[s] || 0;
-      const h = Math.max(0, baseline - yS(v));
-      const y3 = y0 - h;
-      y0 = y3;
-      const fill = seriesColor(c2, si);
-      if (si === topIdx) return topRoundedBar(s, b.x, y3, b.width, h, fill, 0.85);
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("rect", { x: b.x, y: y3, width: b.width, height: h, fill, opacity: 0.85 }, s);
-    }) }, i);
-  });
-  if (t === "stacked-area") {
-    const cumul = data.map((d) => {
-      let s = 0;
-      return series.map((k) => {
-        s += d[k] || 0;
-        return s;
-      });
-    });
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: series.map((s, si) => {
-      const pts = data.map((d, i) => {
-        const b = band(labels[i]);
-        return { x: b.x + b.width / 2, y: yS(cumul[i][si]) };
-      });
-      const base = si === 0 ? data.map((_, i) => {
-        const b = band(labels[i]);
-        return { x: b.x + b.width / 2, y: baseline };
-      }) : data.map((_, i) => {
-        const b = band(labels[i]);
-        return { x: b.x + b.width / 2, y: yS(cumul[i][si - 1]) };
-      });
-      const topD = linePath(pts).replace(/^M/, "");
-      const baseD = linePath([...base].reverse()).replace(/^M/, "L");
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: `M${topD} ${baseD} Z`, fill: seriesColor(c2, si), opacity: 0.2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: linePath(pts), fill: "none", stroke: seriesColor(c2, si), strokeWidth: 1.5 })
-      ] }, s);
-    }) });
-  }
-  return null;
-}
-
-// graph-engine/cartesian-render.tsx
-var import_jsx_runtime11 = __toESM(require_jsx_runtime());
-function CartesianRender({ chart, width = 320, height = 150 }) {
-  const ref = (0, import_react5.useRef)(null);
-  const { tip, show, hide } = useTooltip();
-  const { range, onDown: dragDown, onDrag, onUp: dragUp, clear: dragClear } = useDragRange();
-  const c2 = cs(chart);
-  const data = chart.data;
-  const t = chart.type;
-  const spark = t === "sparkline";
-  const h = spark ? 40 : height;
-  const m2 = spark ? { top: 4, right: 4, bottom: 4, left: 4 } : MARGIN;
-  const pw = width - m2.left - m2.right;
-  const ph = h - m2.top - m2.bottom;
-  const xR = [m2.left, m2.left + pw];
-  const yR = [m2.top, m2.top + ph];
-  if (t === "scatter" || t === "bubble") return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(ScatterSvg, { chart, width, height });
-  if (t === "waterfall") return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(WaterfallSvg, { chart, width, height });
-  const isStacked = t === "stacked-bar" || t === "stacked-area";
-  const isMulti = t === "multi-line";
-  const series = chart.series || [];
-  const labels = data.map((d) => String(d.label ?? ""));
-  const band = bandScale(labels, xR, t === "line" || t === "multi-line" || t === "area" || t === "stacked-area" || spark ? 0 : 0.2);
-  const allVals = isStacked ? data.map((d) => series.reduce((s, k) => s + (d[k] || 0), 0)) : isMulti ? data.flatMap((d) => series.map((k) => d[k] || 0)) : data.map((d) => d.value ?? 0);
-  const yDom = niceDomain(0, Math.max(...allVals, 1));
-  const yS = linearScale([yDom.min, yDom.max], [yR[1], yR[0]]);
-  const resolve = (e) => {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0) return null;
-    const scaleX = rect.width / width;
-    const scaleY = rect.height / h;
-    const vbX = (e.clientX - rect.left) / scaleX;
-    const idx = Math.min(data.length - 1, Math.max(0, Math.floor((vbX - xR[0]) / pw * data.length)));
-    const d = data[idx];
-    if (!d) return null;
-    const b = band(labels[idx]);
-    const pX = b.x + b.width / 2;
-    const pY = yS(allVals[idx]);
-    return { idx, label: labels[idx], value: allVals[idx], vbX: pX, pY, scaleX, scaleY };
-  };
-  const onMove = (e) => {
-    const r = resolve(e);
-    if (!r) return;
-    if (range.dragging) {
-      onDrag({ idx: r.idx, label: r.label, value: r.value, vbX: r.vbX });
-      return;
-    }
-    const vals = isStacked || isMulti ? series.map((s, i) => ({ name: s, value: data[r.idx][s] || 0, color: seriesColor(c2, i) })) : [{ name: "value", value: r.value, color: c2.primary }];
-    show({ x: r.vbX * r.scaleX, y: r.pY * r.scaleY, vbX: r.vbX, vbY: r.pY, label: r.label, values: vals });
-  };
-  const ix = chart.interaction ?? defaultInteraction(t);
-  const scX = ref.current ? ref.current.getBoundingClientRect().width / width : 1;
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
-      "svg",
-      {
-        ref,
-        viewBox: `0 0 ${width} ${h}`,
-        width: "100%",
-        height: h,
-        onMouseMove: onMove,
-        onMouseLeave: () => {
-          if (!range.dragging) hide();
-        },
-        onMouseDown: ix.dragRange ? (e) => {
-          const r = resolve(e);
-          if (r) {
-            dragClear();
-            hide();
-            dragDown({ idx: r.idx, label: r.label, value: r.value, vbX: r.vbX });
-          }
-        } : void 0,
-        onMouseUp: ix.dragRange ? dragUp : void 0,
-        style: { display: "block", cursor: spark ? void 0 : ix.dragRange ? "crosshair" : void 0 },
-        children: [
-          c2.gradient && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("linearGradient", { id: "gr-bar", x1: "0", y1: "0", x2: "0", y2: "1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("stop", { offset: "0%", stopColor: c2.gradient[0] }),
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("stop", { offset: "100%", stopColor: c2.gradient[1] })
-          ] }) }),
-          ix.dragRange && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(RangeHighlight, { range, yR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridLines, { domain: yDom, range: [yR[1], yR[0]], xRange: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(XAxisBand, { labels, y: yR[1], range: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(YAxis, { domain: yDom, range: [yR[1], yR[0]], x: m2.left }),
-          renderSeries(t, data, labels, band, yS, yR[1], c2, series, pw, chart),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(ThresholdLines, { thresholds: chart.thresholds, yScale: yS, xRange: xR }),
-          !spark && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Crosshairs, { tip, xR, yR, mode: ix.crosshair, ms: ix.transitionMs })
-        ]
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(TooltipOverlay, { tip, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig, svgRef: ref, ms: ix.transitionMs }),
-    ix.dragRange && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(RangeBadge, { range, svgRef: ref, scaleX: scX, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig })
-  ] });
-}
-
-// graph-engine/radial-render.tsx
+// public/coauthor-explorer-body.tsx
 var import_react6 = __toESM(require_react());
-var import_jsx_runtime12 = __toESM(require_jsx_runtime());
-function RadialRender({ chart, size = 150 }) {
-  const t = chart.type;
-  if (t === "gauge") return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(GaugeSvg, { chart, size });
-  if (t === "progress-ring") return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(RingSvg, { chart, size });
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(PieSvg, { chart, size, donut: t === "donut" });
-}
-function PieSvg({ chart, size, donut }) {
-  const ref = (0, import_react6.useRef)(null);
-  const { tip, show, hide } = useTooltip();
-  const data = chart.data;
-  const colors = cs(chart).seriesColors || FALLBACK_SERIES;
-  const cx = size / 2, cy = size / 2;
-  const outer = size * 0.38, inner = donut ? size * 0.23 : 0;
-  const values = data.map((d) => d.value ?? 0);
-  const arcs = arcScale(values, -Math.PI / 2, Math.PI * 1.5);
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("svg", { ref, viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, onMouseLeave: hide, children: [
-      arcs.map((arc, i) => {
-        const color = colors[i % colors.length];
-        const mid = (arc.startAngle + arc.endAngle) / 2;
-        const hx = cx + outer * 0.7 * Math.cos(mid);
-        const hy = cy + outer * 0.7 * Math.sin(mid);
-        const d = donut ? donutArc(cx, cy, outer, inner, arc.startAngle, arc.endAngle) : donutArc(cx, cy, outer, 0, arc.startAngle, arc.endAngle);
-        return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
-          "path",
-          {
-            d,
-            fill: color,
-            stroke: "var(--bg-card)",
-            strokeWidth: 1.5,
-            onMouseEnter: () => show({ x: hx, y: hy, vbX: hx, vbY: hy, label: data[i].label, values: [{ name: "value", value: values[i], color }] })
-          },
-          i
-        );
-      }),
-      donut && chart.yLabel && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("text", { x: cx, y: cy, textAnchor: "middle", dominantBaseline: "central", fontSize: 14, fontWeight: 700, fill: "var(--text-main)", children: chart.yLabel })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(TooltipOverlay, { tip, yLabel: chart.yLabel, currencyCfg: chart.currencyConfig, svgRef: ref })
-  ] });
-}
-function GaugeSvg({ chart, size }) {
-  const c2 = cs(chart);
-  const d = chart.data[0];
-  if (!d) return null;
-  const value = d.value ?? 0;
-  const max = chart.range?.max ?? 100;
-  const pct = Math.min(value / max, 1);
-  const cx = size / 2, cy = size * 0.55, r = size * 0.38;
-  const bgPath = arcPath(cx, cy, r, Math.PI, 0);
-  const fgPath = arcPath(cx, cy, r, Math.PI, Math.PI + pct * Math.PI);
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { style: { textAlign: "center" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("svg", { viewBox: `0 0 ${size} ${size * 0.6}`, width: "100%", height: size * 0.55, style: { display: "block" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: bgPath, fill: "none", stroke: "var(--border-main)", strokeWidth: 8, strokeLinecap: "round", opacity: 0.4 }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: fgPath, fill: "none", stroke: c2.primary, strokeWidth: 8, strokeLinecap: "round" })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(BaseText, { weight: "bold", style: { fontSize: 18, marginTop: -4, color: c2.primary }, children: [
-      chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value,
-      chart.yLabel === "%" ? "%" : ""
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(BaseText, { variant: "detail", color: "muted", style: { fontSize: 9 }, children: d.label || chart.title })
-  ] });
-}
-function RingSvg({ chart, size }) {
-  const c2 = cs(chart);
-  const d = chart.data[0];
-  if (!d) return null;
-  const value = d.value ?? 0;
-  const max = chart.range?.max ?? 100;
-  const pct = Math.min(value / max, 1);
-  const cx = size / 2, cy = size / 2, r = size * 0.38, sw = 8;
-  const circ = Math.PI * 2 * r;
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: size, style: { display: "block" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("circle", { cx, cy, r, fill: "none", stroke: "var(--border-main)", strokeWidth: sw, opacity: 0.4 }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
-      "circle",
-      {
-        cx,
-        cy,
-        r,
-        fill: "none",
-        stroke: c2.primary,
-        strokeWidth: sw,
-        strokeDasharray: `${pct * circ} ${circ}`,
-        strokeLinecap: "round",
-        transform: `rotate(-90 ${cx} ${cy})`
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("text", { x: cx, y: cy - 4, textAnchor: "middle", fontSize: 22, fontWeight: 700, fill: "var(--text-main)", children: chart.currencyConfig ? fmtValue(value, chart.currencyConfig) : value }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("text", { x: cx, y: cy + 14, textAnchor: "middle", fontSize: 9, fill: "var(--text-muted)", children: d.label || chart.title })
-  ] }) });
-}
 
-// public/relationship-types.ts
-var TAG_CATEGORIES = ["institution", "author", "journal"];
-var COLORS = {
-  institution: "#f57f17",
-  author: "#c62828",
-  journal: "#2e7d32"
-};
-function nodeRadius(weight, role) {
-  const base = Math.max(4, Math.min(18, 4 + Math.sqrt(weight) * 2));
-  if (role === "hub") return Math.min(22, base * 1.3);
-  if (role === "leaf") return Math.max(4, base * 0.8);
-  return base;
-}
-
-// public/filtered-paper-list.tsx
-var import_react7 = __toESM(require_react());
-var import_jsx_runtime13 = __toESM(require_jsx_runtime());
-var PAGE_SIZE = 20;
-function formatAuthors(authors) {
-  if (!authors?.length) return "\u2014";
-  if (authors.length <= 3) return authors.join(", ");
-  return `${authors.slice(0, 3).join(", ")} et al.`;
-}
-var btnStyle = {
-  background: "var(--bg-inset)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: 4,
-  cursor: "pointer",
-  fontSize: 12,
-  color: "var(--fg-muted)",
-  fontFamily: "var(--mono)",
-  padding: "6px 12px"
-};
-var cellStyle = {
-  padding: "8px 10px",
-  fontSize: 12,
-  fontFamily: "var(--mono)",
-  borderBottom: "1px solid var(--border-soft)",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  color: "var(--fg-muted)"
-};
-function FilteredPaperList({ papers }) {
-  const [expanded, setExpanded] = (0, import_react7.useState)(false);
-  const [showAll, setShowAll] = (0, import_react7.useState)(false);
-  if (!papers.length) return null;
-  const sorted = [...papers].sort((a2, b) => (b.citation_count || 0) - (a2.citation_count || 0));
-  const visible = showAll ? sorted : sorted.slice(0, PAGE_SIZE);
-  const hasMore = sorted.length > PAGE_SIZE;
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { marginTop: 14 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("button", { onClick: () => setExpanded(!expanded), style: btnStyle, children: expanded ? "Hide papers" : `Show ${papers.length} paper${papers.length !== 1 ? "s" : ""}` }),
-    expanded && /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { marginTop: 10, border: "1px solid var(--border-soft)", borderRadius: "var(--radius)", overflow: "auto", maxHeight: 500, background: "var(--bg-card)" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("tr", { style: { background: "var(--bg-inset)", textAlign: "left" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("th", { style: { ...cellStyle, fontWeight: 500, width: "40%", color: "var(--fg-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 11 }, children: "Title" }),
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("th", { style: { ...cellStyle, fontWeight: 500, width: "25%", color: "var(--fg-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 11 }, children: "Authors" }),
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("th", { style: { ...cellStyle, fontWeight: 500, width: "10%", color: "var(--fg-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 11 }, children: "Year" }),
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("th", { style: { ...cellStyle, fontWeight: 500, width: "15%", color: "var(--fg-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 11 }, children: "Journal" }),
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("th", { style: { ...cellStyle, fontWeight: 500, width: "10%", textAlign: "right", color: "var(--fg-dim)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 11 }, children: "Cited" })
-        ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("tbody", { children: visible.map((r) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("tr", { style: { cursor: "default" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("td", { style: { ...cellStyle, whiteSpace: "normal", maxWidth: 300, color: "var(--fg)" }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
-            "a",
-            {
-              href: `https://doi.org/${r.doi}`,
-              target: "_blank",
-              rel: "noopener noreferrer",
-              style: { color: "var(--accent)", textDecoration: "none" },
-              title: r.title || r.doi,
-              children: [
-                (r.title || r.doi).substring(0, 80),
-                (r.title || r.doi).length > 80 ? "\u2026" : ""
-              ]
-            }
-          ) }),
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("td", { style: cellStyle, title: r.authors?.join(", "), children: formatAuthors(r.authors) }),
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("td", { style: cellStyle, children: r.published ? r.published.substring(0, 4) : "\u2014" }),
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("td", { style: cellStyle, title: r.journal, children: r.journal ? r.journal.substring(0, 25) : "\u2014" }),
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("td", { style: { ...cellStyle, textAlign: "right", color: "var(--fg)" }, children: r.citation_count ?? "\u2014" })
-        ] }, r.doi)) })
-      ] }),
-      hasMore && !showAll && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { padding: 10, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("button", { onClick: () => setShowAll(true), style: { ...btnStyle, border: "none", color: "var(--accent)" }, children: [
-        "Show all ",
-        sorted.length,
-        " papers"
-      ] }) })
-    ] })
-  ] });
-}
-
-// public/filtered-charts.tsx
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
-function ChartCard({ chart }) {
-  const isDonut = chart.type === "donut" || chart.type === "pie";
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: "var(--radius)", padding: "14px 16px 10px", overflow: "hidden" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontFamily: "var(--mono)", fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--fg-dim)", marginBottom: 10 }, children: chart.title }),
-    isDonut ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(RadialRender, { chart, size: 200 }) : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(CartesianRender, { chart, width: 340, height: 160 })
-  ] });
-}
-function StatsBar({ nodes, edges, doiCount }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { display: "flex", gap: 18, fontSize: 12, color: "var(--fg-muted)", fontFamily: "var(--mono)", padding: "10px 0", flexWrap: "wrap" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { children: [
-      nodes.length,
-      " tags"
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { children: [
-      edges.length,
-      " connections"
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { color: "var(--fg)" }, children: [
-      doiCount,
-      " papers"
-    ] }),
-    TAG_CATEGORIES.map((cat) => {
-      const count = nodes.filter((n) => n.group === cat).length;
-      if (!count) return null;
-      return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { color: COLORS[cat] }, children: [
-        count,
-        " ",
-        cat,
-        count !== 1 ? "s" : ""
-      ] }, cat);
-    })
-  ] });
-}
-var scheme = (color) => ({
-  sentiment: "neutral",
-  primary: color,
-  fill: color,
-  gradient: [color, color]
-});
-function buildCharts(filtered) {
-  const charts = [];
-  const withCitations = filtered.filter((r) => r.citation_count > 0).sort((a2, b) => b.citation_count - a2.citation_count).slice(0, 15);
-  if (withCitations.length > 0) {
-    charts.push({ type: "bar", title: "Citations", yLabel: "Citations", colorScheme: scheme("#3b82f6"), data: withCitations.map((r) => ({ label: (r.title || r.doi).substring(0, 22), value: r.citation_count })) });
-  }
-  const typeMap = /* @__PURE__ */ new Map();
-  for (const r of filtered) typeMap.set(r.type || "unknown", (typeMap.get(r.type || "unknown") || 0) + 1);
-  if (typeMap.size > 0) {
-    const typeScheme = { sentiment: "neutral", primary: COLORS.type, fill: COLORS.type, seriesColors: Object.values(COLORS) };
-    charts.push({ type: typeMap.size > 1 ? "donut" : "bar", title: "By Type", colorScheme: typeScheme, data: [...typeMap.entries()].map(([label, value]) => ({ label, value })) });
-  }
-  const journalMap = /* @__PURE__ */ new Map();
-  for (const r of filtered) if (r.journal) journalMap.set(r.journal, (journalMap.get(r.journal) || 0) + 1);
-  if (journalMap.size > 0) {
-    charts.push({ type: "bar", title: "By Journal", yLabel: "Count", colorScheme: scheme(COLORS.journal), data: [...journalMap.entries()].sort((a2, b) => b[1] - a2[1]).slice(0, 12).map(([label, value]) => ({ label: label.substring(0, 22), value })) });
-  }
-  const yearMap = /* @__PURE__ */ new Map();
-  for (const r of filtered) {
-    if (r.published) {
-      const y3 = r.published.substring(0, 4);
-      if (/^\d{4}$/.test(y3)) yearMap.set(y3, (yearMap.get(y3) || 0) + 1);
-    }
-  }
-  if (yearMap.size > 0) {
-    charts.push({ type: yearMap.size > 1 ? "line" : "bar", title: "Timeline", yLabel: "Papers", colorScheme: scheme(COLORS.year), data: [...yearMap.entries()].sort((a2, b) => a2[0].localeCompare(b[0])).map(([label, value]) => ({ label, value })) });
-  }
-  const authorMap = /* @__PURE__ */ new Map();
-  for (const r of filtered) if (r.authors) for (const a2 of r.authors) authorMap.set(a2, (authorMap.get(a2) || 0) + 1);
-  const topAuthors = [...authorMap.entries()].sort((a2, b) => b[1] - a2[1]).slice(0, 15);
-  if (topAuthors.length > 0) {
-    charts.push({ type: "bar", title: "Authors", yLabel: "Papers", colorScheme: scheme(COLORS.author), data: topAuthors.map(([label, value]) => ({ label: label.substring(0, 20), value })) });
-  }
-  const pubMap = /* @__PURE__ */ new Map();
-  for (const r of filtered) if (r.publisher) pubMap.set(r.publisher, (pubMap.get(r.publisher) || 0) + 1);
-  if (pubMap.size > 0) {
-    charts.push({ type: "bar", title: "Publishers", yLabel: "Count", colorScheme: scheme(COLORS.publisher), data: [...pubMap.entries()].sort((a2, b) => b[1] - a2[1]).slice(0, 10).map(([label, value]) => ({ label: label.substring(0, 22), value })) });
-  }
-  return charts;
-}
-function FilteredCharts({ matchingDois, totalDois }) {
-  const [records, setRecords] = (0, import_react8.useState)([]);
-  const [loaded, setLoaded] = (0, import_react8.useState)(false);
-  (0, import_react8.useEffect)(() => {
-    fetch("/api/records").then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setRecords(data);
-      setLoaded(true);
-    }).catch(() => setLoaded(true));
-  }, []);
-  const filtered = records.filter((r) => matchingDois.has(r.doi));
-  const isFiltered = matchingDois.size < totalDois;
-  if (!loaded) return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { padding: 12, color: "var(--fg-dim)", fontFamily: "var(--mono)", fontSize: 13 }, children: "Loading charts\u2026" });
-  if (!filtered.length) return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { padding: 12, color: "var(--fg-dim)", fontFamily: "var(--mono)", fontSize: 13 }, children: "No matching papers for current selection." });
-  const charts = buildCharts(filtered);
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
-    charts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_jsx_runtime14.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 12, color: "var(--fg-muted)", fontFamily: "var(--mono)", marginBottom: 12, letterSpacing: "0.08em" }, children: isFiltered ? `Charts for ${filtered.length} of ${totalDois} papers (filtered)` : `Charts for all ${filtered.length} papers` }),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 12 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(ChartCard, { chart }, `${chart.title}-${filtered.length}-${i}`)) })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(FilteredPaperList, { papers: filtered })
-  ] });
-}
-
-// public/force-graph.tsx
-var import_react12 = __toESM(require_react());
+// public/coauthor-graph-sim.tsx
+var import_react4 = __toESM(require_react());
 
 // public/community-graph/CommunityGraph.tsx
-var import_react10 = __toESM(require_react());
+var import_react2 = __toESM(require_react());
 
 // public/community-graph/communities.ts
 var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1"];
@@ -14142,21 +12801,21 @@ function buildCommunityColors(nodes, adapter, primaryKey, minSize) {
 }
 
 // public/community-graph/render.tsx
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+var import_jsx_runtime = __toESM(require_jsx_runtime());
 function GraphDefs() {
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("radialGradient", { id: "community-glow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("radialGradient", { id: "community-glow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
   ] }) });
 }
 function Links({ links, connected }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("g", { children: links.map((l, i) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("g", { children: links.map((l, i) => {
     const s = typeof l.source === "object" ? l.source : null;
     const t = typeof l.target === "object" ? l.target : null;
     if (!s || !t) return null;
     const dim = connected && !(connected.has(s.id) && connected.has(t.id));
     const w = l.weight || 1;
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
       "line",
       {
         x1: s.x,
@@ -14171,13 +12830,13 @@ function Links({ links, connected }) {
   }) });
 }
 function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("g", { children: nodes.map((n) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("g", { children: nodes.map((n) => {
     const id = adapter.getId(n);
     const r = adapter.getRadius(n);
     const isHov = id === hoverId;
     const isSel = id === selectedId;
     const dim = connected && !connected.has(id);
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
       "g",
       {
         transform: `translate(${n.x}, ${n.y})`,
@@ -14191,8 +12850,8 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
         },
         style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
         children: [
-          (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
             "circle",
             {
               r,
@@ -14209,10 +12868,10 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
 }
 
 // public/community-graph/labels.tsx
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_jsx_runtime2 = __toESM(require_jsx_runtime());
 function EgoLabel({ ego, adapter }) {
   const r = adapter.getRadius(ego);
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
     "div",
     {
       style: {
@@ -14235,7 +12894,7 @@ function HoverTooltip({ node, adapter }) {
   const r = adapter.getRadius(node);
   const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
   const footnote = adapter.getHoverFootnote?.(node) ?? null;
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
     "div",
     {
       style: {
@@ -14255,16 +12914,16 @@ function HoverTooltip({ node, adapter }) {
         zIndex: 2
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontWeight: 500 }, children: adapter.getLabel(node) }),
-        subtitle && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", marginTop: 2 }, children: subtitle }),
-        footnote && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)", marginTop: 2 }, children: footnote })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontWeight: 500 }, children: adapter.getLabel(node) }),
+        subtitle && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", marginTop: 2 }, children: subtitle }),
+        footnote && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)", marginTop: 2 }, children: footnote })
       ]
     }
   );
 }
 
 // public/smoothed-hulls.tsx
-var import_react9 = __toESM(require_react());
+var import_react = __toESM(require_react());
 
 // public/convex-hull.ts
 var RING_SAMPLES = 72;
@@ -14323,7 +12982,7 @@ function smoothClosedPath(pts, tension) {
 }
 
 // public/smoothed-hulls.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var import_jsx_runtime3 = __toESM(require_jsx_runtime());
 var DEFAULT_LERP_ALPHA = 0.18;
 var DEFAULT_PAD = 32;
 var MIN_GROUP_SIZE = 3;
@@ -14331,7 +12990,7 @@ function lerp(a2, b, t) {
   return a2 + (b - a2) * t;
 }
 function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALPHA }) {
-  const stateRef = (0, import_react9.useRef)(/* @__PURE__ */ new Map());
+  const stateRef = (0, import_react.useRef)(/* @__PURE__ */ new Map());
   const state = stateRef.current;
   const paths = [];
   const seenKeys = /* @__PURE__ */ new Set();
@@ -14356,7 +13015,7 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
   for (const key of [...state.keys()]) {
     if (!seenKeys.has(key)) state.delete(key);
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("g", { children: paths.map((p) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("g", { children: paths.map((p) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
     "path",
     {
       d: p.d,
@@ -14371,7 +13030,7 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
 }
 
 // public/community-graph/hulls.tsx
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var import_jsx_runtime4 = __toESM(require_jsx_runtime());
 function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize }) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const groups = /* @__PURE__ */ new Map();
@@ -14391,7 +13050,7 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize }) {
       emphasis: key === primaryKey
     });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SmoothedHulls, { groups: hullGroups });
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(SmoothedHulls, { groups: hullGroups });
 }
 
 // public/community-graph/drag.ts
@@ -15397,7 +14056,7 @@ var DEFAULT_FORCE_CONFIG = {
 };
 
 // public/community-graph/CommunityGraph.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_jsx_runtime5 = __toESM(require_jsx_runtime());
 function CommunityGraph({
   nodes: inNodes,
   links: inLinks,
@@ -15411,28 +14070,28 @@ function CommunityGraph({
   pinDraggedNodes = false
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
-  const svgRef = (0, import_react10.useRef)(null);
-  const simRef = (0, import_react10.useRef)(null);
-  const [, tick] = (0, import_react10.useState)(0);
-  const [hoverId, setHoverId] = (0, import_react10.useState)(null);
-  const communityColors = (0, import_react10.useMemo)(
+  const svgRef = (0, import_react2.useRef)(null);
+  const simRef = (0, import_react2.useRef)(null);
+  const [, tick] = (0, import_react2.useState)(0);
+  const [hoverId, setHoverId] = (0, import_react2.useState)(null);
+  const communityColors = (0, import_react2.useMemo)(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const major = (0, import_react10.useMemo)(
+  const major = (0, import_react2.useMemo)(
     () => majorCommunities(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const { nodes, links } = (0, import_react10.useMemo)(() => {
+  const { nodes, links } = (0, import_react2.useMemo)(() => {
     const ns = initialNodes(inNodes, adapter, width, height);
     const ls = initialLinks(inLinks, ns, adapter);
     return { nodes: ns, links: ls };
   }, [inNodes, inLinks, adapter, width, height]);
-  const anchors = (0, import_react10.useMemo)(
+  const anchors = (0, import_react2.useMemo)(
     () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
     [nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
   );
-  (0, import_react10.useEffect)(() => {
+  (0, import_react2.useEffect)(() => {
     const sim = createSimulation({
       nodes,
       links,
@@ -15462,7 +14121,7 @@ function CommunityGraph({
     if (override) return override;
     return communityColor || "var(--fg-muted)";
   };
-  const connected = (0, import_react10.useMemo)(() => {
+  const connected = (0, import_react2.useMemo)(() => {
     const focusId = hoverId || selectedId || null;
     if (!focusId) return null;
     const set2 = /* @__PURE__ */ new Set([focusId]);
@@ -15481,10 +14140,10 @@ function CommunityGraph({
     const isEgo = adapter.isEgo(node);
     startDrag(e, node, svgRef.current, simRef.current, pinDraggedNodes || isEgo);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: { position: "relative", width, height }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphDefs, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { position: "relative", width, height }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(GraphDefs, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
         CommunityHulls,
         {
           nodes,
@@ -15494,8 +14153,8 @@ function CommunityGraph({
           minSize: config.minCommunitySize
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Links, { links, connected }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Links, { links, connected }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
         Nodes,
         {
           nodes,
@@ -15511,18 +14170,18 @@ function CommunityGraph({
         }
       )
     ] }),
-    ego && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(EgoLabel, { ego, adapter }),
-    showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(HoverTooltip, { node: hovered, adapter })
+    ego && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(EgoLabel, { ego, adapter }),
+    showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(HoverTooltip, { node: hovered, adapter })
   ] });
 }
 
 // public/community-graph/legend.tsx
-var import_react11 = __toESM(require_react());
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
+var import_react3 = __toESM(require_react());
+var import_jsx_runtime6 = __toESM(require_jsx_runtime());
 function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
-  const colors = (0, import_react11.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const major = (0, import_react11.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const items = (0, import_react11.useMemo)(() => {
+  const colors = (0, import_react3.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const major = (0, import_react3.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const items = (0, import_react3.useMemo)(() => {
     const byKey = /* @__PURE__ */ new Map();
     for (const n of nodes) {
       const key = effectiveKey(n, adapter, major);
@@ -15540,211 +14199,123 @@ function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
       return b[1].count - a2[1].count;
     });
   }, [nodes, adapter, major, primaryKey]);
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: info.name }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: info.name }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
       "\xB7",
       info.count
     ] })
   ] }, key)) });
 }
 
-// public/force-graph.tsx
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
+// public/coauthor-graph-sim.tsx
+var import_jsx_runtime7 = __toESM(require_jsx_runtime());
 function radius(n) {
-  return nodeRadius(n.weight || 1, n.role);
+  return n.isMe ? 12 : 5 + Math.min(10, Math.sqrt(n.weight) * 1.5);
 }
-function communityKeyFor(n, institutionsByAuthor) {
-  if (n.group === "institution") return n.id;
-  if (n.group === "author") {
-    const insts = institutionsByAuthor.get(n.id);
-    if (!insts || insts.size === 0) return null;
-    return [...insts].sort()[0];
-  }
-  return null;
-}
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null }) {
-  const institutionLabelById = (0, import_react12.useMemo)(() => {
-    const m2 = /* @__PURE__ */ new Map();
-    for (const n of nodes) if (n.group === "institution") m2.set(n.id, n.label);
-    return m2;
-  }, [nodes]);
-  const adapter = (0, import_react12.useMemo)(() => ({
+function CoAuthorSim({ graph, width, height }) {
+  const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
+  const adapter = (0, import_react4.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: radius,
-    getCommunityKey: (n) => {
-      if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
-      return communityKeyFor(n, affiliations.institutionsByAuthor);
-    },
-    isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
-    getCommunityLabel: (key) => institutionLabelById.get(key) || key,
-    getNodeColor: (n, communityColor) => {
-      if (n.group === "institution" || n.group === "author") return communityColor;
-      return COLORS[n.group] || null;
-    },
-    getHoverSubtitle: (n) => {
-      if (n.group !== "author") return null;
-      const insts = affiliations.institutionsByAuthor.get(n.id);
-      if (!insts || insts.size === 0) return null;
-      const firstId = [...insts].sort()[0];
-      return institutionLabelById.get(firstId) || null;
-    },
-    getHoverFootnote: (n) => n.weight ? `${n.weight} ${n.weight === 1 ? "paper" : "papers"}` : null
-  }), [affiliations, institutionLabelById, egoAuthorId, homeInstitutionId]);
-  return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+    getCommunityKey: (n) => n.affiliation?.ror ?? null,
+    isEgo: (n) => !!n.isMe,
+    getCommunityLabel: (_key, sample) => sample.affiliation?.name || _key,
+    getHoverSubtitle: (n) => n.affiliation?.name || null,
+    getHoverFootnote: (n) => `${n.weight} shared ${n.weight === 1 ? "paper" : "papers"}`
+  }), []);
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
     CommunityGraph,
     {
-      nodes,
-      links,
+      nodes: graph.nodes,
+      links: graph.edges,
       adapter,
-      primaryKey: homeInstitutionId,
+      primaryKey: myRor,
       width,
       height,
-      selectedId: selectedId ?? null,
-      onNodeClick,
-      forceConfig: {
-        linkDistance: 60,
-        linkStrength: 0.3,
-        charge: (g) => g === "doi" ? -80 : -260,
-        clusterStrengthX: 0.05,
-        clusterStrengthY: 0.05,
-        collidePad: 6,
-        minCommunitySize: 2,
-        orbitRadius: 0.45
+      onNodeClick: (n) => {
+        window.location.href = `/overview.html?highlight=${encodeURIComponent(n.id)}`;
       }
     }
   );
 }
 
-// public/graph-search.tsx
-var import_react13 = __toESM(require_react());
-var import_jsx_runtime22 = __toESM(require_jsx_runtime());
-function GraphSearch({ nodes, onSelect }) {
-  const [query, setQuery] = (0, import_react13.useState)("");
-  const [open, setOpen] = (0, import_react13.useState)(false);
-  const matches = (0, import_react13.useMemo)(() => {
-    if (!query || query.length < 2) return [];
-    const q = query.toLowerCase();
-    return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
-  }, [query, nodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
-    "div",
-    {
-      style: { position: "relative", display: "inline-block" },
-      onBlur: (e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
-          "input",
-          {
-            value: query,
-            onChange: (e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            },
-            onFocus: () => setOpen(true),
-            placeholder: "Search nodes\u2026",
-            style: { fontFamily: "var(--mono)", fontSize: 12, padding: "6px 10px", width: 180 }
-          }
-        ),
-        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: {
-          position: "absolute",
-          top: "100%",
-          left: 0,
-          zIndex: 10,
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          borderRadius: 4,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-          maxHeight: 240,
-          overflow: "auto",
-          width: 280,
-          marginTop: 4
-        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
-          "div",
-          {
-            tabIndex: 0,
-            onMouseDown: (e) => {
-              e.preventDefault();
-              onSelect(n.id);
-              setQuery("");
-              setOpen(false);
-            },
-            style: {
-              padding: "6px 10px",
-              cursor: "pointer",
-              fontSize: 11,
-              fontFamily: "var(--mono)",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              borderBottom: "1px solid var(--border-soft)",
-              color: "var(--fg)"
-            },
-            onMouseOver: (e) => e.currentTarget.style.background = "var(--bg-elev)",
-            onMouseOut: (e) => e.currentTarget.style.background = "transparent",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
-            ]
-          },
-          n.id
-        )) })
-      ]
-    }
-  );
-}
+// public/shell-icons.tsx
+var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+var S = { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6 };
+var Ico = {
+  home: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("svg", { ...S, children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M4 11 L12 4 L20 11 L20 20 L14 20 L14 14 L10 14 L10 20 L4 20 Z" }) }),
+  graph: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ...S, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: "6", cy: "6", r: "2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: "18", cy: "6", r: "2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: "12", cy: "18", r: "2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "7.4", y1: "7.4", x2: "10.8", y2: "16.6" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "16.6", y1: "7.4", x2: "13.2", y2: "16.6" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "8", y1: "6", x2: "16", y2: "6" })
+  ] }),
+  paper: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ...S, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M6 3 H15 L19 7 V21 H6 Z" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "9", y1: "9", x2: "16", y2: "9" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "9", y1: "13", x2: "16", y2: "13" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "9", y1: "17", x2: "13", y2: "17" })
+  ] }),
+  people: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ...S, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: "9", cy: "8", r: "3" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: "17", cy: "9", r: "2.5" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M3 20 C3 16 5 14 9 14 C13 14 15 16 15 20" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M14 20 C14 17 15.5 15.5 18 15.5 C20.5 15.5 22 17 22 20" })
+  ] }),
+  build: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ...S, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: "4", y: "4", width: "7", height: "7" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: "13", y: "4", width: "7", height: "7" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: "4", y: "13", width: "7", height: "7" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: "13", y: "13", width: "7", height: "7" })
+  ] }),
+  submit: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ...S, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "12", y1: "4", x2: "12", y2: "16" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("polyline", { points: "7,9 12,4 17,9" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "4", y1: "20", x2: "20", y2: "20" })
+  ] }),
+  search: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ...S, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: "10", cy: "10", r: "6" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "14.5", y1: "14.5", x2: "20", y2: "20" })
+  ] }),
+  gear: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ...S, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: "12", cy: "12", r: "3" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M12 2 L13 5 L16 4 L16 7 L19 8 L18 11 L21 12 L18 13 L19 16 L16 17 L16 20 L13 19 L12 22 L11 19 L8 20 L8 17 L5 16 L6 13 L3 12 L6 11 L5 8 L8 7 L8 4 L11 5 Z" })
+  ] }),
+  tag: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ...S, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M3 12 L12 3 L21 3 L21 12 L12 21 Z" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: "16", cy: "8", r: "1.4" })
+  ] }),
+  close: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ...S, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "6", y1: "6", x2: "18", y2: "18" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "18", y1: "6", x2: "6", y2: "18" })
+  ] }),
+  arrow: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { ...S, strokeWidth: 1.8, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("line", { x1: "4", y1: "12", x2: "20", y2: "12" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("polyline", { points: "14,6 20,12 14,18" })
+  ] }),
+  check: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.5, children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("polyline", { points: "4,12 10,18 20,6" }) }),
+  ext: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M7 17 L17 7" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("polyline", { points: "9,7 17,7 17,15" })
+  ] })
+};
 
-// public/time-slider.tsx
-var import_react14 = __toESM(require_react());
-var import_jsx_runtime23 = __toESM(require_jsx_runtime());
-function yearOf(n) {
-  if (n.group !== "doi" || !n.published) return 0;
-  const y3 = parseInt(n.published.substring(0, 4));
-  return y3 > 1900 ? y3 : 0;
-}
-function useTimeRange(nodes) {
-  return (0, import_react14.useMemo)(() => {
-    let min = 9999, max = 0;
-    for (const n of nodes) {
-      const y3 = yearOf(n);
-      if (y3) {
-        min = Math.min(min, y3);
-        max = Math.max(max, y3);
-      }
-    }
-    return { min: min > max ? 0 : min, max };
-  }, [nodes]);
-}
-
-// public/use-graph-data.ts
-var import_react15 = __toESM(require_react());
-function useGraphData() {
-  const [rawNodes, setRawNodes] = (0, import_react15.useState)([]);
-  const [rawEdges, setRawEdges] = (0, import_react15.useState)([]);
-  const [tagMeta, setTagMeta] = (0, import_react15.useState)({});
-  const [loading, setLoading] = (0, import_react15.useState)(true);
-  (0, import_react15.useEffect)(() => {
-    fetch("/api/graph").then((r) => r.json()).then((d) => {
-      setRawNodes(d.nodes);
-      setRawEdges(d.edges);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-    fetch("/api/graph-metadata").then((r) => r.json()).then((d) => setTagMeta(d.tagMeta || {})).catch(() => {
-    });
-  }, []);
-  return { rawNodes, rawEdges, tagMeta, loading };
+// public/ui-primitives.tsx
+var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+function Tag({ children, tone = "default", mono = false }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: `tag tag-${tone} ${mono ? "mono" : ""}`, children });
 }
 
 // public/shell-helpers.ts
-var import_react16 = __toESM(require_react());
+var import_react5 = __toESM(require_react());
 var CACHE_KEY = "nexus.me";
 function useCurrentUser() {
-  const [me, setMe] = (0, import_react16.useState)(() => {
+  const [me, setMe] = (0, import_react5.useState)(() => {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -15752,9 +14323,9 @@ function useCurrentUser() {
       return null;
     }
   });
-  const [loading, setLoading] = (0, import_react16.useState)(!me);
-  const [error, setError] = (0, import_react16.useState)(null);
-  (0, import_react16.useEffect)(() => {
+  const [loading, setLoading] = (0, import_react5.useState)(!me);
+  const [error, setError] = (0, import_react5.useState)(null);
+  (0, import_react5.useEffect)(() => {
     let cancelled = false;
     fetch("/api/auth?action=me").then((r) => r.status === 401 ? null : r.json()).then((d) => {
       if (cancelled) return;
@@ -15781,291 +14352,90 @@ function applyTheme(me) {
   if (me.secondaryColor) body.style.setProperty("--secondary", me.secondaryColor);
 }
 
-// public/graph-filters-sidebar.tsx
-var import_react17 = __toESM(require_react());
-var import_jsx_runtime24 = __toESM(require_jsx_runtime());
-var LEGEND = [
-  { group: "author", label: "Author" },
-  { group: "institution", label: "Institution" },
-  { group: "journal", label: "Journal" },
-  { group: "paper", label: "Paper" }
-];
-function pickCommunityKey(n, institutionsByAuthor) {
-  if (n.group === "institution") return n.id;
-  if (n.group === "author") {
-    const insts = institutionsByAuthor.get(n.id);
-    if (!insts || insts.size === 0) return null;
-    return [...insts].sort()[0];
-  }
-  return null;
-}
-function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, affiliations, homeInstitutionId }) {
-  const paperColor = "#888";
-  const institutionLabelById = (0, import_react17.useMemo)(() => {
-    const m2 = /* @__PURE__ */ new Map();
-    for (const n of nodes) if (n.group === "institution") m2.set(n.id, n.label);
-    return m2;
-  }, [nodes]);
-  const legendAdapter = (0, import_react17.useMemo)(() => ({
+// public/coauthor-explorer-body.tsx
+var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+function CoauthorExplorerBody() {
+  const { me } = useCurrentUser();
+  const [graph, setGraph] = (0, import_react6.useState)(null);
+  const [err, setErr] = (0, import_react6.useState)(null);
+  const canvasRef = (0, import_react6.useRef)(null);
+  const [dims, setDims] = (0, import_react6.useState)({ w: 900, h: 600 });
+  (0, import_react6.useEffect)(() => {
+    fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then((d) => setGraph(d.portfolio?.coauthorGraph ?? null)).catch((e) => setErr(String(e)));
+  }, []);
+  (0, import_react6.useEffect)(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setDims({ w: r.width, h: Math.max(480, r.height) });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const myRor = graph?.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
+  const legendAdapter = {
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
-    getCommunityKey: (n) => pickCommunityKey(n, affiliations.institutionsByAuthor),
-    isEgo: () => false,
-    getCommunityLabel: (key) => institutionLabelById.get(key) || key
-  }), [affiliations, institutionLabelById]);
-  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("aside", { className: "graph-filters", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "filter-label", children: "Node types" }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Check, { checked: flags.author, onChange: (v) => setFlag("author", v), label: "Authors", color: COLORS.author }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Check, { checked: flags.institution, onChange: (v) => setFlag("institution", v), label: "Institutions", color: COLORS.institution }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Check, { checked: flags.journal, onChange: (v) => setFlag("journal", v), label: "Journals", color: COLORS.journal }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Check, { checked: flags.paper, onChange: (v) => setFlag("paper", v), label: "Papers", color: paperColor })
-    ] }),
-    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "filter-label", children: "Year floor" }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "year-slider", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
-          "input",
-          {
-            type: "range",
-            min: yearMin,
-            max: yearMax,
-            value: yearFloor,
-            onChange: (e) => onYearFloorChange(parseInt(e.target.value))
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "year-val mono", children: [
-          "\u2265 ",
-          yearFloor
-        ] })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "filter-group legend", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "filter-label", children: "Node types" }),
-      LEGEND.map((l) => /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "legend-row", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { className: "dot", style: { background: l.group === "paper" ? paperColor : COLORS[l.group] } }),
-        l.label
-      ] }, l.group))
-    ] }),
-    nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "filter-group legend", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "filter-label", children: "Communities" }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
-  ] });
-}
-
-// public/explorer-affiliations.ts
-function buildExplorerAffiliations(rawNodes, rawEdges) {
-  const groupByNodeId = /* @__PURE__ */ new Map();
-  for (const n of rawNodes) groupByNodeId.set(n.id, n.group);
-  const tagsByDoi = /* @__PURE__ */ new Map();
-  for (const e of rawEdges) {
-    const list = tagsByDoi.get(e.source) || [];
-    list.push(e.target);
-    tagsByDoi.set(e.source, list);
-  }
-  const institutionsByAuthor = /* @__PURE__ */ new Map();
-  const journalsByAuthor = /* @__PURE__ */ new Map();
-  const doisByJournal = /* @__PURE__ */ new Map();
-  for (const [doiId, tagIds] of tagsByDoi) {
-    const authors = [];
-    const institutions = [];
-    const journals = [];
-    for (const id of tagIds) {
-      const g = groupByNodeId.get(id);
-      if (g === "author") authors.push(id);
-      else if (g === "institution") institutions.push(id);
-      else if (g === "journal") journals.push(id);
-    }
-    for (const a2 of authors) {
-      if (!institutionsByAuthor.has(a2)) institutionsByAuthor.set(a2, /* @__PURE__ */ new Set());
-      for (const i of institutions) institutionsByAuthor.get(a2).add(i);
-      if (!journalsByAuthor.has(a2)) journalsByAuthor.set(a2, /* @__PURE__ */ new Set());
-      for (const j of journals) journalsByAuthor.get(a2).add(j);
-    }
-    for (const j of journals) {
-      if (!doisByJournal.has(j)) doisByJournal.set(j, /* @__PURE__ */ new Set());
-      doisByJournal.get(j).add(doiId);
-    }
-  }
-  const yearByDoi = /* @__PURE__ */ new Map();
-  for (const n of rawNodes) {
-    if (n.group === "doi" && n.published) yearByDoi.set(n.id, n.published.slice(0, 4));
-  }
-  return { institutionsByAuthor, journalsByAuthor, doisByJournal, yearByDoi };
-}
-
-// public/use-explorer-ego.ts
-var import_react18 = __toESM(require_react());
-function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) {
-  const homeInstitutionId = (0, import_react18.useMemo)(() => {
-    const ror = me?.profile.ror;
-    if (!ror) return null;
-    const hit = rawNodes.find((n) => n.group === "institution" && n.ext_id === ror);
-    return hit?.id ?? null;
-  }, [me, rawNodes]);
-  const egoAuthorId = (0, import_react18.useMemo)(() => {
-    const orcid = me?.profile.orcid;
-    if (!orcid) return null;
-    const hit = projectedNodes.find((n) => n.group === "author" && n.ext_id === orcid);
-    return hit?.id ?? null;
-  }, [me, projectedNodes]);
-  const effectiveHomeKey = (0, import_react18.useMemo)(() => {
-    if (homeInstitutionId) return homeInstitutionId;
-    if (!egoAuthorId) return null;
-    const insts = institutionsByAuthor.get(egoAuthorId);
-    if (!insts || insts.size === 0) return null;
-    return [...insts].sort()[0];
-  }, [homeInstitutionId, egoAuthorId, institutionsByAuthor]);
-  return { egoAuthorId, effectiveHomeKey };
-}
-
-// public/graph-explorer-body.tsx
-var import_jsx_runtime25 = __toESM(require_jsx_runtime());
-var DEFAULT_FLAGS = { institution: true, author: true, journal: true, paper: false };
-function yearOf2(n) {
-  if (n.group !== "doi" || !n.published) return 0;
-  const y3 = parseInt(n.published.substring(0, 4));
-  return y3 > 1900 ? y3 : 0;
-}
-function GraphExplorerBody() {
-  const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
-  const [selectedNodeId, setSelectedNodeId] = (0, import_react19.useState)(null);
-  const [flags, setFlags] = (0, import_react19.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react19.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
-  const [yearFloor, setYearFloor] = (0, import_react19.useState)(0);
-  const highlightedIds = (0, import_react19.useMemo)(() => {
-    const o = new URLSearchParams(window.location.search).get("highlight");
-    return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
-  }, []);
-  const { me } = useCurrentUser();
-  const containerRef = (0, import_react19.useRef)(null);
-  const [dims, setDims] = (0, import_react19.useState)({ width: 900, height: 600 });
-  (0, import_react19.useEffect)(() => {
-    if (!rawNodes.length) return;
-    const f = highlightedIds.values().next().value;
-    if (f && rawNodes.some((n) => n.id === f)) setSelectedNodeId(f);
-  }, [rawNodes, highlightedIds]);
-  const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  (0, import_react19.useEffect)(() => {
-    if (yearMin && !yearFloor) setYearFloor(yearMin);
-  }, [yearMin, yearFloor]);
-  (0, import_react19.useEffect)(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const obs = new ResizeObserver((entries) => {
-      const r2 = entries[0].contentRect;
-      if (r2.width > 0 && r2.height > 0) setDims({ width: r2.width, height: r2.height });
-    });
-    obs.observe(el);
-    const r = el.getBoundingClientRect();
-    if (r.width > 0) setDims({ width: r.width, height: r.height });
-    return () => obs.disconnect();
-  }, []);
-  const filteredRaw = (0, import_react19.useMemo)(() => {
-    if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
-    const keep = /* @__PURE__ */ new Set();
-    const nodes = rawNodes.filter((n) => {
-      if (n.group !== "doi") return true;
-      const y3 = yearOf2(n);
-      const ok = !y3 || y3 >= yearFloor;
-      if (ok) keep.add(n.id);
-      return ok;
-    });
-    const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
-    return { nodes, edges };
-  }, [rawNodes, rawEdges, yearFloor, yearMin]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = (0, import_react19.useMemo)(
-    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null),
-    [filteredRaw]
-  );
-  const projectedNodes = (0, import_react19.useMemo)(() => {
-    const enriched = enrichWithMeta(projectedRaw, tagMeta);
-    const groupMatch = (g) => g === "institution" && flags.institution || g === "author" && flags.author || g === "journal" && flags.journal || g === "doi" && flags.paper;
-    return enriched.filter((n) => groupMatch(n.group));
-  }, [projectedRaw, tagMeta, flags]);
-  const projectedEdges = (0, import_react19.useMemo)(() => {
-    const ids = new Set(projectedNodes.map((n) => n.id));
-    return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
-  }, [projectedEdgesAll, projectedNodes]);
-  const doiCount = (0, import_react19.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
-  const affiliations = (0, import_react19.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
-  const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
-    me,
-    rawNodes,
-    projectedNodes,
-    institutionsByAuthor: affiliations.institutionsByAuthor
-  });
-  const chartDois = (0, import_react19.useMemo)(() => {
-    if (!selectedNodeId) return matchingDois;
-    const nodeDois = /* @__PURE__ */ new Set();
-    for (const e of rawEdges) if (e.target === selectedNodeId) {
-      const doi = e.source.replace("doi:", "");
-      if (matchingDois.has(doi)) nodeDois.add(doi);
-    }
-    return nodeDois;
-  }, [selectedNodeId, rawEdges, matchingDois]);
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
-  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "view graph-view", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("header", { className: "view-head compact", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("h1", { className: "view-title tight", children: [
-          "The institution as a ",
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("em", { children: "network" }),
+    getCommunityKey: (n) => n.affiliation?.ror ?? null,
+    isEgo: (n) => !!n.isMe,
+    getCommunityLabel: (_key, sample) => sample.affiliation?.name || _key
+  };
+  const empty = err ? `Error: ${err}` : !graph ? null : graph.nodes.length === 0 ? "No papers indexed yet." : graph.nodes.length === 1 ? "Papers indexed, but no co-authors have ORCIDs attached." : null;
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "view graph-view", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("header", { className: "view-head compact", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("h1", { className: "view-title tight", children: [
+          "Your co-author ",
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("em", { children: "network" }),
           "."
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(Tag, { mono: true, children: [
-          projectedNodes.length,
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(Tag, { mono: true, children: [
+          graph?.nodes.length ?? 0,
           " NODES"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(Tag, { mono: true, tone: "muted", children: [
-          projectedEdges.length,
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(Tag, { mono: true, tone: "muted", children: [
+          graph?.edges.length ?? 0,
           " EDGES"
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => setSelectedNodeId(id) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "graph-layout", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFloor: yearFloor || yearMin, onYearFloorChange: setYearFloor, nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { ref: containerRef, className: "graph-canvas", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "canvas-corner-tl", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "graph-layout", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("aside", { className: "graph-filters", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "filter-group", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "filter-label", children: "Signed in" }),
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "muted", style: { fontSize: 12 }, children: me?.user || "\u2014" }),
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "muted", style: { fontSize: 11, marginTop: 4 }, children: [
             "tenant \xB7 ",
-            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("em", { children: me?.tenant || "\u2014" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
-            "role \xB7 ",
-            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("em", { children: me?.role || "\u2014" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
-            "scope \xB7 ",
-            yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("em", { children: me?.tenant || "\u2014" })
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(ForceGraph, { nodes: projectedNodes, links: projectedEdges, width: dims.width, height: dims.height, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id), affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId })
+        graph && graph.nodes.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "filter-group legend", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "filter-label", children: "Communities" }),
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(CommunityLegend, { nodes: graph.nodes, adapter: legendAdapter, primaryKey: myRor })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 HOVER to isolate" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(NodeDetail, { nodeId: selectedNodeId, onClose: () => setSelectedNodeId(null) }) })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatsBar, { nodes: projectedNodes, edges: projectedEdges, doiCount }),
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { marginTop: 20, borderTop: "1px solid var(--border-soft)", paddingTop: 20 }, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(FilteredCharts, { matchingDois: chartDois, totalDois: doiCount }) })
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { ref: canvasRef, className: "graph-canvas", style: { minHeight: 480 }, children: empty ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "muted", style: { padding: 40, textAlign: "center" }, children: empty }) : graph ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(CoAuthorSim, { graph, width: dims.w, height: dims.h }) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "muted", style: { padding: 40, textAlign: "center" }, children: "Loading\u2026" }) })
+    ] })
   ] });
 }
 
 // public/relationships.tsx
-var import_jsx_runtime26 = __toESM(require_jsx_runtime());
+var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 var root = null;
 function mount() {
   const el = document.getElementById("relationships-root");
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphExplorerBody, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CoauthorExplorerBody, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/relationships-bundle.js"] = mount;
