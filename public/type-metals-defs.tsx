@@ -13,19 +13,17 @@ const POLISHED = new Set([
 function polishedStops(tokenVar: string) {
   const base = `var(${tokenVar})`;
   const mix = (pct: string) => `color-mix(in oklch, var(${tokenVar}) 100%, ${pct})`;
-  const specularPrimary = `color-mix(in oklch, var(${tokenVar}) 20%, white 80%)`;
-  const specularSecondary = `color-mix(in oklch, var(${tokenVar}) 55%, white 45%)`;
+  const specularHalf = `color-mix(in oklch, var(${tokenVar}) 70%, white 30%)`;
+  const specularPeak = `color-mix(in oklch, var(${tokenVar}) 45%, white 55%)`;
   return [
-    { offset: '0%',   color: mix('white 14%') },
-    { offset: '22%',  color: mix('white 4%') },
-    { offset: '24%',  color: specularPrimary },
-    { offset: '26%',  color: specularPrimary },
-    { offset: '30%',  color: mix('white 2%') },
+    { offset: '0%',   color: mix('white 12%') },
+    { offset: '18%',  color: mix('white 6%') },
+    { offset: '22%',  color: specularHalf },
+    { offset: '25%',  color: specularPeak },
+    { offset: '28%',  color: specularHalf },
+    { offset: '32%',  color: mix('white 2%') },
     { offset: '55%',  color: base },
-    { offset: '70%',  color: mix('black 6%') },
-    { offset: '72%',  color: specularSecondary },
-    { offset: '74%',  color: mix('black 10%') },
-    { offset: '100%', color: mix('black 26%') },
+    { offset: '100%', color: mix('black 24%') },
   ].map(s => <stop key={s.offset} offset={s.offset} stopColor={s.color} />);
 }
 
