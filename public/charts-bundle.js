@@ -13254,11 +13254,18 @@ function renderSeries(t, data, labels, band, yS, baseline, c, series, pw, chart)
     let y0 = baseline;
     return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: series.map((s, si) => {
       const v = d[s] || 0;
-      const h = baseline - yS(v);
+      const h = Math.max(0, baseline - yS(v));
       const y = y0 - h;
       y0 = y;
-      const r = si === series.length - 1 ? 3 : 0;
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: b.x, y, width: b.width, height: Math.max(0, h), rx: r, fill: seriesColor(c, si), opacity: 0.85 }, s);
+      const isTop = si === series.length - 1;
+      const r = isTop ? Math.min(3, h, b.width / 2) : 0;
+      const fill = seriesColor(c, si);
+      if (!isTop || r === 0) {
+        return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: b.x, y, width: b.width, height: h, fill, opacity: 0.85 }, s);
+      }
+      const x = b.x, w = b.width;
+      const d2 = `M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h} Z`;
+      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: d2, fill, opacity: 0.85 }, s);
     }) }, i);
   });
   if (t === "stacked-area") {

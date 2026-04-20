@@ -47,8 +47,17 @@ export function renderSeries(t: string, data: any[], labels: string[], band: any
     })}</>;
     if (t === 'stacked-bar') return data.map((d: any, i: number) => {
         const b = band(labels[i]); let y0 = baseline;
-        return <g key={i}>{series.map((s, si) => { const v = d[s] || 0; const h = baseline - yS(v); const y = y0 - h; y0 = y; const r = si === series.length - 1 ? 3 : 0;
-            return <rect key={s} x={b.x} y={y} width={b.width} height={Math.max(0, h)} rx={r} fill={seriesColor(c, si)} opacity={0.85} />;
+        return <g key={i}>{series.map((s, si) => {
+            const v = d[s] || 0; const h = Math.max(0, baseline - yS(v)); const y = y0 - h; y0 = y;
+            const isTop = si === series.length - 1;
+            const r = isTop ? Math.min(3, h, b.width / 2) : 0;
+            const fill = seriesColor(c, si);
+            if (!isTop || r === 0) {
+                return <rect key={s} x={b.x} y={y} width={b.width} height={h} fill={fill} opacity={0.85} />;
+            }
+            const x = b.x, w = b.width;
+            const d2 = `M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h} Z`;
+            return <path key={s} d={d2} fill={fill} opacity={0.85} />;
         })}</g>;
     });
     if (t === 'stacked-area') {
