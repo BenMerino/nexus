@@ -79,11 +79,11 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       selectedId={selectedId ?? null}
       onNodeClick={onNodeClick}
       forceConfig={{
-        linkDistance: 60,
-        linkStrength: 0.4,
-        charge: g => (g === 'doi' ? -60 : -220),
-        clusterStrengthX: 0.05,
-        clusterStrengthY: 0.05,
+        linkDistance: 35,
+        linkStrength: 0.15,
+        charge: g => (g === 'doi' ? -30 : -80),
+        clusterStrengthX: 0.35,
+        clusterStrengthY: 0.4,
         collidePad: 4,
         minCommunitySize: 3,
       }}
