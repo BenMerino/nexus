@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { SectionHead, Ico } from './ui-primitives';
+import { Ico } from './ui-primitives';
 import { CoAuthorSim } from './coauthor-graph-sim';
 import { buildCommunityColors, majorRors, communityKeyFor, OTHER_KEY, OTHER_LABEL } from './coauthor-communities';
 import type { CoauthorGraph } from './dashboard-builders.js';
@@ -26,10 +26,10 @@ function Legend({ graph }: { graph: CoauthorGraph }) {
     });
   }, [graph, myRor, major]);
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: 10, fontSize: 11, color: 'var(--fg-muted)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11, color: 'var(--fg-muted)' }}>
       {items.map(([key, info]) => (
         <span key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: colors.get(key) }} /> {info.name} <span style={{ color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>·{info.count}</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: colors.get(key), flexShrink: 0 }} /> {info.name} <span style={{ color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>·{info.count}</span>
         </span>
       ))}
     </div>
@@ -55,13 +55,18 @@ export function CoAuthorGraphPanel({ graph }: { graph?: CoauthorGraph }) {
     : null;
 
   return (
-    <section className="card card-graph-preview" style={{ display: 'flex', flexDirection: 'column' }}>
-      <SectionHead eyebrow="Network" title="Your co-author graph"
-        right={<a className="link-btn" href="/overview.html">Open explorer {Ico.arrow}</a>} />
-      <div ref={ref} style={{ position: 'relative', width: '100%', flex: 1, minHeight: 260 }}>
+    <section className="card card-graph-preview" style={{ display: 'flex', gap: 18, alignItems: 'stretch' }}>
+      <aside style={{ width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div>
+          <div className="eyebrow">Network</div>
+          <h2 className="section-title">Your co-author graph</h2>
+        </div>
+        <a className="link-btn" href="/overview.html" style={{ alignSelf: 'flex-start' }}>Open explorer {Ico.arrow}</a>
+        {!emptyMsg && graph && <Legend graph={graph} />}
+      </aside>
+      <div ref={ref} style={{ position: 'relative', flex: 1, minHeight: 260 }}>
         {emptyMsg ? <div className="muted">{emptyMsg}</div> : size && <CoAuthorSim graph={graph!} width={size.w} height={size.h} />}
       </div>
-      {!emptyMsg && graph && <Legend graph={graph} />}
     </section>
   );
 }

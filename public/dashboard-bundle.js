@@ -14348,8 +14348,8 @@ function Legend({ graph }) {
       return b[1].count - a2[1].count;
     });
   }, [graph, myRor, major]);
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 10, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key) } }),
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
     " ",
     info.name,
     " ",
@@ -14376,20 +14376,19 @@ function CoAuthorGraphPanel({ graph }) {
   }, []);
   const nodes = graph?.nodes ?? [];
   const emptyMsg = !graph ? "Co-author graph unavailable." : nodes.length === 0 ? "No papers indexed yet." : nodes.length === 1 ? "Papers indexed, but no co-authors have ORCIDs attached." : null;
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("section", { className: "card card-graph-preview", style: { display: "flex", flexDirection: "column" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-      SectionHead,
-      {
-        eyebrow: "Network",
-        title: "Your co-author graph",
-        right: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("a", { className: "link-btn", href: "/overview.html", children: [
-          "Open explorer ",
-          Ico.arrow
-        ] })
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { ref, style: { position: "relative", width: "100%", flex: 1, minHeight: 260 }, children: emptyMsg ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "muted", children: emptyMsg }) : size && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(CoAuthorSim, { graph, width: size.w, height: size.h }) }),
-    !emptyMsg && graph && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Legend, { graph })
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("section", { className: "card card-graph-preview", style: { display: "flex", gap: 18, alignItems: "stretch" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("aside", { style: { width: 180, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "eyebrow", children: "Network" }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("h2", { className: "section-title", children: "Your co-author graph" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("a", { className: "link-btn", href: "/overview.html", style: { alignSelf: "flex-start" }, children: [
+        "Open explorer ",
+        Ico.arrow
+      ] }),
+      !emptyMsg && graph && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Legend, { graph })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { ref, style: { position: "relative", flex: 1, minHeight: 260 }, children: emptyMsg ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "muted", children: emptyMsg }) : size && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(CoAuthorSim, { graph, width: size.w, height: size.h }) })
   ] });
 }
 
