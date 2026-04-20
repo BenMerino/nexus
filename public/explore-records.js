@@ -47,39 +47,46 @@ function renderTable() {
 
   const countEl = document.getElementById("record-count");
   const emptyEl = document.getElementById("empty-state");
-  const tableEl = document.getElementById("records-table");
   const body = document.getElementById("records-body");
 
   countEl.textContent = `${records.length} record${records.length !== 1 ? "s" : ""}` +
     (query ? ` matching "${query}"` : "");
 
-  if (!records.length) { tableEl.style.display = "none"; emptyEl.style.display = "block"; }
-  else { tableEl.style.display = "table"; emptyEl.style.display = "none"; }
+  if (!records.length) { body.style.display = "none"; emptyEl.style.display = "block"; }
+  else { body.style.display = "grid"; emptyEl.style.display = "none"; }
 
-  body.innerHTML = records.map((r, i) => `
-    <tr class="record-row" onclick="toggleDetail(${i})" style="cursor: pointer;">
-      <td style="max-width: 300px;">
-        <div style="font-weight: bold;">${escHtml(r.title || r.doi)}</div>
-        <div class="text-small text-muted">${escHtml(r.doi)}</div>
-      </td>
-      <td style="max-width: 200px;">${escHtml((r.authors || []).slice(0, 3).join(", "))}${(r.authors || []).length > 3 ? ` +${(r.authors || []).length - 3} more` : ""}</td>
-      <td>${escHtml(r.journal || "-")}</td>
-      <td>${escHtml(r.published || "-")}</td>
-      <td>${r.citation_count != null ? r.citation_count : "-"}</td>
-      <td><span class="tag ${r.type || ''}">${escHtml(r.type || "-")}</span></td>
-      <td>${r.open_access ? "Yes" : "No"}</td>
-    </tr>
-    <tr class="detail-row" id="detail-${i}" style="display: none;">
-      <td colspan="7" style="padding: 16px 24px; background: var(--bg-alt, #f8f9fa);">
+  body.innerHTML = records.map((r, i) => renderCard(r, i)).join("");
+}
+
+function renderCard(r, i) {
+  const year = (r.published || "").slice(0, 4);
+  const authors = (r.authors || []).slice(0, 6);
+  const extra = (r.authors || []).length - authors.length;
+  return `
+    <article class="paper-card" onclick="toggleDetail(${i})" style="cursor: pointer;">
+      <div class="paper-meta-row">
+        ${year ? `<span class="tag tag-muted mono">${escHtml(year)}</span>` : ""}
+        ${r.type ? `<span class="tag mono">${escHtml(r.type)}</span>` : ""}
+        ${r.open_access ? `<span class="tag mono">OA</span>` : ""}
+        <span class="mono paper-doi-inline">${escHtml(r.doi)}</span>
+        <span class="paper-cites mono">${r.citation_count != null ? r.citation_count : 0} citations</span>
+      </div>
+      <h3 class="paper-card-title">${escHtml(r.title || "(untitled)")}</h3>
+      ${r.journal ? `<div class="paper-journal">${escHtml(r.journal)}</div>` : ""}
+      <div class="paper-authors">
+        ${authors.map((a, j) => `<span class="paper-author">${escHtml(a)}${j < authors.length - 1 ? '<span class="muted"> · </span>' : ""}</span>`).join("")}
+        ${extra > 0 ? ` <span class="muted">+${extra} more</span>` : ""}
+      </div>
+      <div id="detail-${i}" style="display: none; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border-soft);" onclick="event.stopPropagation();">
         ${renderDetail(r)}
-      </td>
-    </tr>
-  `).join("");
+      </div>
+    </article>
+  `;
 }
 
 function toggleDetail(i) {
-  const row = document.getElementById("detail-" + i);
-  row.style.display = row.style.display === "none" ? "table-row" : "none";
+  const el = document.getElementById("detail-" + i);
+  el.style.display = el.style.display === "none" ? "block" : "none";
 }
 
 function renderDetail(r) {
