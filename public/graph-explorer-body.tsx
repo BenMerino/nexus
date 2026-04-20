@@ -4,7 +4,8 @@ import { enrichWithMeta } from './enrich-meta';
 import { projectGraph } from './project-graph';
 import { NodeDetail } from './node-detail';
 import { StatsBar, FilteredCharts } from './filtered-charts';
-import { ForceGraph } from './force-graph';
+import { CoAuthorSim } from './coauthor-graph-sim';
+import { useCoauthorGraph } from './use-coauthor-graph';
 import { GraphSearch } from './graph-search';
 import { useTimeRange } from './time-slider';
 import { useGraphData } from './use-graph-data';
@@ -35,6 +36,7 @@ export function GraphExplorerBody() {
   const { me } = useCurrentUser();
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 900, height: 600 });
+  const coauthorGraph = useCoauthorGraph();
 
   useEffect(() => {
     if (!rawNodes.length) return;
@@ -129,9 +131,11 @@ export function GraphExplorerBody() {
             <div>role · <em>{me?.role || '—'}</em></div>
             <div>scope · {yearFloor > yearMin ? `≥ ${yearFloor}` : 'all years'}</div>
           </div>
-          {projectedNodes.length === 0
-            ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match current filters.</div>
-            : <ForceGraph nodes={projectedNodes} links={projectedEdges} width={dims.width} height={dims.height} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} />}
+          {!coauthorGraph
+            ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">Loading co-author network…</div>
+            : coauthorGraph.nodes.length < 2
+              ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No co-authors yet.</div>
+              : <CoAuthorSim graph={coauthorGraph} width={dims.width} height={dims.height} />}
         </div>
 
         <aside className="detail-panel">

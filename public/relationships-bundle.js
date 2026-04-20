@@ -12750,7 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react19 = __toESM(require_react());
+var import_react20 = __toESM(require_react());
 
 // public/enrich-meta.ts
 function enrichWithMeta(nodes, tagMeta) {
@@ -13905,12 +13905,6 @@ var COLORS = {
   author: "#c62828",
   journal: "#2e7d32"
 };
-function nodeRadius(weight, role) {
-  const base = Math.max(4, Math.min(18, 4 + Math.sqrt(weight) * 2));
-  if (role === "hub") return Math.min(22, base * 1.3);
-  if (role === "leaf") return Math.max(4, base * 0.8);
-  return base;
-}
 
 // public/filtered-paper-list.tsx
 var import_react7 = __toESM(require_react());
@@ -14093,7 +14087,7 @@ function FilteredCharts({ matchingDois, totalDois }) {
   ] });
 }
 
-// public/force-graph.tsx
+// public/coauthor-graph-sim.tsx
 var import_react12 = __toESM(require_react());
 
 // public/community-graph/CommunityGraph.tsx
@@ -15550,81 +15544,64 @@ function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
   ] }, key)) });
 }
 
-// public/force-graph.tsx
+// public/coauthor-graph-sim.tsx
 var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 function radius(n) {
-  return nodeRadius(n.weight || 1, n.role);
+  return n.isMe ? 12 : 5 + Math.min(10, Math.sqrt(n.weight) * 1.5);
 }
-function communityKeyFor(n, institutionsByAuthor) {
-  if (n.group === "institution") return n.id;
-  if (n.group === "author") {
-    const insts = institutionsByAuthor.get(n.id);
-    if (!insts || insts.size === 0) return null;
-    return [...insts].sort()[0];
-  }
-  return null;
-}
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null }) {
-  const institutionLabelById = (0, import_react12.useMemo)(() => {
-    const m2 = /* @__PURE__ */ new Map();
-    for (const n of nodes) if (n.group === "institution") m2.set(n.id, n.label);
-    return m2;
-  }, [nodes]);
+function CoAuthorSim({ graph, width, height }) {
+  const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
   const adapter = (0, import_react12.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: radius,
-    getCommunityKey: (n) => {
-      if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
-      return communityKeyFor(n, affiliations.institutionsByAuthor);
-    },
-    isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
-    getCommunityLabel: (key) => institutionLabelById.get(key) || key,
-    getNodeColor: (n, communityColor) => {
-      if (n.group === "institution" || n.group === "author") return communityColor;
-      return COLORS[n.group] || null;
-    },
-    getHoverSubtitle: (n) => {
-      if (n.group !== "author") return null;
-      const insts = affiliations.institutionsByAuthor.get(n.id);
-      if (!insts || insts.size === 0) return null;
-      const firstId = [...insts].sort()[0];
-      return institutionLabelById.get(firstId) || null;
-    },
-    getHoverFootnote: (n) => n.weight ? `${n.weight} ${n.weight === 1 ? "paper" : "papers"}` : null
-  }), [affiliations, institutionLabelById, egoAuthorId, homeInstitutionId]);
+    getCommunityKey: (n) => n.affiliation?.ror ?? null,
+    isEgo: (n) => !!n.isMe,
+    getCommunityLabel: (_key, sample) => sample.affiliation?.name || _key,
+    getHoverSubtitle: (n) => n.affiliation?.name || null,
+    getHoverFootnote: (n) => `${n.weight} shared ${n.weight === 1 ? "paper" : "papers"}`
+  }), []);
   return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
     CommunityGraph,
     {
-      nodes,
-      links,
+      nodes: graph.nodes,
+      links: graph.edges,
       adapter,
-      primaryKey: homeInstitutionId,
+      primaryKey: myRor,
       width,
       height,
-      selectedId: selectedId ?? null,
-      onNodeClick,
-      forceConfig: {
-        linkDistance: 60,
-        linkStrength: 0.3,
-        charge: (g) => g === "doi" ? -80 : -260,
-        clusterStrengthX: 0.05,
-        clusterStrengthY: 0.05,
-        collidePad: 6,
-        minCommunitySize: 2,
-        orbitRadius: 0.45
+      onNodeClick: (n) => {
+        window.location.href = `/overview.html?highlight=${encodeURIComponent(n.id)}`;
       }
     }
   );
 }
 
-// public/graph-search.tsx
+// public/use-coauthor-graph.ts
 var import_react13 = __toESM(require_react());
+function useCoauthorGraph() {
+  const [graph, setGraph] = (0, import_react13.useState)(null);
+  (0, import_react13.useEffect)(() => {
+    let cancelled = false;
+    fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then((d) => {
+      if (!cancelled) setGraph(d.portfolio?.coauthorGraph ?? null);
+    }).catch(() => {
+      if (!cancelled) setGraph(null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return graph;
+}
+
+// public/graph-search.tsx
+var import_react14 = __toESM(require_react());
 var import_jsx_runtime22 = __toESM(require_jsx_runtime());
 function GraphSearch({ nodes, onSelect }) {
-  const [query, setQuery] = (0, import_react13.useState)("");
-  const [open, setOpen] = (0, import_react13.useState)(false);
-  const matches = (0, import_react13.useMemo)(() => {
+  const [query, setQuery] = (0, import_react14.useState)("");
+  const [open, setOpen] = (0, import_react14.useState)(false);
+  const matches = (0, import_react14.useMemo)(() => {
     if (!query || query.length < 2) return [];
     const q = query.toLowerCase();
     return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
@@ -15700,7 +15677,7 @@ function GraphSearch({ nodes, onSelect }) {
 }
 
 // public/time-slider.tsx
-var import_react14 = __toESM(require_react());
+var import_react15 = __toESM(require_react());
 var import_jsx_runtime23 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
@@ -15708,7 +15685,7 @@ function yearOf(n) {
   return y3 > 1900 ? y3 : 0;
 }
 function useTimeRange(nodes) {
-  return (0, import_react14.useMemo)(() => {
+  return (0, import_react15.useMemo)(() => {
     let min = 9999, max = 0;
     for (const n of nodes) {
       const y3 = yearOf(n);
@@ -15722,13 +15699,13 @@ function useTimeRange(nodes) {
 }
 
 // public/use-graph-data.ts
-var import_react15 = __toESM(require_react());
+var import_react16 = __toESM(require_react());
 function useGraphData() {
-  const [rawNodes, setRawNodes] = (0, import_react15.useState)([]);
-  const [rawEdges, setRawEdges] = (0, import_react15.useState)([]);
-  const [tagMeta, setTagMeta] = (0, import_react15.useState)({});
-  const [loading, setLoading] = (0, import_react15.useState)(true);
-  (0, import_react15.useEffect)(() => {
+  const [rawNodes, setRawNodes] = (0, import_react16.useState)([]);
+  const [rawEdges, setRawEdges] = (0, import_react16.useState)([]);
+  const [tagMeta, setTagMeta] = (0, import_react16.useState)({});
+  const [loading, setLoading] = (0, import_react16.useState)(true);
+  (0, import_react16.useEffect)(() => {
     fetch("/api/graph").then((r) => r.json()).then((d) => {
       setRawNodes(d.nodes);
       setRawEdges(d.edges);
@@ -15741,10 +15718,10 @@ function useGraphData() {
 }
 
 // public/shell-helpers.ts
-var import_react16 = __toESM(require_react());
+var import_react17 = __toESM(require_react());
 var CACHE_KEY = "nexus.me";
 function useCurrentUser() {
-  const [me, setMe] = (0, import_react16.useState)(() => {
+  const [me, setMe] = (0, import_react17.useState)(() => {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -15752,9 +15729,9 @@ function useCurrentUser() {
       return null;
     }
   });
-  const [loading, setLoading] = (0, import_react16.useState)(!me);
-  const [error, setError] = (0, import_react16.useState)(null);
-  (0, import_react16.useEffect)(() => {
+  const [loading, setLoading] = (0, import_react17.useState)(!me);
+  const [error, setError] = (0, import_react17.useState)(null);
+  (0, import_react17.useEffect)(() => {
     let cancelled = false;
     fetch("/api/auth?action=me").then((r) => r.status === 401 ? null : r.json()).then((d) => {
       if (cancelled) return;
@@ -15782,7 +15759,7 @@ function applyTheme(me) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_react17 = __toESM(require_react());
+var import_react18 = __toESM(require_react());
 var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 var LEGEND = [
   { group: "author", label: "Author" },
@@ -15801,12 +15778,12 @@ function pickCommunityKey(n, institutionsByAuthor) {
 }
 function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, affiliations, homeInstitutionId }) {
   const paperColor = "#888";
-  const institutionLabelById = (0, import_react17.useMemo)(() => {
+  const institutionLabelById = (0, import_react18.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution") m2.set(n.id, n.label);
     return m2;
   }, [nodes]);
-  const legendAdapter = (0, import_react17.useMemo)(() => ({
+  const legendAdapter = (0, import_react18.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -15898,21 +15875,21 @@ function buildExplorerAffiliations(rawNodes, rawEdges) {
 }
 
 // public/use-explorer-ego.ts
-var import_react18 = __toESM(require_react());
+var import_react19 = __toESM(require_react());
 function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) {
-  const homeInstitutionId = (0, import_react18.useMemo)(() => {
+  const homeInstitutionId = (0, import_react19.useMemo)(() => {
     const ror = me?.profile.ror;
     if (!ror) return null;
     const hit = rawNodes.find((n) => n.group === "institution" && n.ext_id === ror);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const egoAuthorId = (0, import_react18.useMemo)(() => {
+  const egoAuthorId = (0, import_react19.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = projectedNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, projectedNodes]);
-  const effectiveHomeKey = (0, import_react18.useMemo)(() => {
+  const effectiveHomeKey = (0, import_react19.useMemo)(() => {
     if (homeInstitutionId) return homeInstitutionId;
     if (!egoAuthorId) return null;
     const insts = institutionsByAuthor.get(egoAuthorId);
@@ -15932,27 +15909,28 @@ function yearOf2(n) {
 }
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
-  const [selectedNodeId, setSelectedNodeId] = (0, import_react19.useState)(null);
-  const [flags, setFlags] = (0, import_react19.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react19.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
-  const [yearFloor, setYearFloor] = (0, import_react19.useState)(0);
-  const highlightedIds = (0, import_react19.useMemo)(() => {
+  const [selectedNodeId, setSelectedNodeId] = (0, import_react20.useState)(null);
+  const [flags, setFlags] = (0, import_react20.useState)(DEFAULT_FLAGS);
+  const setFlag = (0, import_react20.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
+  const [yearFloor, setYearFloor] = (0, import_react20.useState)(0);
+  const highlightedIds = (0, import_react20.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  const containerRef = (0, import_react19.useRef)(null);
-  const [dims, setDims] = (0, import_react19.useState)({ width: 900, height: 600 });
-  (0, import_react19.useEffect)(() => {
+  const containerRef = (0, import_react20.useRef)(null);
+  const [dims, setDims] = (0, import_react20.useState)({ width: 900, height: 600 });
+  const coauthorGraph = useCoauthorGraph();
+  (0, import_react20.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) setSelectedNodeId(f);
   }, [rawNodes, highlightedIds]);
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  (0, import_react19.useEffect)(() => {
+  (0, import_react20.useEffect)(() => {
     if (yearMin && !yearFloor) setYearFloor(yearMin);
   }, [yearMin, yearFloor]);
-  (0, import_react19.useEffect)(() => {
+  (0, import_react20.useEffect)(() => {
     const el = containerRef.current;
     if (!el) return;
     const obs = new ResizeObserver((entries) => {
@@ -15964,7 +15942,7 @@ function GraphExplorerBody() {
     if (r.width > 0) setDims({ width: r.width, height: r.height });
     return () => obs.disconnect();
   }, []);
-  const filteredRaw = (0, import_react19.useMemo)(() => {
+  const filteredRaw = (0, import_react20.useMemo)(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
     const nodes = rawNodes.filter((n) => {
@@ -15977,28 +15955,28 @@ function GraphExplorerBody() {
     const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
     return { nodes, edges };
   }, [rawNodes, rawEdges, yearFloor, yearMin]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = (0, import_react19.useMemo)(
+  const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = (0, import_react20.useMemo)(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null),
     [filteredRaw]
   );
-  const projectedNodes = (0, import_react19.useMemo)(() => {
+  const projectedNodes = (0, import_react20.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     const groupMatch = (g) => g === "institution" && flags.institution || g === "author" && flags.author || g === "journal" && flags.journal || g === "doi" && flags.paper;
     return enriched.filter((n) => groupMatch(n.group));
   }, [projectedRaw, tagMeta, flags]);
-  const projectedEdges = (0, import_react19.useMemo)(() => {
+  const projectedEdges = (0, import_react20.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const doiCount = (0, import_react19.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
-  const affiliations = (0, import_react19.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
+  const doiCount = (0, import_react20.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
+  const affiliations = (0, import_react20.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
     rawNodes,
     projectedNodes,
     institutionsByAuthor: affiliations.institutionsByAuthor
   });
-  const chartDois = (0, import_react19.useMemo)(() => {
+  const chartDois = (0, import_react20.useMemo)(() => {
     if (!selectedNodeId) return matchingDois;
     const nodeDois = /* @__PURE__ */ new Set();
     for (const e of rawEdges) if (e.target === selectedNodeId) {
@@ -16048,7 +16026,7 @@ function GraphExplorerBody() {
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(ForceGraph, { nodes: projectedNodes, links: projectedEdges, width: dims.width, height: dims.height, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id), affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId })
+        !coauthorGraph ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "Loading co-author network\u2026" }) : coauthorGraph.nodes.length < 2 ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No co-authors yet." }) : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(CoAuthorSim, { graph: coauthorGraph, width: dims.width, height: dims.height })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(NodeDetail, { nodeId: selectedNodeId, onClose: () => setSelectedNodeId(null) }) })
     ] }),
