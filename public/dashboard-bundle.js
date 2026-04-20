@@ -13350,6 +13350,56 @@ function HoverTooltip({ node, radius: radius2 }) {
   );
 }
 
+// public/convex-hull.ts
+function convexHull(points) {
+  if (points.length < 3) return points;
+  const sorted = [...points].sort((a2, b) => a2.x - b.x || a2.y - b.y);
+  const cross = (o, a2, b) => (a2.x - o.x) * (b.y - o.y) - (a2.y - o.y) * (b.x - o.x);
+  const lower = [];
+  for (const p of sorted) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const p = sorted[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+function paddedHullPath(hull, pad) {
+  if (hull.length < 2) return "";
+  if (hull.length === 2) {
+    const [a2, b] = hull;
+    return `M ${a2.x - pad} ${a2.y - pad} L ${b.x + pad} ${b.y - pad} L ${b.x + pad} ${b.y + pad} L ${a2.x - pad} ${a2.y + pad} Z`;
+  }
+  const cx = hull.reduce((s, p) => s + p.x, 0) / hull.length;
+  const cy = hull.reduce((s, p) => s + p.y, 0) / hull.length;
+  const expanded = hull.map((p) => {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    return { x: p.x + dx / dist * pad, y: p.y + dy / dist * pad };
+  });
+  let d = `M ${expanded[0].x} ${expanded[0].y}`;
+  for (let i = 1; i < expanded.length; i++) {
+    const prev = expanded[i - 1];
+    const curr = expanded[i];
+    const mx2 = (prev.x + curr.x) / 2;
+    const my2 = (prev.y + curr.y) / 2;
+    d += ` Q ${prev.x} ${prev.y} ${mx2} ${my2}`;
+  }
+  const last = expanded[expanded.length - 1];
+  const first = expanded[0];
+  const mx = (last.x + first.x) / 2;
+  const my = (last.y + first.y) / 2;
+  d += ` Q ${last.x} ${last.y} ${mx} ${my} Z`;
+  return d;
+}
+
 // public/coauthor-graph-hulls.tsx
 var import_jsx_runtime9 = __toESM(require_jsx_runtime());
 function collectByCommunity(nodes, myRor) {
@@ -13368,34 +13418,35 @@ function collectByCommunity(nodes, myRor) {
   }
   return groups;
 }
-function boundingCircle(points, pad) {
+function trimOutliers(points) {
+  if (points.length <= 3) return points;
   const cx = points.reduce((s, p) => s + p.x, 0) / points.length;
   const cy = points.reduce((s, p) => s + p.y, 0) / points.length;
-  const distances = points.map((p) => Math.hypot(p.x - cx, p.y - cy)).sort((a2, b) => a2 - b);
-  const keepIndex = Math.max(0, Math.ceil(distances.length * 0.8) - 1);
-  const trimmedRadius = distances[keepIndex];
-  return { cx, cy, r: trimmedRadius + pad };
+  const ranked = points.map((p) => ({ p, d: Math.hypot(p.x - cx, p.y - cy) })).sort((a2, b) => a2.d - b.d);
+  const keep = Math.max(3, Math.ceil(ranked.length * 0.8));
+  return ranked.slice(0, keep).map((r) => r.p);
 }
 function CommunityHulls({ nodes, myRor, colors }) {
-  const bubbles = [];
+  const hulls = [];
   for (const [key, group] of collectByCommunity(nodes, myRor)) {
-    if (group.points.length < 2) continue;
-    const { cx, cy, r } = boundingCircle(group.points, 18);
-    bubbles.push({ key, name: group.name, color: colors.get(key) || "#888", cx, cy, r });
+    if (group.points.length < 3) continue;
+    const trimmed = trimOutliers(group.points);
+    const hull = convexHull(trimmed);
+    const d = paddedHullPath(hull, 22);
+    if (!d) continue;
+    hulls.push({ key, name: group.name, color: colors.get(key) || "#888", d });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("g", { children: bubbles.map((b) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
-    "circle",
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("g", { children: hulls.map((h) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+    "path",
     {
-      cx: b.cx,
-      cy: b.cy,
-      r: b.r,
-      fill: b.color,
+      d: h.d,
+      fill: h.color,
       fillOpacity: 0.1,
-      stroke: b.color,
+      stroke: h.color,
       strokeOpacity: 0.35,
       strokeWidth: 1
     },
-    b.key
+    h.key
   )) });
 }
 
