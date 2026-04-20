@@ -13307,7 +13307,7 @@ var N = (p, s) => ({ sentiment: "neutral", primary: p, fill: p, seriesColors: s 
 var PRIMARY_G = { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: ["var(--primary)", "var(--accent-dim)"] };
 var OK = { sentiment: "positive", primary: "var(--ok)", fill: "var(--ok)" };
 var TYPE_SCHEME = {
-  heatmap: { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: ["var(--bg-elev)", "var(--accent-dim)", "var(--primary)"] },
+  heatmap: { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: ["#3a2a14", "#7a5320", "#c08a35", "#e8c870"] },
   bubble: N(CTX_S[0], CTX_S),
   scatter: N(CTX_S[0], CTX_S),
   bar: PRIMARY_G,
