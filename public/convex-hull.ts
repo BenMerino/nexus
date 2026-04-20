@@ -39,18 +39,19 @@ export function paddedHullPath(hull: Point[], pad: number): string {
     return { x: p.x + (dx / dist) * pad, y: p.y + (dy / dist) * pad };
   });
 
-  let d = `M ${expanded[0].x} ${expanded[0].y}`;
-  for (let i = 1; i < expanded.length; i++) {
-    const prev = expanded[i - 1];
+  // Start at the midpoint of the last→first edge, then sweep Q-curves that use
+  // each vertex as the control point and the *next* edge midpoint as the end —
+  // so every vertex becomes a rounded corner rather than a hard point.
+  const n = expanded.length;
+  const midpoint = (a: Point, b: Point) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+  const startMid = midpoint(expanded[n - 1], expanded[0]);
+  let d = `M ${startMid.x} ${startMid.y}`;
+  for (let i = 0; i < n; i++) {
     const curr = expanded[i];
-    const mx = (prev.x + curr.x) / 2;
-    const my = (prev.y + curr.y) / 2;
-    d += ` Q ${prev.x} ${prev.y} ${mx} ${my}`;
+    const next = expanded[(i + 1) % n];
+    const end = midpoint(curr, next);
+    d += ` Q ${curr.x} ${curr.y} ${end.x} ${end.y}`;
   }
-  const last = expanded[expanded.length - 1];
-  const first = expanded[0];
-  const mx = (last.x + first.x) / 2;
-  const my = (last.y + first.y) / 2;
-  d += ` Q ${last.x} ${last.y} ${mx} ${my} Z`;
+  d += ' Z';
   return d;
 }
