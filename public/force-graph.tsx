@@ -87,8 +87,6 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
         collidePad: 6,
         minCommunitySize: 2,
         orbitRadius: 0.45,
-        containmentStrength: 0.9,
-        containmentRadiusMultiplier: 1.3,
       }}
     />
   );
