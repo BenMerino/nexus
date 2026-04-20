@@ -73,17 +73,28 @@
   function runScripts(root) {
     var scripts = Array.prototype.slice.call(root.querySelectorAll('script'));
     scripts.forEach(function (old) {
+      var isModule = (old.type || '').toLowerCase() === 'module';
+      // Modules: if the bundle has already loaded once, it will have registered a
+      // global remount hook on window.__nexusMounts keyed by its src. Call that
+      // instead of re-downloading. Otherwise load the module normally (first visit).
+      if (isModule && old.src) {
+        var srcUrl = new URL(old.src, location.href);
+        var key = srcUrl.pathname;
+        var mounts = window.__nexusMounts || {};
+        if (mounts[key]) { try { mounts[key](); } catch (e) { console.error(e); } old.remove(); return; }
+      }
       var s = document.createElement('script');
       for (var i = 0; i < old.attributes.length; i++) {
         var at = old.attributes[i];
         s.setAttribute(at.name, at.value);
       }
-      if (old.src) {
-        // ES modules are cached by URL; force a fresh evaluation so the bundle
-        // remounts its React root against the freshly-swapped-in DOM.
-        var u = new URL(old.src, location.href);
-        u.searchParams.set('_spa', Date.now().toString());
-        s.src = u.href;
+      if (isModule && old.src) {
+        // First-ever load of this bundle in this session — no busting needed;
+        // subsequent navigations use the __nexusMounts hook above.
+        s.src = old.src;
+      } else if (old.src) {
+        // Plain scripts: re-executing via a fresh tag works and uses HTTP cache.
+        s.src = old.src;
       } else {
         s.textContent = old.textContent;
       }

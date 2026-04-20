@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { useCurrentUser } from './shell-helpers';
 import { Stat, Tag, SectionHead } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders.js';
@@ -116,5 +116,14 @@ function App() {
   );
 }
 
-const el = document.getElementById('dashboard-root');
-if (el) createRoot(el).render(<App />);
+let root: Root | null = null;
+function mount() {
+  const el = document.getElementById('dashboard-root');
+  if (!el) return;
+  if (root) root.unmount();
+  root = createRoot(el);
+  root.render(<App />);
+}
+(window as any).__nexusMounts = (window as any).__nexusMounts || {};
+(window as any).__nexusMounts['/dashboard-bundle.js'] = mount;
+mount();

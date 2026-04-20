@@ -1,6 +1,15 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { GraphExplorerBody } from './graph-explorer-body';
 
-const el = document.getElementById('relationships-root');
-if (el) createRoot(el).render(<GraphExplorerBody />);
+let root: Root | null = null;
+function mount() {
+  const el = document.getElementById('relationships-root');
+  if (!el) return;
+  if (root) root.unmount();
+  root = createRoot(el);
+  root.render(<GraphExplorerBody />);
+}
+(window as any).__nexusMounts = (window as any).__nexusMounts || {};
+(window as any).__nexusMounts['/relationships-bundle.js'] = mount;
+mount();
