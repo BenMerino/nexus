@@ -5,6 +5,8 @@ export interface ExplorerAffiliations {
   institutionsByAuthor: Map<string, Set<string>>;
   /** authorId → set of journal node ids the author shares a paper with. */
   journalsByAuthor: Map<string, Set<string>>;
+  /** journalId → set of doi node ids published in that journal. */
+  doisByJournal: Map<string, Set<string>>;
   /** doiNodeId → YYYY year string. */
   yearByDoi: Map<string, string>;
 }
@@ -23,8 +25,9 @@ export function buildExplorerAffiliations(rawNodes: RawNode[], rawEdges: RawEdge
 
   const institutionsByAuthor = new Map<string, Set<string>>();
   const journalsByAuthor = new Map<string, Set<string>>();
+  const doisByJournal = new Map<string, Set<string>>();
 
-  for (const [, tagIds] of tagsByDoi) {
+  for (const [doiId, tagIds] of tagsByDoi) {
     const authors: string[] = [];
     const institutions: string[] = [];
     const journals: string[] = [];
@@ -40,6 +43,10 @@ export function buildExplorerAffiliations(rawNodes: RawNode[], rawEdges: RawEdge
       if (!journalsByAuthor.has(a)) journalsByAuthor.set(a, new Set());
       for (const j of journals) journalsByAuthor.get(a)!.add(j);
     }
+    for (const j of journals) {
+      if (!doisByJournal.has(j)) doisByJournal.set(j, new Set());
+      doisByJournal.get(j)!.add(doiId);
+    }
   }
 
   const yearByDoi = new Map<string, string>();
@@ -47,5 +54,5 @@ export function buildExplorerAffiliations(rawNodes: RawNode[], rawEdges: RawEdge
     if (n.group === 'doi' && n.published) yearByDoi.set(n.id, n.published.slice(0, 4));
   }
 
-  return { institutionsByAuthor, journalsByAuthor, yearByDoi };
+  return { institutionsByAuthor, journalsByAuthor, doisByJournal, yearByDoi };
 }

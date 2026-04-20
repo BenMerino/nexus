@@ -15115,18 +15115,31 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
 function pickColor(i) {
   return COMMUNITY_COLORS[i % COMMUNITY_COLORS.length];
 }
-function groupByAuthorLink(nodes, hubGroup, lookup) {
-  const hubs = nodes.filter((n) => n.group === hubGroup);
+function groupByInstitution(nodes, institutionsByAuthor) {
+  const hubs = nodes.filter((n) => n.group === "institution");
   const authors = nodes.filter((n) => n.group === "author");
-  const groups = [];
-  hubs.forEach((hub, i) => {
+  return hubs.map((hub, i) => {
     const points = [{ x: hub.x, y: hub.y }];
     for (const a2 of authors) {
-      if (lookup.get(a2.id)?.has(hub.id)) points.push({ x: a2.x, y: a2.y });
+      if (institutionsByAuthor.get(a2.id)?.has(hub.id)) points.push({ x: a2.x, y: a2.y });
     }
-    groups.push({ key: hub.id, label: hub.label, color: pickColor(i), points });
+    return { key: hub.id, label: hub.label, color: pickColor(i), points };
   });
-  return groups;
+}
+function groupByJournalHub(nodes, journalsByAuthor, doisByJournal) {
+  const hubs = nodes.filter((n) => n.group === "journal");
+  const authors = nodes.filter((n) => n.group === "author");
+  const dois = nodes.filter((n) => n.group === "doi");
+  return hubs.map((hub, i) => {
+    const points = [{ x: hub.x, y: hub.y }];
+    for (const a2 of authors) {
+      if (journalsByAuthor.get(a2.id)?.has(hub.id)) points.push({ x: a2.x, y: a2.y });
+    }
+    for (const d of dois) {
+      if (doisByJournal.get(hub.id)?.has(d.id)) points.push({ x: d.x, y: d.y });
+    }
+    return { key: hub.id, label: hub.label, color: pickColor(i), points };
+  });
 }
 function groupByYear(nodes, yearByDoi) {
   const byYear = /* @__PURE__ */ new Map();
@@ -15147,8 +15160,8 @@ function groupByYear(nodes, yearByDoi) {
 }
 function buildExplorerHullGroups(dim, nodes, affiliations) {
   if (dim === "none") return [];
-  if (dim === "institution") return groupByAuthorLink(nodes, "institution", affiliations.institutionsByAuthor);
-  if (dim === "journal") return groupByAuthorLink(nodes, "journal", affiliations.journalsByAuthor);
+  if (dim === "institution") return groupByInstitution(nodes, affiliations.institutionsByAuthor);
+  if (dim === "journal") return groupByJournalHub(nodes, affiliations.journalsByAuthor, affiliations.doisByJournal);
   if (dim === "year") return groupByYear(nodes, affiliations.yearByDoi);
   return [];
 }
@@ -15534,7 +15547,8 @@ function buildExplorerAffiliations(rawNodes, rawEdges) {
   }
   const institutionsByAuthor = /* @__PURE__ */ new Map();
   const journalsByAuthor = /* @__PURE__ */ new Map();
-  for (const [, tagIds] of tagsByDoi) {
+  const doisByJournal = /* @__PURE__ */ new Map();
+  for (const [doiId, tagIds] of tagsByDoi) {
     const authors = [];
     const institutions = [];
     const journals = [];
@@ -15550,12 +15564,16 @@ function buildExplorerAffiliations(rawNodes, rawEdges) {
       if (!journalsByAuthor.has(a2)) journalsByAuthor.set(a2, /* @__PURE__ */ new Set());
       for (const j of journals) journalsByAuthor.get(a2).add(j);
     }
+    for (const j of journals) {
+      if (!doisByJournal.has(j)) doisByJournal.set(j, /* @__PURE__ */ new Set());
+      doisByJournal.get(j).add(doiId);
+    }
   }
   const yearByDoi = /* @__PURE__ */ new Map();
   for (const n of rawNodes) {
     if (n.group === "doi" && n.published) yearByDoi.set(n.id, n.published.slice(0, 4));
   }
-  return { institutionsByAuthor, journalsByAuthor, yearByDoi };
+  return { institutionsByAuthor, journalsByAuthor, doisByJournal, yearByDoi };
 }
 
 // public/graph-explorer-body.tsx
