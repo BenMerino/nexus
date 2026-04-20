@@ -23,23 +23,54 @@ export function convexHull(points: Point[]): Point[] {
   return lower.concat(upper);
 }
 
-/** Build a smooth rounded SVG path around a hull, padded outward by `pad` pixels. */
+/** Build an organic blob outline around `points` that contains every point.
+ *  Instead of hugging the convex hull (which has sharp vertices when the point
+ *  set is sparse), sample the enclosing shape as a smooth ring of control
+ *  points — for each of N evenly-spaced angles, the radius is the distance to
+ *  the furthest point in that angular slice. Curves drawn through that ring
+ *  are always smooth, and padding expands the ring outward so every input
+ *  point sits comfortably inside. */
 export function paddedHullPath(hull: Point[], pad: number): string {
-  if (hull.length < 2) return '';
-  if (hull.length === 2) {
-    const [a, b] = hull;
-    return `M ${a.x - pad} ${a.y - pad} L ${b.x + pad} ${b.y - pad} L ${b.x + pad} ${b.y + pad} L ${a.x - pad} ${a.y + pad} Z`;
+  if (hull.length === 0) return '';
+  if (hull.length === 1) {
+    const p = hull[0];
+    return `M ${p.x - pad} ${p.y} A ${pad} ${pad} 0 1 0 ${p.x + pad} ${p.y} A ${pad} ${pad} 0 1 0 ${p.x - pad} ${p.y} Z`;
   }
   const cx = hull.reduce((s, p) => s + p.x, 0) / hull.length;
   const cy = hull.reduce((s, p) => s + p.y, 0) / hull.length;
-  const expanded = hull.map(p => {
+  const ring = sampleEnclosingRing(hull, cx, cy, pad);
+  return smoothClosedPath(ring, 0.5);
+}
+
+/** Produce 24 control points arranged radially around (cx, cy). Each sits at
+ *  the distance of the furthest input point that falls within a small arc
+ *  around that angle, plus `pad`. Radii are smoothed by a 3-point rolling
+ *  average so sparse input points don't create spikes. */
+function sampleEnclosingRing(points: Point[], cx: number, cy: number, pad: number): Point[] {
+  const SAMPLES = 24;
+  const radii: number[] = new Array(SAMPLES).fill(0);
+  for (const p of points) {
     const dx = p.x - cx;
     const dy = p.y - cy;
-    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-    return { x: p.x + (dx / dist) * pad, y: p.y + (dy / dist) * pad };
+    const angle = Math.atan2(dy, dx);
+    const dist = Math.hypot(dx, dy);
+    const idx = ((Math.round((angle / (Math.PI * 2)) * SAMPLES) % SAMPLES) + SAMPLES) % SAMPLES;
+    for (let k = -1; k <= 1; k++) {
+      const i = ((idx + k) % SAMPLES + SAMPLES) % SAMPLES;
+      if (dist > radii[i]) radii[i] = dist;
+    }
+  }
+  const smoothed = radii.map((_, i) => {
+    const a = radii[(i - 1 + SAMPLES) % SAMPLES];
+    const b = radii[i];
+    const c = radii[(i + 1) % SAMPLES];
+    return (a + b + c) / 3;
   });
-
-  return smoothClosedPath(expanded, 0.5);
+  return smoothed.map((r, i) => {
+    const angle = (i / SAMPLES) * Math.PI * 2;
+    const radius = r + pad;
+    return { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
+  });
 }
 
 /** Draw a smooth closed path through `pts` using cubic Béziers with

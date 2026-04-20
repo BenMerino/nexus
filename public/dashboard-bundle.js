@@ -13153,20 +13153,41 @@ function convexHull(points) {
   return lower.concat(upper);
 }
 function paddedHullPath(hull, pad) {
-  if (hull.length < 2) return "";
-  if (hull.length === 2) {
-    const [a2, b] = hull;
-    return `M ${a2.x - pad} ${a2.y - pad} L ${b.x + pad} ${b.y - pad} L ${b.x + pad} ${b.y + pad} L ${a2.x - pad} ${a2.y + pad} Z`;
+  if (hull.length === 0) return "";
+  if (hull.length === 1) {
+    const p = hull[0];
+    return `M ${p.x - pad} ${p.y} A ${pad} ${pad} 0 1 0 ${p.x + pad} ${p.y} A ${pad} ${pad} 0 1 0 ${p.x - pad} ${p.y} Z`;
   }
   const cx = hull.reduce((s, p) => s + p.x, 0) / hull.length;
   const cy = hull.reduce((s, p) => s + p.y, 0) / hull.length;
-  const expanded = hull.map((p) => {
+  const ring = sampleEnclosingRing(hull, cx, cy, pad);
+  return smoothClosedPath(ring, 0.5);
+}
+function sampleEnclosingRing(points, cx, cy, pad) {
+  const SAMPLES = 24;
+  const radii = new Array(SAMPLES).fill(0);
+  for (const p of points) {
     const dx = p.x - cx;
     const dy = p.y - cy;
-    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-    return { x: p.x + dx / dist * pad, y: p.y + dy / dist * pad };
+    const angle = Math.atan2(dy, dx);
+    const dist = Math.hypot(dx, dy);
+    const idx = (Math.round(angle / (Math.PI * 2) * SAMPLES) % SAMPLES + SAMPLES) % SAMPLES;
+    for (let k = -1; k <= 1; k++) {
+      const i = ((idx + k) % SAMPLES + SAMPLES) % SAMPLES;
+      if (dist > radii[i]) radii[i] = dist;
+    }
+  }
+  const smoothed = radii.map((_, i) => {
+    const a2 = radii[(i - 1 + SAMPLES) % SAMPLES];
+    const b = radii[i];
+    const c2 = radii[(i + 1) % SAMPLES];
+    return (a2 + b + c2) / 3;
   });
-  return smoothClosedPath(expanded, 0.5);
+  return smoothed.map((r, i) => {
+    const angle = i / SAMPLES * Math.PI * 2;
+    const radius2 = r + pad;
+    return { x: cx + Math.cos(angle) * radius2, y: cy + Math.sin(angle) * radius2 };
+  });
 }
 function smoothClosedPath(pts, tension) {
   const n = pts.length;
