@@ -11,6 +11,16 @@ export function Stat({ label, value, sub, accent }: { label: string; value: Reac
   );
 }
 
+export function StatSkeleton({ label, sub }: { label: string; sub?: string }) {
+  return (
+    <div className="stat">
+      <div className="stat-label">{label}</div>
+      <div className="stat-value"><span className="skel" style={{ display: 'inline-block', width: '60%', height: '0.85em', verticalAlign: 'middle' }}>x</span></div>
+      {sub && <div className="stat-sub">{sub}</div>}
+    </div>
+  );
+}
+
 export function Tag({ children, tone = 'default', mono = false }: { children: React.ReactNode; tone?: 'default' | 'muted'; mono?: boolean }) {
   return <span className={`tag tag-${tone} ${mono ? 'mono' : ''}`}>{children}</span>;
 }

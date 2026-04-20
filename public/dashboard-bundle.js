@@ -12863,6 +12863,13 @@ function Stat({ label, value, sub, accent }) {
     sub && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-sub", children: sub })
   ] });
 }
+function StatSkeleton({ label, sub }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "stat", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-label", children: label }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-value", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "skel", style: { display: "inline-block", width: "60%", height: "0.85em", verticalAlign: "middle" }, children: "x" }) }),
+    sub && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-sub", children: sub })
+  ] });
+}
 function Tag({ children, tone = "default", mono = false }) {
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: `tag tag-${tone} ${mono ? "mono" : ""}`, children });
 }
@@ -14578,6 +14585,22 @@ function CoAuthorGraphPanel({ graph }) {
     /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { ref, style: { position: "relative", flex: 1, minHeight: 260 }, children: emptyMsg ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "muted", children: emptyMsg }) : size && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(CoAuthorSim, { graph, width: size.w, height: size.h }) })
   ] });
 }
+function CoAuthorGraphPanelSkeleton() {
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "card card-graph-preview", style: { display: "flex", gap: 18, alignItems: "stretch" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("aside", { style: { width: 180, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "eyebrow", children: "Network" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "section-title", children: "Your co-author graph" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "skel", style: { display: "inline-block", width: 120, height: 13, alignSelf: "flex-start" }, children: "x" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }, children: [140, 110, 130, 100, 120].map((w, i) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { style: { display: "inline-flex", gap: 6, alignItems: "center" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: "var(--bg-inset)" } }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "skel", style: { display: "inline-block", width: w, height: 11 }, children: "x" })
+      ] }, i)) })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { position: "relative", flex: 1, minHeight: 260 }, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "skel skel-block", style: { position: "absolute", inset: 0, opacity: 0.4 }, children: "x" }) })
+  ] });
+}
 
 // public/portfolio-velocity.tsx
 var import_react8 = __toESM(require_react());
@@ -14650,6 +14673,19 @@ function VelocityPanel({ velocity }) {
         ] }, i);
       })
     ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
+  ] });
+}
+function VelocityPanelSkeleton() {
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, lineHeight: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "skel", style: { display: "inline-block", width: 96, height: "0.85em", verticalAlign: "middle" }, children: "x" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "score" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "skel", style: { display: "inline-block", width: 70, height: 14 }, children: "x" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "skel skel-block", style: { position: "absolute", inset: 0, opacity: 0.5 }, children: "x" }) }),
     /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
   ] });
 }
@@ -14761,6 +14797,20 @@ function CadencePanel({ cadence }) {
     ] })
   ] });
 }
+function CadencePanelSkeleton() {
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, lineHeight: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "skel", style: { display: "inline-block", width: 80, height: "0.85em", verticalAlign: "middle" }, children: "x" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "papers / year (avg)" })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "skel skel-block", style: { position: "absolute", inset: 0, opacity: 0.5 }, children: "x" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: [80, 100, 70, 90].map((wpx, i) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { width: 10, height: 10, background: "var(--bg-inset)", borderRadius: 2, display: "inline-block" } }),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "skel", style: { display: "inline-block", width: wpx, height: 11 }, children: "x" })
+    ] }, i)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Publications per year, stacked by type. Dashed line: average." })
+  ] });
+}
 
 // public/portfolio-topcited.tsx
 var import_jsx_runtime15 = __toESM(require_jsx_runtime());
@@ -14787,6 +14837,26 @@ function TopCitedPanel({ items }) {
       /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { height: 3, background: "var(--bg-inset)", borderRadius: 2, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { width: `${pct}%`, height: "100%", background: "var(--accent)", opacity: 0.7 } }) })
     ] }, w.doi);
   }) });
+}
+function TopCitedPanelSkeleton({ rows = 5 }) {
+  const widths = ["85%", "70%", "92%", "60%", "78%"];
+  const bars = [88, 64, 50, 38, 22];
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 10 }, children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "baseline", minWidth: 0, flex: 1 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { style: { fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)", minWidth: 18 }, children: [
+          "#",
+          i + 1
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { display: "inline-block", width: widths[i % widths.length], height: 13 }, children: "x" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6, whiteSpace: "nowrap" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { display: "inline-block", width: 36, height: 14 }, children: "x" }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { display: "inline-block", width: 28, height: 10 }, children: "x" })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { height: 3, background: "var(--bg-inset)", borderRadius: 2, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { width: `${bars[i % bars.length]}%`, height: "100%", background: "var(--border-soft)" } }) })
+  ] }, i)) });
 }
 
 // public/portfolio-concepts.tsx
@@ -14826,100 +14896,159 @@ function ConceptsPanel({ concepts }) {
     })
   ] });
 }
-
-// public/dashboard-skeleton.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function StatSkel() {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "stat", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "stat-label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: "55%" }, children: "x" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "stat-value", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-num", children: "x" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "stat-sub", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: "70%" }, children: "x" }) })
+function ConceptsPanelSkeleton({ rows = 6 }) {
+  const widths = ["55%", "70%", "40%", "62%", "48%", "58%"];
+  const bars = [92, 78, 64, 50, 36, 22];
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { style: { fontSize: 12, color: "var(--fg-dim)", margin: "0 0 4px 0" }, children: "Topics on your works, by OpenAlex Concept." }),
+    Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 3 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { display: "inline-block", width: widths[i % widths.length], height: 13 }, children: "x" }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { display: "inline-block", width: 80, height: 11, whiteSpace: "nowrap" }, children: "x" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { height: 6, background: "var(--bg-inset)", borderRadius: 3, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { width: `${bars[i % bars.length]}%`, height: "100%", background: "var(--border-soft)" } }) })
+    ] }, i))
   ] });
 }
-function SectionHeadSkel({ eyebrowWidth = 90, titleWidth = 220 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "section-head", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { width: "100%" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "eyebrow", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: eyebrowWidth }, children: "x" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-title", style: { width: titleWidth }, children: "x" })
-  ] }) });
+
+// public/dashboard-panels-skeletons.tsx
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+function RankedListSkel({ rows, widths, counts }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ul", { className: "ranked-list", children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("li", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank", children: String(i + 1).padStart(2, "0") }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-title", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: widths[i % widths.length], height: 14 }, children: "x" }) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-count", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: counts[i % counts.length], height: 14 }, children: "x" }) })
+  ] }, i)) });
 }
-function BarChartSkel() {
+function TopJournalsSkeleton() {
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Venues", title: "Top journals" }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RankedListSkel, { rows: 5, widths: ["80%", "60%", "72%", "55%", "68%"], counts: [28, 24, 22, 20, 18] })
+  ] });
+}
+function PartnerInstitutionsSkeleton() {
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Collaborations", title: "Partner institutions" }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RankedListSkel, { rows: 6, widths: ["78%", "65%", "70%", "52%", "60%", "58%"], counts: [28, 24, 22, 20, 18, 16] })
+  ] });
+}
+function BarChartSkeleton() {
   const heights = [55, 72, 48, 88, 64, 78];
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card card-chart", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHeadSkel, { titleWidth: 240 }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Output", title: "Publications per year", right: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Tag, { mono: true, tone: "muted", children: "\u2014" }) }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-chart", children: heights.map((h, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "bar-col", children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { width: "100%", height: `${h}%`, alignSelf: "flex-end", borderRadius: "1px 1px 0 0" }, children: "x" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: 28 }, children: "x" }) })
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: 28, height: 11 }, children: "x" }) })
     ] }, i)) })
   ] });
 }
-function GraphPreviewSkel() {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card card-graph-preview", style: { display: "flex", gap: 18, alignItems: "stretch" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("aside", { style: { width: 180, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "eyebrow", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: 60 }, children: "x" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-title", style: { width: 140 }, children: "x" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: 110 }, children: "x" })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { flex: 1, minHeight: 260, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-block", style: { position: "absolute", inset: 0 }, children: "x" }) })
-  ] });
-}
-function RankedListSkel({ rows = 5, eyebrowWidth = 70, titleWidth = 180 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHeadSkel, { eyebrowWidth, titleWidth }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ul", { className: "ranked-list", style: { listStyle: "none" }, children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("li", { className: "skel-row", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: 22 }, children: "x" }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: "70%" }, children: "x" }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: 32 }, children: "x" })
-    ] }, i)) })
-  ] });
-}
-function TableSkel({ rows = 5 }) {
+function RecentlyIndexedSkeleton({ rows = 5 }) {
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card card-span-2", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHeadSkel, { eyebrowWidth: 70, titleWidth: 200 }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Ledger", title: "Recently indexed" }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("table", { className: "paper-table", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("tr", { children: ["45%", "10%", "20%", "12%", "8%"].map((w, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: w }, children: "x" }) }, i)) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("tr", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: "Title" }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: "Type" }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: "Journal" }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: "Published" }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: "Cites" })
+      ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("tbody", { children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("tr", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: "85%" }, children: "x" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: "60%" }, children: "x" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: "70%" }, children: "x" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: "50%" }, children: "x" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: "40%" }, children: "x" }) })
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("td", { className: "paper-title", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: "90%", height: 14 }, children: "x" }),
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { marginTop: 3 }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: 220, height: 11 }, children: "x" }) })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: 56, height: 18 }, children: "x" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: "80%", height: 14 }, children: "x" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: 36, height: 14 }, children: "x" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: 28, height: 14 }, children: "x" }) })
       ] }, i)) })
     ] })
   ] });
 }
-function DashboardSkeleton() {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "view dashboard", "aria-busy": "true", "aria-live": "polite", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { flex: 1 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "eyebrow", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: 140 }, children: "x" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-title", style: { width: 360, height: "2.6em" }, children: "x" }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { marginTop: 10 }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: 280 }, children: "x" }) })
+
+// public/dashboard-loading.tsx
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var PERSONAL_STATS = [
+  { label: "Publications", sub: "indexed via ORCID" },
+  { label: "Total citations", sub: "OpenAlex \xB7 last sync" },
+  { label: "h-index", sub: "computed \xB7 real-time" },
+  { label: "Collaborators", sub: "unique, all years" }
+];
+var INSTITUTIONAL_STATS = [
+  { label: "Publications", sub: "indexed records" },
+  { label: "Citations", sub: "sum across papers" },
+  { label: "Open access", sub: "of total output" },
+  { label: "Authors indexed", sub: "ORCID-verified" }
+];
+function DashboardLoading() {
+  const { me } = useCurrentUser();
+  const tenantName = me?.tenant || "Institution";
+  const displayName = me?.profile.name || me?.user || "";
+  const firstName = displayName.split(" ")[0];
+  const isPersonal = !!me?.profile.orcid;
+  const stats = isPersonal ? PERSONAL_STATS : INSTITUTIONAL_STATS;
+  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
+    greeting(),
+    ", ",
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("em", { children: firstName }),
+    "."
+  ] }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("em", { children: tenantName }),
+    "."
+  ] });
+  const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "view dashboard", "aria-busy": "true", "aria-live": "polite", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("header", { className: "view-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h1", { className: "view-title", children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "view-sub", children: sub })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "view-meta", style: { display: "flex", gap: 8 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: 110, height: 22 }, children: "x" }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel skel-text", style: { width: 220, height: 22 }, children: "x" })
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "stat-row", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(StatSkel, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(StatSkel, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(StatSkel, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(StatSkel, {})
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "stat-row", children: stats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(StatSkeleton, { label: s.label, sub: s.sub }, i)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "dash-grid", children: isPersonal ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PersonalCards, {}) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(InstitutionalCards, {}) })
+  ] });
+}
+function PersonalCards() {
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card card-chart", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(VelocityPanelSkeleton, {})
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "dash-grid", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BarChartSkel, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(GraphPreviewSkel, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RankedListSkel, { eyebrowWidth: 60, titleWidth: 140 }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RankedListSkel, { eyebrowWidth: 110, titleWidth: 200 }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(TableSkel, {})
-    ] })
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card card-chart", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CadencePanelSkeleton, {})
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CoAuthorGraphPanelSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TopCitedPanelSkeleton, {})
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ConceptsPanelSkeleton, {})
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TopJournalsSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PartnerInstitutionsSkeleton, {})
+  ] });
+}
+function InstitutionalCards() {
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(BarChartSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CoAuthorGraphPanelSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TopJournalsSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PartnerInstitutionsSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(RecentlyIndexedSkeleton, {})
   ] });
 }
 
 // public/h-index-breakdown.tsx
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 var H_INDEX_TYPES = [
   { key: "journal-article", label: "journal" },
   { key: "conference-paper", label: "conf" },
@@ -14932,19 +15061,19 @@ function entries(byType) {
   return H_INDEX_TYPES.map((t) => ({ label: t.label, value: byType[t.key] })).filter((e) => e.value != null && e.value > 0);
 }
 function HIndexBreakdown({ byType }) {
-  if (!byType) return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_jsx_runtime18.Fragment, { children: "computed \xB7 real-time" });
+  if (!byType) return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_jsx_runtime19.Fragment, { children: "computed \xB7 real-time" });
   const rows = entries(byType);
-  if (rows.length === 0) return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_jsx_runtime18.Fragment, { children: "computed \xB7 real-time" });
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "hindex-breakdown", children: rows.map((e, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { children: [
+  if (rows.length === 0) return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_jsx_runtime19.Fragment, { children: "computed \xB7 real-time" });
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "hindex-breakdown", children: rows.map((e, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { children: [
     i > 0 ? " \xB7 " : "",
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("strong", { children: e.value }),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("strong", { children: e.value }),
     " ",
     e.label
   ] }, e.label)) });
 }
 
 // public/dashboard-charts.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 function DashboardContent({ data }) {
   const { me } = useCurrentUser();
   const years = yearlyCounts(data);
@@ -14959,7 +15088,7 @@ function DashboardContent({ data }) {
   const heroStats = isPersonal ? [
     { label: "Publications", value: pubCount.toLocaleString(), sub: "indexed via ORCID" },
     { label: "Total citations", value: totalCit.toLocaleString(), sub: "OpenAlex \xB7 last sync" },
-    { label: "h-index", value: me?.hIndex ?? "\u2014", sub: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(HIndexBreakdown, { byType: me?.hIndexByType }), accent: true },
+    { label: "h-index", value: me?.hIndex ?? "\u2014", sub: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(HIndexBreakdown, { byType: me?.hIndexByType }), accent: true },
     { label: "Collaborators", value: collabCount.toLocaleString(), sub: "unique, all years" }
   ] : [
     { label: "Publications", value: data.totalPubs.toLocaleString(), sub: "indexed records" },
@@ -14967,58 +15096,58 @@ function DashboardContent({ data }) {
     { label: "Open access", value: data.totalPubs > 0 ? `${Math.round(data.oaCount / data.totalPubs * 100)}%` : "\u2014", sub: "of total output", accent: true },
     { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
-  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
+  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
     greeting(),
     ", ",
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("em", { children: firstName }),
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("em", { children: firstName }),
     "."
-  ] }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("em", { children: tenantName }),
+  ] }) : /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("em", { children: tenantName }),
     "."
   ] });
   const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "view dashboard", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h1", { className: "view-title", children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "view-sub", children: sub })
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "view dashboard", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("header", { className: "view-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("h1", { className: "view-title", children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "view-sub", children: sub })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Stat, { ...s }, i)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card card-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(VelocityPanel, { velocity: p.velocity })
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Stat, { ...s }, i)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(VelocityPanel, { velocity: p.velocity })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card card-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
-        p.cadence && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CadencePanel, { cadence: p.cadence })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
+        p.cadence && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(CadencePanel, { cadence: p.cadence })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TopCitedPanel, { items: p.topCited || [] })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(TopCitedPanel, { items: p.topCited || [] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ConceptsPanel, { concepts: p.concepts || [] })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(ConceptsPanel, { concepts: p.concepts || [] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TopJournals, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PartnerInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ClaimPaperPanel, { onClaimed: () => window.location.reload() })
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
-      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "muted", children: "No year data." }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TopJournals, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PartnerInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(RecentlyIndexed, { data })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(ClaimPaperPanel, { onClaimed: () => window.location.reload() })
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
+      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "muted", children: "No year data." }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(RecentlyIndexed, { data })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { id: "import-slot" })
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { id: "import-slot" })
   ] });
 }
 function App() {
@@ -15027,13 +15156,13 @@ function App() {
   (0, import_react10.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
-    err && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "status error", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
+    err && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "status error", children: [
       "Error: ",
       err
     ] }) }),
-    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(DashboardSkeleton, {}),
-    data && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(DashboardContent, { data })
+    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(DashboardLoading, {}),
+    data && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(DashboardContent, { data })
   ] });
 }
 var root = null;
@@ -15042,7 +15171,7 @@ function mount() {
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime19.jsx)(App, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime20.jsx)(App, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/dashboard-bundle.js"] = mount;

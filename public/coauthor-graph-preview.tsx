@@ -49,3 +49,28 @@ export function CoAuthorGraphPanel({ graph }: { graph?: CoauthorGraph }) {
     </section>
   );
 }
+
+export function CoAuthorGraphPanelSkeleton() {
+  return (
+    <section className="card card-graph-preview" style={{ display: 'flex', gap: 18, alignItems: 'stretch' }}>
+      <aside style={{ width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div>
+          <div className="eyebrow">Network</div>
+          <h2 className="section-title">Your co-author graph</h2>
+        </div>
+        <span className="skel" style={{ display: 'inline-block', width: 120, height: 13, alignSelf: 'flex-start' }}>x</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+          {[140, 110, 130, 100, 120].map((w, i) => (
+            <span key={i} style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--bg-inset)' }} />
+              <span className="skel" style={{ display: 'inline-block', width: w, height: 11 }}>x</span>
+            </span>
+          ))}
+        </div>
+      </aside>
+      <div style={{ position: 'relative', flex: 1, minHeight: 260 }}>
+        <span className="skel skel-block" style={{ position: 'absolute', inset: 0, opacity: 0.4 }}>x</span>
+      </div>
+    </section>
+  );
+}

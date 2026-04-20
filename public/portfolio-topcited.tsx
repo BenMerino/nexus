@@ -33,3 +33,29 @@ export function TopCitedPanel({ items }: { items: TopCitedItem[] }) {
     </div>
   );
 }
+
+export function TopCitedPanelSkeleton({ rows = 5 }: { rows?: number }) {
+  const widths = ['85%', '70%', '92%', '60%', '78%'];
+  const bars = [88, 64, 50, 38, 22];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', minWidth: 0, flex: 1 }}>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-dim)', minWidth: 18 }}>#{i + 1}</span>
+              <span className="skel" style={{ display: 'inline-block', width: widths[i % widths.length], height: 13 }}>x</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, whiteSpace: 'nowrap' }}>
+              <span className="skel" style={{ display: 'inline-block', width: 36, height: 14 }}>x</span>
+              <span className="skel" style={{ display: 'inline-block', width: 28, height: 10 }}>x</span>
+            </div>
+          </div>
+          <div style={{ height: 3, background: 'var(--bg-inset)', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ width: `${bars[i % bars.length]}%`, height: '100%', background: 'var(--border-soft)' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

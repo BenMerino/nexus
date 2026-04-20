@@ -33,3 +33,26 @@ export function ConceptsPanel({ concepts }: { concepts: Concept[] }) {
     </div>
   );
 }
+
+export function ConceptsPanelSkeleton({ rows = 6 }: { rows?: number }) {
+  const widths = ['55%', '70%', '40%', '62%', '48%', '58%'];
+  const bars = [92, 78, 64, 50, 36, 22];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '0 0 4px 0' }}>
+        Topics on your works, by OpenAlex Concept.
+      </p>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+            <span className="skel" style={{ display: 'inline-block', width: widths[i % widths.length], height: 13 }}>x</span>
+            <span className="skel" style={{ display: 'inline-block', width: 80, height: 11, whiteSpace: 'nowrap' }}>x</span>
+          </div>
+          <div style={{ height: 6, background: 'var(--bg-inset)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ width: `${bars[i % bars.length]}%`, height: '100%', background: 'var(--border-soft)' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

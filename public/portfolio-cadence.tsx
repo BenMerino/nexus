@@ -111,3 +111,34 @@ export function CadencePanel({ cadence }: { cadence: Cadence }) {
     </div>
   );
 }
+
+export function CadencePanelSkeleton() {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 12 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--display)', fontSize: 42, lineHeight: 1 }}>
+            <span className="skel" style={{ display: 'inline-block', width: 80, height: '0.85em', verticalAlign: 'middle' }}>x</span>
+          </div>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 }}>
+            papers / year (avg)
+          </div>
+        </div>
+      </div>
+      <div style={{ height: 140, position: 'relative' }}>
+        <span className="skel skel-block" style={{ position: 'absolute', inset: 0, opacity: 0.5 }}>x</span>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', marginTop: 10, fontSize: 11 }}>
+        {[80, 100, 70, 90].map((wpx, i) => (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)' }}>
+            <span style={{ width: 10, height: 10, background: 'var(--bg-inset)', borderRadius: 2, display: 'inline-block' }} />
+            <span className="skel" style={{ display: 'inline-block', width: wpx, height: 11 }}>x</span>
+          </span>
+        ))}
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 8 }}>
+        Publications per year, stacked by type. Dashed line: average.
+      </div>
+    </div>
+  );
+}
