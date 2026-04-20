@@ -7,6 +7,7 @@ import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
 import { COLORS, nodeRadius } from './relationship-types';
 import { SmoothedHulls, type HullGroup } from './smoothed-hulls';
 import { buildExplorerHullGroups, type GroupByDim } from './explorer-hull-groups';
+import type { ExplorerAffiliations } from './explorer-affiliations';
 import { ForceGraphNodes } from './force-graph-nodes';
 
 interface Props {
@@ -18,13 +19,13 @@ interface Props {
   onNodeClick?: (n: EnrichedSimNode) => void;
   accent?: string;
   groupBy?: GroupByDim;
-  yearByNodeId?: Map<string, string>;
+  affiliations?: ExplorerAffiliations;
 }
 
 type SimN = EnrichedSimNode & { x: number; y: number; fx?: number | null; fy?: number | null };
 type SimL = ProjectedEdge & { source: SimN | string; target: SimN | string };
 
-export function ForceGraph({ nodes: inNodes, links: inLinks, width, height, selectedId, onNodeClick, accent = 'var(--accent)', groupBy = 'none', yearByNodeId }: Props) {
+export function ForceGraph({ nodes: inNodes, links: inLinks, width, height, selectedId, onNodeClick, accent = 'var(--accent)', groupBy = 'none', affiliations }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const simRef = useRef<Simulation<SimN, SimL> | null>(null);
   const [, tick] = useState(0);
@@ -102,9 +103,9 @@ export function ForceGraph({ nodes: inNodes, links: inLinks, width, height, sele
     return set;
   }, [hoverId, selectedId, links]);
 
-  const hullGroups: HullGroup[] = groupBy === 'none'
+  const hullGroups: HullGroup[] = groupBy === 'none' || !affiliations
     ? []
-    : buildExplorerHullGroups(groupBy, nodes, links as unknown as ProjectedEdge[], yearByNodeId || new Map())
+    : buildExplorerHullGroups(groupBy, nodes, affiliations)
         .map(g => ({ key: g.key, color: g.color, points: g.points }));
 
   return (

@@ -15112,75 +15112,44 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
 }
 
 // public/explorer-hull-groups.ts
-function groupByInstitution(nodes, edges) {
-  const institutions = nodes.filter((n) => n.group === "institution");
-  const nodeById = new Map(nodes.map((n) => [n.id, n]));
+function pickColor(i) {
+  return COMMUNITY_COLORS[i % COMMUNITY_COLORS.length];
+}
+function groupByAuthorLink(nodes, hubGroup, lookup) {
+  const hubs = nodes.filter((n) => n.group === hubGroup);
+  const authors = nodes.filter((n) => n.group === "author");
   const groups = [];
-  institutions.forEach((inst, i) => {
-    const points = [{ x: inst.x, y: inst.y }];
-    for (const e of edges) {
-      const sId = typeof e.source === "object" ? e.source.id : e.source;
-      const tId = typeof e.target === "object" ? e.target.id : e.target;
-      const other = sId === inst.id ? tId : tId === inst.id ? sId : null;
-      if (!other) continue;
-      const n = nodeById.get(other);
-      if (n && n.group === "author") points.push({ x: n.x, y: n.y });
+  hubs.forEach((hub, i) => {
+    const points = [{ x: hub.x, y: hub.y }];
+    for (const a2 of authors) {
+      if (lookup.get(a2.id)?.has(hub.id)) points.push({ x: a2.x, y: a2.y });
     }
-    groups.push({
-      key: inst.id,
-      label: inst.label,
-      color: COMMUNITY_COLORS[i % COMMUNITY_COLORS.length],
-      points
-    });
+    groups.push({ key: hub.id, label: hub.label, color: pickColor(i), points });
   });
   return groups;
 }
-function groupByJournal(nodes, edges) {
-  const journals = nodes.filter((n) => n.group === "journal");
-  const nodeById = new Map(nodes.map((n) => [n.id, n]));
-  const groups = [];
-  journals.forEach((j, i) => {
-    const points = [{ x: j.x, y: j.y }];
-    for (const e of edges) {
-      const sId = typeof e.source === "object" ? e.source.id : e.source;
-      const tId = typeof e.target === "object" ? e.target.id : e.target;
-      const other = sId === j.id ? tId : tId === j.id ? sId : null;
-      if (!other) continue;
-      const n = nodeById.get(other);
-      if (n && (n.group === "author" || n.group === "doi")) points.push({ x: n.x, y: n.y });
-    }
-    groups.push({
-      key: j.id,
-      label: j.label,
-      color: COMMUNITY_COLORS[i % COMMUNITY_COLORS.length],
-      points
-    });
-  });
-  return groups;
-}
-function groupByYear(nodes, rawYears) {
+function groupByYear(nodes, yearByDoi) {
   const byYear = /* @__PURE__ */ new Map();
   for (const n of nodes) {
     if (n.group !== "doi") continue;
-    const y3 = rawYears.get(n.id)?.slice(0, 4);
+    const y3 = yearByDoi.get(n.id);
     if (!y3) continue;
     const list = byYear.get(y3) || [];
     list.push({ x: n.x, y: n.y });
     byYear.set(y3, list);
   }
-  const years = [...byYear.keys()].sort();
-  return years.map((y3, i) => ({
+  return [...byYear.keys()].sort().map((y3, i) => ({
     key: "year:" + y3,
     label: y3,
-    color: COMMUNITY_COLORS[i % COMMUNITY_COLORS.length],
+    color: pickColor(i),
     points: byYear.get(y3)
   }));
 }
-function buildExplorerHullGroups(dim, nodes, edges, rawYears) {
+function buildExplorerHullGroups(dim, nodes, affiliations) {
   if (dim === "none") return [];
-  if (dim === "institution") return groupByInstitution(nodes, edges);
-  if (dim === "journal") return groupByJournal(nodes, edges);
-  if (dim === "year") return groupByYear(nodes, rawYears);
+  if (dim === "institution") return groupByAuthorLink(nodes, "institution", affiliations.institutionsByAuthor);
+  if (dim === "journal") return groupByAuthorLink(nodes, "journal", affiliations.journalsByAuthor);
+  if (dim === "year") return groupByYear(nodes, affiliations.yearByDoi);
   return [];
 }
 
@@ -15214,7 +15183,7 @@ function ForceGraphNodes({ nodes, radius, color, hoverId, selectedId, connected,
 
 // public/force-graph.tsx
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function ForceGraph({ nodes: inNodes, links: inLinks, width, height, selectedId, onNodeClick, accent = "var(--accent)", groupBy = "none", yearByNodeId }) {
+function ForceGraph({ nodes: inNodes, links: inLinks, width, height, selectedId, onNodeClick, accent = "var(--accent)", groupBy = "none", affiliations }) {
   const svgRef = (0, import_react10.useRef)(null);
   const simRef = (0, import_react10.useRef)(null);
   const [, tick] = (0, import_react10.useState)(0);
@@ -15281,7 +15250,7 @@ function ForceGraph({ nodes: inNodes, links: inLinks, width, height, selectedId,
     }
     return set2;
   }, [hoverId, selectedId, links]);
-  const hullGroups = groupBy === "none" ? [] : buildExplorerHullGroups(groupBy, nodes, links, yearByNodeId || /* @__PURE__ */ new Map()).map((g) => ({ key: g.key, color: g.color, points: g.points }));
+  const hullGroups = groupBy === "none" || !affiliations ? [] : buildExplorerHullGroups(groupBy, nodes, affiliations).map((g) => ({ key: g.key, color: g.color, points: g.points }));
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("radialGradient", { id: "nodeGlow", children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("stop", { offset: "0%", stopColor: accent, stopOpacity: "0.5" }),
@@ -15553,6 +15522,42 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
   ] });
 }
 
+// public/explorer-affiliations.ts
+function buildExplorerAffiliations(rawNodes, rawEdges) {
+  const groupByNodeId = /* @__PURE__ */ new Map();
+  for (const n of rawNodes) groupByNodeId.set(n.id, n.group);
+  const tagsByDoi = /* @__PURE__ */ new Map();
+  for (const e of rawEdges) {
+    const list = tagsByDoi.get(e.source) || [];
+    list.push(e.target);
+    tagsByDoi.set(e.source, list);
+  }
+  const institutionsByAuthor = /* @__PURE__ */ new Map();
+  const journalsByAuthor = /* @__PURE__ */ new Map();
+  for (const [, tagIds] of tagsByDoi) {
+    const authors = [];
+    const institutions = [];
+    const journals = [];
+    for (const id of tagIds) {
+      const g = groupByNodeId.get(id);
+      if (g === "author") authors.push(id);
+      else if (g === "institution") institutions.push(id);
+      else if (g === "journal") journals.push(id);
+    }
+    for (const a2 of authors) {
+      if (!institutionsByAuthor.has(a2)) institutionsByAuthor.set(a2, /* @__PURE__ */ new Set());
+      for (const i of institutions) institutionsByAuthor.get(a2).add(i);
+      if (!journalsByAuthor.has(a2)) journalsByAuthor.set(a2, /* @__PURE__ */ new Set());
+      for (const j of journals) journalsByAuthor.get(a2).add(j);
+    }
+  }
+  const yearByDoi = /* @__PURE__ */ new Map();
+  for (const n of rawNodes) {
+    if (n.group === "doi" && n.published) yearByDoi.set(n.id, n.published.slice(0, 4));
+  }
+  return { institutionsByAuthor, journalsByAuthor, yearByDoi };
+}
+
 // public/graph-explorer-body.tsx
 var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: true, author: true, journal: true, paper: false };
@@ -15623,11 +15628,7 @@ function GraphExplorerBody() {
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
   const doiCount = (0, import_react15.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
-  const yearByNodeId = (0, import_react15.useMemo)(() => {
-    const m2 = /* @__PURE__ */ new Map();
-    for (const n of rawNodes) if (n.published) m2.set(n.id, n.published);
-    return m2;
-  }, [rawNodes]);
+  const affiliations = (0, import_react15.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
   const chartDois = (0, import_react15.useMemo)(() => {
     if (!selectedNodeId) return matchingDois;
     const nodeDois = /* @__PURE__ */ new Set();
@@ -15678,7 +15679,7 @@ function GraphExplorerBody() {
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(ForceGraph, { nodes: projectedNodes, links: projectedEdges, width: dims.width, height: dims.height, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id), groupBy, yearByNodeId })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(ForceGraph, { nodes: projectedNodes, links: projectedEdges, width: dims.width, height: dims.height, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id), groupBy, affiliations })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(NodeDetail, { nodeId: selectedNodeId, onClose: () => setSelectedNodeId(null) }) })
     ] }),

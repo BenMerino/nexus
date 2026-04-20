@@ -12,6 +12,7 @@ import { useCurrentUser } from './shell-helpers';
 import { Tag } from './ui-primitives';
 import { GraphFiltersSidebar, type NodeTypeFlags } from './graph-filters-sidebar';
 import type { GroupByDim } from './explorer-hull-groups';
+import { buildExplorerAffiliations } from './explorer-affiliations';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, journal: true, paper: false };
 
@@ -86,11 +87,7 @@ export function GraphExplorerBody() {
 
   const doiCount = useMemo(() => rawNodes.filter(n => n.group === 'doi').length, [rawNodes]);
 
-  const yearByNodeId = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const n of rawNodes) if (n.published) m.set(n.id, n.published);
-    return m;
-  }, [rawNodes]);
+  const affiliations = useMemo(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
 
   const chartDois = useMemo(() => {
     if (!selectedNodeId) return matchingDois;
@@ -128,7 +125,7 @@ export function GraphExplorerBody() {
           </div>
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match current filters.</div>
-            : <ForceGraph nodes={projectedNodes} links={projectedEdges} width={dims.width} height={dims.height} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} groupBy={groupBy} yearByNodeId={yearByNodeId} />}
+            : <ForceGraph nodes={projectedNodes} links={projectedEdges} width={dims.width} height={dims.height} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} groupBy={groupBy} affiliations={affiliations} />}
         </div>
 
         <aside className="detail-panel">
