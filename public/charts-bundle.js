@@ -13021,8 +13021,8 @@ function TooltipOverlay({ tip, yLabel, currencyCfg, ms = 0 }) {
         transition: t
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(BaseText, { color: "muted", style: { fontSize: 9, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, marginBottom: 2 }, children: tip.label }),
-        tip.values.map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(BaseText, { style: { color: v.color, fontSize: 12, fontWeight: 600 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(BaseText, { color: "muted", style: { display: "block", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, marginBottom: 2 }, children: tip.label }),
+        tip.values.map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(BaseText, { style: { display: "block", color: v.color, fontSize: 12, fontWeight: 600 }, children: [
           v.name !== "value" ? `${v.name}: ` : "",
           fmtValue(v.value, currencyCfg),
           i === 0 && !currencyCfg ? ` ${yLabel || ""}` : ""

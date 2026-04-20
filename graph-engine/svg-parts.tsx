@@ -113,11 +113,11 @@ export function TooltipOverlay({ tip, yLabel, currencyCfg, ms = 0 }: { tip: Tool
                 border: '1px solid var(--border-ghost, var(--border-main))', pointerEvents: 'none',
                 transition: t }}
         >
-            <BaseText color="muted" style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, marginBottom: 2 }}>
+            <BaseText color="muted" style={{ display: 'block', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, marginBottom: 2 }}>
                 {tip.label}
             </BaseText>
             {tip.values.map((v, i) => (
-                <BaseText key={i} style={{ color: v.color, fontSize: 12, fontWeight: 600 }}>
+                <BaseText key={i} style={{ display: 'block', color: v.color, fontSize: 12, fontWeight: 600 }}>
                     {v.name !== 'value' ? `${v.name}: ` : ''}{fmtValue(v.value, currencyCfg)}{i === 0 && !currencyCfg ? ` ${yLabel || ''}` : ''}
                 </BaseText>
             ))}
