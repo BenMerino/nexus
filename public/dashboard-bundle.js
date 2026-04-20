@@ -13164,24 +13164,30 @@ function paddedHullPath(hull, pad) {
   return smoothClosedPath(ring, 0.5);
 }
 function sampleEnclosingRing(points, cx, cy, pad) {
-  const SAMPLES = 24;
+  const SAMPLES = 72;
+  const SPREAD = 6;
+  const SMOOTH_WINDOW = 9;
   const radii = new Array(SAMPLES).fill(0);
   for (const p of points) {
     const dx = p.x - cx;
     const dy = p.y - cy;
     const angle = Math.atan2(dy, dx);
     const dist = Math.hypot(dx, dy);
-    const idx = (Math.round(angle / (Math.PI * 2) * SAMPLES) % SAMPLES + SAMPLES) % SAMPLES;
-    for (let k = -1; k <= 1; k++) {
-      const i = ((idx + k) % SAMPLES + SAMPLES) % SAMPLES;
-      if (dist > radii[i]) radii[i] = dist;
+    const center = (Math.round(angle / (Math.PI * 2) * SAMPLES) % SAMPLES + SAMPLES) % SAMPLES;
+    for (let k = -SPREAD; k <= SPREAD; k++) {
+      const falloff = 1 - Math.abs(k) / (SPREAD + 1);
+      const i = ((center + k) % SAMPLES + SAMPLES) % SAMPLES;
+      const contribution = dist * falloff;
+      if (contribution > radii[i]) radii[i] = contribution;
     }
   }
+  const half = Math.floor(SMOOTH_WINDOW / 2);
   const smoothed = radii.map((_, i) => {
-    const a2 = radii[(i - 1 + SAMPLES) % SAMPLES];
-    const b = radii[i];
-    const c2 = radii[(i + 1) % SAMPLES];
-    return (a2 + b + c2) / 3;
+    let sum = 0;
+    for (let k = -half; k <= half; k++) {
+      sum += radii[((i + k) % SAMPLES + SAMPLES) % SAMPLES];
+    }
+    return sum / SMOOTH_WINDOW;
   });
   return smoothed.map((r, i) => {
     const angle = i / SAMPLES * Math.PI * 2;
