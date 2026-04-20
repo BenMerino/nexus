@@ -21,12 +21,6 @@ export interface PublicStats {
 }
 
 const INDEXES = ['WoS', 'Scopus', 'SciELO', 'DOAJ'];
-const INDEX_COLOR: Record<string, string> = {
-  WoS: 'var(--secondary)',
-  Scopus: 'var(--primary)',
-  SciELO: 'var(--journal)',
-  DOAJ: 'var(--ok)',
-};
 
 function buildYearChart(stats: PublicStats): GraphDirective | null {
   const byYearTotal = new Map<string, number>();
@@ -54,14 +48,12 @@ function buildYearChart(stats: PublicStats): GraphDirective | null {
     if (!presentIndexes.includes(r.bucket)) continue;
     grid.get(r.year)![r.bucket] += r.count;
   }
-  const seriesColors = presentIndexes.map(k => INDEX_COLOR[k]);
   return {
     type: 'stacked-bar',
     title: 'Publications by Year',
     yLabel: 'Articles',
     series: presentIndexes,
     data: years.map(y => ({ label: y, ...grid.get(y)! })),
-    colorScheme: { sentiment: 'neutral', primary: seriesColors[0], fill: seriesColors[0], seriesColors },
   };
 }
 

@@ -16,6 +16,7 @@ const TYPE_SCHEME: Record<string, ColorScheme> = {
     heatmap: { sentiment: 'neutral', primary: CTX_S[0], fill: CTX_S[0], gradient: ['#6366f1', '#a855f7', '#ec4899', '#f97316'] },
     bubble: N(CTX_S[1], CTX_S), scatter: N(CTX_S[1], CTX_S),
     bar: INFO_G, line: INFO_G, area: INFO_G,
+    'stacked-bar': N(CTX_S[0], CTX_S),
     pie: N(CTX_S[0], CTX_S), donut: N(CTX_S[0], CTX_S), funnel: N(CTX_S[0], CTX_S), treemap: N(CTX_S[0], CTX_S),
     radar: N(CTX_S[0], CTX_S), gauge: OK, 'progress-ring': OK,
 };

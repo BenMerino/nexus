@@ -12915,6 +12915,7 @@ var TYPE_SCHEME = {
   bar: INFO_G,
   line: INFO_G,
   area: INFO_G,
+  "stacked-bar": N(CTX_S[0], CTX_S),
   pie: N(CTX_S[0], CTX_S),
   donut: N(CTX_S[0], CTX_S),
   funnel: N(CTX_S[0], CTX_S),
@@ -15110,12 +15111,6 @@ function TenantGraph({ nodes, edges }) {
 
 // public/tenant-builders.ts
 var INDEXES = ["WoS", "Scopus", "SciELO", "DOAJ"];
-var INDEX_COLOR = {
-  WoS: "var(--secondary)",
-  Scopus: "var(--primary)",
-  SciELO: "var(--journal)",
-  DOAJ: "var(--ok)"
-};
 function buildYearChart(stats) {
   const byYearTotal = /* @__PURE__ */ new Map();
   for (const row of stats.yearSource) byYearTotal.set(row.year, (byYearTotal.get(row.year) || 0) + parseInt(row.count));
@@ -15142,14 +15137,12 @@ function buildYearChart(stats) {
     if (!presentIndexes.includes(r.bucket)) continue;
     grid.get(r.year)[r.bucket] += r.count;
   }
-  const seriesColors = presentIndexes.map((k) => INDEX_COLOR[k]);
   return {
     type: "stacked-bar",
     title: "Publications by Year",
     yLabel: "Articles",
     series: presentIndexes,
-    data: years.map((y3) => ({ label: y3, ...grid.get(y3) })),
-    colorScheme: { sentiment: "neutral", primary: seriesColors[0], fill: seriesColors[0], seriesColors }
+    data: years.map((y3) => ({ label: y3, ...grid.get(y3) }))
   };
 }
 function buildTypeChart(stats) {

@@ -13305,6 +13305,7 @@ var TYPE_SCHEME = {
   bar: INFO_G,
   line: INFO_G,
   area: INFO_G,
+  "stacked-bar": N(CTX_S[0], CTX_S),
   pie: N(CTX_S[0], CTX_S),
   donut: N(CTX_S[0], CTX_S),
   funnel: N(CTX_S[0], CTX_S),
