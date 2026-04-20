@@ -14695,19 +14695,22 @@ var POLISHED = /* @__PURE__ */ new Set([
   // Copper
 ]);
 function polishedStops(tokenVar) {
+  const base = `var(${tokenVar})`;
+  const mix = (pct) => `color-mix(in oklch, var(${tokenVar}) 100%, ${pct})`;
+  const specularPrimary = `color-mix(in oklch, var(${tokenVar}) 20%, white 80%)`;
+  const specularSecondary = `color-mix(in oklch, var(${tokenVar}) 55%, white 45%)`;
   return [
-    { offset: "0%", mix: "white 18%" },
-    { offset: "28%", mix: "white 8%" },
-    { offset: "55%", mix: null },
-    { offset: "100%", mix: "black 22%" }
-  ].map((s) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-    "stop",
-    {
-      offset: s.offset,
-      stopColor: s.mix ? `color-mix(in oklch, var(${tokenVar}) 100%, ${s.mix})` : `var(${tokenVar})`
-    },
-    s.offset
-  ));
+    { offset: "0%", color: mix("white 14%") },
+    { offset: "22%", color: mix("white 4%") },
+    { offset: "24%", color: specularPrimary },
+    { offset: "26%", color: specularPrimary },
+    { offset: "30%", color: mix("white 2%") },
+    { offset: "55%", color: base },
+    { offset: "70%", color: mix("black 6%") },
+    { offset: "72%", color: specularSecondary },
+    { offset: "74%", color: mix("black 10%") },
+    { offset: "100%", color: mix("black 26%") }
+  ].map((s) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("stop", { offset: s.offset, stopColor: s.color }, s.offset));
 }
 function dullStops(tokenVar) {
   return [
@@ -14724,7 +14727,11 @@ function dullStops(tokenVar) {
   ));
 }
 function MetalGradientDefs() {
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("defs", { children: Object.entries(TYPE_METAL).map(([type, meta]) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("linearGradient", { id: typeGradientId(type), x1: "0", x2: "0", y1: "0", y2: "1", children: POLISHED.has(type) ? polishedStops(meta.token) : dullStops(meta.token) }, type)) });
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("defs", { children: Object.entries(TYPE_METAL).map(([type, meta]) => {
+    const polished = POLISHED.has(type);
+    const axis = polished ? { x1: "0.3", y1: "0", x2: "0.7", y2: "1" } : { x1: "0", y1: "0", x2: "0", y2: "1" };
+    return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("linearGradient", { id: typeGradientId(type), ...axis, children: polished ? polishedStops(meta.token) : dullStops(meta.token) }, type);
+  }) });
 }
 
 // public/portfolio-cadence.tsx
