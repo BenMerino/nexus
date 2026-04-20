@@ -4,7 +4,7 @@ import { enrichWithMeta } from './enrich-meta';
 import { projectGraph } from './project-graph';
 import { NodeDetail } from './node-detail';
 import { StatsBar, FilteredCharts } from './filtered-charts';
-import { CoAuthorSim } from './coauthor-graph-sim';
+import { CoauthorCanvas } from './coauthor-canvas';
 import { useCoauthorGraph } from './use-coauthor-graph';
 import { GraphSearch } from './graph-search';
 import { useTimeRange } from './time-slider';
@@ -135,7 +135,7 @@ export function GraphExplorerBody() {
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">Loading co-author network…</div>
             : coauthorGraph.nodes.length < 2
               ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No co-authors yet.</div>
-              : <CoAuthorSim graph={coauthorGraph} width={dims.width} height={dims.height} />}
+              : <CoauthorCanvas graph={coauthorGraph} />}
         </div>
 
         <aside className="detail-panel">
