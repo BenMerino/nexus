@@ -15605,14 +15605,14 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       selectedId: selectedId ?? null,
       onNodeClick,
       forceConfig: {
-        linkDistance: 35,
-        linkStrength: 0.15,
-        charge: (g) => g === "doi" ? -40 : -140,
-        clusterStrengthX: 0.25,
-        clusterStrengthY: 0.28,
+        linkDistance: 60,
+        linkStrength: 0.3,
+        charge: (g) => g === "doi" ? -80 : -260,
+        clusterStrengthX: 0.05,
+        clusterStrengthY: 0.05,
         collidePad: 6,
         minCommunitySize: 2,
-        orbitRadius: 0.55
+        orbitRadius: 0.45
       }
     }
   );
