@@ -74,7 +74,7 @@
       .then(r => r.json()).then(function (d) {
         if (d.error) { s.textContent = "Error: " + d.error; return; }
         var imp = d.imported || {}, bf = d.backfill || {};
-        s.textContent = "Seeded: WoS=" + imp.wos + " DOAJ=" + imp.doaj + " SciELO=" + imp.scielo
+        s.textContent = "Seeded: WoS=" + imp.wos + " DOAJ=" + imp.doaj
           + " (checked " + imp.checked + " ISSNs, skipped " + imp.skipped + "). "
           + "Tagged " + bf.tagged + " paper-source pairs.";
         refresh();

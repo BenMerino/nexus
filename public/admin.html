@@ -62,9 +62,9 @@
             <p>One row per indexing source. Auto sources fetch fresh data on click; manual sources take a CSV upload. Every seed replaces the source's list and re-tags every matching paper.</p>
             <div id="indexation-table"></div>
             <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-              <button class="primary-btn" onclick="idxSeedOpenAlex()">Seed WoS + DOAJ + SciELO from OpenAlex</button>
+              <button class="primary-btn" onclick="idxSeedOpenAlex()">Seed WoS + DOAJ from OpenAlex</button>
               <button class="primary-btn" onclick="idxReconcile()" style="background:var(--bg-muted);">Reconcile all indexed_in tags</button>
-              <span style="font-size:12px;color:var(--fg-muted);">OpenAlex exposes is_core (WoS), is_in_doaj, is_in_scielo per journal. One click refreshes all three.</span>
+              <span style="font-size:12px;color:var(--fg-muted);">OpenAlex is_core + is_in_doaj drive WoS/DOAJ. SciELO has its own button (articlemeta, more reliable).</span>
             </div>
             <div id="idx-status" style="margin-top:10px;font-size:12px;"></div>
           </div>
