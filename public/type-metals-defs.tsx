@@ -10,35 +10,42 @@ const POLISHED = new Set([
   'dataset',          // Copper
 ]);
 
+// Each metal's base token has sibling *-shadow and *-highlight tokens in
+// shared.css. The three tones use drifted hues (not just drifted L), which
+// is what makes the gradient read as metal instead of a brightness ramp.
+function tones(tokenVar: string) {
+  return {
+    shadow:    `var(${tokenVar}-shadow)`,
+    base:      `var(${tokenVar})`,
+    highlight: `var(${tokenVar}-highlight)`,
+  };
+}
+
+// Polished metals: soft specular hump at 25%, then base → shadow.
+// The specular peak IS the -highlight token; no white mixing, so the
+// metal's hue is preserved in the bright band.
 function polishedStops(tokenVar: string) {
-  const base = `var(${tokenVar})`;
-  const mix = (pct: string) => `color-mix(in oklch, var(${tokenVar}) 100%, ${pct})`;
-  const specularHalf = `color-mix(in oklch, var(${tokenVar}) 70%, white 30%)`;
-  const specularPeak = `color-mix(in oklch, var(${tokenVar}) 45%, white 55%)`;
+  const { shadow, base, highlight } = tones(tokenVar);
   return [
-    { offset: '0%',   color: mix('white 12%') },
-    { offset: '18%',  color: mix('white 6%') },
-    { offset: '22%',  color: specularHalf },
-    { offset: '25%',  color: specularPeak },
-    { offset: '28%',  color: specularHalf },
-    { offset: '32%',  color: mix('white 2%') },
-    { offset: '55%',  color: base },
-    { offset: '100%', color: mix('black 24%') },
+    { offset: '0%',   color: highlight },
+    { offset: '18%',  color: base },
+    { offset: '22%',  color: highlight },
+    { offset: '28%',  color: highlight },
+    { offset: '34%',  color: base },
+    { offset: '60%',  color: base },
+    { offset: '100%', color: shadow },
   ].map(s => <stop key={s.offset} offset={s.offset} stopColor={s.color} />);
 }
 
+// Dull metals: plain highlight → base → shadow ramp, no specular band.
+// Still uses the three-tone palette so the hue drifts naturally.
 function dullStops(tokenVar: string) {
+  const { shadow, base, highlight } = tones(tokenVar);
   return [
-    { offset: '0%',   mix: 'white 10%' },
-    { offset: '50%',  mix: null        },
-    { offset: '100%', mix: 'black 20%' },
-  ].map(s => (
-    <stop
-      key={s.offset}
-      offset={s.offset}
-      stopColor={s.mix ? `color-mix(in oklch, var(${tokenVar}) 100%, ${s.mix})` : `var(${tokenVar})`}
-    />
-  ));
+    { offset: '0%',   color: highlight },
+    { offset: '35%',  color: base },
+    { offset: '100%', color: shadow },
+  ].map(s => <stop key={s.offset} offset={s.offset} stopColor={s.color} />);
 }
 
 export function MetalGradientDefs() {

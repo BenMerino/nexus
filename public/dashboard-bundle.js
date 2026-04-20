@@ -14694,35 +14694,32 @@ var POLISHED = /* @__PURE__ */ new Set([
   "dataset"
   // Copper
 ]);
+function tones(tokenVar) {
+  return {
+    shadow: `var(${tokenVar}-shadow)`,
+    base: `var(${tokenVar})`,
+    highlight: `var(${tokenVar}-highlight)`
+  };
+}
 function polishedStops(tokenVar) {
-  const base = `var(${tokenVar})`;
-  const mix = (pct) => `color-mix(in oklch, var(${tokenVar}) 100%, ${pct})`;
-  const specularHalf = `color-mix(in oklch, var(${tokenVar}) 70%, white 30%)`;
-  const specularPeak = `color-mix(in oklch, var(${tokenVar}) 45%, white 55%)`;
+  const { shadow, base, highlight } = tones(tokenVar);
   return [
-    { offset: "0%", color: mix("white 12%") },
-    { offset: "18%", color: mix("white 6%") },
-    { offset: "22%", color: specularHalf },
-    { offset: "25%", color: specularPeak },
-    { offset: "28%", color: specularHalf },
-    { offset: "32%", color: mix("white 2%") },
-    { offset: "55%", color: base },
-    { offset: "100%", color: mix("black 24%") }
+    { offset: "0%", color: highlight },
+    { offset: "18%", color: base },
+    { offset: "22%", color: highlight },
+    { offset: "28%", color: highlight },
+    { offset: "34%", color: base },
+    { offset: "60%", color: base },
+    { offset: "100%", color: shadow }
   ].map((s) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("stop", { offset: s.offset, stopColor: s.color }, s.offset));
 }
 function dullStops(tokenVar) {
+  const { shadow, base, highlight } = tones(tokenVar);
   return [
-    { offset: "0%", mix: "white 10%" },
-    { offset: "50%", mix: null },
-    { offset: "100%", mix: "black 20%" }
-  ].map((s) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-    "stop",
-    {
-      offset: s.offset,
-      stopColor: s.mix ? `color-mix(in oklch, var(${tokenVar}) 100%, ${s.mix})` : `var(${tokenVar})`
-    },
-    s.offset
-  ));
+    { offset: "0%", color: highlight },
+    { offset: "35%", color: base },
+    { offset: "100%", color: shadow }
+  ].map((s) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("stop", { offset: s.offset, stopColor: s.color }, s.offset));
 }
 function MetalGradientDefs() {
   return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("defs", { children: Object.entries(TYPE_METAL).map(([type, meta]) => {
