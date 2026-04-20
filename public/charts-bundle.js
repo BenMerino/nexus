@@ -14114,6 +14114,21 @@ function AxesToggle({ current, onToggle }) {
   }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(BaseText, { variant: "detail", style: { fontSize: "9px", fontWeight: 600 }, children: "\u03A3" }) });
 }
 
+// public/type-labels.ts
+var TYPE_DISPLAY_LABELS = {
+  "journal-article": "Article",
+  "conference-paper": "Conference",
+  "preprint": "Preprint",
+  "review": "Review",
+  "book-chapter": "Book Chapter",
+  "book": "Book",
+  "dataset": "Dataset",
+  "editorial": "Editorial",
+  "letter": "Letter",
+  "erratum": "Erratum",
+  "paratext": "Paratext"
+};
+
 // public/chart-builders.ts
 function calculateHIndex(citations) {
   const sorted = citations.slice().sort((a, b) => b - a);
@@ -14165,7 +14180,10 @@ function buildTypeChart(records) {
   return {
     type: "donut",
     title: "Papers by Type",
-    data: Array.from(counts.entries()).map(([label, value]) => ({ label, value }))
+    data: Array.from(counts.entries()).map(([label, value]) => ({
+      label: TYPE_DISPLAY_LABELS[label] || label,
+      value
+    }))
   };
 }
 function buildJournalChart(records) {

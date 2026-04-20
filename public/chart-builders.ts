@@ -1,4 +1,5 @@
 import type { GraphDirective } from '../architect/graph-composer.types.js';
+import { TYPE_DISPLAY_LABELS } from './type-labels.js';
 
 interface DoiRecord {
   doi: string;
@@ -73,7 +74,10 @@ function buildTypeChart(records: DoiRecord[]): GraphDirective | null {
   return {
     type: 'donut',
     title: 'Papers by Type',
-    data: Array.from(counts.entries()).map(([label, value]) => ({ label, value })),
+    data: Array.from(counts.entries()).map(([label, value]) => ({
+      label: TYPE_DISPLAY_LABELS[label] || label,
+      value,
+    })),
   };
 }
 
