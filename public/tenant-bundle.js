@@ -13197,14 +13197,20 @@ function defaultInteraction(type) {
 
 // graph-engine/cartesian-series.tsx
 var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+function topRoundedBar(key, x3, y3, w, h, fill, opacity) {
+  const r = Math.min(3, h, w / 2);
+  if (r <= 0) return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: x3, y: y3, width: w, height: h, fill, opacity }, key);
+  const d = `M${x3},${y3 + h} L${x3},${y3 + r} Q${x3},${y3} ${x3 + r},${y3} L${x3 + w - r},${y3} Q${x3 + w},${y3} ${x3 + w},${y3 + r} L${x3 + w},${y3 + h} Z`;
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d, fill, opacity }, key);
+}
 function renderSeries(t, data, labels, band, yS, baseline, c2, series, pw, chart) {
   const isBar = t === "bar";
   const isArea = t === "area" || t === "sparkline";
   if (t === "distribution") {
     const bars = data.map((d, i) => {
       const b = band(labels[i]);
-      const h = baseline - yS(d.value ?? 0);
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: b.x, y: yS(d.value ?? 0), width: b.width, height: Math.max(0, h), rx: 3, fill: c2.primary, opacity: 0.5 }, i);
+      const h = Math.max(0, baseline - yS(d.value ?? 0));
+      return topRoundedBar(i, b.x, yS(d.value ?? 0), b.width, h, c2.primary, 0.5);
     });
     const g = chart?.gaussian;
     if (!g) return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: bars });
@@ -13224,8 +13230,8 @@ function renderSeries(t, data, labels, band, yS, baseline, c2, series, pw, chart
   }
   if (isBar) return data.map((d, i) => {
     const b = band(labels[i]);
-    const h = baseline - yS(d.value ?? 0);
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: b.x, y: yS(d.value ?? 0), width: b.width, height: Math.max(0, h), rx: 3, fill: c2.gradient ? "url(#gr-bar)" : c2.primary, opacity: 0.85 }, i);
+    const h = Math.max(0, baseline - yS(d.value ?? 0));
+    return topRoundedBar(i, b.x, yS(d.value ?? 0), b.width, h, c2.gradient ? "url(#gr-bar)" : c2.primary, 0.85);
   });
   if (isArea) {
     const pts = data.map((d, i) => {
@@ -13260,20 +13266,21 @@ function renderSeries(t, data, labels, band, yS, baseline, c2, series, pw, chart
   if (t === "stacked-bar") return data.map((d, i) => {
     const b = band(labels[i]);
     let y0 = baseline;
+    let topIdx = -1;
+    for (let si = series.length - 1; si >= 0; si--) {
+      if ((d[series[si]] || 0) > 0) {
+        topIdx = si;
+        break;
+      }
+    }
     return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: series.map((s, si) => {
       const v = d[s] || 0;
       const h = Math.max(0, baseline - yS(v));
       const y3 = y0 - h;
       y0 = y3;
-      const isTop = si === series.length - 1;
-      const r = isTop ? Math.min(3, h, b.width / 2) : 0;
       const fill = seriesColor(c2, si);
-      if (!isTop || r === 0) {
-        return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: b.x, y: y3, width: b.width, height: h, fill, opacity: 0.85 }, s);
-      }
-      const x3 = b.x, w = b.width;
-      const d2 = `M${x3},${y3 + h} L${x3},${y3 + r} Q${x3},${y3} ${x3 + r},${y3} L${x3 + w - r},${y3} Q${x3 + w},${y3} ${x3 + w},${y3 + r} L${x3 + w},${y3 + h} Z`;
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: d2, fill, opacity: 0.85 }, s);
+      if (si === topIdx) return topRoundedBar(s, b.x, y3, b.width, h, fill, 0.85);
+      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: b.x, y: y3, width: b.width, height: h, fill, opacity: 0.85 }, s);
     }) }, i);
   });
   if (t === "stacked-area") {

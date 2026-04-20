@@ -8,13 +8,21 @@ import type { GraphDirective } from '../../architect/graph-composer.types.js';
  * stacked-bar, stacked-area, distribution chart types.
  * ──────────────────────────────────────────────────────────── */
 
+/** Bar with rounded top corners only — bottom sits flush on baseline or stack. */
+function topRoundedBar(key: React.Key, x: number, y: number, w: number, h: number, fill: string, opacity: number) {
+    const r = Math.min(3, h, w / 2);
+    if (r <= 0) return <rect key={key} x={x} y={y} width={w} height={h} fill={fill} opacity={opacity} />;
+    const d = `M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h} Z`;
+    return <path key={key} d={d} fill={fill} opacity={opacity} />;
+}
+
 export function renderSeries(t: string, data: any[], labels: string[], band: any, yS: any, baseline: number, c: any, series: string[], pw: number, chart?: GraphDirective) {
     const isBar = t === 'bar';
     const isArea = t === 'area' || t === 'sparkline';
     if (t === 'distribution') {
         const bars = data.map((d: any, i: number) => {
-            const b = band(labels[i]); const h = baseline - yS(d.value ?? 0);
-            return <rect key={i} x={b.x} y={yS(d.value ?? 0)} width={b.width} height={Math.max(0, h)} rx={3} fill={c.primary} opacity={0.5} />;
+            const b = band(labels[i]); const h = Math.max(0, baseline - yS(d.value ?? 0));
+            return topRoundedBar(i, b.x, yS(d.value ?? 0), b.width, h, c.primary, 0.5);
         });
         const g = chart?.gaussian;
         if (!g) return <>{bars}</>;
@@ -30,8 +38,8 @@ export function renderSeries(t: string, data: any[], labels: string[], band: any
         return <>{bars}<path d={linePath(pts)} fill="none" stroke={c.primary} strokeWidth={2} opacity={0.9} /></>;
     }
     if (isBar) return data.map((d: any, i: number) => {
-        const b = band(labels[i]); const h = baseline - yS(d.value ?? 0);
-        return <rect key={i} x={b.x} y={yS(d.value ?? 0)} width={b.width} height={Math.max(0, h)} rx={3} fill={c.gradient ? 'url(#gr-bar)' : c.primary} opacity={0.85} />;
+        const b = band(labels[i]); const h = Math.max(0, baseline - yS(d.value ?? 0));
+        return topRoundedBar(i, b.x, yS(d.value ?? 0), b.width, h, c.gradient ? 'url(#gr-bar)' : c.primary, 0.85);
     });
     if (isArea) {
         const pts = data.map((d: any, i: number) => { const b = band(labels[i]); return { x: b.x + b.width / 2, y: yS(d.value ?? 0) }; });
@@ -47,17 +55,13 @@ export function renderSeries(t: string, data: any[], labels: string[], band: any
     })}</>;
     if (t === 'stacked-bar') return data.map((d: any, i: number) => {
         const b = band(labels[i]); let y0 = baseline;
+        let topIdx = -1;
+        for (let si = series.length - 1; si >= 0; si--) { if ((d[series[si]] || 0) > 0) { topIdx = si; break; } }
         return <g key={i}>{series.map((s, si) => {
             const v = d[s] || 0; const h = Math.max(0, baseline - yS(v)); const y = y0 - h; y0 = y;
-            const isTop = si === series.length - 1;
-            const r = isTop ? Math.min(3, h, b.width / 2) : 0;
             const fill = seriesColor(c, si);
-            if (!isTop || r === 0) {
-                return <rect key={s} x={b.x} y={y} width={b.width} height={h} fill={fill} opacity={0.85} />;
-            }
-            const x = b.x, w = b.width;
-            const d2 = `M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h} Z`;
-            return <path key={s} d={d2} fill={fill} opacity={0.85} />;
+            if (si === topIdx) return topRoundedBar(s, b.x, y, b.width, h, fill, 0.85);
+            return <rect key={s} x={b.x} y={y} width={b.width} height={h} fill={fill} opacity={0.85} />;
         })}</g>;
     });
     if (t === 'stacked-area') {
