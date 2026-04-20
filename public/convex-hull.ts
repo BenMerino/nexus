@@ -42,6 +42,49 @@ export function paddedHullPath(hull: Point[], pad: number): string {
   return smoothClosedPath(ring, 0.5);
 }
 
+export const RING_SAMPLES = 72;
+
+/** Compute raw radii around (cx, cy): for each of RING_SAMPLES angular slots,
+ *  the furthest-point distance (spread across ±6 slots with falloff, smoothed
+ *  by a 9-point rolling average). Shared helper used by the stateful renderer
+ *  that temporally smooths the ring across frames. */
+export function computeRawRadii(points: Point[], cx: number, cy: number): number[] {
+  const SPREAD = 6;
+  const SMOOTH_WINDOW = 9;
+  const radii: number[] = new Array(RING_SAMPLES).fill(0);
+  for (const p of points) {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const angle = Math.atan2(dy, dx);
+    const dist = Math.hypot(dx, dy);
+    const center = ((Math.round((angle / (Math.PI * 2)) * RING_SAMPLES) % RING_SAMPLES) + RING_SAMPLES) % RING_SAMPLES;
+    for (let k = -SPREAD; k <= SPREAD; k++) {
+      const falloff = 1 - Math.abs(k) / (SPREAD + 1);
+      const i = ((center + k) % RING_SAMPLES + RING_SAMPLES) % RING_SAMPLES;
+      const contribution = dist * falloff;
+      if (contribution > radii[i]) radii[i] = contribution;
+    }
+  }
+  const half = Math.floor(SMOOTH_WINDOW / 2);
+  return radii.map((_, i) => {
+    let sum = 0;
+    for (let k = -half; k <= half; k++) {
+      sum += radii[((i + k) % RING_SAMPLES + RING_SAMPLES) % RING_SAMPLES];
+    }
+    return sum / SMOOTH_WINDOW;
+  });
+}
+
+/** Render a Catmull-Rom closed path through a ring of radii around (cx, cy). */
+export function radiiToPath(radii: number[], cx: number, cy: number, pad: number): string {
+  const ring = radii.map((r, i) => {
+    const angle = (i / RING_SAMPLES) * Math.PI * 2;
+    const radius = r + pad;
+    return { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
+  });
+  return smoothClosedPath(ring, 0.5);
+}
+
 /** Produce 24 control points arranged radially around (cx, cy). Each sits at
  *  the distance of the furthest input point that falls within a small arc
  *  around that angle, plus `pad`. Radii are smoothed by a 3-point rolling
