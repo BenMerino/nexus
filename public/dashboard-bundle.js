@@ -13199,31 +13199,32 @@ var MIN_COMMUNITY_SIZE = 3;
 function majorRors(nodes, myRor) {
   const counts = /* @__PURE__ */ new Map();
   for (const n of nodes) {
-    if (n.isMe || !n.affiliation?.ror || n.affiliation.ror === myRor) continue;
+    if (n.isMe || !n.affiliation?.ror) continue;
     counts.set(n.affiliation.ror, (counts.get(n.affiliation.ror) || 0) + 1);
   }
   const set2 = /* @__PURE__ */ new Set();
   for (const [ror, count] of counts) {
     if (count >= MIN_COMMUNITY_SIZE) set2.add(ror);
   }
+  if (myRor) set2.add(myRor);
   return set2;
 }
 function communityKeyFor(n, myRor, major) {
   if (n.isMe) return null;
   const ror = n.affiliation?.ror;
-  if (ror === myRor) return null;
   if (ror && major.has(ror)) return ror;
   return OTHER_KEY;
 }
 function buildCommunityColors(nodes, myRor) {
   const major = majorRors(nodes, myRor);
-  const sorted = [...major].sort((a2, b) => {
+  const external = [...major].filter((ror) => ror !== myRor).sort((a2, b) => {
     const ca = nodes.filter((n) => n.affiliation?.ror === a2).length;
     const cb = nodes.filter((n) => n.affiliation?.ror === b).length;
     return cb - ca;
   });
   const map = /* @__PURE__ */ new Map();
-  sorted.forEach((ror, i) => map.set(ror, COMMUNITY_PALETTE[i % COMMUNITY_PALETTE.length]));
+  external.forEach((ror, i) => map.set(ror, COMMUNITY_PALETTE[i % COMMUNITY_PALETTE.length]));
+  if (myRor) map.set(myRor, "var(--accent)");
   map.set(OTHER_KEY, OTHER_COLOR);
   return map;
 }
@@ -14383,7 +14384,7 @@ function buildAnchors(nodes, myRor, width, height) {
     counts.set(ror, nodes.filter((n) => n.affiliation?.ror === ror).length);
   }
   const hasOther = nodes.some((n) => communityKeyFor(n, myRor, major) === OTHER_KEY);
-  const slots = [...major].sort((a2, b) => (counts.get(b) || 0) - (counts.get(a2) || 0));
+  const slots = [...major].filter((ror) => ror !== myRor).sort((a2, b) => (counts.get(b) || 0) - (counts.get(a2) || 0));
   if (hasOther) slots.push(OTHER_KEY);
   const map = /* @__PURE__ */ new Map();
   const orbit = Math.min(width, height) * 0.38;
@@ -14517,37 +14518,24 @@ function Legend({ graph }) {
       e.count += 1;
       byKey.set(key, e);
     }
-    const list = [...byKey.entries()];
-    return list.sort((a2, b) => {
+    return [...byKey.entries()].sort((a2, b) => {
+      if (a2[0] === myRor) return -1;
+      if (b[0] === myRor) return 1;
       if (a2[0] === OTHER_KEY) return 1;
       if (b[0] === OTHER_KEY) return -1;
       return b[1].count - a2[1].count;
     });
   }, [graph, myRor, major]);
-  const home = graph.nodes.find((n) => n.isMe)?.affiliation?.name;
-  const homeCount = myRor ? graph.nodes.filter((n) => !n.isMe && n.affiliation?.ror === myRor).length : 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 10, fontSize: 11, color: "var(--fg-muted)" }, children: [
-    home && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" } }),
-      " ",
-      home,
-      " ",
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
-        "\xB7",
-        homeCount
-      ] })
-    ] }),
-    items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key) } }),
-      " ",
-      info.name,
-      " ",
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
-        "\xB7",
-        info.count
-      ] })
-    ] }, key))
-  ] });
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 10, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key) } }),
+    " ",
+    info.name,
+    " ",
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
+      "\xB7",
+      info.count
+    ] })
+  ] }, key)) });
 }
 function CoAuthorGraphPanel({ graph }) {
   const ref = (0, import_react6.useRef)(null);

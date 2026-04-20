@@ -34,7 +34,9 @@ export function buildAnchors(nodes: SimN[], myRor: string | null, width: number,
     counts.set(ror, nodes.filter(n => n.affiliation?.ror === ror).length);
   }
   const hasOther = nodes.some(n => communityKeyFor(n, myRor, major) === OTHER_KEY);
-  const slots: string[] = [...major].sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0));
+  const slots: string[] = [...major]
+    .filter(ror => ror !== myRor)
+    .sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0));
   if (hasOther) slots.push(OTHER_KEY);
 
   const map = new Map<string, { x: number; y: number }>();

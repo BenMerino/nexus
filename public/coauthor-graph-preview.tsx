@@ -17,22 +17,16 @@ function Legend({ graph }: { graph: CoauthorGraph }) {
       const e = byKey.get(key) || { name, count: 0 };
       e.count += 1; byKey.set(key, e);
     }
-    const list = [...byKey.entries()];
-    return list.sort((a, b) => {
+    return [...byKey.entries()].sort((a, b) => {
+      if (a[0] === myRor) return -1;
+      if (b[0] === myRor) return 1;
       if (a[0] === OTHER_KEY) return 1;
       if (b[0] === OTHER_KEY) return -1;
       return b[1].count - a[1].count;
     });
   }, [graph, myRor, major]);
-  const home = graph.nodes.find(n => n.isMe)?.affiliation?.name;
-  const homeCount = myRor ? graph.nodes.filter(n => !n.isMe && n.affiliation?.ror === myRor).length : 0;
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: 10, fontSize: 11, color: 'var(--fg-muted)' }}>
-      {home && (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} /> {home} <span style={{ color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>·{homeCount}</span>
-        </span>
-      )}
       {items.map(([key, info]) => (
         <span key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: colors.get(key) }} /> {info.name} <span style={{ color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>·{info.count}</span>
