@@ -11,11 +11,11 @@ export function Stat({ label, value, sub, accent }: { label: string; value: Reac
   );
 }
 
-export function StatSkeleton({ label, sub }: { label: string; sub?: string }) {
+export function StatSkeleton({ label, sub, placeholder = '0,000' }: { label: string; sub?: string; placeholder?: string }) {
   return (
     <div className="stat">
       <div className="stat-label">{label}</div>
-      <div className="stat-value"><span className="skel" style={{ display: 'inline-block', width: '60%', height: '0.85em', verticalAlign: 'middle' }}>x</span></div>
+      <div className="stat-value skel" style={{ display: 'inline-block' }}>{placeholder}</div>
       {sub && <div className="stat-sub">{sub}</div>}
     </div>
   );

@@ -35,7 +35,7 @@ export function ConceptsPanel({ concepts }: { concepts: Concept[] }) {
 }
 
 export function ConceptsPanelSkeleton({ rows = 6 }: { rows?: number }) {
-  const widths = ['55%', '70%', '40%', '62%', '48%', '58%'];
+  const names = ['Machine learning', 'Public health', 'Educational policy', 'Renewable energy', 'Cellular biology', 'Computational physics'];
   const bars = [92, 78, 64, 50, 36, 22];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -45,8 +45,8 @@ export function ConceptsPanelSkeleton({ rows = 6 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-            <span className="skel" style={{ display: 'inline-block', width: widths[i % widths.length], height: 13 }}>x</span>
-            <span className="skel" style={{ display: 'inline-block', width: 80, height: 11, whiteSpace: 'nowrap' }}>x</span>
+            <span className="skel" style={{ fontSize: 13 }}>{names[i % names.length]}</span>
+            <span className="skel" style={{ fontFamily: 'var(--mono)', fontSize: 11, whiteSpace: 'nowrap' }}>00 works · 00%</span>
           </div>
           <div style={{ height: 6, background: 'var(--bg-inset)', borderRadius: 3, overflow: 'hidden' }}>
             <div style={{ width: `${bars[i % bars.length]}%`, height: '100%', background: 'var(--border-soft)' }} />

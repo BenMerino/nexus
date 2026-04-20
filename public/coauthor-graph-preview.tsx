@@ -51,6 +51,7 @@ export function CoAuthorGraphPanel({ graph }: { graph?: CoauthorGraph }) {
 }
 
 export function CoAuthorGraphPanelSkeleton() {
+  const legendNames = ['Universidad de Talca', 'Pontificia U. Católica', 'Universidad de Chile', 'U. Austral de Chile', 'U. de Concepción'];
   return (
     <section className="card card-graph-preview" style={{ display: 'flex', gap: 18, alignItems: 'stretch' }}>
       <aside style={{ width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -58,18 +59,18 @@ export function CoAuthorGraphPanelSkeleton() {
           <div className="eyebrow">Network</div>
           <h2 className="section-title">Your co-author graph</h2>
         </div>
-        <span className="skel" style={{ display: 'inline-block', width: 120, height: 13, alignSelf: 'flex-start' }}>x</span>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-          {[140, 110, 130, 100, 120].map((w, i) => (
+        <a className="link-btn" style={{ alignSelf: 'flex-start' }}>Open explorer →</a>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+          {legendNames.map((name, i) => (
             <span key={i} style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--bg-inset)' }} />
-              <span className="skel" style={{ display: 'inline-block', width: w, height: 11 }}>x</span>
+              <span className="skel" style={{ fontSize: 11 }}>{name}</span>
             </span>
           ))}
         </div>
       </aside>
       <div style={{ position: 'relative', flex: 1, minHeight: 260 }}>
-        <span className="skel skel-block" style={{ position: 'absolute', inset: 0, opacity: 0.4 }}>x</span>
+        <div className="skel-fill skel" style={{ opacity: 0.4 }} />
       </div>
     </section>
   );

@@ -12863,10 +12863,10 @@ function Stat({ label, value, sub, accent }) {
     sub && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-sub", children: sub })
   ] });
 }
-function StatSkeleton({ label, sub }) {
+function StatSkeleton({ label, sub, placeholder = "0,000" }) {
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "stat", children: [
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-label", children: label }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-value", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "skel", style: { display: "inline-block", width: "60%", height: "0.85em", verticalAlign: "middle" }, children: "x" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-value skel", style: { display: "inline-block" }, children: placeholder }),
     sub && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "stat-sub", children: sub })
   ] });
 }
@@ -14586,19 +14586,20 @@ function CoAuthorGraphPanel({ graph }) {
   ] });
 }
 function CoAuthorGraphPanelSkeleton() {
+  const legendNames = ["Universidad de Talca", "Pontificia U. Cat\xF3lica", "Universidad de Chile", "U. Austral de Chile", "U. de Concepci\xF3n"];
   return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "card card-graph-preview", style: { display: "flex", gap: 18, alignItems: "stretch" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("aside", { style: { width: 180, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "eyebrow", children: "Network" }),
         /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "section-title", children: "Your co-author graph" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "skel", style: { display: "inline-block", width: 120, height: 13, alignSelf: "flex-start" }, children: "x" }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }, children: [140, 110, 130, 100, 120].map((w, i) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { style: { display: "inline-flex", gap: 6, alignItems: "center" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("a", { className: "link-btn", style: { alignSelf: "flex-start" }, children: "Open explorer \u2192" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }, children: legendNames.map((name, i) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { style: { display: "inline-flex", gap: 6, alignItems: "center" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: "var(--bg-inset)" } }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "skel", style: { display: "inline-block", width: w, height: 11 }, children: "x" })
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "skel", style: { fontSize: 11 }, children: name })
       ] }, i)) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { position: "relative", flex: 1, minHeight: 260 }, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "skel skel-block", style: { position: "absolute", inset: 0, opacity: 0.4 }, children: "x" }) })
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { position: "relative", flex: 1, minHeight: 260 }, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.4 } }) })
   ] });
 }
 
@@ -14680,12 +14681,12 @@ function VelocityPanelSkeleton() {
   return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { children: [
     /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, lineHeight: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "skel", style: { display: "inline-block", width: 96, height: "0.85em", verticalAlign: "middle" }, children: "x" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "skel", style: { display: "inline-block", fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }, children: "0.00" }),
         /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "score" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "skel", style: { display: "inline-block", width: 70, height: 14 }, children: "x" })
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "skel", style: { display: "inline-block", fontSize: 16, fontFamily: "var(--mono)" }, children: "\u25B2 rising" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "skel skel-block", style: { position: "absolute", inset: 0, opacity: 0.5 }, children: "x" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.5 } }) }),
     /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
   ] });
 }
@@ -14798,15 +14799,16 @@ function CadencePanel({ cadence }) {
   ] });
 }
 function CadencePanelSkeleton() {
+  const legendPlaceholders = ["Article", "Conference paper", "Review", "Book chapter"];
   return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
     /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, lineHeight: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "skel", style: { display: "inline-block", width: 80, height: "0.85em", verticalAlign: "middle" }, children: "x" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "skel", style: { display: "inline-block", fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }, children: "0.0" }),
       /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "papers / year (avg)" })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "skel skel-block", style: { position: "absolute", inset: 0, opacity: 0.5 }, children: "x" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: [80, 100, 70, 90].map((wpx, i) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.5 } }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: legendPlaceholders.map((label, i) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { width: 10, height: 10, background: "var(--bg-inset)", borderRadius: 2, display: "inline-block" } }),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "skel", style: { display: "inline-block", width: wpx, height: 11 }, children: "x" })
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "skel", style: { display: "inline-block" }, children: label })
     ] }, i)) }),
     /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Publications per year, stacked by type. Dashed line: average." })
   ] });
@@ -14839,7 +14841,13 @@ function TopCitedPanel({ items }) {
   }) });
 }
 function TopCitedPanelSkeleton({ rows = 5 }) {
-  const widths = ["85%", "70%", "92%", "60%", "78%"];
+  const titles = [
+    "A representative paper title spanning roughly two lines for layout",
+    "Another title placeholder of moderate length",
+    "A longer placeholder title that fills the column nicely on a wider card",
+    "Short title placeholder",
+    "A medium-length title placeholder for ranking"
+  ];
   const bars = [88, 64, 50, 38, 22];
   return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 10 }, children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
@@ -14848,11 +14856,11 @@ function TopCitedPanelSkeleton({ rows = 5 }) {
           "#",
           i + 1
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { display: "inline-block", width: widths[i % widths.length], height: 13 }, children: "x" })
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { fontSize: 13, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }, children: titles[i % titles.length] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6, whiteSpace: "nowrap" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { display: "inline-block", width: 36, height: 14 }, children: "x" }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { display: "inline-block", width: 28, height: 10 }, children: "x" })
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { fontFamily: "var(--mono)", fontSize: 14, fontWeight: 600 }, children: "0,000" }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { fontFamily: "var(--mono)", fontSize: 10 }, children: "0000" })
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { height: 3, background: "var(--bg-inset)", borderRadius: 2, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { width: `${bars[i % bars.length]}%`, height: "100%", background: "var(--border-soft)" } }) })
@@ -14897,14 +14905,14 @@ function ConceptsPanel({ concepts }) {
   ] });
 }
 function ConceptsPanelSkeleton({ rows = 6 }) {
-  const widths = ["55%", "70%", "40%", "62%", "48%", "58%"];
+  const names = ["Machine learning", "Public health", "Educational policy", "Renewable energy", "Cellular biology", "Computational physics"];
   const bars = [92, 78, 64, 50, 36, 22];
   return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { style: { fontSize: 12, color: "var(--fg-dim)", margin: "0 0 4px 0" }, children: "Topics on your works, by OpenAlex Concept." }),
     Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 3 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { display: "inline-block", width: widths[i % widths.length], height: 13 }, children: "x" }),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { display: "inline-block", width: 80, height: 11, whiteSpace: "nowrap" }, children: "x" })
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { fontSize: 13 }, children: names[i % names.length] }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { fontFamily: "var(--mono)", fontSize: 11, whiteSpace: "nowrap" }, children: "00 works \xB7 00%" })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { height: 6, background: "var(--bg-inset)", borderRadius: 3, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { width: `${bars[i % bars.length]}%`, height: "100%", background: "var(--border-soft)" } }) })
     ] }, i))
@@ -14913,36 +14921,59 @@ function ConceptsPanelSkeleton({ rows = 6 }) {
 
 // public/dashboard-panels-skeletons.tsx
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function RankedListSkel({ rows, widths, counts }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ul", { className: "ranked-list", children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("li", { children: [
+var JOURNAL_NAMES = [
+  "Revista M\xE9dica de Chile",
+  "PLOS ONE",
+  "Scientific Reports",
+  "Nature Communications",
+  "Latin American Research Review"
+];
+var PARTNER_NAMES = [
+  "Universidad de Chile",
+  "Pontificia Universidad Cat\xF3lica",
+  "Universidad Austral de Chile",
+  "Universidad de Concepci\xF3n",
+  "Universidad Diego Portales",
+  "Universidad de Santiago"
+];
+function RankedListSkel({ titles, counts }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ul", { className: "ranked-list", children: titles.map((title, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("li", { children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank", children: String(i + 1).padStart(2, "0") }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-title", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: widths[i % widths.length], height: 14 }, children: "x" }) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-count", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: counts[i % counts.length], height: 14 }, children: "x" }) })
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-title skel", children: title }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-count skel", children: counts[i % counts.length] })
   ] }, i)) });
 }
 function TopJournalsSkeleton() {
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card", children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Venues", title: "Top journals" }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RankedListSkel, { rows: 5, widths: ["80%", "60%", "72%", "55%", "68%"], counts: [28, 24, 22, 20, 18] })
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RankedListSkel, { titles: JOURNAL_NAMES, counts: ["28", "24", "22", "20", "18"] })
   ] });
 }
 function PartnerInstitutionsSkeleton() {
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card", children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Collaborations", title: "Partner institutions" }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RankedListSkel, { rows: 6, widths: ["78%", "65%", "70%", "52%", "60%", "58%"], counts: [28, 24, 22, 20, 18, 16] })
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RankedListSkel, { titles: PARTNER_NAMES, counts: ["28", "24", "22", "20", "18", "16"] })
   ] });
 }
 function BarChartSkeleton() {
   const heights = [55, 72, 48, 88, 64, 78];
+  const years = ["2020", "2021", "2022", "2023", "2024", "2025"];
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card card-chart", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Output", title: "Publications per year", right: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Tag, { mono: true, tone: "muted", children: "\u2014" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Output", title: "Publications per year", right: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Tag, { mono: true, tone: "muted", children: "2020\u20132025" }) }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-chart", children: heights.map((h, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "bar-col", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { width: "100%", height: `${h}%`, alignSelf: "flex-end", borderRadius: "1px 1px 0 0" }, children: "x" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: 28, height: 11 }, children: "x" }) })
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar skel", style: { height: `${h}%` } }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-label skel", children: years[i] })
     ] }, i)) })
   ] });
 }
 function RecentlyIndexedSkeleton({ rows = 5 }) {
+  const titles = [
+    "A representative paper title for the recently indexed table layout",
+    "Another placeholder title with a typical length",
+    "A longer placeholder title that may wrap to two lines on narrow widths",
+    "Short placeholder title",
+    "Medium-length placeholder title for a recent paper"
+  ];
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card card-span-2", children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Ledger", title: "Recently indexed" }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("table", { className: "paper-table", children: [
@@ -14955,13 +14986,13 @@ function RecentlyIndexedSkeleton({ rows = 5 }) {
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("tbody", { children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("tr", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("td", { className: "paper-title", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: "90%", height: 14 }, children: "x" }),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { marginTop: 3 }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: 220, height: 11 }, children: "x" }) })
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", children: titles[i % titles.length] }),
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "mono paper-doi", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", children: "10.0000/example.0000.000000" }) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: 56, height: 18 }, children: "x" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: "80%", height: 14 }, children: "x" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: 36, height: 14 }, children: "x" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block", width: 28, height: 14 }, children: "x" }) })
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "tag type mono skel", children: "Article" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", children: "Revista M\xE9dica de Chile" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", children: "2024" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", children: "000" }) })
       ] }, i)) })
     ] })
   ] });

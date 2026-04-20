@@ -35,7 +35,13 @@ export function TopCitedPanel({ items }: { items: TopCitedItem[] }) {
 }
 
 export function TopCitedPanelSkeleton({ rows = 5 }: { rows?: number }) {
-  const widths = ['85%', '70%', '92%', '60%', '78%'];
+  const titles = [
+    'A representative paper title spanning roughly two lines for layout',
+    'Another title placeholder of moderate length',
+    'A longer placeholder title that fills the column nicely on a wider card',
+    'Short title placeholder',
+    'A medium-length title placeholder for ranking',
+  ];
   const bars = [88, 64, 50, 38, 22];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -44,11 +50,13 @@ export function TopCitedPanelSkeleton({ rows = 5 }: { rows?: number }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', minWidth: 0, flex: 1 }}>
               <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-dim)', minWidth: 18 }}>#{i + 1}</span>
-              <span className="skel" style={{ display: 'inline-block', width: widths[i % widths.length], height: 13 }}>x</span>
+              <span className="skel" style={{ fontSize: 13, lineHeight: 1.35, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                {titles[i % titles.length]}
+              </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, whiteSpace: 'nowrap' }}>
-              <span className="skel" style={{ display: 'inline-block', width: 36, height: 14 }}>x</span>
-              <span className="skel" style={{ display: 'inline-block', width: 28, height: 10 }}>x</span>
+              <span className="skel" style={{ fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 600 }}>0,000</span>
+              <span className="skel" style={{ fontFamily: 'var(--mono)', fontSize: 10 }}>0000</span>
             </div>
           </div>
           <div style={{ height: 3, background: 'var(--bg-inset)', borderRadius: 2, overflow: 'hidden' }}>

@@ -88,15 +88,13 @@ export function VelocityPanelSkeleton() {
     <div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 12 }}>
         <div>
-          <div style={{ fontFamily: 'var(--display)', fontSize: 42, lineHeight: 1 }}>
-            <span className="skel" style={{ display: 'inline-block', width: 96, height: '0.85em', verticalAlign: 'middle' }}>x</span>
-          </div>
+          <div className="skel" style={{ display: 'inline-block', fontFamily: 'var(--display)', fontSize: 42, letterSpacing: '-0.02em', lineHeight: 1 }}>0.00</div>
           <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 }}>score</div>
         </div>
-        <span className="skel" style={{ display: 'inline-block', width: 70, height: 14 }}>x</span>
+        <div className="skel" style={{ display: 'inline-block', fontSize: 16, fontFamily: 'var(--mono)' }}>▲ rising</div>
       </div>
       <div style={{ height: 140, position: 'relative' }}>
-        <span className="skel skel-block" style={{ position: 'absolute', inset: 0, opacity: 0.5 }}>x</span>
+        <div className="skel-fill skel" style={{ opacity: 0.5 }} />
       </div>
       <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 8 }}>
         Solid: actual citations. Dashed: linear projection from your trend.
