@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { CoauthorExplorerBody } from './coauthor-explorer-body';
+import { GraphExplorerBody } from './graph-explorer-body';
 
 let root: Root | null = null;
 function mount() {
@@ -8,7 +8,7 @@ function mount() {
   if (!el) return;
   if (root) root.unmount();
   root = createRoot(el);
-  root.render(<CoauthorExplorerBody />);
+  root.render(<GraphExplorerBody />);
 }
 (window as any).__nexusMounts = (window as any).__nexusMounts || {};
 (window as any).__nexusMounts['/relationships-bundle.js'] = mount;
