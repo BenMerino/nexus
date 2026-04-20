@@ -27,6 +27,11 @@ export interface ForceConfig {
   minCommunitySize: number;
   /** Fraction of min(width, height) used as the community-anchor orbit radius. */
   orbitRadius: number;
+  /** Strength of the radial force that pulls members back inside their
+   *  community's soft boundary — must outweigh link pull to keep hulls apart. */
+  containmentStrength: number;
+  /** Boundary radius = median-distance-from-centroid × this multiplier. */
+  containmentRadiusMultiplier: number;
 }
 
 export const DEFAULT_FORCE_CONFIG: ForceConfig = {
@@ -38,4 +43,6 @@ export const DEFAULT_FORCE_CONFIG: ForceConfig = {
   collidePad: 3,
   minCommunitySize: 3,
   orbitRadius: 0.38,
+  containmentStrength: 0.6,
+  containmentRadiusMultiplier: 1.4,
 };

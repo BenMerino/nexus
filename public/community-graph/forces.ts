@@ -3,6 +3,7 @@ import {
   type Simulation,
 } from 'd3-force';
 import { majorCommunities, effectiveKey, OTHER_KEY } from './communities';
+import { forceCommunityContainment } from './containment';
 import type { CommunityAdapter, ForceConfig } from './types';
 
 export type SimN<N> = N & { x: number; y: number; fx?: number | null; fy?: number | null };
@@ -98,6 +99,7 @@ export function createSimulation<N, L extends BaseLink>({
     .force('clusterX', forceX<SimN<N>>(d => anchorFor(d)?.x ?? width / 2).strength(config.clusterStrengthX))
     .force('clusterY', forceY<SimN<N>>(d => anchorFor(d)?.y ?? height / 2).strength(config.clusterStrengthY))
     .force('collide', forceCollide<SimN<N>>().radius(d => adapter.getRadius(d) + config.collidePad))
+    .force('containment', forceCommunityContainment(adapter, primaryKey, config.minCommunitySize, config.containmentStrength, config.containmentRadiusMultiplier))
     .alpha(1)
     .alphaDecay(0.025)
     .on('tick', () => {

@@ -15315,6 +15315,52 @@ function y_default2(y3) {
   return force;
 }
 
+// public/community-graph/containment.ts
+function forceCommunityContainment(adapter, primaryKey, minSize, strength, radiusMultiplier) {
+  let simNodes = [];
+  function force() {
+    if (simNodes.length === 0) return;
+    const major = majorCommunities(simNodes, adapter, primaryKey, minSize);
+    const groups = /* @__PURE__ */ new Map();
+    for (const n of simNodes) {
+      if (adapter.isEgo(n)) continue;
+      const key = effectiveKey(n, adapter, major);
+      if (!key) continue;
+      const list = groups.get(key);
+      if (list) list.push(n);
+      else groups.set(key, [n]);
+    }
+    for (const members of groups.values()) {
+      if (members.length < 2) continue;
+      let cx = 0, cy = 0;
+      for (const n of members) {
+        cx += n.x;
+        cy += n.y;
+      }
+      cx /= members.length;
+      cy /= members.length;
+      const dists = members.map((n) => Math.hypot(n.x - cx, n.y - cy));
+      dists.sort((a2, b) => a2 - b);
+      const median = dists[Math.floor(dists.length / 2)] || 1;
+      const radius2 = median * radiusMultiplier;
+      for (const n of members) {
+        const dx = n.x - cx;
+        const dy = n.y - cy;
+        const d = Math.hypot(dx, dy);
+        if (d <= radius2) continue;
+        const overshoot = d - radius2;
+        const pull = overshoot / d * strength;
+        n.vx -= dx * pull;
+        n.vy -= dy * pull;
+      }
+    }
+  }
+  force.initialize = (nodes) => {
+    simNodes = nodes;
+  };
+  return force;
+}
+
 // public/community-graph/forces.ts
 function initialNodes(nodes, adapter, width, height) {
   return nodes.map((n) => {
@@ -15371,7 +15417,7 @@ function createSimulation({
     return key ? anchors.get(key) : null;
   };
   const chargeFn = typeof config.charge === "function" ? config.charge : () => config.charge;
-  return simulation_default(nodes).force("link", link_default(links).id((d) => adapter.getId(d)).distance(config.linkDistance).strength(config.linkStrength)).force("charge", manyBody_default().strength((d) => chargeFn(d.group))).force("clusterX", x_default2((d) => anchorFor(d)?.x ?? width / 2).strength(config.clusterStrengthX)).force("clusterY", y_default2((d) => anchorFor(d)?.y ?? height / 2).strength(config.clusterStrengthY)).force("collide", collide_default().radius((d) => adapter.getRadius(d) + config.collidePad)).alpha(1).alphaDecay(0.025).on("tick", () => {
+  return simulation_default(nodes).force("link", link_default(links).id((d) => adapter.getId(d)).distance(config.linkDistance).strength(config.linkStrength)).force("charge", manyBody_default().strength((d) => chargeFn(d.group))).force("clusterX", x_default2((d) => anchorFor(d)?.x ?? width / 2).strength(config.clusterStrengthX)).force("clusterY", y_default2((d) => anchorFor(d)?.y ?? height / 2).strength(config.clusterStrengthY)).force("collide", collide_default().radius((d) => adapter.getRadius(d) + config.collidePad)).force("containment", forceCommunityContainment(adapter, primaryKey, config.minCommunitySize, config.containmentStrength, config.containmentRadiusMultiplier)).alpha(1).alphaDecay(0.025).on("tick", () => {
     clampToViewport(nodes, adapter, width, height);
     onTick();
   });
@@ -15393,7 +15439,9 @@ var DEFAULT_FORCE_CONFIG = {
   clusterStrengthY: 0.45,
   collidePad: 3,
   minCommunitySize: 3,
-  orbitRadius: 0.38
+  orbitRadius: 0.38,
+  containmentStrength: 0.6,
+  containmentRadiusMultiplier: 1.4
 };
 
 // public/community-graph/CommunityGraph.tsx
@@ -15612,7 +15660,9 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
         clusterStrengthY: 0.05,
         collidePad: 6,
         minCommunitySize: 2,
-        orbitRadius: 0.45
+        orbitRadius: 0.45,
+        containmentStrength: 0.9,
+        containmentRadiusMultiplier: 1.3
       }
     }
   );
