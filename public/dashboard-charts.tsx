@@ -4,6 +4,7 @@ import { useCurrentUser } from './shell-helpers';
 import { Stat, Tag, SectionHead } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders.js';
 import { yearlyCounts, greeting, BarChart, TopJournals, PartnerInstitutions, RecentlyIndexed } from './dashboard-panels';
+import { ClaimPaperPanel } from './claim-paper-panel';
 import { CoAuthorGraphPanel } from './coauthor-graph-preview';
 import { VelocityPanel } from './portfolio-velocity';
 import { CadencePanel } from './portfolio-cadence';
@@ -82,6 +83,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
             </section>
             <TopJournals data={data} />
             <PartnerInstitutions data={data} />
+            <ClaimPaperPanel onClaimed={() => window.location.reload()} />
           </>
         ) : (
           <>
