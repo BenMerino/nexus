@@ -39,18 +39,27 @@ export function paddedHullPath(hull: Point[], pad: number): string {
     return { x: p.x + (dx / dist) * pad, y: p.y + (dy / dist) * pad };
   });
 
-  // Start at the midpoint of the last→first edge, then sweep Q-curves that use
-  // each vertex as the control point and the *next* edge midpoint as the end —
-  // so every vertex becomes a rounded corner rather than a hard point.
-  const n = expanded.length;
-  const midpoint = (a: Point, b: Point) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-  const startMid = midpoint(expanded[n - 1], expanded[0]);
-  let d = `M ${startMid.x} ${startMid.y}`;
+  return smoothClosedPath(expanded, 0.5);
+}
+
+/** Draw a smooth closed path through `pts` using cubic Béziers with
+ *  Catmull-Rom-like control points. `tension` controls how tight the curves
+ *  hug the polygon (0 = straight lines, 1 = very loose). */
+function smoothClosedPath(pts: Point[], tension: number): string {
+  const n = pts.length;
+  if (n < 2) return '';
+  const k = tension / 6;
+  let d = `M ${pts[0].x} ${pts[0].y}`;
   for (let i = 0; i < n; i++) {
-    const curr = expanded[i];
-    const next = expanded[(i + 1) % n];
-    const end = midpoint(curr, next);
-    d += ` Q ${curr.x} ${curr.y} ${end.x} ${end.y}`;
+    const p0 = pts[(i - 1 + n) % n];
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % n];
+    const p3 = pts[(i + 2) % n];
+    const c1x = p1.x + (p2.x - p0.x) * k;
+    const c1y = p1.y + (p2.y - p0.y) * k;
+    const c2x = p2.x - (p3.x - p1.x) * k;
+    const c2y = p2.y - (p3.y - p1.y) * k;
+    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
   }
   d += ' Z';
   return d;

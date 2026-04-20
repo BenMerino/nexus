@@ -13166,15 +13166,23 @@ function paddedHullPath(hull, pad) {
     const dist = Math.sqrt(dx * dx + dy * dy) || 1;
     return { x: p.x + dx / dist * pad, y: p.y + dy / dist * pad };
   });
-  const n = expanded.length;
-  const midpoint = (a2, b) => ({ x: (a2.x + b.x) / 2, y: (a2.y + b.y) / 2 });
-  const startMid = midpoint(expanded[n - 1], expanded[0]);
-  let d = `M ${startMid.x} ${startMid.y}`;
+  return smoothClosedPath(expanded, 0.5);
+}
+function smoothClosedPath(pts, tension) {
+  const n = pts.length;
+  if (n < 2) return "";
+  const k = tension / 6;
+  let d = `M ${pts[0].x} ${pts[0].y}`;
   for (let i = 0; i < n; i++) {
-    const curr = expanded[i];
-    const next = expanded[(i + 1) % n];
-    const end = midpoint(curr, next);
-    d += ` Q ${curr.x} ${curr.y} ${end.x} ${end.y}`;
+    const p0 = pts[(i - 1 + n) % n];
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % n];
+    const p3 = pts[(i + 2) % n];
+    const c1x = p1.x + (p2.x - p0.x) * k;
+    const c1y = p1.y + (p2.y - p0.y) * k;
+    const c2x = p2.x - (p3.x - p1.x) * k;
+    const c2y = p2.y - (p3.y - p1.y) * k;
+    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
   }
   d += " Z";
   return d;
@@ -13203,19 +13211,25 @@ function CommunityHulls({ nodes, myRor, colors }) {
   for (const [key, group] of collectByCommunity(nodes, myRor)) {
     if (group.points.length < 3) continue;
     const hull = convexHull(group.points);
-    const d = paddedHullPath(hull, 22);
+    const d = paddedHullPath(hull, 32);
     if (!d) continue;
-    hulls.push({ key, name: group.name, color: colors.get(key) || "#888", d });
+    hulls.push({
+      key,
+      name: group.name,
+      d,
+      color: colors.get(key) || "#888",
+      isHome: key === myRor
+    });
   }
   return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { children: hulls.map((h) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
     "path",
     {
       d: h.d,
       fill: h.color,
-      fillOpacity: 0.1,
+      fillOpacity: h.isHome ? 0.18 : 0.1,
       stroke: h.color,
-      strokeOpacity: 0.35,
-      strokeWidth: 1
+      strokeOpacity: h.isHome ? 0.55 : 0.35,
+      strokeWidth: h.isHome ? 1.5 : 1
     },
     h.key
   )) });

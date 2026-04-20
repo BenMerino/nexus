@@ -16,6 +16,7 @@ interface CommunityHull {
   name: string;
   color: string;
   d: string;
+  isHome: boolean;
 }
 
 function collectByCommunity(nodes: Positioned[], myRor: string | null) {
@@ -40,9 +41,13 @@ export function CommunityHulls({ nodes, myRor, colors }: Props) {
   for (const [key, group] of collectByCommunity(nodes, myRor)) {
     if (group.points.length < 3) continue;
     const hull = convexHull(group.points);
-    const d = paddedHullPath(hull, 22);
+    const d = paddedHullPath(hull, 32);
     if (!d) continue;
-    hulls.push({ key, name: group.name, color: colors.get(key) || '#888', d });
+    hulls.push({
+      key, name: group.name, d,
+      color: colors.get(key) || '#888',
+      isHome: key === myRor,
+    });
   }
 
   return (
@@ -52,10 +57,10 @@ export function CommunityHulls({ nodes, myRor, colors }: Props) {
           key={h.key}
           d={h.d}
           fill={h.color}
-          fillOpacity={0.1}
+          fillOpacity={h.isHome ? 0.18 : 0.1}
           stroke={h.color}
-          strokeOpacity={0.35}
-          strokeWidth={1}
+          strokeOpacity={h.isHome ? 0.55 : 0.35}
+          strokeWidth={h.isHome ? 1.5 : 1}
         />
       ))}
     </g>
