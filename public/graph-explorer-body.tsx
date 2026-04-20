@@ -11,6 +11,7 @@ import { useGraphData } from './use-graph-data';
 import { useCurrentUser } from './shell-helpers';
 import { Tag } from './ui-primitives';
 import { GraphFiltersSidebar, type NodeTypeFlags } from './graph-filters-sidebar';
+import type { GroupByDim } from './explorer-hull-groups';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, journal: true, paper: false };
 
@@ -26,6 +27,7 @@ export function GraphExplorerBody() {
   const [flags, setFlags] = useState<NodeTypeFlags>(DEFAULT_FLAGS);
   const setFlag = useCallback((k: keyof NodeTypeFlags, v: boolean) => setFlags(f => ({ ...f, [k]: v })), []);
   const [yearFloor, setYearFloor] = useState(0);
+  const [groupBy, setGroupBy] = useState<GroupByDim>('none');
   const highlightedIds = useMemo(() => {
     const o = new URLSearchParams(window.location.search).get('highlight');
     return o ? new Set([`author:${o}`]) : new Set<string>();
@@ -84,6 +86,12 @@ export function GraphExplorerBody() {
 
   const doiCount = useMemo(() => rawNodes.filter(n => n.group === 'doi').length, [rawNodes]);
 
+  const yearByNodeId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const n of rawNodes) if (n.published) m.set(n.id, n.published);
+    return m;
+  }, [rawNodes]);
+
   const chartDois = useMemo(() => {
     if (!selectedNodeId) return matchingDois;
     const nodeDois = new Set<string>();
@@ -110,7 +118,7 @@ export function GraphExplorerBody() {
       <div style={{ marginBottom: 12 }}><GraphSearch nodes={projectedNodes} onSelect={id => setSelectedNodeId(id)} /></div>
 
       <div className="graph-layout">
-        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFloor={yearFloor || yearMin} onYearFloorChange={setYearFloor} />
+        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFloor={yearFloor || yearMin} onYearFloorChange={setYearFloor} groupBy={groupBy} onGroupByChange={setGroupBy} />
 
         <div ref={containerRef} className="graph-canvas">
           <div className="canvas-corner-tl">
@@ -120,7 +128,7 @@ export function GraphExplorerBody() {
           </div>
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match current filters.</div>
-            : <ForceGraph nodes={projectedNodes} links={projectedEdges} width={dims.width} height={dims.height} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} />}
+            : <ForceGraph nodes={projectedNodes} links={projectedEdges} width={dims.width} height={dims.height} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} groupBy={groupBy} yearByNodeId={yearByNodeId} />}
         </div>
 
         <aside className="detail-panel">

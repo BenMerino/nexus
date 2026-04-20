@@ -1,6 +1,7 @@
 import React from 'react';
 import { Check } from './ui-primitives';
 import { COLORS } from './relationship-types';
+import type { GroupByDim } from './explorer-hull-groups';
 
 export interface NodeTypeFlags {
   institution: boolean;
@@ -16,7 +17,16 @@ interface Props {
   yearMax: number;
   yearFloor: number;
   onYearFloorChange: (y: number) => void;
+  groupBy: GroupByDim;
+  onGroupByChange: (dim: GroupByDim) => void;
 }
+
+const GROUP_BY_OPTIONS: { value: GroupByDim; label: string }[] = [
+  { value: 'none',        label: 'None' },
+  { value: 'institution', label: 'Institution' },
+  { value: 'journal',     label: 'Journal' },
+  { value: 'year',        label: 'Year' },
+];
 
 const LEGEND: { group: keyof NodeTypeFlags; label: string }[] = [
   { group: 'author',      label: 'Author' },
@@ -25,7 +35,7 @@ const LEGEND: { group: keyof NodeTypeFlags; label: string }[] = [
   { group: 'paper',       label: 'Paper' },
 ];
 
-export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange }: Props) {
+export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, groupBy, onGroupByChange }: Props) {
   const paperColor = '#888';
   return (
     <aside className="graph-filters">
@@ -35,6 +45,14 @@ export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloo
         <Check checked={flags.institution} onChange={v => setFlag('institution', v)} label="Institutions" color={COLORS.institution} />
         <Check checked={flags.journal}     onChange={v => setFlag('journal', v)}     label="Journals"     color={COLORS.journal} />
         <Check checked={flags.paper}       onChange={v => setFlag('paper', v)}       label="Papers"       color={paperColor} />
+      </div>
+
+      <div className="filter-group">
+        <div className="filter-label">Group by</div>
+        <select value={groupBy} onChange={e => onGroupByChange(e.target.value as GroupByDim)}
+          style={{ width: '100%', padding: '6px 8px', fontFamily: 'var(--mono)', fontSize: 12, background: 'var(--bg-card)', border: '1px solid var(--border-soft)', borderRadius: 3, color: 'var(--fg)' }}>
+          {GROUP_BY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
       </div>
 
       {yearMax > yearMin && (

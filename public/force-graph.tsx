@@ -5,6 +5,9 @@ import {
 } from 'd3-force';
 import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
 import { COLORS, nodeRadius } from './relationship-types';
+import { SmoothedHulls, type HullGroup } from './smoothed-hulls';
+import { buildExplorerHullGroups, type GroupByDim } from './explorer-hull-groups';
+import { ForceGraphNodes } from './force-graph-nodes';
 
 interface Props {
   nodes: EnrichedSimNode[];
@@ -14,12 +17,14 @@ interface Props {
   selectedId?: string | null;
   onNodeClick?: (n: EnrichedSimNode) => void;
   accent?: string;
+  groupBy?: GroupByDim;
+  yearByNodeId?: Map<string, string>;
 }
 
 type SimN = EnrichedSimNode & { x: number; y: number; fx?: number | null; fy?: number | null };
 type SimL = ProjectedEdge & { source: SimN | string; target: SimN | string };
 
-export function ForceGraph({ nodes: inNodes, links: inLinks, width, height, selectedId, onNodeClick, accent = 'var(--accent)' }: Props) {
+export function ForceGraph({ nodes: inNodes, links: inLinks, width, height, selectedId, onNodeClick, accent = 'var(--accent)', groupBy = 'none', yearByNodeId }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const simRef = useRef<Simulation<SimN, SimL> | null>(null);
   const [, tick] = useState(0);
@@ -97,6 +102,11 @@ export function ForceGraph({ nodes: inNodes, links: inLinks, width, height, sele
     return set;
   }, [hoverId, selectedId, links]);
 
+  const hullGroups: HullGroup[] = groupBy === 'none'
+    ? []
+    : buildExplorerHullGroups(groupBy, nodes, links as unknown as ProjectedEdge[], yearByNodeId || new Map())
+        .map(g => ({ key: g.key, color: g.color, points: g.points }));
+
   return (
     <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none' }}>
       <defs>
@@ -105,6 +115,7 @@ export function ForceGraph({ nodes: inNodes, links: inLinks, width, height, sele
           <stop offset="100%" stopColor={accent} stopOpacity="0" />
         </radialGradient>
       </defs>
+      <SmoothedHulls groups={hullGroups} />
       <g>
         {links.map((l, i) => {
           const s = typeof l.source === 'object' ? l.source as SimN : null;
@@ -118,29 +129,18 @@ export function ForceGraph({ nodes: inNodes, links: inLinks, width, height, sele
           );
         })}
       </g>
-      <g>
-        {nodes.map(n => {
-          const r = radius(n);
-          const isSel = n.id === selectedId;
-          const isHov = n.id === hoverId;
-          const dim = connected && !connected.has(n.id);
-          return (
-            <g key={n.id} transform={`translate(${n.x || 0}, ${n.y || 0})`}
-              onMouseEnter={() => setHoverId(n.id)} onMouseLeave={() => setHoverId(null)}
-              onMouseDown={e => handleMouseDown(e, n)}
-              onClick={() => onNodeClick?.(n)}
-              style={{ cursor: 'pointer', opacity: dim ? 0.25 : 1, transition: 'opacity 0.2s' }}>
-              {(isSel || isHov) && <circle r={r + 10} fill="url(#nodeGlow)" />}
-              <circle r={r} fill={color(n)} stroke={isSel ? '#fff' : 'rgba(255,255,255,0.2)'} strokeWidth={isSel ? 2 : 1} />
-              {(isHov || isSel || (n.weight && n.weight > 3)) && (
-                <text x={0} y={r + 14} textAnchor="middle" fill="rgba(255,255,255,0.85)" fontSize={11} fontFamily="Inter, sans-serif" style={{ pointerEvents: 'none' }}>
-                  {n.label}
-                </text>
-              )}
-            </g>
-          );
-        })}
-      </g>
+      <ForceGraphNodes
+        nodes={nodes}
+        radius={radius}
+        color={color}
+        hoverId={hoverId}
+        selectedId={selectedId}
+        connected={connected}
+        onHoverStart={setHoverId}
+        onHoverEnd={() => setHoverId(null)}
+        onMouseDown={handleMouseDown}
+        onClick={n => onNodeClick?.(n)}
+      />
     </svg>
   );
 }
