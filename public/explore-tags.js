@@ -1,10 +1,12 @@
 (() => {
-let tagStats = [];
+const cache = (window.__nexusCache = window.__nexusCache || {});
+let tagStats = cache.tagStats || [];
 
 async function loadTags() {
-  if (tagStats.length) { renderTagCloud(); return; }
+  if (tagStats.length) renderTagCloud();
   const resp = await fetch("/api/tag-stats");
   tagStats = await resp.json();
+  cache.tagStats = tagStats;
   renderTagCloud();
 }
 

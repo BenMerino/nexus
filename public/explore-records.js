@@ -1,14 +1,18 @@
 (() => {
-let allRecords = [];
-let myOrcid = null;
+const cache = (window.__nexusCache = window.__nexusCache || {});
+let allRecords = cache.records || [];
+let myOrcid = cache.myOrcid ?? null;
 
 async function loadRecords() {
+  if (allRecords.length) renderTable();
   const [recs, me] = await Promise.all([
     fetch("/api/records").then(r => r.json()),
     fetch("/api/auth?action=me").then(r => r.ok ? r.json() : null).catch(() => null),
   ]);
   allRecords = recs;
   myOrcid = me?.profile?.orcid || null;
+  cache.records = allRecords;
+  cache.myOrcid = myOrcid;
   const mineToggle = document.getElementById("mine-toggle");
   if (mineToggle) {
     mineToggle.style.display = myOrcid ? "inline-flex" : "none";
