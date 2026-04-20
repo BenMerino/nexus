@@ -21,16 +21,17 @@ Tag `category` values:
 - `publisher`, `type`, `venue`, `year` — value-only.
 - `indexed_in` — `value` names the source (Scopus, WoS, SciELO, DOAJ, etc.), `ext_id` holds the ISSN-L. See `lib/indexation-sources.js`.
 
-## OpenAlex as primary indexation source
+## Indexation sources
 
-When building "is journal X indexed in source Y" features, prefer OpenAlex's `/sources/issn:<issn>` response:
+Which journals are indexed where (Scopus / WoS / SciELO / DOAJ) is assembled from three different upstreams:
 
-- `is_core` → WoS Core Collection
-- `is_in_doaj` → DOAJ
-- `is_in_scielo` → SciELO
-- Scopus has no OpenAlex flag; it's the only source that needs a manual CSV.
+- **WoS, DOAJ** — OpenAlex flags (`is_core`, `is_in_doaj`) from `api.openalex.org/sources/issn:<issn>`.
+- **SciELO** — articlemeta ISSN list (`articlemeta.scielo.org/api/v1/journal/identifiers/`). OpenAlex's `is_in_scielo` flag is unreliable for this source; do not use it.
+- **Scopus** — Elsevier Serial Title API (`api.elsevier.com/content/serial/title/issn/<issn>`), requires `ELSEVIER_API_KEY`.
 
-Three of four sources for free, with one API. Don't build CSV-ingestion pipelines for DOAJ/SciELO/WoS before checking OpenAlex.
+All four seed through one orchestrator and write to the canonical `indexed_journals` table. Full source-by-source rationale, quotas, and taxonomy in [indexation.md](indexation.md).
+
+When proposing a new indexation source, read that doc first — several upstream paths we evaluated (doaj.org/csv, Clarivate MJL, JCR XLSX, GitHub/Kaggle mirrors) were rejected for reasons specific to this codebase.
 
 ## Scope + auth
 
