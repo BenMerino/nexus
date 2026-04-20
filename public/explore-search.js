@@ -1,3 +1,4 @@
+(() => {
 document.getElementById("search-input").addEventListener("keydown", (e) => {
   if (e.key === "Enter") doSearch();
 });
@@ -43,3 +44,4 @@ async function doSearch() {
     statusEl.innerHTML = `<div class="status error">Error: ${err.message}</div>`;
   }
 }
+})();

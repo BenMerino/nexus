@@ -1,3 +1,4 @@
+(() => {
 let allRecords = [];
 let myOrcid = null;
 
@@ -135,4 +136,7 @@ async function deleteRecord(id, doi, event) {
 document.getElementById("rec-search").addEventListener("input", renderTable);
 document.getElementById("sort-select").addEventListener("change", renderTable);
 document.getElementById("mine-check")?.addEventListener("change", renderTable);
+window.toggleDetail = toggleDetail;
+window.deleteRecord = deleteRecord;
 loadRecords();
+})();

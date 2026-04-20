@@ -1,3 +1,4 @@
+(() => {
 let tagStats = [];
 
 async function loadTags() {
@@ -53,3 +54,8 @@ async function showTagDetail(category, value) {
     </div>
   `).join("");
 }
+
+window.loadTags = loadTags;
+window.filterTags = filterTags;
+window.showTagDetail = showTagDetail;
+})();

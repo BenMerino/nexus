@@ -4,27 +4,22 @@
   <meta charset="utf-8">
   <title>Settings — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
-  <style>
-    .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; }
-    .logo-box {
-      width: 96px; height: 96px;
-      border: 1px dashed var(--border); border-radius: var(--radius);
-      display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer;
-      background: var(--bg-inset);
-    }
-    .logo-box:hover { border-color: var(--accent); }
-    .logo-box img { max-width: 96px; max-height: 96px; object-fit: contain; }
-    .color-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
-    .color-row label { width: 140px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
-    .color-row input[type="color"] { width: 40px; height: 32px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 0; background: transparent; }
-    .color-row .hex { font-size: 11px; color: var(--fg-dim); font-family: var(--mono); }
-  </style>
 </head>
 <body class="shell-fixed">
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
   <div class="app">
     <div id="sidebar-mount" data-path="/settings.html"></div>
     <main class="main">
+      <style>
+        .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; }
+        .logo-box { width: 96px; height: 96px; border: 1px dashed var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; background: var(--bg-inset); }
+        .logo-box:hover { border-color: var(--accent); }
+        .logo-box img { max-width: 96px; max-height: 96px; object-fit: contain; }
+        .color-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+        .color-row label { width: 140px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
+        .color-row input[type="color"] { width: 40px; height: 32px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 0; background: transparent; }
+        .color-row .hex { font-size: 11px; color: var(--fg-dim); font-family: var(--mono); }
+      </style>
       <div class="view">
         <header class="view-head">
           <div>
@@ -62,11 +57,11 @@
           </div>
         </div>
       </div>
+      <script src="/color-extract.js"></script>
+      <script src="/settings-app.js"></script>
     </main>
   </div>
-
-  <script src="/color-extract.js"></script>
-  <script src="/settings-app.js"></script>
   <script type="module" src="/shell-mount-bundle.js"></script>
+  <script src="/spa-router.js"></script>
 </body>
 </html>

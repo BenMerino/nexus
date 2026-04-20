@@ -1,3 +1,4 @@
+(() => {
 let candidates = [];
 let synonyms = [];
 
@@ -123,4 +124,11 @@ async function removeSynonym(id) {
   await loadSynonyms();
 }
 
+window.loadCandidates = loadCandidates;
+window.switchTab = switchTab;
+window.selectCanonical = selectCanonical;
+window.confirmMerge = confirmMerge;
+window.dismissPair = dismissPair;
+window.removeSynonym = removeSynonym;
 loadCandidates();
+})();

@@ -4,38 +4,29 @@
   <meta charset="utf-8">
   <title>Explore — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
-  <link rel="preload" href="/api/auth?action=me" as="fetch" crossorigin="use-credentials">
-  <link rel="modulepreload" href="/shell-mount-bundle.js">
-  <style>
-    .section-tabs {
-      display: flex; gap: 0; margin-bottom: 18px;
-      border-bottom: 1px solid var(--border-soft);
-    }
-    .section-tabs button {
-      background: transparent; border: 0; border-bottom: 2px solid transparent;
-      padding: 10px 16px; cursor: pointer; font-family: var(--mono); font-size: 12px;
-      color: var(--fg-dim); letter-spacing: 0.08em; text-transform: uppercase;
-    }
-    .section-tabs button:hover { color: var(--fg); }
-    .section-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .section { display: none; }
-    .section.active { display: block; }
-    .tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
-    .tag-cloud .tag { cursor: pointer; transition: transform 0.1s; }
-    .tag-cloud .tag:hover { transform: scale(1.05); }
-    .search-result { border-left: 2px solid var(--accent); padding: 10px 14px; margin-bottom: 10px; background: var(--bg-card); border-radius: 3px; }
-    .search-result h4 { margin-bottom: 4px; font-family: var(--display); font-weight: 400; font-size: 18px; }
-    .search-result .meta { font-size: 12px; color: var(--fg-dim); }
-    .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 0; align-items: center; }
-    .filter-bar label { font-family: var(--mono); font-size: 10px; color: var(--fg-dim); letter-spacing: 0.14em; text-transform: uppercase; }
-    .tag-filter.active { background: var(--accent); color: #1a1612; border-color: var(--accent); }
-  </style>
 </head>
 <body class="shell-fixed">
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
   <div class="app">
     <div id="sidebar-mount" data-path="/explore.html"></div>
     <main class="main">
+      <style>
+        .section-tabs { display: flex; gap: 0; margin-bottom: 18px; border-bottom: 1px solid var(--border-soft); }
+        .section-tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 10px 16px; cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--fg-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+        .section-tabs button:hover { color: var(--fg); }
+        .section-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .section { display: none; }
+        .section.active { display: block; }
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
+        .tag-cloud .tag { cursor: pointer; transition: transform 0.1s; }
+        .tag-cloud .tag:hover { transform: scale(1.05); }
+        .search-result { border-left: 2px solid var(--accent); padding: 10px 14px; margin-bottom: 10px; background: var(--bg-card); border-radius: 3px; }
+        .search-result h4 { margin-bottom: 4px; font-family: var(--display); font-weight: 400; font-size: 18px; }
+        .search-result .meta { font-size: 12px; color: var(--fg-dim); }
+        .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 0; align-items: center; }
+        .filter-bar label { font-family: var(--mono); font-size: 10px; color: var(--fg-dim); letter-spacing: 0.14em; text-transform: uppercase; }
+        .tag-filter.active { background: var(--accent); color: #1a1612; border-color: var(--accent); }
+      </style>
       <div class="view">
         <header class="view-head compact">
           <div>
@@ -109,23 +100,23 @@
           </div>
         </div>
       </div>
+      <script>
+        function showSection(id) {
+          document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+          document.querySelectorAll(".section-tabs button").forEach(b => b.classList.remove("active"));
+          document.getElementById(id).classList.add("active");
+          document.querySelector(`.section-tabs button[onclick="showSection('${id}')"]`).classList.add("active");
+          if (id === "tags") loadTags();
+        }
+        function escHtml(s) { if (!s) return ""; return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+        function escAttr(s) { return escHtml(s).replace(/'/g, "&#39;"); }
+      </script>
+      <script src="/explore-records.js"></script>
+      <script src="/explore-search.js"></script>
+      <script src="/explore-tags.js"></script>
     </main>
   </div>
-
-  <script>
-    function showSection(id) {
-      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-      document.querySelectorAll(".section-tabs button").forEach(b => b.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-      document.querySelector(`.section-tabs button[onclick="showSection('${id}')"]`).classList.add("active");
-      if (id === "tags") loadTags();
-    }
-    function escHtml(s) { if (!s) return ""; return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
-    function escAttr(s) { return escHtml(s).replace(/'/g, "&#39;"); }
-  </script>
   <script type="module" src="/shell-mount-bundle.js"></script>
-  <script src="/explore-records.js"></script>
-  <script src="/explore-search.js"></script>
-  <script src="/explore-tags.js"></script>
+  <script src="/spa-router.js"></script>
 </body>
 </html>

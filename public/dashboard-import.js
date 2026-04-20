@@ -1,4 +1,5 @@
 // Bulk institution import with cursor pagination (superadmin only)
+(() => {
 var DEFAULT_ROR = "https://ror.org/03gawms58"; // UTalca
 
 function mountImportUI() {
@@ -64,3 +65,6 @@ function startImport() {
 
   importPage();
 }
+
+window.startImport = startImport;
+})();

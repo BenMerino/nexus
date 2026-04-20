@@ -1,23 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Sidebar } from './shell-sidebar';
 import { RoleSwitcher } from './shell-tweaks';
 import { useCurrentUser } from './shell-helpers';
 
-function SidebarApp({ currentPath }: { currentPath: string }) {
+function SidebarApp({ initialPath }: { initialPath: string }) {
   const { me } = useCurrentUser();
+  const [currentPath, setCurrentPath] = useState(initialPath);
+  useEffect(() => {
+    const onNav = (e: Event) => {
+      const d = (e as CustomEvent<{ path: string }>).detail;
+      if (d?.path) setCurrentPath(d.path);
+    };
+    window.addEventListener('nexus:navigated', onNav);
+    return () => window.removeEventListener('nexus:navigated', onNav);
+  }, []);
   return <Sidebar me={me} currentPath={currentPath} roleSwitcher={<RoleSwitcher me={me} />} />;
 }
 
 function mount() {
-  const el = document.getElementById('sidebar-mount');
-  if (!el) return;
+  const el = document.getElementById('sidebar-mount') as (HTMLElement & { __mounted?: boolean }) | null;
+  if (!el || el.__mounted) return;
+  el.__mounted = true;
   const path = el.dataset.path || window.location.pathname;
-  createRoot(el).render(<SidebarApp currentPath={path} />);
+  createRoot(el).render(<SidebarApp initialPath={path} />);
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', mount);
-} else {
-  mount();
-}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
+else mount();

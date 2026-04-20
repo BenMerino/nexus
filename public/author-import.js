@@ -1,3 +1,4 @@
+(() => {
 document.getElementById("author-search").addEventListener("keydown", e => {
   if (e.key === "Enter") searchAuthor();
 });
@@ -118,3 +119,9 @@ function esc(s) {
   if (!s) return "";
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
+
+window.pickSuggestion = pickSuggestion;
+window.searchAuthor = searchAuthor;
+window.selectAuthor = selectAuthor;
+window.importDois = importDois;
+})();

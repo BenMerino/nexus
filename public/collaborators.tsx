@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Shell } from './shell';
 import { SectionHead, Tag } from './ui-primitives';
 import { CollaboratorsPanel, type Suggested } from './portfolio-collaborators';
 
@@ -17,24 +16,22 @@ function App() {
   }, []);
 
   return (
-    <Shell scroll>
-      <div className="view">
-        <header className="view-head">
-          <div>
-            <div className="eyebrow">Missing link</div>
-            <h1 className="view-title">Suggested <em>collaborators</em>.</h1>
-            <div className="view-sub">Researchers in your institution working on similar concepts.</div>
-          </div>
-          <div className="view-meta"><Tag mono>SCOPED · YOUR ORCID</Tag></div>
-        </header>
-        <section className="card">
-          <SectionHead eyebrow="Concept overlap" title="People you haven't co-authored with" />
-          {err && <div className="status error">Error: {err}</div>}
-          {!suggested && !err && <div className="muted">Loading…</div>}
-          {suggested && <CollaboratorsPanel suggested={suggested} />}
-        </section>
-      </div>
-    </Shell>
+    <div className="view">
+      <header className="view-head">
+        <div>
+          <div className="eyebrow">Missing link</div>
+          <h1 className="view-title">Suggested <em>collaborators</em>.</h1>
+          <div className="view-sub">Researchers in your institution working on similar concepts.</div>
+        </div>
+        <div className="view-meta"><Tag mono>SCOPED · YOUR ORCID</Tag></div>
+      </header>
+      <section className="card">
+        <SectionHead eyebrow="Concept overlap" title="People you haven't co-authored with" />
+        {err && <div className="status error">Error: {err}</div>}
+        {!suggested && !err && <div className="muted">Loading…</div>}
+        {suggested && <CollaboratorsPanel suggested={suggested} />}
+      </section>
+    </div>
   );
 }
 

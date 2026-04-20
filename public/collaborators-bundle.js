@@ -766,7 +766,7 @@ var require_scheduler = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React5 = require_react();
+    var React2 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React5.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React5 = require_react();
+    var React2 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React5.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React5.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React2.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12747,14 +12747,8 @@ var require_jsx_runtime = __commonJS({
 });
 
 // public/collaborators.tsx
-var import_react5 = __toESM(require_react());
-var import_client = __toESM(require_client());
-
-// public/shell.tsx
-var import_react4 = __toESM(require_react());
-
-// public/shell-sidebar.tsx
 var import_react = __toESM(require_react());
+var import_client = __toESM(require_client());
 
 // public/shell-icons.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime());
@@ -12834,275 +12828,21 @@ function SectionHead({ eyebrow, title, right }) {
   ] });
 }
 
-// public/shell-sidebar.tsx
-var import_jsx_runtime3 = __toESM(require_jsx_runtime());
-var DEFAULT_LINKS = [
-  { href: "/dashboard.html", label: "Dashboard", icon: "home", section: "Workspace" },
-  { href: "/overview.html", label: "Graph explorer", icon: "graph", section: "Workspace" },
-  { href: "/explore.html", label: "Explore", icon: "search", section: "Workspace" },
-  { href: "/collaborators.html", label: "Collaborators", icon: "people", section: "Workspace" },
-  { href: "/submit.html", label: "Submit DOI", icon: "submit", section: "Workspace" }
-];
-var SUPERADMIN_LINKS = [
-  { href: "/admin.html", label: "Admin", icon: "build", section: "Admin" },
-  { href: "/author-import.html", label: "Author import", icon: "people", section: "Admin" },
-  { href: "/tag-manager.html", label: "Tag manager", icon: "tag", section: "Admin" }
-];
-var TENANT_LINKS = [
-  { href: "/settings.html", label: "Settings", icon: "gear", section: "Tenant" }
-];
-function linksFor(role) {
-  if (role === "superadmin") return [...DEFAULT_LINKS, ...SUPERADMIN_LINKS, ...TENANT_LINKS];
-  return [...DEFAULT_LINKS, ...TENANT_LINKS];
-}
-function initials(name) {
-  return name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-}
-function Sidebar({ me, currentPath, roleSwitcher }) {
-  const role = me?.role ?? "";
-  const links = linksFor(role);
-  const sections = Array.from(new Set(links.map((l) => l.section || "")));
-  const tenantName = me?.tenant || (role === "superadmin" ? "Superadmin" : "Nexus");
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("aside", { className: "sidebar", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "tenant-chip", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "tenant-brand", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "tenant-mark", children: me?.logo && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("img", { src: me.logo, alt: "" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "brand-text", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "brand-name", children: "Nexus" }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "brand-tenant", children: [
-            tenantName,
-            " \xB7 CRIS"
-          ] })
-        ] })
-      ] }),
-      me?.profile.ror && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "tenant-chip-meta", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Tag, { mono: true, children: [
-        "ROR ",
-        me.profile.ror
-      ] }) })
-    ] }),
-    roleSwitcher,
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("nav", { className: "nav-list", children: sections.map((section) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_react.default.Fragment, { children: [
-      section && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "nav-section-label", children: section }),
-      links.filter((l) => (l.section || "") === section).map((l) => {
-        const active = currentPath === l.href || l.href === "/overview.html" && currentPath === "/";
-        return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("a", { href: l.href, className: `nav-item ${active ? "active" : ""}`, children: [
-          Ico[l.icon],
-          " ",
-          l.label
-        ] }, l.href);
-      })
-    ] }, section)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "sidebar-footer", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "sync-pulse" }),
-        "Live \xB7 authenticated"
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "sidebar-user-row", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { title: me?.profile.name || me?.user, children: me ? initials(me.profile.name || me.user) : "\xB7\xB7" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("a", { href: "/api/auth?action=logout", children: "logout" })
-      ] })
-    ] })
-  ] });
-}
-
-// public/shell-tweaks.tsx
-var import_react3 = __toESM(require_react());
-
-// public/shell-helpers.ts
-var import_react2 = __toESM(require_react());
-var CACHE_KEY = "nexus.me";
-function useCurrentUser() {
-  const [me, setMe] = (0, import_react2.useState)(() => {
-    try {
-      const raw = sessionStorage.getItem(CACHE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [loading, setLoading] = (0, import_react2.useState)(!me);
-  const [error, setError] = (0, import_react2.useState)(null);
-  (0, import_react2.useEffect)(() => {
-    let cancelled = false;
-    fetch("/api/auth?action=me").then((r) => r.status === 401 ? null : r.json()).then((d) => {
-      if (cancelled) return;
-      if (!d) {
-        window.location.href = "/login.html";
-        return;
-      }
-      setMe(d);
-      try {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify(d));
-      } catch {
-      }
-      applyTheme(d);
-    }).catch((e) => !cancelled && setError(String(e))).finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return { me, loading, error };
-}
-function applyTheme(me) {
-  const body = document.body;
-  if (me.primaryColor) body.style.setProperty("--primary", me.primaryColor);
-  if (me.secondaryColor) body.style.setProperty("--secondary", me.secondaryColor);
-}
-var VIEW_AS_KEY = "nexus.viewAs";
-function useViewAs() {
-  const [viewAs, setViewAsState] = (0, import_react2.useState)(() => sessionStorage.getItem(VIEW_AS_KEY));
-  const setViewAs = (role) => {
-    if (role) sessionStorage.setItem(VIEW_AS_KEY, role);
-    else sessionStorage.removeItem(VIEW_AS_KEY);
-    setViewAsState(role);
-    window.dispatchEvent(new CustomEvent("nexus:viewAsChange", { detail: role }));
-  };
-  (0, import_react2.useEffect)(() => {
-    const onChange = (e) => setViewAsState(e.detail ?? null);
-    window.addEventListener("nexus:viewAsChange", onChange);
-    return () => window.removeEventListener("nexus:viewAsChange", onChange);
-  }, []);
-  return [viewAs, setViewAs];
-}
-function effectiveRole(me, viewAs) {
-  if (me?.role === "superadmin" && viewAs) return viewAs;
-  return me?.role || "public";
-}
-
-// public/shell-tweaks.tsx
-var import_jsx_runtime4 = __toESM(require_jsx_runtime());
-var VIEW_AS_ROLES = [
-  { id: null, label: "Self (superadmin)" },
-  { id: "director", label: "Director" },
-  { id: "secretary", label: "Secretary" },
-  { id: "academic", label: "Academic" },
-  { id: "researcher", label: "Researcher" }
-];
-function RoleSwitcher({ me }) {
-  const [viewAs, setViewAs] = useViewAs();
-  if (!me || me.role !== "superadmin") return null;
-  const active = effectiveRole(me, viewAs);
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "role-switcher", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "role-label", children: "View as" }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "role-list", children: VIEW_AS_ROLES.map((r) => {
-      const isActive = (r.id || "superadmin") === active;
-      return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
-        "button",
-        {
-          className: `role-btn ${isActive ? "active" : ""}`,
-          onClick: () => setViewAs(r.id),
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { className: "role-btn-label", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "role-btn-title", children: r.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "role-btn-who", children: r.id ? "view-as" : me.user })
-            ] }),
-            isActive && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { color: "var(--accent)", fontSize: 16, lineHeight: 1 }, children: "\u25CF" })
-          ]
-        },
-        r.id ?? "self"
-      );
-    }) })
-  ] });
-}
-var TWEAKS_KEY = "nexus.tweaks";
-var DEFAULT_TWEAKS = { density: "comfortable", showGrid: true };
-function loadTweaks() {
-  try {
-    return { ...DEFAULT_TWEAKS, ...JSON.parse(localStorage.getItem(TWEAKS_KEY) || "{}") };
-  } catch {
-    return DEFAULT_TWEAKS;
-  }
-}
-function useTweaks() {
-  const [tweaks, setTweaksState] = (0, import_react3.useState)(loadTweaks);
-  const setTweak = (key, value) => {
-    const next = { ...tweaks, [key]: value };
-    setTweaksState(next);
-    try {
-      localStorage.setItem(TWEAKS_KEY, JSON.stringify(next));
-    } catch {
-    }
-  };
-  return { tweaks, setTweak };
-}
-function TweaksPanel({ open, onClose }) {
-  const { tweaks, setTweak } = useTweaks();
-  if (!open) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "tweaks-panel", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "tweaks-header", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "tweaks-title", children: "Tweaks" }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "close", onClick: onClose, "aria-label": "Close", children: Ico.close })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "tweak", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "tweak-label", children: [
-        "Density ",
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: tweaks.density })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "tweak-opts", children: ["compact", "comfortable"].map((d) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        "button",
-        {
-          className: `tweak-opt ${tweaks.density === d ? "on" : ""}`,
-          onClick: () => setTweak("density", d),
-          children: d
-        },
-        d
-      )) })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "tweak", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "tweak-label", children: "Graph grid" }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "tweak-opts", children: [true, false].map((v) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        "button",
-        {
-          className: `tweak-opt ${tweaks.showGrid === v ? "on" : ""}`,
-          onClick: () => setTweak("showGrid", v),
-          children: v ? "on" : "off"
-        },
-        String(v)
-      )) })
-    ] })
-  ] });
-}
-
-// public/shell.tsx
-var import_jsx_runtime5 = __toESM(require_jsx_runtime());
-function Shell({ children, scroll = false, currentPath, tweaks = false }) {
-  const { me } = useCurrentUser();
-  const path = currentPath ?? window.location.pathname;
-  (0, import_react4.useEffect)(() => {
-    const body = document.body;
-    const html = document.documentElement;
-    if (!scroll) {
-      body.classList.add("shell-fixed");
-      html.classList.add("shell-fixed");
-      return () => {
-        body.classList.remove("shell-fixed");
-        html.classList.remove("shell-fixed");
-      };
-    }
-  }, [scroll]);
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: `app ${scroll ? "app-scroll" : ""}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Sidebar, { me, currentPath: path, roleSwitcher: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RoleSwitcher, { me }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("main", { className: "main", children }),
-    tweaks && me?.role === "superadmin" && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(TweaksPanel, { open: true, onClose: () => {
-    } })
-  ] });
-}
-
 // public/portfolio-collaborators.tsx
-var import_jsx_runtime6 = __toESM(require_jsx_runtime());
+var import_jsx_runtime3 = __toESM(require_jsx_runtime());
 function CollaboratorsPanel({ suggested }) {
   if (!suggested.length) {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No potential collaborators found yet. Backfill needs to run, or no one in your tenant shares your concepts (excluding existing co-authors)." });
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No potential collaborators found yet. Backfill needs to run, or no one in your tenant shares your concepts (excluding existing co-authors)." });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { style: { fontSize: 13, color: "var(--fg-muted)", marginBottom: 12 }, children: "Researchers in your institution working on similar concepts you haven\u2019t co-authored with yet." }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: suggested.map((s) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { borderLeft: "2px solid var(--accent)", padding: "10px 14px", background: "var(--bg-inset)", borderRadius: 3 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { fontWeight: 500, fontSize: 14 }, children: s.name || s.orcid }),
-          s.faculty && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)" }, children: s.faculty })
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: { fontSize: 13, color: "var(--fg-muted)", marginBottom: 12 }, children: "Researchers in your institution working on similar concepts you haven\u2019t co-authored with yet." }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: suggested.map((s) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { borderLeft: "2px solid var(--accent)", padding: "10px 14px", background: "var(--bg-inset)", borderRadius: 3 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontWeight: 500, fontSize: 14 }, children: s.name || s.orcid }),
+          s.faculty && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)" }, children: s.faculty })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "a",
           {
             href: `/overview.html?highlight=${encodeURIComponent(s.orcid)}`,
@@ -13111,9 +12851,9 @@ function CollaboratorsPanel({ suggested }) {
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }, children: [
-        s.sharedConcepts.map((c) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: { fontSize: 10, background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 10, padding: "1px 8px", fontFamily: "var(--mono)", color: "var(--fg-muted)" }, children: c }, c)),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { style: { fontSize: 10, color: "var(--fg-dim)", marginLeft: 4 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }, children: [
+        s.sharedConcepts.map((c) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 10, background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 10, padding: "1px 8px", fontFamily: "var(--mono)", color: "var(--fg-muted)" }, children: c }, c)),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { style: { fontSize: 10, color: "var(--fg-dim)", marginLeft: 4 }, children: [
           s.sharedCount,
           " shared"
         ] })
@@ -13123,39 +12863,39 @@ function CollaboratorsPanel({ suggested }) {
 }
 
 // public/collaborators.tsx
-var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+var import_jsx_runtime4 = __toESM(require_jsx_runtime());
 function App() {
-  const [suggested, setSuggested] = (0, import_react5.useState)(null);
-  const [err, setErr] = (0, import_react5.useState)(null);
-  (0, import_react5.useEffect)(() => {
+  const [suggested, setSuggested] = (0, import_react.useState)(null);
+  const [err, setErr] = (0, import_react.useState)(null);
+  (0, import_react.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then((d) => setSuggested(d.portfolio?.collaborators.suggested || [])).catch((e) => setErr(String(e)));
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Shell, { scroll: true, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "view", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "eyebrow", children: "Missing link" }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("h1", { className: "view-title", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "view", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("header", { className: "view-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "eyebrow", children: "Missing link" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("h1", { className: "view-title", children: [
           "Suggested ",
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("em", { children: "collaborators" }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("em", { children: "collaborators" }),
           "."
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "view-sub", children: "Researchers in your institution working on similar concepts." })
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "view-sub", children: "Researchers in your institution working on similar concepts." })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "view-meta", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Tag, { mono: true, children: "SCOPED \xB7 YOUR ORCID" }) })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "view-meta", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Tag, { mono: true, children: "SCOPED \xB7 YOUR ORCID" }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("section", { className: "card", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(SectionHead, { eyebrow: "Concept overlap", title: "People you haven't co-authored with" }),
-      err && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "status error", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { className: "card", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(SectionHead, { eyebrow: "Concept overlap", title: "People you haven't co-authored with" }),
+      err && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "status error", children: [
         "Error: ",
         err
       ] }),
-      !suggested && !err && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "muted", children: "Loading\u2026" }),
-      suggested && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(CollaboratorsPanel, { suggested })
+      !suggested && !err && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "muted", children: "Loading\u2026" }),
+      suggested && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CollaboratorsPanel, { suggested })
     ] })
-  ] }) });
+  ] });
 }
 var el = document.getElementById("collaborators-root");
-if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime7.jsx)(App, {}));
+if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(App, {}));
 /*! Bundled license information:
 
 react/cjs/react.production.js:

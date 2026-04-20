@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Shell } from './shell';
 import { useCurrentUser } from './shell-helpers';
 import { Stat, Tag, SectionHead } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders.js';
@@ -109,11 +108,11 @@ function App() {
       .catch(e => setErr(String(e)));
   }, []);
   return (
-    <Shell scroll>
+    <>
       {err && <div className="view"><div className="status error">Error: {err}</div></div>}
       {!data && !err && <div className="view"><div className="eyebrow">Loading dashboard…</div></div>}
       {data && <DashboardContent data={data} />}
-    </Shell>
+    </>
   );
 }
 

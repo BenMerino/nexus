@@ -4,53 +4,43 @@
   <meta charset="utf-8">
   <title>Admin — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
-  <style>
-    #tenant-detail { display: none; }
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
-    .back-btn {
-      cursor: pointer; font-size: 13px; color: var(--accent);
-      background: transparent; border: 0; padding: 0; margin-bottom: 14px; font: inherit;
-    }
-    .back-btn:hover { filter: brightness(1.15); }
-    .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .admin-table th, .admin-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-soft); }
-    .admin-table th { font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: 0.12em; color: var(--fg-dim); font-family: var(--mono); }
-    .badge {
-      display: inline-block; padding: 2px 8px; border-radius: 3px;
-      font-size: 10px; font-weight: 500; font-family: var(--mono); letter-spacing: 0.06em;
-    }
-    .badge-superadmin { background: oklch(0.28 0.05 300 / 0.5); color: oklch(0.82 0.10 300); }
-    .badge-director   { background: oklch(0.28 0.05 245 / 0.5); color: oklch(0.82 0.10 245); }
-    .badge-secretary  { background: oklch(0.28 0.05 50  / 0.5); color: oklch(0.82 0.10 50); }
-    .badge-academic   { background: oklch(0.28 0.05 145 / 0.5); color: oklch(0.82 0.10 145); }
-    .color-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
-    .color-row label { width: 130px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
-    .color-row input[type="color"] { width: 40px; height: 30px; border: 1px solid var(--border); cursor: pointer; background: transparent; border-radius: 3px; padding: 0; }
-    .form-row { margin: 10px 0; }
-    .form-row label { display: block; font-family: var(--mono); font-size: 10px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.12em; color: var(--fg-dim); }
-    .form-row input, .form-row select { width: 100%; }
-    .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start; }
-    .logo-box {
-      width: 80px; height: 80px; border: 1px dashed var(--border); border-radius: 6px;
-      display: flex; align-items: center; justify-content: center; overflow: hidden;
-      cursor: pointer; background: var(--bg-inset);
-    }
-    .logo-box:hover { border-color: var(--accent); }
-    .logo-box img { max-width: 80px; max-height: 80px; object-fit: contain; }
-    .tm-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 4px; padding: 14px; margin-bottom: 10px; }
-    .tm-vals { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
-    .tm-vals .tag { cursor: pointer; border: 2px solid transparent; }
-    .tm-vals .tag.selected { border-color: var(--accent); font-weight: 500; }
-    .synonym-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 12px; }
-    .card h3 { font-family: var(--display); font-weight: 400; font-size: 18px; margin-bottom: 10px; }
-    .card p { font-size: 12px; color: var(--fg-muted); margin-bottom: 10px; }
-  </style>
 </head>
 <body class="shell-fixed">
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
   <div class="app">
     <div id="sidebar-mount" data-path="/admin.html"></div>
     <main class="main">
+      <style>
+        #tenant-detail { display: none; }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+        .back-btn { cursor: pointer; font-size: 13px; color: var(--accent); background: transparent; border: 0; padding: 0; margin-bottom: 14px; font: inherit; }
+        .back-btn:hover { filter: brightness(1.15); }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .admin-table th, .admin-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-soft); }
+        .admin-table th { font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: 0.12em; color: var(--fg-dim); font-family: var(--mono); }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 500; font-family: var(--mono); letter-spacing: 0.06em; }
+        .badge-superadmin { background: oklch(0.28 0.05 300 / 0.5); color: oklch(0.82 0.10 300); }
+        .badge-director   { background: oklch(0.28 0.05 245 / 0.5); color: oklch(0.82 0.10 245); }
+        .badge-secretary  { background: oklch(0.28 0.05 50  / 0.5); color: oklch(0.82 0.10 50); }
+        .badge-academic   { background: oklch(0.28 0.05 145 / 0.5); color: oklch(0.82 0.10 145); }
+        .color-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+        .color-row label { width: 130px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
+        .color-row input[type="color"] { width: 40px; height: 30px; border: 1px solid var(--border); cursor: pointer; background: transparent; border-radius: 3px; padding: 0; }
+        .form-row { margin: 10px 0; }
+        .form-row label { display: block; font-family: var(--mono); font-size: 10px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.12em; color: var(--fg-dim); }
+        .form-row input, .form-row select { width: 100%; }
+        .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start; }
+        .logo-box { width: 80px; height: 80px; border: 1px dashed var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; background: var(--bg-inset); }
+        .logo-box:hover { border-color: var(--accent); }
+        .logo-box img { max-width: 80px; max-height: 80px; object-fit: contain; }
+        .tm-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 4px; padding: 14px; margin-bottom: 10px; }
+        .tm-vals { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+        .tm-vals .tag { cursor: pointer; border: 2px solid transparent; }
+        .tm-vals .tag.selected { border-color: var(--accent); font-weight: 500; }
+        .synonym-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 12px; }
+        .card h3 { font-family: var(--display); font-weight: 400; font-size: 18px; margin-bottom: 10px; }
+        .card p { font-size: 12px; color: var(--fg-muted); margin-bottom: 10px; }
+      </style>
       <div class="view">
         <header class="view-head">
           <div>
@@ -71,9 +61,10 @@
             <h3>Journal indexation (source of truth)</h3>
             <p>One row per indexing source. Auto sources fetch fresh data on click; manual sources take a CSV upload. Every seed replaces the source's list and re-tags every matching paper.</p>
             <div id="indexation-table"></div>
-            <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+            <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <button class="primary-btn" onclick="idxSeedOpenAlex()">Seed WoS + DOAJ + SciELO from OpenAlex</button>
               <button class="primary-btn" onclick="idxReconcile()" style="background:var(--bg-muted);">Reconcile all indexed_in tags</button>
-              <span style="font-size:12px;color:var(--fg-muted);">Wipes & rederives indexed_in tags from the canonical table. Run once after deploy.</span>
+              <span style="font-size:12px;color:var(--fg-muted);">OpenAlex exposes is_core (WoS), is_in_doaj, is_in_scielo per journal. One click refreshes all three.</span>
             </div>
             <div id="idx-status" style="margin-top:10px;font-size:12px;"></div>
           </div>
@@ -140,16 +131,16 @@
           </div>
         </div>
       </div>
+      <script src="/color-extract.js"></script>
+      <script src="/admin-tenant-form.js"></script>
+      <script src="/admin-users.js"></script>
+      <script src="/admin-tag-manager.js"></script>
+      <script src="/admin-author-import.js"></script>
+      <script src="/admin-indexation.js"></script>
+      <script src="/admin-app.js"></script>
     </main>
   </div>
-
-  <script src="/color-extract.js"></script>
-  <script src="/admin-tenant-form.js"></script>
-  <script src="/admin-users.js"></script>
-  <script src="/admin-tag-manager.js"></script>
-  <script src="/admin-author-import.js"></script>
-  <script src="/admin-indexation.js"></script>
-  <script src="/admin-app.js"></script>
   <script type="module" src="/shell-mount-bundle.js"></script>
+  <script src="/spa-router.js"></script>
 </body>
 </html>
