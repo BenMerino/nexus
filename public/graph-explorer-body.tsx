@@ -135,7 +135,7 @@ export function GraphExplorerBody() {
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">Loading co-author network…</div>
             : coauthorGraph.nodes.length < 2
               ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No co-authors yet.</div>
-              : <CoauthorCanvas graph={coauthorGraph} />}
+              : <CoauthorCanvas graph={coauthorGraph} onNodeClick={n => setSelectedNodeId(n.id)} />}
         </div>
 
         <aside className="detail-panel">

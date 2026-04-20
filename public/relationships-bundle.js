@@ -15552,7 +15552,7 @@ var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 function radius(n) {
   return n.isMe ? 12 : 5 + Math.min(10, Math.sqrt(n.weight) * 1.5);
 }
-function CoAuthorSim({ graph, width, height }) {
+function CoAuthorSim({ graph, width, height, onNodeClick }) {
   const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
   const adapter = (0, import_react12.useMemo)(() => ({
     getId: (n) => n.id,
@@ -15573,16 +15573,16 @@ function CoAuthorSim({ graph, width, height }) {
       primaryKey: myRor,
       width,
       height,
-      onNodeClick: (n) => {
+      onNodeClick: onNodeClick ?? ((n) => {
         window.location.href = `/overview.html?highlight=${encodeURIComponent(n.id)}`;
-      }
+      })
     }
   );
 }
 
 // public/coauthor-canvas.tsx
 var import_jsx_runtime22 = __toESM(require_jsx_runtime());
-function CoauthorCanvas({ graph, minHeight = 480 }) {
+function CoauthorCanvas({ graph, minHeight = 480, onNodeClick }) {
   const ref = (0, import_react13.useRef)(null);
   const [size, setSize] = (0, import_react13.useState)(null);
   (0, import_react13.useEffect)(() => {
@@ -15597,7 +15597,7 @@ function CoauthorCanvas({ graph, minHeight = 480 }) {
     ro.observe(el);
     return () => ro.disconnect();
   }, [minHeight]);
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight }, children: size && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(CoAuthorSim, { graph, width: size.w, height: size.h }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight }, children: size && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(CoAuthorSim, { graph, width: size.w, height: size.h, onNodeClick }) });
 }
 
 // public/use-coauthor-graph.ts
@@ -16049,7 +16049,7 @@ function GraphExplorerBody() {
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        !coauthorGraph ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "Loading co-author network\u2026" }) : coauthorGraph.nodes.length < 2 ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No co-authors yet." }) : /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(CoauthorCanvas, { graph: coauthorGraph })
+        !coauthorGraph ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "Loading co-author network\u2026" }) : coauthorGraph.nodes.length < 2 ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No co-authors yet." }) : /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(CoauthorCanvas, { graph: coauthorGraph, onNodeClick: (n) => setSelectedNodeId(n.id) })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(NodeDetail, { nodeId: selectedNodeId, onClose: () => setSelectedNodeId(null) }) })
     ] }),

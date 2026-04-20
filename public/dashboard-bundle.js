@@ -14490,7 +14490,7 @@ var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function radius(n) {
   return n.isMe ? 12 : 5 + Math.min(10, Math.sqrt(n.weight) * 1.5);
 }
-function CoAuthorSim({ graph, width, height }) {
+function CoAuthorSim({ graph, width, height, onNodeClick }) {
   const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
   const adapter = (0, import_react6.useMemo)(() => ({
     getId: (n) => n.id,
@@ -14511,9 +14511,9 @@ function CoAuthorSim({ graph, width, height }) {
       primaryKey: myRor,
       width,
       height,
-      onNodeClick: (n) => {
+      onNodeClick: onNodeClick ?? ((n) => {
         window.location.href = `/overview.html?highlight=${encodeURIComponent(n.id)}`;
-      }
+      })
     }
   );
 }

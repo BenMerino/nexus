@@ -6,7 +6,14 @@ function radius(n: CoauthorNode) {
   return n.isMe ? 12 : 5 + Math.min(10, Math.sqrt(n.weight) * 1.5);
 }
 
-export function CoAuthorSim({ graph, width, height }: { graph: CoauthorGraph; width: number; height: number }) {
+interface CoAuthorSimProps {
+  graph: CoauthorGraph;
+  width: number;
+  height: number;
+  onNodeClick?: (n: CoauthorNode) => void;
+}
+
+export function CoAuthorSim({ graph, width, height, onNodeClick }: CoAuthorSimProps) {
   const myRor = graph.nodes.find(n => n.isMe)?.affiliation?.ror || null;
 
   const adapter = useMemo<CommunityAdapter<CoauthorNode>>(() => ({
@@ -28,7 +35,7 @@ export function CoAuthorSim({ graph, width, height }: { graph: CoauthorGraph; wi
       primaryKey={myRor}
       width={width}
       height={height}
-      onNodeClick={n => { window.location.href = `/overview.html?highlight=${encodeURIComponent(n.id)}`; }}
+      onNodeClick={onNodeClick ?? (n => { window.location.href = `/overview.html?highlight=${encodeURIComponent(n.id)}`; })}
     />
   );
 }
