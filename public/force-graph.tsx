@@ -14,6 +14,8 @@ interface Props {
   affiliations: ExplorerAffiliations;
   /** Home institution node id — receives accent color + hull emphasis. */
   homeInstitutionId?: string | null;
+  /** Logged-in user's author node id — pinned at center as ego. */
+  egoAuthorId?: string | null;
 }
 
 function radius(n: EnrichedSimNode): number {
@@ -33,7 +35,7 @@ function communityKeyFor(n: EnrichedSimNode, institutionsByAuthor: Map<string, S
   return null;
 }
 
-export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null }: Props) {
+export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null }: Props) {
   const institutionLabelById = useMemo(() => {
     const m = new Map<string, string>();
     for (const n of nodes) if (n.group === 'institution') m.set(n.id, n.label);
@@ -44,8 +46,11 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     getId: n => n.id,
     getLabel: n => n.label,
     getRadius: radius,
-    getCommunityKey: n => communityKeyFor(n, affiliations.institutionsByAuthor),
-    isEgo: () => false,
+    getCommunityKey: n => {
+      if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
+      return communityKeyFor(n, affiliations.institutionsByAuthor);
+    },
+    isEgo: n => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: key => institutionLabelById.get(key) || key,
     getNodeColor: (n, communityColor) => {
       // Institutions and authors use community colors so hulls + nodes match.
@@ -61,7 +66,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       return institutionLabelById.get(firstId) || null;
     },
     getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
-  }), [affiliations, institutionLabelById]);
+  }), [affiliations, institutionLabelById, egoAuthorId, homeInstitutionId]);
 
   return (
     <CommunityGraph<EnrichedSimNode, ProjectedEdge>

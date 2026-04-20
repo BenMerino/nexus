@@ -12,6 +12,7 @@ import { useCurrentUser } from './shell-helpers';
 import { Tag } from './ui-primitives';
 import { GraphFiltersSidebar, type NodeTypeFlags } from './graph-filters-sidebar';
 import { buildExplorerAffiliations } from './explorer-affiliations';
+import { useExplorerEgo } from './use-explorer-ego';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, journal: true, paper: false };
 
@@ -87,12 +88,12 @@ export function GraphExplorerBody() {
 
   const affiliations = useMemo(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
 
-  const homeInstitutionId = useMemo(() => {
-    const ror = me?.profile.ror;
-    if (!ror) return null;
-    const hit = rawNodes.find(n => n.group === 'institution' && n.ext_id === ror);
-    return hit?.id ?? null;
-  }, [me, rawNodes]);
+  const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
+    me,
+    rawNodes,
+    projectedNodes,
+    institutionsByAuthor: affiliations.institutionsByAuthor,
+  });
 
   const chartDois = useMemo(() => {
     if (!selectedNodeId) return matchingDois;
@@ -120,7 +121,7 @@ export function GraphExplorerBody() {
       <div style={{ marginBottom: 12 }}><GraphSearch nodes={projectedNodes} onSelect={id => setSelectedNodeId(id)} /></div>
 
       <div className="graph-layout">
-        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFloor={yearFloor || yearMin} onYearFloorChange={setYearFloor} nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={homeInstitutionId} />
+        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFloor={yearFloor || yearMin} onYearFloorChange={setYearFloor} nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} />
 
         <div ref={containerRef} className="graph-canvas">
           <div className="canvas-corner-tl">
@@ -130,7 +131,7 @@ export function GraphExplorerBody() {
           </div>
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match current filters.</div>
-            : <ForceGraph nodes={projectedNodes} links={projectedEdges} width={dims.width} height={dims.height} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} affiliations={affiliations} homeInstitutionId={homeInstitutionId} />}
+            : <ForceGraph nodes={projectedNodes} links={projectedEdges} width={dims.width} height={dims.height} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} />}
         </div>
 
         <aside className="detail-panel">

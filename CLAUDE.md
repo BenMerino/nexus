@@ -26,6 +26,8 @@ For data pipeline details, see [lib/README.md](lib/README.md).
 
 `hooks/pre-commit-audit.sh` blocks commits with source files over 150 lines. This fires at commit time only — write code at whatever size it naturally wants to be, and refactor only when the hook complains or the seam is real.
 
+**When the hook fires, refactor — extract a cohesive chunk into a new file and import it back.** Never compress: don't collapse multi-line `useMemo` / `useEffect` / `if` blocks into one-liners, don't strip comments or whitespace, don't inline things that were intentionally expanded. The rule exists to force real refactoring; making the code denser defeats its purpose.
+
 ### Deploy policy
 
 After every task, commit and push to `main`. Vercel auto-deploys from `main`. Do not ask first. Still ask before destructive git ops (force push, reset --hard, branch deletion).
