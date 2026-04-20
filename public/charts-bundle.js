@@ -13004,19 +13004,19 @@ function TooltipOverlay({ tip, yLabel, currencyCfg, ms = 0 }) {
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
     BaseBox,
     {
-      px: "3",
-      py: "2",
-      surfaceRadius: "sm",
-      shadow: "xl",
       style: {
         position: "absolute",
         left: tip.x,
         top: tip.y - 8,
         transform: "translate(-50%, -100%)",
         zIndex: 50,
-        background: "var(--glass-bg, var(--bg-card))",
+        padding: "8px 12px",
+        borderRadius: 8,
+        background: "rgba(255,255,255,0.45)",
         backdropFilter: "blur(12px)",
-        border: "1px solid var(--border-ghost, var(--border-main))",
+        WebkitBackdropFilter: "blur(12px)",
+        border: "1px solid rgba(255,255,255,0.6)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
         pointerEvents: "none",
         transition: t
       },
@@ -13183,7 +13183,7 @@ function defaultInteraction(type) {
   return {
     crosshair: type === "sparkline" ? "none" : "both",
     dragRange: false,
-    transitionMs: 0
+    transitionMs: 120
   };
 }
 

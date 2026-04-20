@@ -50,6 +50,6 @@ export function defaultInteraction(type: string): GraphInteraction {
   return {
     crosshair: type === 'sparkline' ? 'none' : 'both',
     dragRange: false,
-    transitionMs: 0,
+    transitionMs: 120,
   };
 }

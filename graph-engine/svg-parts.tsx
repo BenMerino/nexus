@@ -107,10 +107,11 @@ export function TooltipOverlay({ tip, yLabel, currencyCfg, ms = 0 }: { tip: Tool
     const t = ms > 0 ? `left ${ms}ms ease-out, top ${ms}ms ease-out` : undefined;
     return (
         <BaseBox
-            px="3" py="2" surfaceRadius="sm" shadow="xl"
             style={{ position: 'absolute', left: tip.x, top: tip.y - 8, transform: 'translate(-50%, -100%)', zIndex: 50,
-                background: 'var(--glass-bg, var(--bg-card))', backdropFilter: 'blur(12px)',
-                border: '1px solid var(--border-ghost, var(--border-main))', pointerEvents: 'none',
+                padding: '8px 12px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                pointerEvents: 'none',
                 transition: t }}
         >
             <BaseText color="muted" style={{ display: 'block', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, marginBottom: 2 }}>
