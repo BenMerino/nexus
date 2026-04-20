@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 
 export type CadencePoint = { year: number; count: number };
 export type Cadence = { series: CadencePoint[]; meanPerYear: number };
 
 export function CadencePanel({ cadence }: { cadence: Cadence }) {
   const { series, meanPerYear } = cadence;
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(460);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      const cw = entries[0].contentRect.width;
+      if (cw > 0) setW(Math.floor(cw));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   if (!series.length) return <p style={{ color: 'var(--fg-muted)' }}>No publication years on record.</p>;
   const max = Math.max(1, ...series.map(p => p.count));
-  const w = 460, h = 140, pad = 28;
+  const h = 140, pad = 28;
   const barW = (w - pad * 2) / series.length * 0.7;
   const step = (w - pad * 2) / Math.max(1, series.length - 1);
   const xCenter = (i: number) => series.length === 1 ? w / 2 : pad + i * step;
@@ -15,14 +28,14 @@ export function CadencePanel({ cadence }: { cadence: Cadence }) {
   const meanY = yScale(meanPerYear);
 
   return (
-    <div>
+    <div ref={wrapRef}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 12 }}>
         <div>
           <div style={{ fontFamily: 'var(--display)', fontSize: 42, letterSpacing: '-0.02em', color: 'var(--accent)', lineHeight: 1 }}>{meanPerYear.toFixed(1)}</div>
           <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 }}>papers / year (avg)</div>
         </div>
       </div>
-      <svg width={w} height={h} style={{ display: 'block', maxWidth: '100%' }}>
+      <svg width={w} height={h} style={{ display: 'block' }}>
         <line x1={pad} x2={w - pad} y1={meanY} y2={meanY} stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 3" opacity={0.5} />
         {series.map((p, i) => {
           const cx = xCenter(i);

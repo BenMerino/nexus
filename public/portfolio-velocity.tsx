@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 
 export type VelocityPoint = { year: number; total: number; projected?: number; partial?: boolean };
 export type ForecastPoint = { year: number; total: number };
@@ -14,11 +14,24 @@ const TREND_COLOR: Record<Velocity['trend'], string> = { rising: 'var(--ok)', fl
 
 export function VelocityPanel({ velocity }: { velocity: Velocity }) {
   const { series, forecast = [], score, trend } = velocity;
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(460);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      const cw = entries[0].contentRect.width;
+      if (cw > 0) setW(Math.floor(cw));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const histY = (p: VelocityPoint) => p.partial && p.projected != null ? p.projected : p.total;
   const allPoints = [...series.map(p => ({ year: p.year, y: histY(p), kind: 'hist' as const, partial: !!p.partial, raw: p.total })),
                      ...forecast.map(p => ({ year: p.year, y: p.total, kind: 'fc' as const, partial: false, raw: p.total }))];
   const max = Math.max(1, ...allPoints.map(p => p.y));
-  const w = 460, h = 140, pad = 28;
+  const h = 140, pad = 28;
   const xs = allPoints.map(p => p.year);
   const minX = Math.min(...xs), maxX = Math.max(...xs);
   const xScale = (y: number) => pad + (xs.length > 1 ? (y - minX) / (maxX - minX) * (w - pad * 2) : 0);
@@ -26,7 +39,6 @@ export function VelocityPanel({ velocity }: { velocity: Velocity }) {
 
   const histPts = allPoints.filter(p => p.kind === 'hist').map(p => [xScale(p.year), yScale(p.y)] as const);
   const histPath = histPts.map((pt, i) => (i === 0 ? 'M' : 'L') + pt[0] + ',' + pt[1]).join(' ');
-  // Bridge: solid line ends at last historical full year, dashed continues from there through partial + forecast
   const lastFull = series.filter(p => !p.partial).slice(-1)[0];
   const bridgeStartX = lastFull ? xScale(lastFull.year) : histPts[histPts.length - 1][0];
   const bridgeStartY = lastFull ? yScale(histY(lastFull)) : histPts[histPts.length - 1][1];
@@ -37,7 +49,7 @@ export function VelocityPanel({ velocity }: { velocity: Velocity }) {
   const fcPath = `M${bridgeStartX},${bridgeStartY}` + fcSource.map(p => ` L${xScale(p.year)},${yScale(p.y)}`).join('');
 
   return (
-    <div>
+    <div ref={wrapRef}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 12 }}>
         <div>
           <div style={{ fontFamily: 'var(--display)', fontSize: 42, letterSpacing: '-0.02em', color: 'var(--accent)', lineHeight: 1 }}>{score.toFixed(2)}</div>
@@ -47,7 +59,7 @@ export function VelocityPanel({ velocity }: { velocity: Velocity }) {
           {TREND_SYMBOL[trend]} {trend}
         </div>
       </div>
-      <svg width={w} height={h} style={{ display: 'block', maxWidth: '100%' }}>
+      <svg width={w} height={h} style={{ display: 'block' }}>
         <path d={histPath} fill="none" stroke="var(--accent)" strokeWidth={2} />
         {fcSource.length > 0 && <path d={fcPath} fill="none" stroke="var(--accent)" strokeWidth={2} strokeDasharray="4 4" opacity={0.5} />}
         {allPoints.map((p, i) => {

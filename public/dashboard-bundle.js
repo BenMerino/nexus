@@ -766,7 +766,7 @@ var require_scheduler = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React5 = require_react();
+    var React7 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React5.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React7.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React5 = require_react();
+    var React7 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React5.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React7.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React5.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React7.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12747,7 +12747,7 @@ var require_jsx_runtime = __commonJS({
 });
 
 // public/dashboard-charts.tsx
-var import_react5 = __toESM(require_react());
+var import_react7 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
 // public/shell-helpers.ts
@@ -14394,18 +14394,31 @@ function CoAuthorGraphPanel({ graph }) {
 }
 
 // public/portfolio-velocity.tsx
+var import_react5 = __toESM(require_react());
 var import_jsx_runtime9 = __toESM(require_jsx_runtime());
 var TREND_SYMBOL = { rising: "\u25B2", flat: "\u2192", falling: "\u25BC" };
 var TREND_COLOR = { rising: "var(--ok)", flat: "var(--fg-dim)", falling: "var(--err)" };
 function VelocityPanel({ velocity }) {
   const { series, forecast = [], score, trend } = velocity;
+  const wrapRef = (0, import_react5.useRef)(null);
+  const [w, setW] = (0, import_react5.useState)(460);
+  (0, import_react5.useLayoutEffect)(() => {
+    const el2 = wrapRef.current;
+    if (!el2) return;
+    const ro = new ResizeObserver((entries) => {
+      const cw = entries[0].contentRect.width;
+      if (cw > 0) setW(Math.floor(cw));
+    });
+    ro.observe(el2);
+    return () => ro.disconnect();
+  }, []);
   const histY = (p) => p.partial && p.projected != null ? p.projected : p.total;
   const allPoints = [
     ...series.map((p) => ({ year: p.year, y: histY(p), kind: "hist", partial: !!p.partial, raw: p.total })),
     ...forecast.map((p) => ({ year: p.year, y: p.total, kind: "fc", partial: false, raw: p.total }))
   ];
   const max = Math.max(1, ...allPoints.map((p) => p.y));
-  const w = 460, h = 140, pad = 28;
+  const h = 140, pad = 28;
   const xs = allPoints.map((p) => p.year);
   const minX = Math.min(...xs), maxX = Math.max(...xs);
   const xScale = (y3) => pad + (xs.length > 1 ? (y3 - minX) / (maxX - minX) * (w - pad * 2) : 0);
@@ -14420,7 +14433,7 @@ function VelocityPanel({ velocity }) {
     ...forecast.map((p) => ({ year: p.year, y: p.total }))
   ];
   const fcPath = `M${bridgeStartX},${bridgeStartY}` + fcSource.map((p) => ` L${xScale(p.year)},${yScale(p.y)}`).join("");
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { ref: wrapRef, children: [
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", color: "var(--accent)", lineHeight: 1 }, children: score.toFixed(2) }),
@@ -14432,7 +14445,7 @@ function VelocityPanel({ velocity }) {
         trend
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { width: w, height: h, style: { display: "block", maxWidth: "100%" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { width: w, height: h, style: { display: "block" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: histPath, fill: "none", stroke: "var(--accent)", strokeWidth: 2 }),
       fcSource.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: fcPath, fill: "none", stroke: "var(--accent)", strokeWidth: 2, strokeDasharray: "4 4", opacity: 0.5 }),
       allPoints.map((p, i) => {
@@ -14456,23 +14469,36 @@ function VelocityPanel({ velocity }) {
 }
 
 // public/portfolio-cadence.tsx
+var import_react6 = __toESM(require_react());
 var import_jsx_runtime10 = __toESM(require_jsx_runtime());
 function CadencePanel({ cadence }) {
   const { series, meanPerYear } = cadence;
+  const wrapRef = (0, import_react6.useRef)(null);
+  const [w, setW] = (0, import_react6.useState)(460);
+  (0, import_react6.useLayoutEffect)(() => {
+    const el2 = wrapRef.current;
+    if (!el2) return;
+    const ro = new ResizeObserver((entries) => {
+      const cw = entries[0].contentRect.width;
+      if (cw > 0) setW(Math.floor(cw));
+    });
+    ro.observe(el2);
+    return () => ro.disconnect();
+  }, []);
   if (!series.length) return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No publication years on record." });
   const max = Math.max(1, ...series.map((p) => p.count));
-  const w = 460, h = 140, pad = 28;
+  const h = 140, pad = 28;
   const barW = (w - pad * 2) / series.length * 0.7;
   const step = (w - pad * 2) / Math.max(1, series.length - 1);
   const xCenter = (i) => series.length === 1 ? w / 2 : pad + i * step;
   const yScale = (v) => h - pad - v / max * (h - pad * 2);
   const meanY = yScale(meanPerYear);
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { ref: wrapRef, children: [
     /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", color: "var(--accent)", lineHeight: 1 }, children: meanPerYear.toFixed(1) }),
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "papers / year (avg)" })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("svg", { width: w, height: h, style: { display: "block", maxWidth: "100%" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("svg", { width: w, height: h, style: { display: "block" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("line", { x1: pad, x2: w - pad, y1: meanY, y2: meanY, stroke: "var(--fg-dim)", strokeWidth: 1, strokeDasharray: "3 3", opacity: 0.5 }),
       series.map((p, i) => {
         const cx = xCenter(i);
@@ -14639,9 +14665,9 @@ function DashboardContent({ data }) {
   ] });
 }
 function App() {
-  const [data, setData] = (0, import_react5.useState)(null);
-  const [err, setErr] = (0, import_react5.useState)(null);
-  (0, import_react5.useEffect)(() => {
+  const [data, setData] = (0, import_react7.useState)(null);
+  const [err, setErr] = (0, import_react7.useState)(null);
+  (0, import_react7.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
   return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_jsx_runtime13.Fragment, { children: [
