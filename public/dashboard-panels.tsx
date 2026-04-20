@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tag, SectionHead, Ico } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders.js';
+import { TYPE_DISPLAY_LABELS } from './type-labels.js';
 
 export function yearlyCounts(data: DashboardData): { year: string; count: number }[] {
   const byYear = new Map<string, number>();
@@ -88,11 +89,12 @@ export function RecentlyIndexed({ data }: { data: DashboardData }) {
       <SectionHead eyebrow="Ledger" title="Recently indexed" right={<a className="link-btn" href="/explore.html">All papers {Ico.arrow}</a>} />
       {papers.length === 0 ? <div className="muted">No papers yet.</div> : (
         <table className="paper-table">
-          <thead><tr><th>Title</th><th>Journal</th><th>Published</th><th>Cites</th></tr></thead>
+          <thead><tr><th>Title</th><th>Type</th><th>Journal</th><th>Published</th><th>Cites</th></tr></thead>
           <tbody>
             {papers.map(p => (
               <tr key={p.doi}>
                 <td className="paper-title">{p.title || '(untitled)'}<div className="mono paper-doi">{p.doi}</div></td>
+                <td>{p.type ? <span className="tag type mono">{TYPE_DISPLAY_LABELS[p.type] || p.type}</span> : '—'}</td>
                 <td>{p.journal || '—'}</td>
                 <td>{p.published?.slice(0, 4) || '—'}</td>
                 <td>{p.citation_count ?? 0}</td>

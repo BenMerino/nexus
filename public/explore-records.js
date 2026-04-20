@@ -2,6 +2,7 @@
 const cache = (window.__nexusCache = window.__nexusCache || {});
 let allRecords = cache.records || [];
 let myOrcid = cache.myOrcid ?? null;
+const TYPE_DISPLAY_LABELS = window.TYPE_DISPLAY_LABELS || {};
 
 async function loadRecords() {
   if (allRecords.length) renderTable();
@@ -71,7 +72,7 @@ function renderCard(r, i) {
     <article class="paper-card" onclick="toggleDetail(${i})" style="cursor: pointer;">
       <div class="paper-meta-row">
         ${year ? `<span class="tag tag-muted mono">${escHtml(year)}</span>` : ""}
-        ${r.type ? `<span class="tag mono">${escHtml(r.type)}</span>` : ""}
+        ${r.type ? `<span class="tag type mono">${escHtml(TYPE_DISPLAY_LABELS[r.type] || r.type)}</span>` : ""}
         ${r.open_access ? `<span class="tag mono">OA</span>` : ""}
         <span class="mono paper-doi-inline">${escHtml(r.doi)}</span>
         <span class="paper-cites mono">${r.citation_count != null ? r.citation_count : 0} citations</span>

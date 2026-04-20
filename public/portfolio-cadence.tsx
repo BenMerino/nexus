@@ -1,12 +1,33 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
+import { TYPE_DISPLAY_LABELS } from './type-labels.js';
 
-export type CadencePoint = { year: number; count: number };
-export type Cadence = { series: CadencePoint[]; meanPerYear: number };
+export type CadenceSegment = { type: string; count: number };
+export type CadencePoint = { year: number; count: number; segments: CadenceSegment[] };
+export type Cadence = { series: CadencePoint[]; types: string[]; meanPerYear: number };
+
+const TYPE_HUE: Record<string, number> = {
+  'journal-article': 145,
+  'conference-paper': 50,
+  'preprint': 180,
+  'review': 300,
+  'book-chapter': 80,
+  'book': 80,
+  'dataset': 245,
+  'editorial': 20,
+  'letter': 20,
+  'erratum': 20,
+  'paratext': 260,
+  'unknown': 260,
+};
+
+const typeColor = (t: string) => `oklch(0.72 0.12 ${TYPE_HUE[t] ?? 260})`;
+const typeLabel = (t: string) => TYPE_DISPLAY_LABELS[t] || (t === 'unknown' ? 'Unknown' : t);
 
 export function CadencePanel({ cadence }: { cadence: Cadence }) {
-  const { series, meanPerYear } = cadence;
+  const { series, types, meanPerYear } = cadence;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(460);
+
   useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -18,43 +39,86 @@ export function CadencePanel({ cadence }: { cadence: Cadence }) {
     return () => ro.disconnect();
   }, []);
 
-  if (!series.length) return <p style={{ color: 'var(--fg-muted)' }}>No publication years on record.</p>;
+  if (!series.length) {
+    return <p style={{ color: 'var(--fg-muted)' }}>No publication years on record.</p>;
+  }
+
   const max = Math.max(1, ...series.map(p => p.count));
-  const h = 140, pad = 28;
+  const h = 140;
+  const pad = 28;
   const barW = (w - pad * 2) / series.length * 0.7;
   const step = (w - pad * 2) / Math.max(1, series.length - 1);
   const xCenter = (i: number) => series.length === 1 ? w / 2 : pad + i * step;
   const yScale = (v: number) => h - pad - (v / max) * (h - pad * 2);
   const meanY = yScale(meanPerYear);
+  const baseY = h - pad;
 
   return (
     <div ref={wrapRef}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 12 }}>
         <div>
-          <div style={{ fontFamily: 'var(--display)', fontSize: 42, letterSpacing: '-0.02em', color: 'var(--accent)', lineHeight: 1 }}>{meanPerYear.toFixed(1)}</div>
-          <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 }}>papers / year (avg)</div>
+          <div style={{ fontFamily: 'var(--display)', fontSize: 42, letterSpacing: '-0.02em', color: 'var(--accent)', lineHeight: 1 }}>
+            {meanPerYear.toFixed(1)}
+          </div>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 }}>
+            papers / year (avg)
+          </div>
         </div>
       </div>
+
       <svg width={w} height={h} style={{ display: 'block' }}>
         <line x1={pad} x2={w - pad} y1={meanY} y2={meanY} stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 3" opacity={0.5} />
+
         {series.map((p, i) => {
           const cx = xCenter(i);
-          const bh = (p.count / max) * (h - pad * 2);
+          const totalH = (p.count / max) * (h - pad * 2);
           const bx = cx - barW / 2;
-          const by = h - pad - bh;
+          let yCursor = baseY;
+
           return (
             <g key={p.year}>
-              <rect x={bx} y={by} width={barW} height={bh} fill="var(--accent)" opacity={0.85} rx={1.5} />
-              <text x={cx} y={h - 6} fontSize={10} textAnchor="middle" fill="var(--fg-dim)" fontFamily="var(--mono)">{p.year}</text>
+              {p.segments.map(seg => {
+                if (!seg.count) return null;
+                const segH = (seg.count / max) * (h - pad * 2);
+                yCursor -= segH;
+                return (
+                  <rect
+                    key={seg.type}
+                    x={bx}
+                    y={yCursor}
+                    width={barW}
+                    height={segH}
+                    fill={typeColor(seg.type)}
+                    opacity={0.85}
+                  >
+                    <title>{`${p.year} · ${typeLabel(seg.type)}: ${seg.count}`}</title>
+                  </rect>
+                );
+              })}
+              <text x={cx} y={h - 6} fontSize={10} textAnchor="middle" fill="var(--fg-dim)" fontFamily="var(--mono)">
+                {p.year}
+              </text>
               {p.count > 0 && (
-                <text x={cx} y={by - 4} fontSize={10} textAnchor="middle" fill="var(--fg)" fontFamily="var(--mono)">{p.count}</text>
+                <text x={cx} y={baseY - totalH - 4} fontSize={10} textAnchor="middle" fill="var(--fg)" fontFamily="var(--mono)">
+                  {p.count}
+                </text>
               )}
             </g>
           );
         })}
       </svg>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', marginTop: 10, fontSize: 11 }}>
+        {types.map(t => (
+          <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)' }}>
+            <span style={{ width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: 'inline-block' }} />
+            {typeLabel(t)}
+          </span>
+        ))}
+      </div>
+
       <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 8 }}>
-        Publications per year ({series[0].year}–{series[series.length - 1].year}). Dashed line: average.
+        Publications per year ({series[0].year}–{series[series.length - 1].year}), stacked by type. Dashed line: average.
       </div>
     </div>
   );

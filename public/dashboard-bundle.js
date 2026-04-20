@@ -12876,6 +12876,21 @@ function SectionHead({ eyebrow, title, right }) {
   ] });
 }
 
+// public/type-labels.ts
+var TYPE_DISPLAY_LABELS = {
+  "journal-article": "Article",
+  "conference-paper": "Conference",
+  "preprint": "Preprint",
+  "review": "Review",
+  "book-chapter": "Book Chapter",
+  "book": "Book",
+  "dataset": "Dataset",
+  "editorial": "Editorial",
+  "letter": "Letter",
+  "erratum": "Erratum",
+  "paratext": "Paratext"
+};
+
 // public/dashboard-panels.tsx
 var import_jsx_runtime3 = __toESM(require_jsx_runtime());
 function yearlyCounts(data) {
@@ -12948,6 +12963,7 @@ function RecentlyIndexed({ data }) {
     papers.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "muted", children: "No papers yet." }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("table", { className: "paper-table", children: [
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Title" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Type" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Journal" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Published" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Cites" })
@@ -12957,6 +12973,7 @@ function RecentlyIndexed({ data }) {
           p.title || "(untitled)",
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "mono paper-doi", children: p.doi })
         ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: p.type ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "tag type mono", children: TYPE_DISPLAY_LABELS[p.type] || p.type }) : "\u2014" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: p.journal || "\u2014" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: p.published?.slice(0, 4) || "\u2014" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: p.citation_count ?? 0 })
@@ -14640,8 +14657,24 @@ function VelocityPanel({ velocity }) {
 // public/portfolio-cadence.tsx
 var import_react9 = __toESM(require_react());
 var import_jsx_runtime14 = __toESM(require_jsx_runtime());
+var TYPE_HUE = {
+  "journal-article": 145,
+  "conference-paper": 50,
+  "preprint": 180,
+  "review": 300,
+  "book-chapter": 80,
+  "book": 80,
+  "dataset": 245,
+  "editorial": 20,
+  "letter": 20,
+  "erratum": 20,
+  "paratext": 260,
+  "unknown": 260
+};
+var typeColor = (t) => `oklch(0.72 0.12 ${TYPE_HUE[t] ?? 260})`;
+var typeLabel = (t) => TYPE_DISPLAY_LABELS[t] || (t === "unknown" ? "Unknown" : t);
 function CadencePanel({ cadence }) {
-  const { series, meanPerYear } = cadence;
+  const { series, types, meanPerYear } = cadence;
   const wrapRef = (0, import_react9.useRef)(null);
   const [w, setW] = (0, import_react9.useState)(460);
   (0, import_react9.useLayoutEffect)(() => {
@@ -14654,14 +14687,18 @@ function CadencePanel({ cadence }) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  if (!series.length) return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No publication years on record." });
+  if (!series.length) {
+    return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No publication years on record." });
+  }
   const max = Math.max(1, ...series.map((p) => p.count));
-  const h = 140, pad = 28;
+  const h = 140;
+  const pad = 28;
   const barW = (w - pad * 2) / series.length * 0.7;
   const step = (w - pad * 2) / Math.max(1, series.length - 1);
   const xCenter = (i) => series.length === 1 ? w / 2 : pad + i * step;
   const yScale = (v) => h - pad - v / max * (h - pad * 2);
   const meanY = yScale(meanPerYear);
+  const baseY = h - pad;
   return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { ref: wrapRef, children: [
     /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", color: "var(--accent)", lineHeight: 1 }, children: meanPerYear.toFixed(1) }),
@@ -14671,22 +14708,43 @@ function CadencePanel({ cadence }) {
       /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("line", { x1: pad, x2: w - pad, y1: meanY, y2: meanY, stroke: "var(--fg-dim)", strokeWidth: 1, strokeDasharray: "3 3", opacity: 0.5 }),
       series.map((p, i) => {
         const cx = xCenter(i);
-        const bh = p.count / max * (h - pad * 2);
+        const totalH = p.count / max * (h - pad * 2);
         const bx = cx - barW / 2;
-        const by = h - pad - bh;
+        let yCursor = baseY;
         return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("g", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("rect", { x: bx, y: by, width: barW, height: bh, fill: "var(--accent)", opacity: 0.85, rx: 1.5 }),
+          p.segments.map((seg) => {
+            if (!seg.count) return null;
+            const segH = seg.count / max * (h - pad * 2);
+            yCursor -= segH;
+            return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+              "rect",
+              {
+                x: bx,
+                y: yCursor,
+                width: barW,
+                height: segH,
+                fill: typeColor(seg.type),
+                opacity: 0.85,
+                children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("title", { children: `${p.year} \xB7 ${typeLabel(seg.type)}: ${seg.count}` })
+              },
+              seg.type
+            );
+          }),
           /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("text", { x: cx, y: h - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: p.year }),
-          p.count > 0 && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("text", { x: cx, y: by - 4, fontSize: 10, textAnchor: "middle", fill: "var(--fg)", fontFamily: "var(--mono)", children: p.count })
+          p.count > 0 && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("text", { x: cx, y: baseY - totalH - 4, fontSize: 10, textAnchor: "middle", fill: "var(--fg)", fontFamily: "var(--mono)", children: p.count })
         ] }, p.year);
       })
     ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: types.map((t) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: "inline-block" } }),
+      typeLabel(t)
+    ] }, t)) }),
     /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: [
       "Publications per year (",
       series[0].year,
       "\u2013",
       series[series.length - 1].year,
-      "). Dashed line: average."
+      "), stacked by type. Dashed line: average."
     ] })
   ] });
 }

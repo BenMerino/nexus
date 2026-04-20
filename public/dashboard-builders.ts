@@ -10,7 +10,7 @@ interface Collab { value: string; count: string; }
 interface Country { country: string; count: string; }
 
 export interface TopJournal { value: string; key: string; count: string }
-export interface RecentPaper { doi: string; title: string | null; published: string | null; citation_count: number | null; journal: string | null }
+export interface RecentPaper { doi: string; title: string | null; published: string | null; citation_count: number | null; journal: string | null; type: string | null }
 
 export interface CoauthorNode { id: string; label: string; group: string; weight: number; isMe?: boolean; affiliation?: { ror: string; name: string } | null }
 export interface CoauthorEdge { source: string; target: string; weight: number }
