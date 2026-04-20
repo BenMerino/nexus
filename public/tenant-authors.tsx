@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { hIndexTooltip } from './h-index-breakdown';
 
 export interface AuthorRow {
   name: string;
@@ -6,6 +7,7 @@ export interface AuthorRow {
   paperCount: number;
   totalCitations: number;
   hIndex: number;
+  hIndexByType?: Record<string, number> | null;
 }
 
 type SortKey = 'name' | 'paperCount' | 'hIndex' | 'totalCitations';
@@ -68,7 +70,7 @@ export function AuthorsTable({ authors }: { authors: AuthorRow[] }) {
                 ) : <span style={{ color: '#ccc' }}>—</span>}
               </td>
               <td className="num">{a.paperCount.toLocaleString()}</td>
-              <td className="num">{a.hIndex}</td>
+              <td className="num" title={hIndexTooltip(a.hIndexByType)}>{a.hIndex}</td>
               <td className="num">{a.totalCitations.toLocaleString()}</td>
             </tr>
           ))}

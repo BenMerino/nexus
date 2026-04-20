@@ -18,7 +18,7 @@ module.exports = async function handler(req, res) {
     const isSuperadmin = user.role === "superadmin";
     const tid = user.tenant_id || 1;
     const scope = !isSuperadmin ? await getScope(req) : null;
-    const [tenants, hIndex, userPapers] = await Promise.all([
+    const [tenants, hIndexResult, userPapers] = await Promise.all([
       listTenants(),
       (!isSuperadmin && user.full_name && scope) ? getAllRecords(scope).then(r => computeHIndex(user, r)) : null,
       countPapersByOrcid(user.orcid, tid),
@@ -28,7 +28,9 @@ module.exports = async function handler(req, res) {
     return res.json({
       user: user.username, tenant: tenant?.name,
       logo: isSuperadmin ? null : tenant?.logo_url,
-      profile: buildProfile(user, tenant), hIndex: hIndex,
+      profile: buildProfile(user, tenant),
+      hIndex: hIndexResult?.hIndex ?? null,
+      hIndexByType: hIndexResult?.byType ?? null,
       userPapers, tenantPapers,
       role: user.role, tenantId: user.tenant_id,
       primaryColor: isSuperadmin ? null : tenant?.primary_color,

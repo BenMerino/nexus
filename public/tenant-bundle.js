@@ -13775,10 +13775,10 @@ function useContainerSize(ref) {
     const el2 = ref.current;
     if (!el2) return;
     let raf = 0;
-    const observer = new ResizeObserver((entries) => {
+    const observer = new ResizeObserver((entries2) => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        if (entries[0]) measure(entries[0]);
+        if (entries2[0]) measure(entries2[0]);
       });
     });
     observer.observe(el2);
@@ -14116,7 +14116,29 @@ function AxesToggle({ current, onToggle }) {
 
 // public/tenant-authors.tsx
 var import_react11 = __toESM(require_react());
+
+// public/h-index-breakdown.tsx
 var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+var H_INDEX_TYPES = [
+  { key: "journal-article", label: "journal" },
+  { key: "conference-paper", label: "conf" },
+  { key: "book-chapter", label: "chapter" },
+  { key: "book", label: "book" },
+  { key: "preprint", label: "preprint" },
+  { key: "dataset", label: "dataset" }
+];
+function entries(byType) {
+  return H_INDEX_TYPES.map((t) => ({ label: t.label, value: byType[t.key] })).filter((e) => e.value != null && e.value > 0);
+}
+function hIndexTooltip(byType) {
+  if (!byType) return void 0;
+  const rows = entries(byType);
+  if (rows.length === 0) return void 0;
+  return rows.map((e) => `${e.label}: ${e.value}`).join("\n");
+}
+
+// public/tenant-authors.tsx
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
 function compare(a2, b, key, asc) {
   const dir = asc ? 1 : -1;
   if (key === "name") return a2.name.localeCompare(b.name) * dir;
@@ -14139,9 +14161,9 @@ function AuthorsTable({ authors }) {
     }
   };
   const arrow = (key) => sortKey === key ? asc ? " \u2191" : " \u2193" : "";
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "authors-toolbar", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "authors-toolbar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
         "input",
         {
           placeholder: "Filter by name\u2026",
@@ -14149,41 +14171,41 @@ function AuthorsTable({ authors }) {
           onChange: (e) => setQuery(e.target.value)
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { style: { fontSize: 12, color: "#666" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { style: { fontSize: 12, color: "#666" }, children: [
         filtered.length.toLocaleString(),
         " of ",
         authors.length.toLocaleString()
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("table", { className: "authors-table", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("tr", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("th", { onClick: () => onSort("name"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("table", { className: "authors-table", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("tr", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("th", { onClick: () => onSort("name"), children: [
           "Name",
           arrow("name")
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("th", { children: "ORCID" }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("th", { onClick: () => onSort("paperCount"), style: { textAlign: "right" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { children: "ORCID" }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("th", { onClick: () => onSort("paperCount"), style: { textAlign: "right" }, children: [
           "Papers",
           arrow("paperCount")
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("th", { onClick: () => onSort("hIndex"), style: { textAlign: "right" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("th", { onClick: () => onSort("hIndex"), style: { textAlign: "right" }, children: [
           "h-index",
           arrow("hIndex")
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("th", { onClick: () => onSort("totalCitations"), style: { textAlign: "right" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("th", { onClick: () => onSort("totalCitations"), style: { textAlign: "right" }, children: [
           "Citations",
           arrow("totalCitations")
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("tbody", { children: filtered.slice(0, 500).map((a2, i) => /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("tr", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("td", { children: a2.name }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("td", { children: a2.orcid ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("a", { href: `https://orcid.org/${a2.orcid}`, target: "_blank", rel: "noopener noreferrer", children: a2.orcid }) : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { color: "#ccc" }, children: "\u2014" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("td", { className: "num", children: a2.paperCount.toLocaleString() }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("td", { className: "num", children: a2.hIndex }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("td", { className: "num", children: a2.totalCitations.toLocaleString() })
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("tbody", { children: filtered.slice(0, 500).map((a2, i) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("tr", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { children: a2.name }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { children: a2.orcid ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("a", { href: `https://orcid.org/${a2.orcid}`, target: "_blank", rel: "noopener noreferrer", children: a2.orcid }) : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { color: "#ccc" }, children: "\u2014" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { className: "num", children: a2.paperCount.toLocaleString() }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { className: "num", title: hIndexTooltip(a2.hIndexByType), children: a2.hIndex }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { className: "num", children: a2.totalCitations.toLocaleString() })
       ] }, i)) })
     ] }),
-    filtered.length > 500 ? /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { fontSize: 12, color: "#666", marginTop: 8 }, children: [
+    filtered.length > 500 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { fontSize: 12, color: "#666", marginTop: 8 }, children: [
       "Showing first 500 of ",
       filtered.length.toLocaleString(),
       ". Refine the filter to narrow down."
@@ -15055,7 +15077,7 @@ function manyBody_default() {
 }
 
 // public/tenant-graph.tsx
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
 var COLORS = { author: "#2e7d32", institution: "#1565c0" };
 function TenantGraph({ nodes, edges }) {
   const containerRef = (0, import_react12.useRef)(null);
@@ -15066,8 +15088,8 @@ function TenantGraph({ nodes, edges }) {
   (0, import_react12.useEffect)(() => {
     const el2 = containerRef.current;
     if (!el2) return;
-    const obs = new ResizeObserver((entries) => {
-      const { width } = entries[0].contentRect;
+    const obs = new ResizeObserver((entries2) => {
+      const { width } = entries2[0].contentRect;
       if (width > 0) setDims((prev) => ({ ...prev, width }));
     });
     obs.observe(el2);
@@ -15093,15 +15115,15 @@ function TenantGraph({ nodes, edges }) {
     }
     return s;
   }, [hovered, edges]);
-  if (!nodes.length) return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { padding: 24, color: "#999" }, children: "No collaboration data yet." });
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { ref: containerRef, style: { background: "#fff", border: "1px solid #ddd", borderRadius: 4 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("svg", { width: dims.width, height: dims.height, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("g", { children: edges.map((e, i) => {
+  if (!nodes.length) return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { padding: 24, color: "#999" }, children: "No collaboration data yet." });
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { ref: containerRef, style: { background: "#fff", border: "1px solid #ddd", borderRadius: 4 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("svg", { width: dims.width, height: dims.height, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("g", { children: edges.map((e, i) => {
         const s = nodeMap.get(e.source);
         const t = nodeMap.get(e.target);
         if (!s || !t) return null;
         const dim = connected && !(connected.has(e.source) && connected.has(e.target));
-        return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
           "line",
           {
             x1: s.x,
@@ -15115,10 +15137,10 @@ function TenantGraph({ nodes, edges }) {
           i
         );
       }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("g", { children: simNodesRef.current.map((n) => {
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("g", { children: simNodesRef.current.map((n) => {
         const dim = connected && !connected.has(n.id);
         const r = n.group === "institution" ? 10 : 6;
-        return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
           "g",
           {
             transform: `translate(${n.x || 0}, ${n.y || 0})`,
@@ -15126,20 +15148,20 @@ function TenantGraph({ nodes, edges }) {
             onMouseLeave: () => setHovered(null),
             style: { cursor: "pointer", opacity: dim ? 0.25 : 1 },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("circle", { r, fill: COLORS[n.group], stroke: "#fff", strokeWidth: 1.5 }),
-              (hovered === n.id || n.group === "institution") && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("text", { x: r + 4, y: 4, fontSize: 11, fontFamily: "monospace", fill: "#333", children: n.label.length > 32 ? n.label.slice(0, 32) + "\u2026" : n.label })
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("circle", { r, fill: COLORS[n.group], stroke: "#fff", strokeWidth: 1.5 }),
+              (hovered === n.id || n.group === "institution") && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("text", { x: r + 4, y: 4, fontSize: 11, fontFamily: "monospace", fill: "#333", children: n.label.length > 32 ? n.label.slice(0, 32) + "\u2026" : n.label })
             ]
           },
           n.id
         );
       }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { padding: "6px 12px", fontSize: 11, color: "#666", borderTop: "1px solid #eee" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { color: COLORS.author }, children: "\u25CF" }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { padding: "6px 12px", fontSize: 11, color: "#666", borderTop: "1px solid #eee" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { color: COLORS.author }, children: "\u25CF" }),
       " Author \xA0",
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { color: COLORS.institution }, children: "\u25CF" }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { color: COLORS.institution }, children: "\u25CF" }),
       " Collaborating institution \xA0",
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { marginLeft: 8 }, children: "Hover a node to highlight its connections." })
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { marginLeft: 8 }, children: "Hover a node to highlight its connections." })
     ] })
   ] });
 }
@@ -15232,7 +15254,7 @@ function buildTenantCharts(stats) {
 }
 
 // public/tenant-sidebar.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 var ROR_HOST = "https://ror.org/";
 function rorHref(raw) {
   return raw.startsWith("http") ? raw : `${ROR_HOST}${raw}`;
@@ -15248,19 +15270,19 @@ function TenantPublicSidebar({
   onNavigate,
   yearRange
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("aside", { className: "sidebar", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "tenant-chip", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "tenant-brand", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "tenant-mark", children: tenant.logo_url ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("img", { src: tenant.logo_url, alt: "" }) : null }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "brand-text", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "brand-name", children: "Nexus" }),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "brand-tenant", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("aside", { className: "sidebar", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "tenant-chip", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "tenant-brand", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "tenant-mark", children: tenant.logo_url ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("img", { src: tenant.logo_url, alt: "" }) : null }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "brand-text", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "brand-name", children: "Nexus" }),
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "brand-tenant", children: [
             tenant.name,
             " \xB7 Research"
           ] })
         ] })
       ] }),
-      tenant.ror_id ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "tenant-chip-meta", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+      tenant.ror_id ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "tenant-chip-meta", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
         "a",
         {
           href: rorHref(tenant.ror_id),
@@ -15273,15 +15295,15 @@ function TenantPublicSidebar({
           ]
         }
       ) }) : null,
-      yearRange.minYear && yearRange.maxYear ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { marginTop: 6, fontSize: 11, color: "var(--fg-muted)", fontFamily: "var(--mono)" }, children: [
+      yearRange.minYear && yearRange.maxYear ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: { marginTop: 6, fontSize: 11, color: "var(--fg-muted)", fontFamily: "var(--mono)" }, children: [
         yearRange.minYear,
         "\u2013",
         yearRange.maxYear
       ] }) : null
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("nav", { className: "nav-list", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "nav-section-label", children: "Sections" }),
-      items.map((it) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("nav", { className: "nav-list", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "nav-section-label", children: "Sections" }),
+      items.map((it) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         "a",
         {
           href: `#${it.id}`,
@@ -15295,21 +15317,21 @@ function TenantPublicSidebar({
         it.id
       ))
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "sidebar-footer", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "sync-pulse" }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "sidebar-footer", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "sync-pulse" }),
         "Public profile"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "sidebar-user-row", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { children: "Public" }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("a", { href: "/login.html", children: "sign in" })
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "sidebar-user-row", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { children: "Public" }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("a", { href: "/login.html", children: "sign in" })
       ] })
     ] })
   ] });
 }
 
 // public/tenant.tsx
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 var NAV = [
   { id: "overview", label: "Overview" },
   { id: "charts", label: "Charts" },
@@ -15324,9 +15346,9 @@ function SummaryCards({ summary }) {
     { label: "Open access", value: `${oaPct}%` },
     { label: "Authors", value: summary.authorCount.toLocaleString() }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: "1.5rem" }, children: cards.map((c2, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "card", style: { textAlign: "center", padding: 18 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { fontSize: 28, fontWeight: 500, fontFamily: "var(--display)" }, children: c2.value }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 4, fontFamily: "var(--mono)", letterSpacing: "0.08em", textTransform: "uppercase" }, children: c2.label })
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: "1.5rem" }, children: cards.map((c2, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "card", style: { textAlign: "center", padding: 18 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { fontSize: 28, fontWeight: 500, fontFamily: "var(--display)" }, children: c2.value }),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 4, fontFamily: "var(--mono)", letterSpacing: "0.08em", textTransform: "uppercase" }, children: c2.label })
   ] }, i)) });
 }
 function App() {
@@ -15360,14 +15382,14 @@ function App() {
     if (el2 && mainRef.current) mainRef.current.scrollTo({ top: el2.offsetTop - 24, behavior: "smooth" });
   };
   if (error) {
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "app", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("main", { className: "main", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "view", style: { padding: 24, color: "var(--danger, #c00)" }, children: error }) }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "app", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("main", { className: "main", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "view", style: { padding: 24, color: "var(--danger, #c00)" }, children: error }) }) });
   }
   if (!data) {
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "app", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("main", { className: "main", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "view", style: { padding: 24, color: "var(--fg-dim)" }, children: "Loading\u2026" }) }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "app", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("main", { className: "main", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "view", style: { padding: 24, color: "var(--fg-dim)" }, children: "Loading\u2026" }) }) });
   }
   const charts = buildTenantCharts(data.stats);
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "app", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "app", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
       TenantPublicSidebar,
       {
         tenant: data.tenant,
@@ -15377,11 +15399,11 @@ function App() {
         yearRange: data.stats.yearRange
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("main", { className: "main", ref: mainRef, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "view", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("header", { className: "view-head", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "eyebrow", children: "Institutional research" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h1", { className: "view-title", children: data.tenant.name }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "view-sub", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("main", { className: "main", ref: mainRef, children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "view", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("header", { className: "view-head", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "eyebrow", children: "Institutional research" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h1", { className: "view-title", children: data.tenant.name }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "view-sub", children: [
           "Public research profile \xB7 ",
           data.stats.summary.totalPubs.toLocaleString(),
           " publications \xB7 ",
@@ -15389,24 +15411,24 @@ function App() {
           " authors"
         ] })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("section", { id: "overview", style: { marginBottom: 24 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SummaryCards, { summary: data.stats.summary }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { id: "charts", style: { marginBottom: 32 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { style: { fontFamily: "var(--display)", fontWeight: 400, fontSize: 22, marginBottom: 12 }, children: "Charts" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 16 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "card", style: { minHeight: 400 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphRender, { chart }) }, i)) })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("section", { id: "overview", style: { marginBottom: 24 }, children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SummaryCards, { summary: data.stats.summary }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { id: "charts", style: { marginBottom: 32 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h2", { style: { fontFamily: "var(--display)", fontWeight: 400, fontSize: 22, marginBottom: 12 }, children: "Charts" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 16 }, children: charts.map((chart, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "card", style: { minHeight: 400 }, children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphRender, { chart }) }, i)) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { id: "graph", style: { marginBottom: 32 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { style: { fontFamily: "var(--display)", fontWeight: 400, fontSize: 22, marginBottom: 12 }, children: "Collaboration graph" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TenantGraph, { nodes: data.graph.nodes, edges: data.graph.edges })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { id: "graph", style: { marginBottom: 32 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h2", { style: { fontFamily: "var(--display)", fontWeight: 400, fontSize: 22, marginBottom: 12 }, children: "Collaboration graph" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TenantGraph, { nodes: data.graph.nodes, edges: data.graph.edges })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { id: "authors", style: { marginBottom: 32 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { style: { fontFamily: "var(--display)", fontWeight: 400, fontSize: 22, marginBottom: 12 }, children: "Authors directory" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(AuthorsTable, { authors: data.authors })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { id: "authors", style: { marginBottom: 32 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h2", { style: { fontFamily: "var(--display)", fontWeight: 400, fontSize: 22, marginBottom: 12 }, children: "Authors directory" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(AuthorsTable, { authors: data.authors })
       ] })
     ] }) })
   ] });
 }
 var el = document.getElementById("tenant-root");
-if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime18.jsx)(App, {}));
+if (el) (0, import_client.createRoot)(el).render(/* @__PURE__ */ (0, import_jsx_runtime19.jsx)(App, {}));
 /*! Bundled license information:
 
 react/cjs/react.production.js:

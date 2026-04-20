@@ -11,6 +11,7 @@ import { CadencePanel } from './portfolio-cadence';
 import { TopCitedPanel } from './portfolio-topcited';
 import { ConceptsPanel } from './portfolio-concepts';
 import { DashboardSkeleton } from './dashboard-skeleton';
+import { HIndexBreakdown } from './h-index-breakdown';
 
 function DashboardContent({ data }: { data: DashboardData }) {
   const { me } = useCurrentUser();
@@ -28,7 +29,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
   const heroStats = isPersonal ? [
     { label: 'Publications',   value: pubCount.toLocaleString(), sub: 'indexed via ORCID' },
     { label: 'Total citations', value: totalCit.toLocaleString(), sub: 'OpenAlex · last sync' },
-    { label: 'h-index',        value: me?.hIndex ?? '—', sub: 'computed · real-time', accent: true },
+    { label: 'h-index',        value: me?.hIndex ?? '—', sub: <HIndexBreakdown byType={me?.hIndexByType} />, accent: true },
     { label: 'Collaborators',  value: collabCount.toLocaleString(), sub: 'unique, all years' },
   ] : [
     { label: 'Publications',    value: data.totalPubs.toLocaleString(), sub: 'indexed records' },

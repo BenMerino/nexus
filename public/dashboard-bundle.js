@@ -14591,8 +14591,8 @@ function VelocityPanel({ velocity }) {
   (0, import_react8.useLayoutEffect)(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const cw = entries[0].contentRect.width;
+    const ro = new ResizeObserver((entries2) => {
+      const cw = entries2[0].contentRect.width;
       if (cw > 0) setW(Math.floor(cw));
     });
     ro.observe(el);
@@ -14686,8 +14686,8 @@ function CadencePanel({ cadence }) {
   (0, import_react9.useLayoutEffect)(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const cw = entries[0].contentRect.width;
+    const ro = new ResizeObserver((entries2) => {
+      const cw = entries2[0].contentRect.width;
       if (cw > 0) setW(Math.floor(cw));
     });
     ro.observe(el);
@@ -14918,8 +14918,33 @@ function DashboardSkeleton() {
   ] });
 }
 
-// public/dashboard-charts.tsx
+// public/h-index-breakdown.tsx
 var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var H_INDEX_TYPES = [
+  { key: "journal-article", label: "journal" },
+  { key: "conference-paper", label: "conf" },
+  { key: "book-chapter", label: "chapter" },
+  { key: "book", label: "book" },
+  { key: "preprint", label: "preprint" },
+  { key: "dataset", label: "dataset" }
+];
+function entries(byType) {
+  return H_INDEX_TYPES.map((t) => ({ label: t.label, value: byType[t.key] })).filter((e) => e.value != null && e.value > 0);
+}
+function HIndexBreakdown({ byType }) {
+  if (!byType) return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_jsx_runtime18.Fragment, { children: "computed \xB7 real-time" });
+  const rows = entries(byType);
+  if (rows.length === 0) return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_jsx_runtime18.Fragment, { children: "computed \xB7 real-time" });
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "hindex-breakdown", children: rows.map((e, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { children: [
+    i > 0 ? " \xB7 " : "",
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("strong", { children: e.value }),
+    " ",
+    e.label
+  ] }, e.label)) });
+}
+
+// public/dashboard-charts.tsx
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 function DashboardContent({ data }) {
   const { me } = useCurrentUser();
   const years = yearlyCounts(data);
@@ -14934,7 +14959,7 @@ function DashboardContent({ data }) {
   const heroStats = isPersonal ? [
     { label: "Publications", value: pubCount.toLocaleString(), sub: "indexed via ORCID" },
     { label: "Total citations", value: totalCit.toLocaleString(), sub: "OpenAlex \xB7 last sync" },
-    { label: "h-index", value: me?.hIndex ?? "\u2014", sub: "computed \xB7 real-time", accent: true },
+    { label: "h-index", value: me?.hIndex ?? "\u2014", sub: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(HIndexBreakdown, { byType: me?.hIndexByType }), accent: true },
     { label: "Collaborators", value: collabCount.toLocaleString(), sub: "unique, all years" }
   ] : [
     { label: "Publications", value: data.totalPubs.toLocaleString(), sub: "indexed records" },
@@ -14942,58 +14967,58 @@ function DashboardContent({ data }) {
     { label: "Open access", value: data.totalPubs > 0 ? `${Math.round(data.oaCount / data.totalPubs * 100)}%` : "\u2014", sub: "of total output", accent: true },
     { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
-  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
+  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
     greeting(),
     ", ",
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("em", { children: firstName }),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("em", { children: firstName }),
     "."
-  ] }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("em", { children: tenantName }),
+  ] }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("em", { children: tenantName }),
     "."
   ] });
   const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "view dashboard", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h1", { className: "view-title", children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "view-sub", children: sub })
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "view dashboard", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("header", { className: "view-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h1", { className: "view-title", children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "view-sub", children: sub })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(Stat, { ...s }, i)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card card-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(VelocityPanel, { velocity: p.velocity })
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Stat, { ...s }, i)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(VelocityPanel, { velocity: p.velocity })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card card-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
-        p.cadence && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CadencePanel, { cadence: p.cadence })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
+        p.cadence && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CadencePanel, { cadence: p.cadence })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TopCitedPanel, { items: p.topCited || [] })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TopCitedPanel, { items: p.topCited || [] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ConceptsPanel, { concepts: p.concepts || [] })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ConceptsPanel, { concepts: p.concepts || [] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TopJournals, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PartnerInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ClaimPaperPanel, { onClaimed: () => window.location.reload() })
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
-      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "muted", children: "No year data." }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TopJournals, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PartnerInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(RecentlyIndexed, { data })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ClaimPaperPanel, { onClaimed: () => window.location.reload() })
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
+      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "muted", children: "No year data." }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(RecentlyIndexed, { data })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { id: "import-slot" })
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { id: "import-slot" })
   ] });
 }
 function App() {
@@ -15002,13 +15027,13 @@ function App() {
   (0, import_react10.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
-    err && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "status error", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
+    err && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "status error", children: [
       "Error: ",
       err
     ] }) }),
-    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(DashboardSkeleton, {}),
-    data && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(DashboardContent, { data })
+    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(DashboardSkeleton, {}),
+    data && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(DashboardContent, { data })
   ] });
 }
 var root = null;
@@ -15017,7 +15042,7 @@ function mount() {
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime18.jsx)(App, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime19.jsx)(App, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/dashboard-bundle.js"] = mount;

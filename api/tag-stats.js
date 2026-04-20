@@ -1,6 +1,6 @@
 const { sql } = require("@vercel/postgres");
 const { ensureSchema, getAllRecords } = require("../lib/db");
-const { calculateHIndex, getAuthorHIndexes } = require("../lib/h-index");
+const { calculateHIndex, getAuthorHIndexes, hIndexByType } = require("../lib/h-index");
 const { handleSynonymGet, handleSynonymPost, handleSynonymDelete } = require("../lib/synonym-handlers");
 const { lookupInstitution } = require("../lib/openalex");
 const { requireScope } = require("../lib/scope");
@@ -37,7 +37,11 @@ module.exports = async function handler(req, res) {
       const records = await getAllRecords(scope);
       const authors = getAuthorHIndexes(records);
       const allCitations = records.map((r) => r.citation_count || 0);
-      return res.json({ collectionHIndex: calculateHIndex(allCitations), authors });
+      return res.json({
+        collectionHIndex: calculateHIndex(allCitations),
+        collectionHIndexByType: hIndexByType(records),
+        authors,
+      });
     }
 
     const { rows } = await sql`

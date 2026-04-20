@@ -18,6 +18,7 @@ export interface CurrentUser {
     titles?: string[];
   };
   hIndex: number | null;
+  hIndexByType: Record<string, number> | null;
   userPapers: number | null;
   tenantPapers: number | null;
 }
