@@ -15604,8 +15604,8 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
         linkDistance: 60,
         linkStrength: 0.4,
         charge: (g) => g === "doi" ? -60 : -220,
-        clusterStrengthX: 0.15,
-        clusterStrengthY: 0.15,
+        clusterStrengthX: 0.05,
+        clusterStrengthY: 0.05,
         collidePad: 4,
         minCommunitySize: 3
       }
