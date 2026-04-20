@@ -109,8 +109,8 @@ export function TooltipOverlay({ tip, yLabel, currencyCfg, ms = 0 }: { tip: Tool
         <BaseBox
             style={{ position: 'absolute', left: tip.x, top: tip.y - 8, transform: 'translate(-50%, -100%)', zIndex: 50,
                 padding: '8px 12px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                background: 'var(--glass-bg, var(--bg-card))', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid var(--border-ghost, var(--border-main))', boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
                 pointerEvents: 'none',
                 transition: t }}
         >
