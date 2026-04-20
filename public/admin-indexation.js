@@ -6,9 +6,10 @@
   }
 
   function rowHtml(c) {
-    var action = c.seed_kind === "auto"
-      ? '<button class="primary-btn" data-reseed="' + c.source + '">Re-seed</button>'
-      : '<input type="file" accept=".csv,text/csv" data-csv="' + c.source + '" style="font-size:12px;">'
+    var action;
+    if (c.seed_kind === "openalex") action = '<span style="color:var(--fg-muted);font-size:12px;">via OpenAlex (button below)</span>';
+    else if (c.seed_kind === "auto") action = '<button class="primary-btn" data-reseed="' + c.source + '">Re-seed</button>';
+    else action = '<input type="file" accept=".csv,text/csv" data-csv="' + c.source + '" style="font-size:12px;">'
         + '<button class="primary-btn" data-upload="' + c.source + '" style="margin-left:6px;">Upload CSV</button>';
     return '<tr>'
       + '<td><strong>' + c.source + '</strong></td>'
@@ -65,6 +66,20 @@
     reader.onload = function () { postSeed(source, { csv: reader.result }); };
     reader.readAsText(file);
   }
+
+  window.idxSeedOpenAlex = function () {
+    var s = statusEl();
+    s.textContent = "Seeding WoS, DOAJ, SciELO from OpenAlex (this walks every journal ISSN)…";
+    fetch("/api/indexation?action=seed-openalex", { method: "POST" })
+      .then(r => r.json()).then(function (d) {
+        if (d.error) { s.textContent = "Error: " + d.error; return; }
+        var imp = d.imported || {}, bf = d.backfill || {};
+        s.textContent = "Seeded: WoS=" + imp.wos + " DOAJ=" + imp.doaj + " SciELO=" + imp.scielo
+          + " (checked " + imp.checked + " ISSNs, skipped " + imp.skipped + "). "
+          + "Tagged " + bf.tagged + " paper-source pairs.";
+        refresh();
+      }).catch(function (err) { s.textContent = "Error: " + err.message; });
+  };
 
   window.idxReconcile = function () {
     var s = statusEl();

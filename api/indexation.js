@@ -2,7 +2,7 @@ const { ensureSchema } = require("../lib/db");
 const { requireRole } = require("../lib/auth");
 const { sql } = require("@vercel/postgres");
 const { listCounts } = require("../lib/indexed-journals");
-const { runSeed } = require("../lib/indexation-seed");
+const { runSeed, runOpenAlexSeed } = require("../lib/indexation-seed");
 const { backfillIndexationTags } = require("../lib/indexed-backfill");
 
 module.exports = async function handler(req, res) {
@@ -12,6 +12,15 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "GET") {
     return res.json({ counts: await listCounts() });
+  }
+
+  if (req.method === "POST" && req.query.action === "seed-openalex") {
+    try {
+      const result = await runOpenAlexSeed();
+      return res.json({ ok: true, ...result });
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
   }
 
   if (req.method === "POST" && req.query.action === "reconcile") {
