@@ -10,6 +10,7 @@ import { VelocityPanel } from './portfolio-velocity';
 import { CadencePanel } from './portfolio-cadence';
 import { TopCitedPanel } from './portfolio-topcited';
 import { ConceptsPanel } from './portfolio-concepts';
+import { DashboardSkeleton } from './dashboard-skeleton';
 
 function DashboardContent({ data }: { data: DashboardData }) {
   const { me } = useCurrentUser();
@@ -112,7 +113,7 @@ function App() {
   return (
     <>
       {err && <div className="view"><div className="status error">Error: {err}</div></div>}
-      {!data && !err && <div className="view"><div className="eyebrow">Loading dashboard…</div></div>}
+      {!data && !err && <DashboardSkeleton />}
       {data && <DashboardContent data={data} />}
     </>
   );
