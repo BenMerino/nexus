@@ -1,14 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, forceX, forceY,
-  type Simulation,
-} from 'd3-force';
+import React, { useMemo } from 'react';
 import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
 import { COLORS, nodeRadius } from './relationship-types';
-import { SmoothedHulls, type HullGroup } from './smoothed-hulls';
-import { buildExplorerHullGroups, type GroupByDim } from './explorer-hull-groups';
 import type { ExplorerAffiliations } from './explorer-affiliations';
-import { ForceGraphNodes } from './force-graph-nodes';
+import { CommunityGraph, type CommunityAdapter } from './community-graph';
 
 interface Props {
   nodes: EnrichedSimNode[];
@@ -17,131 +11,77 @@ interface Props {
   height: number;
   selectedId?: string | null;
   onNodeClick?: (n: EnrichedSimNode) => void;
-  accent?: string;
-  groupBy?: GroupByDim;
-  affiliations?: ExplorerAffiliations;
+  affiliations: ExplorerAffiliations;
+  /** Home institution node id — receives accent color + hull emphasis. */
+  homeInstitutionId?: string | null;
 }
 
-type SimN = EnrichedSimNode & { x: number; y: number; fx?: number | null; fy?: number | null };
-type SimL = ProjectedEdge & { source: SimN | string; target: SimN | string };
+function radius(n: EnrichedSimNode): number {
+  return nodeRadius(n.weight || 1, n.role);
+}
 
-export function ForceGraph({ nodes: inNodes, links: inLinks, width, height, selectedId, onNodeClick, accent = 'var(--accent)', groupBy = 'none', affiliations }: Props) {
-  const svgRef = useRef<SVGSVGElement | null>(null);
-  const simRef = useRef<Simulation<SimN, SimL> | null>(null);
-  const [, tick] = useState(0);
-  const [hoverId, setHoverId] = useState<string | null>(null);
-  const dragRef = useRef<SimN | null>(null);
-
-  const { nodes, links } = useMemo(() => {
-    const ns: SimN[] = inNodes.map(n => ({
-      ...n,
-      x: width / 2 + (Math.random() - 0.5) * Math.min(width, height) * 0.6,
-      y: height / 2 + (Math.random() - 0.5) * Math.min(width, height) * 0.6,
-    }));
-    const nmap = new Map(ns.map(n => [n.id, n]));
-    const ls: SimL[] = inLinks
-      .filter(l => nmap.has(l.source as string) && nmap.has(l.target as string))
-      .map(l => ({ ...l }));
-    return { nodes: ns, links: ls };
-  }, [inNodes, inLinks, width, height]);
-
-  useEffect(() => {
-    const sim = forceSimulation<SimN, SimL>(nodes)
-      .force('link', forceLink<SimN, SimL>(links).id(d => d.id).distance(d => 60 + (d.weight ? 0 : 10)).strength(0.4))
-      .force('charge', forceManyBody<SimN>().strength(d => d.group === 'doi' ? -60 : -220))
-      .force('x', forceX<SimN>(width / 2).strength(0.05))
-      .force('y', forceY<SimN>(height / 2).strength(0.05))
-      .force('center', forceCenter(width / 2, height / 2))
-      .force('collide', forceCollide<SimN>().radius(d => radius(d) + 4))
-      .alpha(1)
-      .alphaDecay(0.025)
-      .on('tick', () => tick(v => v + 1));
-    simRef.current = sim;
-    return () => { sim.stop(); };
-  }, [nodes, links, width, height]);
-
-  function radius(n: EnrichedSimNode): number {
-    return nodeRadius(n.weight || 1, n.role);
+/** Pick the community key for an Explorer node. Authors inherit their first
+ *  institution; institution nodes are their own community; journals, papers,
+ *  and orphaned authors return null (land in "Other"). */
+function communityKeyFor(n: EnrichedSimNode, institutionsByAuthor: Map<string, Set<string>>): string | null {
+  if (n.group === 'institution') return n.id;
+  if (n.group === 'author') {
+    const insts = institutionsByAuthor.get(n.id);
+    if (!insts || insts.size === 0) return null;
+    return [...insts].sort()[0];
   }
-  function color(n: EnrichedSimNode): string {
-    return COLORS[n.group] || accent;
-  }
+  return null;
+}
 
-  function handleMouseDown(e: React.MouseEvent, node: SimN) {
-    e.preventDefault();
-    const svg = svgRef.current!;
-    const pt = svg.createSVGPoint();
-    dragRef.current = node;
-    node.fx = node.x; node.fy = node.y;
-    simRef.current?.alphaTarget(0.3).restart();
-    function onMove(ev: MouseEvent) {
-      pt.x = ev.clientX; pt.y = ev.clientY;
-      const p = pt.matrixTransform(svg.getScreenCTM()!.inverse());
-      node.fx = p.x; node.fy = p.y;
-    }
-    function onUp() {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      simRef.current?.alphaTarget(0);
-      node.fx = null; node.fy = null;
-      dragRef.current = null;
-    }
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }
+export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null }: Props) {
+  const institutionLabelById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const n of nodes) if (n.group === 'institution') m.set(n.id, n.label);
+    return m;
+  }, [nodes]);
 
-  const connected = useMemo(() => {
-    const focusId = hoverId || selectedId;
-    if (!focusId) return null;
-    const set = new Set<string>([focusId]);
-    for (const l of links) {
-      const s = typeof l.source === 'object' ? l.source.id : l.source;
-      const t = typeof l.target === 'object' ? l.target.id : l.target;
-      if (s === focusId) set.add(t);
-      if (t === focusId) set.add(s);
-    }
-    return set;
-  }, [hoverId, selectedId, links]);
-
-  const hullGroups: HullGroup[] = groupBy === 'none' || !affiliations
-    ? []
-    : buildExplorerHullGroups(groupBy, nodes, affiliations)
-        .map(g => ({ key: g.key, color: g.color, points: g.points }));
+  const adapter = useMemo<CommunityAdapter<EnrichedSimNode>>(() => ({
+    getId: n => n.id,
+    getLabel: n => n.label,
+    getRadius: radius,
+    getCommunityKey: n => communityKeyFor(n, affiliations.institutionsByAuthor),
+    isEgo: () => false,
+    getCommunityLabel: key => institutionLabelById.get(key) || key,
+    getNodeColor: (n, communityColor) => {
+      // Institutions and authors use community colors so hulls + nodes match.
+      if (n.group === 'institution' || n.group === 'author') return communityColor;
+      // Journals and papers keep their static type color for clarity.
+      return COLORS[n.group] || null;
+    },
+    getHoverSubtitle: n => {
+      if (n.group !== 'author') return null;
+      const insts = affiliations.institutionsByAuthor.get(n.id);
+      if (!insts || insts.size === 0) return null;
+      const firstId = [...insts].sort()[0];
+      return institutionLabelById.get(firstId) || null;
+    },
+    getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
+  }), [affiliations, institutionLabelById]);
 
   return (
-    <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none' }}>
-      <defs>
-        <radialGradient id="nodeGlow">
-          <stop offset="0%" stopColor={accent} stopOpacity="0.5" />
-          <stop offset="100%" stopColor={accent} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <SmoothedHulls groups={hullGroups} />
-      <g>
-        {links.map((l, i) => {
-          const s = typeof l.source === 'object' ? l.source as SimN : null;
-          const t = typeof l.target === 'object' ? l.target as SimN : null;
-          if (!s || !t) return null;
-          const dim = connected && !(connected.has(s.id) && connected.has(t.id));
-          return (
-            <line key={i} x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-              stroke={dim ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.14)'}
-              strokeWidth={l.weight ? Math.min(2.5, 0.5 + l.weight * 0.4) : 0.7} />
-          );
-        })}
-      </g>
-      <ForceGraphNodes
-        nodes={nodes}
-        radius={radius}
-        color={color}
-        hoverId={hoverId}
-        selectedId={selectedId}
-        connected={connected}
-        onHoverStart={setHoverId}
-        onHoverEnd={() => setHoverId(null)}
-        onMouseDown={handleMouseDown}
-        onClick={n => onNodeClick?.(n)}
-      />
-    </svg>
+    <CommunityGraph<EnrichedSimNode, ProjectedEdge>
+      nodes={nodes}
+      links={links}
+      adapter={adapter}
+      primaryKey={homeInstitutionId}
+      width={width}
+      height={height}
+      selectedId={selectedId ?? null}
+      onNodeClick={onNodeClick}
+      forceConfig={{
+        linkDistance: 60,
+        linkStrength: 0.4,
+        charge: g => (g === 'doi' ? -60 : -220),
+        clusterStrengthX: 0.15,
+        clusterStrengthY: 0.15,
+        collidePad: 4,
+        minCommunitySize: 3,
+      }}
+    />
   );
 }

@@ -12917,7 +12917,12 @@ var N = (p, s) => ({ sentiment: "neutral", primary: p, fill: p, seriesColors: s 
 var PRIMARY_G = { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: ["var(--primary)", "var(--accent-dim)"] };
 var OK = { sentiment: "positive", primary: "var(--ok)", fill: "var(--ok)" };
 var TYPE_SCHEME = {
-  heatmap: { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: ["#3a2a14", "#7a5320", "#c08a35", "#e8c870"] },
+  heatmap: { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: [
+    "var(--chart-heatmap-from, #3a2a14)",
+    "var(--chart-heatmap-low, #7a5320)",
+    "var(--chart-heatmap-mid, #c08a35)",
+    "var(--chart-heatmap-to, #e8c870)"
+  ] },
   bubble: N(CTX_S[0], CTX_S),
   scatter: N(CTX_S[0], CTX_S),
   bar: PRIMARY_G,
@@ -13565,11 +13570,19 @@ function parseHex(hex) {
   const h = hex.replace("#", "");
   return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 }
+function resolveStop(stop) {
+  const m2 = stop.match(/^var\((--[\w-]+)(?:\s*,\s*([^)]+))?\)$/);
+  if (!m2) return stop;
+  if (typeof window === "undefined") return m2[2]?.trim() || "#888";
+  const v = getComputedStyle(document.documentElement).getPropertyValue(m2[1]).trim();
+  if (v && /^#[0-9a-fA-F]{6}$/.test(v)) return v;
+  return m2[2]?.trim() || "#888";
+}
 function rampColor(stops, t) {
   if (stops.length < 2) return stops[0] ?? "#888";
   const seg = Math.min(t, 0.999) * (stops.length - 1);
   const i = Math.floor(seg), f = seg - i;
-  const [ar, ag, ab] = parseHex(stops[i]), [br, bg, bb] = parseHex(stops[i + 1]);
+  const [ar, ag, ab] = parseHex(resolveStop(stops[i])), [br, bg, bb] = parseHex(resolveStop(stops[i + 1]));
   return `rgb(${Math.round(ar + (br - ar) * f)},${Math.round(ag + (bg - ag) * f)},${Math.round(ab + (bb - ab) * f)})`;
 }
 

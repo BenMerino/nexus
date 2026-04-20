@@ -13008,7 +13008,17 @@ function SidebarApp({ initialPath }) {
   }, []);
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Sidebar, { me, currentPath, roleSwitcher: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RoleSwitcher, { me }) });
 }
+function loadThemeTokens() {
+  fetch("/api/theme-tokens").then((r) => r.ok ? r.json() : null).then((tokens) => {
+    if (!tokens) return;
+    const root = document.documentElement;
+    for (const k in tokens) root.style.setProperty("--" + k, tokens[k]);
+    window.dispatchEvent(new CustomEvent("nexus:theme-tokens", { detail: tokens }));
+  }).catch(() => {
+  });
+}
 function mount() {
+  loadThemeTokens();
   const el = document.getElementById("sidebar-mount");
   if (!el || el.__mounted) return;
   el.__mounted = true;

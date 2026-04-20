@@ -6,7 +6,9 @@ import { majorCommunities, effectiveKey, OTHER_KEY } from './communities';
 import type { CommunityAdapter, ForceConfig } from './types';
 
 export type SimN<N> = N & { x: number; y: number; fx?: number | null; fy?: number | null };
-export type SimL<L> = L & { source: string | { id: string; x: number; y: number }; target: string | { id: string; x: number; y: number } };
+/** d3-force mutates source/target from string id → resolved node object. */
+export interface ResolvedEndpoint { id: string; x: number; y: number }
+export type SimL<L> = Omit<L, 'source' | 'target'> & { source: string | ResolvedEndpoint; target: string | ResolvedEndpoint };
 
 export interface BaseLink { source: string; target: string }
 

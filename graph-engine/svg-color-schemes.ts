@@ -21,7 +21,12 @@ const N = (p: string, s?: string[]): ColorScheme => ({ sentiment: 'neutral', pri
 const PRIMARY_G: ColorScheme = { sentiment: 'neutral', primary: 'var(--primary)', fill: 'var(--primary)', gradient: ['var(--primary)', 'var(--accent-dim)'] };
 const OK: ColorScheme = { sentiment: 'positive', primary: 'var(--ok)', fill: 'var(--ok)' };
 const TYPE_SCHEME: Record<string, ColorScheme> = {
-    heatmap: { sentiment: 'neutral', primary: 'var(--primary)', fill: 'var(--primary)', gradient: ['#3a2a14', '#7a5320', '#c08a35', '#e8c870'] },
+    heatmap: { sentiment: 'neutral', primary: 'var(--primary)', fill: 'var(--primary)', gradient: [
+        'var(--chart-heatmap-from, #3a2a14)',
+        'var(--chart-heatmap-low, #7a5320)',
+        'var(--chart-heatmap-mid, #c08a35)',
+        'var(--chart-heatmap-to, #e8c870)',
+    ] },
     bubble: N(CTX_S[0], CTX_S), scatter: N(CTX_S[0], CTX_S),
     bar: PRIMARY_G, line: PRIMARY_G, area: PRIMARY_G,
     'stacked-bar': N(CTX_S[0], CTX_S),

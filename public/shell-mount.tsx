@@ -18,7 +18,17 @@ function SidebarApp({ initialPath }: { initialPath: string }) {
   return <Sidebar me={me} currentPath={currentPath} roleSwitcher={<RoleSwitcher me={me} />} />;
 }
 
+function loadThemeTokens() {
+  fetch('/api/theme-tokens').then(r => r.ok ? r.json() : null).then(tokens => {
+    if (!tokens) return;
+    const root = document.documentElement;
+    for (const k in tokens) root.style.setProperty('--' + k, tokens[k]);
+    window.dispatchEvent(new CustomEvent('nexus:theme-tokens', { detail: tokens }));
+  }).catch(() => {});
+}
+
 function mount() {
+  loadThemeTokens();
   const el = document.getElementById('sidebar-mount') as (HTMLElement & { __mounted?: boolean }) | null;
   if (!el || el.__mounted) return;
   el.__mounted = true;

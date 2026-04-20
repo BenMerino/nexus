@@ -766,7 +766,7 @@ var require_react = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React14 = require_react();
+    var React17 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React14.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React17.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React14 = require_react();
+    var React17 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React14.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React17.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React14.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React17.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12750,7 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react15 = __toESM(require_react());
+var import_react18 = __toESM(require_react());
 
 // public/enrich-meta.ts
 function enrichWithMeta(nodes, tagMeta) {
@@ -13307,7 +13307,12 @@ var N = (p, s) => ({ sentiment: "neutral", primary: p, fill: p, seriesColors: s 
 var PRIMARY_G = { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: ["var(--primary)", "var(--accent-dim)"] };
 var OK = { sentiment: "positive", primary: "var(--ok)", fill: "var(--ok)" };
 var TYPE_SCHEME = {
-  heatmap: { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: ["#3a2a14", "#7a5320", "#c08a35", "#e8c870"] },
+  heatmap: { sentiment: "neutral", primary: "var(--primary)", fill: "var(--primary)", gradient: [
+    "var(--chart-heatmap-from, #3a2a14)",
+    "var(--chart-heatmap-low, #7a5320)",
+    "var(--chart-heatmap-mid, #c08a35)",
+    "var(--chart-heatmap-to, #e8c870)"
+  ] },
   bubble: N(CTX_S[0], CTX_S),
   scatter: N(CTX_S[0], CTX_S),
   bar: PRIMARY_G,
@@ -13900,20 +13905,6 @@ var COLORS = {
   author: "#c62828",
   journal: "#2e7d32"
 };
-var COMMUNITY_COLORS = [
-  "#e6194b",
-  "#3cb44b",
-  "#4363d8",
-  "#f58231",
-  "#911eb4",
-  "#42d4f4",
-  "#f032e6",
-  "#bfef45",
-  "#fabebe",
-  "#469990",
-  "#dcbeff",
-  "#9A6324"
-];
 function nodeRadius(weight, role) {
   const base = Math.max(4, Math.min(18, 4 + Math.sqrt(weight) * 2));
   if (role === "hub") return Math.min(22, base * 1.3);
@@ -14103,35 +14094,332 @@ function FilteredCharts({ matchingDois, totalDois }) {
 }
 
 // public/force-graph.tsx
+var import_react12 = __toESM(require_react());
+
+// public/community-graph/CommunityGraph.tsx
 var import_react10 = __toESM(require_react());
 
-// node_modules/d3-force/src/center.js
-function center_default(x3, y3) {
-  var nodes, strength = 1;
-  if (x3 == null) x3 = 0;
-  if (y3 == null) y3 = 0;
-  function force() {
-    var i, n = nodes.length, node, sx = 0, sy = 0;
-    for (i = 0; i < n; ++i) {
-      node = nodes[i], sx += node.x, sy += node.y;
+// public/community-graph/communities.ts
+var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1"];
+var OTHER_KEY = "__other__";
+var OTHER_COLOR = "#b0b0b0";
+var OTHER_LABEL = "Other";
+function majorCommunities(nodes, adapter, primaryKey, minSize) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const n of nodes) {
+    if (adapter.isEgo(n)) continue;
+    const key = adapter.getCommunityKey(n);
+    if (!key) continue;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  const set2 = /* @__PURE__ */ new Set();
+  for (const [key, count] of counts) {
+    if (count >= minSize) set2.add(key);
+  }
+  if (primaryKey) set2.add(primaryKey);
+  return set2;
+}
+function effectiveKey(n, adapter, major) {
+  if (adapter.isEgo(n)) return null;
+  const key = adapter.getCommunityKey(n);
+  if (key && major.has(key)) return key;
+  if (key === null) return null;
+  return OTHER_KEY;
+}
+function buildCommunityColors(nodes, adapter, primaryKey, minSize) {
+  const major = majorCommunities(nodes, adapter, primaryKey, minSize);
+  const counts = /* @__PURE__ */ new Map();
+  for (const n of nodes) {
+    const k = adapter.getCommunityKey(n);
+    if (k) counts.set(k, (counts.get(k) || 0) + 1);
+  }
+  const external = [...major].filter((k) => k !== primaryKey).sort((a2, b) => (counts.get(b) || 0) - (counts.get(a2) || 0));
+  const map = /* @__PURE__ */ new Map();
+  external.forEach((key, i) => map.set(key, COMMUNITY_PALETTE[i % COMMUNITY_PALETTE.length]));
+  if (primaryKey) map.set(primaryKey, "var(--accent)");
+  map.set(OTHER_KEY, OTHER_COLOR);
+  return map;
+}
+
+// public/community-graph/render.tsx
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+function GraphDefs() {
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("radialGradient", { id: "community-glow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
+  ] }) });
+}
+function Links({ links, connected }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("g", { children: links.map((l, i) => {
+    const s = typeof l.source === "object" ? l.source : null;
+    const t = typeof l.target === "object" ? l.target : null;
+    if (!s || !t) return null;
+    const dim = connected && !(connected.has(s.id) && connected.has(t.id));
+    const w = l.weight || 1;
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+      "line",
+      {
+        x1: s.x,
+        y1: s.y,
+        x2: t.x,
+        y2: t.y,
+        stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
+        strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
+      },
+      i
+    );
+  }) });
+}
+function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("g", { children: nodes.map((n) => {
+    const id = adapter.getId(n);
+    const r = adapter.getRadius(n);
+    const isHov = id === hoverId;
+    const isSel = id === selectedId;
+    const dim = connected && !connected.has(id);
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+      "g",
+      {
+        transform: `translate(${n.x}, ${n.y})`,
+        onMouseEnter: () => onHoverStart(id),
+        onMouseLeave: onHoverEnd,
+        onMouseDown: (e) => onMouseDown(e, n),
+        onClick: (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          onClick(n);
+        },
+        style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
+        children: [
+          (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+            "circle",
+            {
+              r,
+              fill: nodeColor(n),
+              stroke: isHov || isSel ? "#fff" : "rgba(255,255,255,0.2)",
+              strokeWidth: isHov || isSel ? 2 : 1
+            }
+          )
+        ]
+      },
+      id
+    );
+  }) });
+}
+
+// public/community-graph/labels.tsx
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+function EgoLabel({ ego, adapter }) {
+  const r = adapter.getRadius(ego);
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+    "div",
+    {
+      style: {
+        position: "absolute",
+        left: ego.x,
+        top: ego.y + r + 6,
+        transform: "translate(-50%, 0)",
+        pointerEvents: "none",
+        fontSize: 11,
+        color: "rgba(255,255,255,0.85)",
+        whiteSpace: "nowrap",
+        zIndex: 1,
+        textShadow: "0 1px 2px rgba(0,0,0,0.6)"
+      },
+      children: adapter.getLabel(ego)
     }
-    for (sx = (sx / n - x3) * strength, sy = (sy / n - y3) * strength, i = 0; i < n; ++i) {
-      node = nodes[i], node.x -= sx, node.y -= sy;
+  );
+}
+function HoverTooltip({ node, adapter }) {
+  const r = adapter.getRadius(node);
+  const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
+  const footnote = adapter.getHoverFootnote?.(node) ?? null;
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+    "div",
+    {
+      style: {
+        position: "absolute",
+        left: node.x,
+        top: node.y - r - 8,
+        transform: "translate(-50%, -100%)",
+        pointerEvents: "none",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-soft)",
+        borderRadius: 4,
+        padding: "6px 10px",
+        fontSize: 12,
+        color: "var(--fg)",
+        whiteSpace: "nowrap",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+        zIndex: 2
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontWeight: 500 }, children: adapter.getLabel(node) }),
+        subtitle && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", marginTop: 2 }, children: subtitle }),
+        footnote && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)", marginTop: 2 }, children: footnote })
+      ]
+    }
+  );
+}
+
+// public/smoothed-hulls.tsx
+var import_react9 = __toESM(require_react());
+
+// public/convex-hull.ts
+var RING_SAMPLES = 72;
+function computeRawRadii(points, cx, cy) {
+  const SPREAD = 6;
+  const SMOOTH_WINDOW = 9;
+  const radii = new Array(RING_SAMPLES).fill(0);
+  for (const p of points) {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const angle = Math.atan2(dy, dx);
+    const dist = Math.hypot(dx, dy);
+    const center = (Math.round(angle / (Math.PI * 2) * RING_SAMPLES) % RING_SAMPLES + RING_SAMPLES) % RING_SAMPLES;
+    for (let k = -SPREAD; k <= SPREAD; k++) {
+      const falloff = 1 - Math.abs(k) / (SPREAD + 1);
+      const i = ((center + k) % RING_SAMPLES + RING_SAMPLES) % RING_SAMPLES;
+      const contribution = dist * falloff;
+      if (contribution > radii[i]) radii[i] = contribution;
     }
   }
-  force.initialize = function(_) {
-    nodes = _;
+  const half = Math.floor(SMOOTH_WINDOW / 2);
+  return radii.map((_, i) => {
+    let sum = 0;
+    for (let k = -half; k <= half; k++) {
+      sum += radii[((i + k) % RING_SAMPLES + RING_SAMPLES) % RING_SAMPLES];
+    }
+    return sum / SMOOTH_WINDOW;
+  });
+}
+function radiiToPath(radii, cx, cy, pad) {
+  const ring = radii.map((r, i) => {
+    const angle = i / RING_SAMPLES * Math.PI * 2;
+    const radius2 = r + pad;
+    return { x: cx + Math.cos(angle) * radius2, y: cy + Math.sin(angle) * radius2 };
+  });
+  return smoothClosedPath(ring, 0.5);
+}
+function smoothClosedPath(pts, tension) {
+  const n = pts.length;
+  if (n < 2) return "";
+  const k = tension / 6;
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n];
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % n];
+    const p3 = pts[(i + 2) % n];
+    const c1x = p1.x + (p2.x - p0.x) * k;
+    const c1y = p1.y + (p2.y - p0.y) * k;
+    const c2x = p2.x - (p3.x - p1.x) * k;
+    const c2y = p2.y - (p3.y - p1.y) * k;
+    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
+  }
+  d += " Z";
+  return d;
+}
+
+// public/smoothed-hulls.tsx
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var DEFAULT_LERP_ALPHA = 0.18;
+var DEFAULT_PAD = 32;
+var MIN_GROUP_SIZE = 3;
+function lerp(a2, b, t) {
+  return a2 + (b - a2) * t;
+}
+function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALPHA }) {
+  const stateRef = (0, import_react9.useRef)(/* @__PURE__ */ new Map());
+  const state = stateRef.current;
+  const paths = [];
+  const seenKeys = /* @__PURE__ */ new Set();
+  for (const g of groups) {
+    if (g.points.length < MIN_GROUP_SIZE) continue;
+    const cx = g.points.reduce((s, p) => s + p.x, 0) / g.points.length;
+    const cy = g.points.reduce((s, p) => s + p.y, 0) / g.points.length;
+    const targetRadii = computeRawRadii(g.points, cx, cy);
+    const prev = state.get(g.key);
+    const radii = prev ? prev.radii.map((r, i) => lerp(r, targetRadii[i], lerpAlpha)) : targetRadii;
+    const scx = prev ? lerp(prev.cx, cx, lerpAlpha) : cx;
+    const scy = prev ? lerp(prev.cy, cy, lerpAlpha) : cy;
+    state.set(g.key, { radii, cx: scx, cy: scy });
+    seenKeys.add(g.key);
+    paths.push({
+      key: g.key,
+      d: radiiToPath(radii, scx, scy, pad),
+      color: g.color,
+      emphasis: !!g.emphasis
+    });
+  }
+  for (const key of [...state.keys()]) {
+    if (!seenKeys.has(key)) state.delete(key);
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("g", { children: paths.map((p) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+    "path",
+    {
+      d: p.d,
+      fill: p.color,
+      fillOpacity: p.emphasis ? 0.18 : 0.1,
+      stroke: p.color,
+      strokeOpacity: p.emphasis ? 0.55 : 0.35,
+      strokeWidth: p.emphasis ? 1.5 : 1
+    },
+    p.key
+  )) });
+}
+
+// public/community-graph/hulls.tsx
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize }) {
+  const major = majorCommunities(nodes, adapter, primaryKey, minSize);
+  const groups = /* @__PURE__ */ new Map();
+  for (const n of nodes) {
+    const key = effectiveKey(n, adapter, major);
+    if (!key) continue;
+    const points = groups.get(key);
+    if (points) points.push({ x: n.x, y: n.y });
+    else groups.set(key, [{ x: n.x, y: n.y }]);
+  }
+  const hullGroups = [];
+  for (const [key, points] of groups) {
+    hullGroups.push({
+      key,
+      color: colors.get(key) || "#888",
+      points,
+      emphasis: key === primaryKey
+    });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SmoothedHulls, { groups: hullGroups });
+}
+
+// public/community-graph/drag.ts
+function startDrag(e, node, svg, sim, pinAfterDrag) {
+  e.preventDefault();
+  e.stopPropagation();
+  const pt = svg.createSVGPoint();
+  node.fx = node.x;
+  node.fy = node.y;
+  sim?.alphaTarget(0.3).restart();
+  const onMove = (ev) => {
+    pt.x = ev.clientX;
+    pt.y = ev.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    node.fx = p.x;
+    node.fy = p.y;
   };
-  force.x = function(_) {
-    return arguments.length ? (x3 = +_, force) : x3;
+  const onUp = () => {
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+    sim?.alphaTarget(0);
+    if (!pinAfterDrag) {
+      node.fx = null;
+      node.fy = null;
+    }
   };
-  force.y = function(_) {
-    return arguments.length ? (y3 = +_, force) : y3;
-  };
-  force.strength = function(_) {
-    return arguments.length ? (strength = +_, force) : strength;
-  };
-  return force;
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
 }
 
 // node_modules/d3-quadtree/src/add.js
@@ -14243,14 +14531,14 @@ function quad_default(node, x0, y0, x1, y1) {
 }
 
 // node_modules/d3-quadtree/src/find.js
-function find_default(x3, y3, radius) {
+function find_default(x3, y3, radius2) {
   var data, x0 = this._x0, y0 = this._y0, x1, y1, x22, y22, x32 = this._x1, y32 = this._y1, quads = [], node = this._root, q, i;
   if (node) quads.push(new quad_default(node, x0, y0, x32, y32));
-  if (radius == null) radius = Infinity;
+  if (radius2 == null) radius2 = Infinity;
   else {
-    x0 = x3 - radius, y0 = y3 - radius;
-    x32 = x3 + radius, y32 = y3 + radius;
-    radius *= radius;
+    x0 = x3 - radius2, y0 = y3 - radius2;
+    x32 = x3 + radius2, y32 = y3 + radius2;
+    radius2 *= radius2;
   }
   while (q = quads.pop()) {
     if (!(node = q.node) || (x1 = q.x0) > x32 || (y1 = q.y0) > y32 || (x22 = q.x1) < x0 || (y22 = q.y1) < y0) continue;
@@ -14269,8 +14557,8 @@ function find_default(x3, y3, radius) {
       }
     } else {
       var dx = x3 - +this._x.call(null, node.data), dy = y3 - +this._y.call(null, node.data), d2 = dx * dx + dy * dy;
-      if (d2 < radius) {
-        var d = Math.sqrt(radius = d2);
+      if (d2 < radius2) {
+        var d = Math.sqrt(radius2 = d2);
         x0 = x3 - d, y0 = y3 - d;
         x32 = x3 + d, y32 = y3 + d;
         data = node.data;
@@ -14448,9 +14736,9 @@ function x(d) {
 function y(d) {
   return d.y + d.vy;
 }
-function collide_default(radius) {
+function collide_default(radius2) {
   var nodes, radii, random, strength = 1, iterations = 1;
-  if (typeof radius !== "function") radius = constant_default(radius == null ? 1 : +radius);
+  if (typeof radius2 !== "function") radius2 = constant_default(radius2 == null ? 1 : +radius2);
   function force() {
     var i, n = nodes.length, tree, node, xi, yi, ri, ri2;
     for (var k = 0; k < iterations; ++k) {
@@ -14495,7 +14783,7 @@ function collide_default(radius) {
     if (!nodes) return;
     var i, n = nodes.length, node;
     radii = new Array(n);
-    for (i = 0; i < n; ++i) node = nodes[i], radii[node.index] = +radius(node, i, nodes);
+    for (i = 0; i < n; ++i) node = nodes[i], radii[node.index] = +radius2(node, i, nodes);
   }
   force.initialize = function(_nodes, _random) {
     nodes = _nodes;
@@ -14509,7 +14797,7 @@ function collide_default(radius) {
     return arguments.length ? (strength = +_, force) : strength;
   };
   force.radius = function(_) {
-    return arguments.length ? (radius = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : radius;
+    return arguments.length ? (radius2 = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : radius2;
   };
   return force;
 }
@@ -14821,9 +15109,9 @@ function simulation_default(nodes) {
       if (node.fx != null) node.x = node.fx;
       if (node.fy != null) node.y = node.fy;
       if (isNaN(node.x) || isNaN(node.y)) {
-        var radius = initialRadius * Math.sqrt(0.5 + i), angle = i * initialAngle;
-        node.x = radius * Math.cos(angle);
-        node.y = radius * Math.sin(angle);
+        var radius2 = initialRadius * Math.sqrt(0.5 + i), angle = i * initialAngle;
+        node.x = radius2 * Math.cos(angle);
+        node.y = radius2 * Math.sin(angle);
       }
       if (isNaN(node.vx) || isNaN(node.vy)) {
         node.vx = node.vy = 0;
@@ -14867,16 +15155,16 @@ function simulation_default(nodes) {
     force: function(name, _) {
       return arguments.length > 1 ? (_ == null ? forces.delete(name) : forces.set(name, initializeForce(_)), simulation) : forces.get(name);
     },
-    find: function(x3, y3, radius) {
+    find: function(x3, y3, radius2) {
       var i = 0, n = nodes.length, dx, dy, d2, node, closest;
-      if (radius == null) radius = Infinity;
-      else radius *= radius;
+      if (radius2 == null) radius2 = Infinity;
+      else radius2 *= radius2;
       for (i = 0; i < n; ++i) {
         node = nodes[i];
         dx = x3 - node.x;
         dy = y3 - node.y;
         d2 = dx * dx + dy * dy;
-        if (d2 < radius) closest = node, radius = d2;
+        if (d2 < radius2) closest = node, radius2 = d2;
       }
       return closest;
     },
@@ -15027,255 +15315,154 @@ function y_default2(y3) {
   return force;
 }
 
-// public/smoothed-hulls.tsx
-var import_react9 = __toESM(require_react());
-
-// public/convex-hull.ts
-var RING_SAMPLES = 72;
-function computeRawRadii(points, cx, cy) {
-  const SPREAD = 6;
-  const SMOOTH_WINDOW = 9;
-  const radii = new Array(RING_SAMPLES).fill(0);
-  for (const p of points) {
-    const dx = p.x - cx;
-    const dy = p.y - cy;
-    const angle = Math.atan2(dy, dx);
-    const dist = Math.hypot(dx, dy);
-    const center = (Math.round(angle / (Math.PI * 2) * RING_SAMPLES) % RING_SAMPLES + RING_SAMPLES) % RING_SAMPLES;
-    for (let k = -SPREAD; k <= SPREAD; k++) {
-      const falloff = 1 - Math.abs(k) / (SPREAD + 1);
-      const i = ((center + k) % RING_SAMPLES + RING_SAMPLES) % RING_SAMPLES;
-      const contribution = dist * falloff;
-      if (contribution > radii[i]) radii[i] = contribution;
-    }
-  }
-  const half = Math.floor(SMOOTH_WINDOW / 2);
-  return radii.map((_, i) => {
-    let sum = 0;
-    for (let k = -half; k <= half; k++) {
-      sum += radii[((i + k) % RING_SAMPLES + RING_SAMPLES) % RING_SAMPLES];
-    }
-    return sum / SMOOTH_WINDOW;
+// public/community-graph/forces.ts
+function initialNodes(nodes, adapter, width, height) {
+  return nodes.map((n) => {
+    const ego = adapter.isEgo(n);
+    return {
+      ...n,
+      x: width / 2 + (Math.random() - 0.5) * width * 0.5,
+      y: height / 2 + (Math.random() - 0.5) * height * 0.5,
+      fx: ego ? width / 2 : null,
+      fy: ego ? height / 2 : null
+    };
   });
 }
-function radiiToPath(radii, cx, cy, pad) {
-  const ring = radii.map((r, i) => {
-    const angle = i / RING_SAMPLES * Math.PI * 2;
-    const radius = r + pad;
-    return { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
-  });
-  return smoothClosedPath(ring, 0.5);
+function initialLinks(edges, nodes, adapter) {
+  const nmap = new Map(nodes.map((n) => [adapter.getId(n), n]));
+  return edges.filter((e) => nmap.has(e.source) && nmap.has(e.target)).map((e) => ({ ...e }));
 }
-function smoothClosedPath(pts, tension) {
-  const n = pts.length;
-  if (n < 2) return "";
-  const k = tension / 6;
-  let d = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 0; i < n; i++) {
-    const p0 = pts[(i - 1 + n) % n];
-    const p1 = pts[i];
-    const p2 = pts[(i + 1) % n];
-    const p3 = pts[(i + 2) % n];
-    const c1x = p1.x + (p2.x - p0.x) * k;
-    const c1y = p1.y + (p2.y - p0.y) * k;
-    const c2x = p2.x - (p3.x - p1.x) * k;
-    const c2y = p2.y - (p3.y - p1.y) * k;
-    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
+function buildAnchors(nodes, adapter, primaryKey, width, height, minSize) {
+  const major = majorCommunities(nodes, adapter, primaryKey, minSize);
+  const counts = /* @__PURE__ */ new Map();
+  for (const key of major) {
+    counts.set(key, nodes.filter((n) => adapter.getCommunityKey(n) === key).length);
   }
-  d += " Z";
-  return d;
-}
-
-// public/smoothed-hulls.tsx
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
-var DEFAULT_LERP_ALPHA = 0.18;
-var DEFAULT_PAD = 32;
-var MIN_GROUP_SIZE = 3;
-function lerp(a2, b, t) {
-  return a2 + (b - a2) * t;
-}
-function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALPHA }) {
-  const stateRef = (0, import_react9.useRef)(/* @__PURE__ */ new Map());
-  const state = stateRef.current;
-  const paths = [];
-  const seenKeys = /* @__PURE__ */ new Set();
-  for (const g of groups) {
-    if (g.points.length < MIN_GROUP_SIZE) continue;
-    const cx = g.points.reduce((s, p) => s + p.x, 0) / g.points.length;
-    const cy = g.points.reduce((s, p) => s + p.y, 0) / g.points.length;
-    const targetRadii = computeRawRadii(g.points, cx, cy);
-    const prev = state.get(g.key);
-    const radii = prev ? prev.radii.map((r, i) => lerp(r, targetRadii[i], lerpAlpha)) : targetRadii;
-    const scx = prev ? lerp(prev.cx, cx, lerpAlpha) : cx;
-    const scy = prev ? lerp(prev.cy, cy, lerpAlpha) : cy;
-    state.set(g.key, { radii, cx: scx, cy: scy });
-    seenKeys.add(g.key);
-    paths.push({
-      key: g.key,
-      d: radiiToPath(radii, scx, scy, pad),
-      color: g.color,
-      emphasis: !!g.emphasis
+  const hasOther = nodes.some((n) => effectiveKey(n, adapter, major) === OTHER_KEY);
+  const slots = [...major].filter((k) => k !== primaryKey).sort((a2, b) => (counts.get(b) || 0) - (counts.get(a2) || 0));
+  if (hasOther) slots.push(OTHER_KEY);
+  const map = /* @__PURE__ */ new Map();
+  const orbit = Math.min(width, height) * 0.38;
+  slots.forEach((key, i) => {
+    const a2 = i / Math.max(slots.length, 1) * Math.PI * 2 - Math.PI / 2;
+    map.set(key, {
+      x: width / 2 + Math.cos(a2) * orbit,
+      y: height / 2 + Math.sin(a2) * orbit
     });
-  }
-  for (const key of [...state.keys()]) {
-    if (!seenKeys.has(key)) state.delete(key);
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("g", { children: paths.map((p) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
-    "path",
-    {
-      d: p.d,
-      fill: p.color,
-      fillOpacity: p.emphasis ? 0.18 : 0.1,
-      stroke: p.color,
-      strokeOpacity: p.emphasis ? 0.55 : 0.35,
-      strokeWidth: p.emphasis ? 1.5 : 1
-    },
-    p.key
-  )) });
+  });
+  if (primaryKey) map.set(primaryKey, { x: width / 2, y: height / 2 });
+  return map;
 }
-
-// public/explorer-hull-groups.ts
-function pickColor(i) {
-  return COMMUNITY_COLORS[i % COMMUNITY_COLORS.length];
-}
-function groupByInstitution(nodes, institutionsByAuthor) {
-  const hubs = nodes.filter((n) => n.group === "institution");
-  const authors = nodes.filter((n) => n.group === "author");
-  return hubs.map((hub, i) => {
-    const points = [{ x: hub.x, y: hub.y }];
-    for (const a2 of authors) {
-      if (institutionsByAuthor.get(a2.id)?.has(hub.id)) points.push({ x: a2.x, y: a2.y });
-    }
-    return { key: hub.id, label: hub.label, color: pickColor(i), points };
+function createSimulation({
+  nodes,
+  links,
+  anchors,
+  adapter,
+  primaryKey,
+  width,
+  height,
+  config,
+  onTick
+}) {
+  const major = majorCommunities(nodes, adapter, primaryKey, config.minCommunitySize);
+  const anchorFor = (n) => {
+    if (adapter.isEgo(n) && primaryKey) return anchors.get(primaryKey);
+    const key = effectiveKey(n, adapter, major);
+    return key ? anchors.get(key) : null;
+  };
+  const chargeFn = typeof config.charge === "function" ? config.charge : () => config.charge;
+  return simulation_default(nodes).force("link", link_default(links).id((d) => adapter.getId(d)).distance(config.linkDistance).strength(config.linkStrength)).force("charge", manyBody_default().strength((d) => chargeFn(d.group))).force("clusterX", x_default2((d) => anchorFor(d)?.x ?? width / 2).strength(config.clusterStrengthX)).force("clusterY", y_default2((d) => anchorFor(d)?.y ?? height / 2).strength(config.clusterStrengthY)).force("collide", collide_default().radius((d) => adapter.getRadius(d) + config.collidePad)).alpha(1).alphaDecay(0.025).on("tick", () => {
+    clampToViewport(nodes, adapter, width, height);
+    onTick();
   });
 }
-function groupByJournalHub(nodes, journalsByAuthor, doisByJournal) {
-  const hubs = nodes.filter((n) => n.group === "journal");
-  const authors = nodes.filter((n) => n.group === "author");
-  const dois = nodes.filter((n) => n.group === "doi");
-  return hubs.map((hub, i) => {
-    const points = [{ x: hub.x, y: hub.y }];
-    for (const a2 of authors) {
-      if (journalsByAuthor.get(a2.id)?.has(hub.id)) points.push({ x: a2.x, y: a2.y });
-    }
-    for (const d of dois) {
-      if (doisByJournal.get(hub.id)?.has(d.id)) points.push({ x: d.x, y: d.y });
-    }
-    return { key: hub.id, label: hub.label, color: pickColor(i), points };
-  });
-}
-function groupByYear(nodes, yearByDoi) {
-  const byYear = /* @__PURE__ */ new Map();
+function clampToViewport(nodes, adapter, width, height) {
   for (const n of nodes) {
-    if (n.group !== "doi") continue;
-    const y3 = yearByDoi.get(n.id);
-    if (!y3) continue;
-    const list = byYear.get(y3) || [];
-    list.push({ x: n.x, y: n.y });
-    byYear.set(y3, list);
+    const r = adapter.getRadius(n);
+    n.x = Math.max(r + 2, Math.min(width - r - 2, n.x));
+    n.y = Math.max(r + 2, Math.min(height - r - 2, n.y));
   }
-  return [...byYear.keys()].sort().map((y3, i) => ({
-    key: "year:" + y3,
-    label: y3,
-    color: pickColor(i),
-    points: byYear.get(y3)
-  }));
-}
-function buildExplorerHullGroups(dim, nodes, affiliations) {
-  if (dim === "none") return [];
-  if (dim === "institution") return groupByInstitution(nodes, affiliations.institutionsByAuthor);
-  if (dim === "journal") return groupByJournalHub(nodes, affiliations.journalsByAuthor, affiliations.doisByJournal);
-  if (dim === "year") return groupByYear(nodes, affiliations.yearByDoi);
-  return [];
 }
 
-// public/force-graph-nodes.tsx
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
-function ForceGraphNodes({ nodes, radius, color, hoverId, selectedId, connected, onHoverStart, onHoverEnd, onMouseDown, onClick }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("g", { children: nodes.map((n) => {
-    const r = radius(n);
-    const isSel = n.id === selectedId;
-    const isHov = n.id === hoverId;
-    const dim = connected && !connected.has(n.id);
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
-      "g",
-      {
-        transform: `translate(${n.x || 0}, ${n.y || 0})`,
-        onMouseEnter: () => onHoverStart(n.id),
-        onMouseLeave: onHoverEnd,
-        onMouseDown: (e) => onMouseDown(e, n),
-        onClick: () => onClick(n),
-        style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
-        children: [
-          (isSel || isHov) && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("circle", { r: r + 10, fill: "url(#nodeGlow)" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("circle", { r, fill: color(n), stroke: isSel ? "#fff" : "rgba(255,255,255,0.2)", strokeWidth: isSel ? 2 : 1 }),
-          (isHov || isSel || n.weight && n.weight > 3) && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("text", { x: 0, y: r + 14, textAnchor: "middle", fill: "rgba(255,255,255,0.85)", fontSize: 11, fontFamily: "Inter, sans-serif", style: { pointerEvents: "none" }, children: n.label })
-        ]
-      },
-      n.id
-    );
-  }) });
-}
+// public/community-graph/types.ts
+var DEFAULT_FORCE_CONFIG = {
+  linkDistance: 25,
+  linkStrength: 0.1,
+  charge: -40,
+  clusterStrengthX: 0.4,
+  clusterStrengthY: 0.45,
+  collidePad: 3,
+  minCommunitySize: 3
+};
 
-// public/force-graph.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function ForceGraph({ nodes: inNodes, links: inLinks, width, height, selectedId, onNodeClick, accent = "var(--accent)", groupBy = "none", affiliations }) {
+// public/community-graph/CommunityGraph.tsx
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+function CommunityGraph({
+  nodes: inNodes,
+  links: inLinks,
+  adapter,
+  primaryKey = null,
+  width,
+  height,
+  selectedId,
+  forceConfig,
+  onNodeClick,
+  pinDraggedNodes = false
+}) {
+  const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react10.useRef)(null);
   const simRef = (0, import_react10.useRef)(null);
   const [, tick] = (0, import_react10.useState)(0);
   const [hoverId, setHoverId] = (0, import_react10.useState)(null);
-  const dragRef = (0, import_react10.useRef)(null);
+  const communityColors = (0, import_react10.useMemo)(
+    () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
+    [inNodes, adapter, primaryKey, config.minCommunitySize]
+  );
+  const major = (0, import_react10.useMemo)(
+    () => majorCommunities(inNodes, adapter, primaryKey, config.minCommunitySize),
+    [inNodes, adapter, primaryKey, config.minCommunitySize]
+  );
   const { nodes, links } = (0, import_react10.useMemo)(() => {
-    const ns = inNodes.map((n) => ({
-      ...n,
-      x: width / 2 + (Math.random() - 0.5) * Math.min(width, height) * 0.6,
-      y: height / 2 + (Math.random() - 0.5) * Math.min(width, height) * 0.6
-    }));
-    const nmap = new Map(ns.map((n) => [n.id, n]));
-    const ls = inLinks.filter((l) => nmap.has(l.source) && nmap.has(l.target)).map((l) => ({ ...l }));
+    const ns = initialNodes(inNodes, adapter, width, height);
+    const ls = initialLinks(inLinks, ns, adapter);
     return { nodes: ns, links: ls };
-  }, [inNodes, inLinks, width, height]);
+  }, [inNodes, inLinks, adapter, width, height]);
+  const anchors = (0, import_react10.useMemo)(
+    () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize),
+    [nodes, adapter, primaryKey, width, height, config.minCommunitySize]
+  );
   (0, import_react10.useEffect)(() => {
-    const sim = simulation_default(nodes).force("link", link_default(links).id((d) => d.id).distance((d) => 60 + (d.weight ? 0 : 10)).strength(0.4)).force("charge", manyBody_default().strength((d) => d.group === "doi" ? -60 : -220)).force("x", x_default2(width / 2).strength(0.05)).force("y", y_default2(height / 2).strength(0.05)).force("center", center_default(width / 2, height / 2)).force("collide", collide_default().radius((d) => radius(d) + 4)).alpha(1).alphaDecay(0.025).on("tick", () => tick((v) => v + 1));
+    const sim = createSimulation({
+      nodes,
+      links,
+      anchors,
+      adapter,
+      primaryKey,
+      width,
+      height,
+      config,
+      onTick: () => tick((v) => v + 1)
+    });
     simRef.current = sim;
     return () => {
       sim.stop();
     };
-  }, [nodes, links, width, height]);
-  function radius(n) {
-    return nodeRadius(n.weight || 1, n.role);
-  }
-  function color(n) {
-    return COLORS[n.group] || accent;
-  }
-  function handleMouseDown(e, node) {
-    e.preventDefault();
-    const svg = svgRef.current;
-    const pt = svg.createSVGPoint();
-    dragRef.current = node;
-    node.fx = node.x;
-    node.fy = node.y;
-    simRef.current?.alphaTarget(0.3).restart();
-    function onMove(ev) {
-      pt.x = ev.clientX;
-      pt.y = ev.clientY;
-      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-      node.fx = p.x;
-      node.fy = p.y;
+  }, [nodes, links, anchors, adapter, primaryKey, width, height]);
+  const nodeColor = (n) => {
+    let communityColor = null;
+    if (adapter.isEgo(n)) {
+      communityColor = "var(--accent)";
+    } else {
+      const key = effectiveKey(n, adapter, major);
+      if (key === OTHER_KEY) communityColor = communityColors.get(OTHER_KEY) || "#b0b0b0";
+      else if (key) communityColor = communityColors.get(key) || null;
     }
-    function onUp() {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      simRef.current?.alphaTarget(0);
-      node.fx = null;
-      node.fy = null;
-      dragRef.current = null;
-    }
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }
+    const override = adapter.getNodeColor?.(n, communityColor);
+    if (override) return override;
+    return communityColor || "var(--fg-muted)";
+  };
   const connected = (0, import_react10.useMemo)(() => {
-    const focusId = hoverId || selectedId;
+    const focusId = hoverId || selectedId || null;
     if (!focusId) return null;
     const set2 = /* @__PURE__ */ new Set([focusId]);
     for (const l of links) {
@@ -15286,61 +15473,158 @@ function ForceGraph({ nodes: inNodes, links: inLinks, width, height, selectedId,
     }
     return set2;
   }, [hoverId, selectedId, links]);
-  const hullGroups = groupBy === "none" || !affiliations ? [] : buildExplorerHullGroups(groupBy, nodes, affiliations).map((g) => ({ key: g.key, color: g.color, points: g.points }));
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("radialGradient", { id: "nodeGlow", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("stop", { offset: "0%", stopColor: accent, stopOpacity: "0.5" }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("stop", { offset: "100%", stopColor: accent, stopOpacity: "0" })
-    ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SmoothedHulls, { groups: hullGroups }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("g", { children: links.map((l, i) => {
-      const s = typeof l.source === "object" ? l.source : null;
-      const t = typeof l.target === "object" ? l.target : null;
-      if (!s || !t) return null;
-      const dim = connected && !(connected.has(s.id) && connected.has(t.id));
-      return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
-        "line",
+  const ego = nodes.find((n) => adapter.isEgo(n));
+  const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
+  const showHover = hovered && !adapter.isEgo(hovered);
+  const handleMouseDown = (e, node) => {
+    const isEgo = adapter.isEgo(node);
+    startDrag(e, node, svgRef.current, simRef.current, pinDraggedNodes || isEgo);
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: { position: "relative", width, height }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphDefs, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+        CommunityHulls,
         {
-          x1: s.x,
-          y1: s.y,
-          x2: t.x,
-          y2: t.y,
-          stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
-          strokeWidth: l.weight ? Math.min(2.5, 0.5 + l.weight * 0.4) : 0.7
-        },
-        i
-      );
-    }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
-      ForceGraphNodes,
-      {
-        nodes,
-        radius,
-        color,
-        hoverId,
-        selectedId,
-        connected,
-        onHoverStart: setHoverId,
-        onHoverEnd: () => setHoverId(null),
-        onMouseDown: handleMouseDown,
-        onClick: (n) => onNodeClick?.(n)
-      }
-    )
+          nodes,
+          adapter,
+          primaryKey,
+          colors: communityColors,
+          minSize: config.minCommunitySize
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Links, { links, connected }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+        Nodes,
+        {
+          nodes,
+          adapter,
+          hoverId,
+          selectedId: selectedId ?? null,
+          connected,
+          nodeColor,
+          onHoverStart: setHoverId,
+          onHoverEnd: () => setHoverId(null),
+          onMouseDown: handleMouseDown,
+          onClick: (n) => onNodeClick?.(n)
+        }
+      )
+    ] }),
+    ego && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(EgoLabel, { ego, adapter }),
+    showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(HoverTooltip, { node: hovered, adapter })
   ] });
 }
 
-// public/graph-search.tsx
+// public/community-graph/legend.tsx
 var import_react11 = __toESM(require_react());
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var import_jsx_runtime20 = __toESM(require_jsx_runtime());
+function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
+  const colors = (0, import_react11.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const major = (0, import_react11.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const items = (0, import_react11.useMemo)(() => {
+    const byKey = /* @__PURE__ */ new Map();
+    for (const n of nodes) {
+      const key = effectiveKey(n, adapter, major);
+      if (!key) continue;
+      const name = key === OTHER_KEY ? OTHER_LABEL : adapter.getCommunityLabel?.(key, n) ?? key;
+      const e = byKey.get(key) || { name, count: 0 };
+      e.count += 1;
+      byKey.set(key, e);
+    }
+    return [...byKey.entries()].sort((a2, b) => {
+      if (a2[0] === primaryKey) return -1;
+      if (b[0] === primaryKey) return 1;
+      if (a2[0] === OTHER_KEY) return 1;
+      if (b[0] === OTHER_KEY) return -1;
+      return b[1].count - a2[1].count;
+    });
+  }, [nodes, adapter, major, primaryKey]);
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: info.name }),
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
+      "\xB7",
+      info.count
+    ] })
+  ] }, key)) });
+}
+
+// public/force-graph.tsx
+var import_jsx_runtime21 = __toESM(require_jsx_runtime());
+function radius(n) {
+  return nodeRadius(n.weight || 1, n.role);
+}
+function communityKeyFor(n, institutionsByAuthor) {
+  if (n.group === "institution") return n.id;
+  if (n.group === "author") {
+    const insts = institutionsByAuthor.get(n.id);
+    if (!insts || insts.size === 0) return null;
+    return [...insts].sort()[0];
+  }
+  return null;
+}
+function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null }) {
+  const institutionLabelById = (0, import_react12.useMemo)(() => {
+    const m2 = /* @__PURE__ */ new Map();
+    for (const n of nodes) if (n.group === "institution") m2.set(n.id, n.label);
+    return m2;
+  }, [nodes]);
+  const adapter = (0, import_react12.useMemo)(() => ({
+    getId: (n) => n.id,
+    getLabel: (n) => n.label,
+    getRadius: radius,
+    getCommunityKey: (n) => communityKeyFor(n, affiliations.institutionsByAuthor),
+    isEgo: () => false,
+    getCommunityLabel: (key) => institutionLabelById.get(key) || key,
+    getNodeColor: (n, communityColor) => {
+      if (n.group === "institution" || n.group === "author") return communityColor;
+      return COLORS[n.group] || null;
+    },
+    getHoverSubtitle: (n) => {
+      if (n.group !== "author") return null;
+      const insts = affiliations.institutionsByAuthor.get(n.id);
+      if (!insts || insts.size === 0) return null;
+      const firstId = [...insts].sort()[0];
+      return institutionLabelById.get(firstId) || null;
+    },
+    getHoverFootnote: (n) => n.weight ? `${n.weight} ${n.weight === 1 ? "paper" : "papers"}` : null
+  }), [affiliations, institutionLabelById]);
+  return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+    CommunityGraph,
+    {
+      nodes,
+      links,
+      adapter,
+      primaryKey: homeInstitutionId,
+      width,
+      height,
+      selectedId: selectedId ?? null,
+      onNodeClick,
+      forceConfig: {
+        linkDistance: 60,
+        linkStrength: 0.4,
+        charge: (g) => g === "doi" ? -60 : -220,
+        clusterStrengthX: 0.15,
+        clusterStrengthY: 0.15,
+        collidePad: 4,
+        minCommunitySize: 3
+      }
+    }
+  );
+}
+
+// public/graph-search.tsx
+var import_react13 = __toESM(require_react());
+var import_jsx_runtime22 = __toESM(require_jsx_runtime());
 function GraphSearch({ nodes, onSelect }) {
-  const [query, setQuery] = (0, import_react11.useState)("");
-  const [open, setOpen] = (0, import_react11.useState)(false);
-  const matches = (0, import_react11.useMemo)(() => {
+  const [query, setQuery] = (0, import_react13.useState)("");
+  const [open, setOpen] = (0, import_react13.useState)(false);
+  const matches = (0, import_react13.useMemo)(() => {
     if (!query || query.length < 2) return [];
     const q = query.toLowerCase();
     return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
   }, [query, nodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
     "div",
     {
       style: { position: "relative", display: "inline-block" },
@@ -15348,7 +15632,7 @@ function GraphSearch({ nodes, onSelect }) {
         if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
           "input",
           {
             value: query,
@@ -15361,7 +15645,7 @@ function GraphSearch({ nodes, onSelect }) {
             style: { fontFamily: "var(--mono)", fontSize: 12, padding: "6px 10px", width: 180 }
           }
         ),
-        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: {
+        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: {
           position: "absolute",
           top: "100%",
           left: 0,
@@ -15374,7 +15658,7 @@ function GraphSearch({ nodes, onSelect }) {
           overflow: "auto",
           width: 280,
           marginTop: 4
-        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
           "div",
           {
             tabIndex: 0,
@@ -15398,9 +15682,9 @@ function GraphSearch({ nodes, onSelect }) {
             onMouseOver: (e) => e.currentTarget.style.background = "var(--bg-elev)",
             onMouseOut: (e) => e.currentTarget.style.background = "transparent",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
+              /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
+              /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
             ]
           },
           n.id
@@ -15411,15 +15695,15 @@ function GraphSearch({ nodes, onSelect }) {
 }
 
 // public/time-slider.tsx
-var import_react12 = __toESM(require_react());
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_react14 = __toESM(require_react());
+var import_jsx_runtime23 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
   const y3 = parseInt(n.published.substring(0, 4));
   return y3 > 1900 ? y3 : 0;
 }
 function useTimeRange(nodes) {
-  return (0, import_react12.useMemo)(() => {
+  return (0, import_react14.useMemo)(() => {
     let min = 9999, max = 0;
     for (const n of nodes) {
       const y3 = yearOf(n);
@@ -15433,13 +15717,13 @@ function useTimeRange(nodes) {
 }
 
 // public/use-graph-data.ts
-var import_react13 = __toESM(require_react());
+var import_react15 = __toESM(require_react());
 function useGraphData() {
-  const [rawNodes, setRawNodes] = (0, import_react13.useState)([]);
-  const [rawEdges, setRawEdges] = (0, import_react13.useState)([]);
-  const [tagMeta, setTagMeta] = (0, import_react13.useState)({});
-  const [loading, setLoading] = (0, import_react13.useState)(true);
-  (0, import_react13.useEffect)(() => {
+  const [rawNodes, setRawNodes] = (0, import_react15.useState)([]);
+  const [rawEdges, setRawEdges] = (0, import_react15.useState)([]);
+  const [tagMeta, setTagMeta] = (0, import_react15.useState)({});
+  const [loading, setLoading] = (0, import_react15.useState)(true);
+  (0, import_react15.useEffect)(() => {
     fetch("/api/graph").then((r) => r.json()).then((d) => {
       setRawNodes(d.nodes);
       setRawEdges(d.edges);
@@ -15452,10 +15736,10 @@ function useGraphData() {
 }
 
 // public/shell-helpers.ts
-var import_react14 = __toESM(require_react());
+var import_react16 = __toESM(require_react());
 var CACHE_KEY = "nexus.me";
 function useCurrentUser() {
-  const [me, setMe] = (0, import_react14.useState)(() => {
+  const [me, setMe] = (0, import_react16.useState)(() => {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -15463,9 +15747,9 @@ function useCurrentUser() {
       return null;
     }
   });
-  const [loading, setLoading] = (0, import_react14.useState)(!me);
-  const [error, setError] = (0, import_react14.useState)(null);
-  (0, import_react14.useEffect)(() => {
+  const [loading, setLoading] = (0, import_react16.useState)(!me);
+  const [error, setError] = (0, import_react16.useState)(null);
+  (0, import_react16.useEffect)(() => {
     let cancelled = false;
     fetch("/api/auth?action=me").then((r) => r.status === 401 ? null : r.json()).then((d) => {
       if (cancelled) return;
@@ -15493,45 +15777,50 @@ function applyTheme(me) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
-var GROUP_BY_OPTIONS = [
-  { value: "none", label: "None" },
-  { value: "institution", label: "Institution" },
-  { value: "journal", label: "Journal" },
-  { value: "year", label: "Year" }
-];
+var import_react17 = __toESM(require_react());
+var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 var LEGEND = [
   { group: "author", label: "Author" },
   { group: "institution", label: "Institution" },
   { group: "journal", label: "Journal" },
   { group: "paper", label: "Paper" }
 ];
-function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, groupBy, onGroupByChange }) {
+function pickCommunityKey(n, institutionsByAuthor) {
+  if (n.group === "institution") return n.id;
+  if (n.group === "author") {
+    const insts = institutionsByAuthor.get(n.id);
+    if (!insts || insts.size === 0) return null;
+    return [...insts].sort()[0];
+  }
+  return null;
+}
+function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, affiliations, homeInstitutionId }) {
   const paperColor = "#888";
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("aside", { className: "graph-filters", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "filter-label", children: "Node types" }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Check, { checked: flags.author, onChange: (v) => setFlag("author", v), label: "Authors", color: COLORS.author }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Check, { checked: flags.institution, onChange: (v) => setFlag("institution", v), label: "Institutions", color: COLORS.institution }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Check, { checked: flags.journal, onChange: (v) => setFlag("journal", v), label: "Journals", color: COLORS.journal }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Check, { checked: flags.paper, onChange: (v) => setFlag("paper", v), label: "Papers", color: paperColor })
+  const institutionLabelById = (0, import_react17.useMemo)(() => {
+    const m2 = /* @__PURE__ */ new Map();
+    for (const n of nodes) if (n.group === "institution") m2.set(n.id, n.label);
+    return m2;
+  }, [nodes]);
+  const legendAdapter = (0, import_react17.useMemo)(() => ({
+    getId: (n) => n.id,
+    getLabel: (n) => n.label,
+    getRadius: () => 0,
+    getCommunityKey: (n) => pickCommunityKey(n, affiliations.institutionsByAuthor),
+    isEgo: () => false,
+    getCommunityLabel: (key) => institutionLabelById.get(key) || key
+  }), [affiliations, institutionLabelById]);
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("aside", { className: "graph-filters", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "filter-label", children: "Node types" }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Check, { checked: flags.author, onChange: (v) => setFlag("author", v), label: "Authors", color: COLORS.author }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Check, { checked: flags.institution, onChange: (v) => setFlag("institution", v), label: "Institutions", color: COLORS.institution }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Check, { checked: flags.journal, onChange: (v) => setFlag("journal", v), label: "Journals", color: COLORS.journal }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Check, { checked: flags.paper, onChange: (v) => setFlag("paper", v), label: "Papers", color: paperColor })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "filter-label", children: "Group by" }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
-        "select",
-        {
-          value: groupBy,
-          onChange: (e) => onGroupByChange(e.target.value),
-          style: { width: "100%", padding: "6px 8px", fontFamily: "var(--mono)", fontSize: 12, background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 3, color: "var(--fg)" },
-          children: GROUP_BY_OPTIONS.map((o) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("option", { value: o.value, children: o.label }, o.value))
-        }
-      )
-    ] }),
-    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "filter-label", children: "Year floor" }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "year-slider", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "filter-label", children: "Year floor" }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "year-slider", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           "input",
           {
             type: "range",
@@ -15541,20 +15830,24 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
             onChange: (e) => onYearFloorChange(parseInt(e.target.value))
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "year-val mono", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "year-val mono", children: [
           "\u2265 ",
           yearFloor
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "filter-group legend", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "filter-label", children: "Legend" }),
-      LEGEND.map((l) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "legend-row", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "dot", style: { background: l.group === "paper" ? paperColor : COLORS[l.group] } }),
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "filter-group legend", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "filter-label", children: "Node types" }),
+      LEGEND.map((l) => /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "legend-row", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { className: "dot", style: { background: l.group === "paper" ? paperColor : COLORS[l.group] } }),
         l.label
       ] }, l.group))
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
+    nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "filter-group legend", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "filter-label", children: "Communities" }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
   ] });
 }
 
@@ -15600,7 +15893,7 @@ function buildExplorerAffiliations(rawNodes, rawEdges) {
 }
 
 // public/graph-explorer-body.tsx
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
+var import_jsx_runtime25 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: true, author: true, journal: true, paper: false };
 function yearOf2(n) {
   if (n.group !== "doi" || !n.published) return 0;
@@ -15609,28 +15902,27 @@ function yearOf2(n) {
 }
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
-  const [selectedNodeId, setSelectedNodeId] = (0, import_react15.useState)(null);
-  const [flags, setFlags] = (0, import_react15.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react15.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
-  const [yearFloor, setYearFloor] = (0, import_react15.useState)(0);
-  const [groupBy, setGroupBy] = (0, import_react15.useState)("none");
-  const highlightedIds = (0, import_react15.useMemo)(() => {
+  const [selectedNodeId, setSelectedNodeId] = (0, import_react18.useState)(null);
+  const [flags, setFlags] = (0, import_react18.useState)(DEFAULT_FLAGS);
+  const setFlag = (0, import_react18.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
+  const [yearFloor, setYearFloor] = (0, import_react18.useState)(0);
+  const highlightedIds = (0, import_react18.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  const containerRef = (0, import_react15.useRef)(null);
-  const [dims, setDims] = (0, import_react15.useState)({ width: 900, height: 600 });
-  (0, import_react15.useEffect)(() => {
+  const containerRef = (0, import_react18.useRef)(null);
+  const [dims, setDims] = (0, import_react18.useState)({ width: 900, height: 600 });
+  (0, import_react18.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) setSelectedNodeId(f);
   }, [rawNodes, highlightedIds]);
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  (0, import_react15.useEffect)(() => {
+  (0, import_react18.useEffect)(() => {
     if (yearMin && !yearFloor) setYearFloor(yearMin);
   }, [yearMin, yearFloor]);
-  (0, import_react15.useEffect)(() => {
+  (0, import_react18.useEffect)(() => {
     const el = containerRef.current;
     if (!el) return;
     const obs = new ResizeObserver((entries) => {
@@ -15642,7 +15934,7 @@ function GraphExplorerBody() {
     if (r.width > 0) setDims({ width: r.width, height: r.height });
     return () => obs.disconnect();
   }, []);
-  const filteredRaw = (0, import_react15.useMemo)(() => {
+  const filteredRaw = (0, import_react18.useMemo)(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
     const nodes = rawNodes.filter((n) => {
@@ -15655,22 +15947,28 @@ function GraphExplorerBody() {
     const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
     return { nodes, edges };
   }, [rawNodes, rawEdges, yearFloor, yearMin]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = (0, import_react15.useMemo)(
+  const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = (0, import_react18.useMemo)(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null),
     [filteredRaw]
   );
-  const projectedNodes = (0, import_react15.useMemo)(() => {
+  const projectedNodes = (0, import_react18.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     const groupMatch = (g) => g === "institution" && flags.institution || g === "author" && flags.author || g === "journal" && flags.journal || g === "doi" && flags.paper;
     return enriched.filter((n) => groupMatch(n.group));
   }, [projectedRaw, tagMeta, flags]);
-  const projectedEdges = (0, import_react15.useMemo)(() => {
+  const projectedEdges = (0, import_react18.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const doiCount = (0, import_react15.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
-  const affiliations = (0, import_react15.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
-  const chartDois = (0, import_react15.useMemo)(() => {
+  const doiCount = (0, import_react18.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
+  const affiliations = (0, import_react18.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
+  const homeInstitutionId = (0, import_react18.useMemo)(() => {
+    const ror = me?.profile.ror;
+    if (!ror) return null;
+    const hit = rawNodes.find((n) => n.group === "institution" && n.ext_id === ror);
+    return hit?.id ?? null;
+  }, [me, rawNodes]);
+  const chartDois = (0, import_react18.useMemo)(() => {
     if (!selectedNodeId) return matchingDois;
     const nodeDois = /* @__PURE__ */ new Set();
     for (const e of rawEdges) if (e.target === selectedNodeId) {
@@ -15679,65 +15977,65 @@ function GraphExplorerBody() {
     }
     return nodeDois;
   }, [selectedNodeId, rawEdges, matchingDois]);
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
-  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "view graph-view", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("header", { className: "view-head compact", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("h1", { className: "view-title tight", children: [
+  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
+  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "eyebrow", children: "No data." }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "view graph-view", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("header", { className: "view-head compact", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("h1", { className: "view-title tight", children: [
           "The institution as a ",
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: "network" }),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("em", { children: "network" }),
           "."
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(Tag, { mono: true, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(Tag, { mono: true, children: [
           projectedNodes.length,
           " NODES"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(Tag, { mono: true, tone: "muted", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(Tag, { mono: true, tone: "muted", children: [
           projectedEdges.length,
           " EDGES"
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => setSelectedNodeId(id) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "graph-layout", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFloor: yearFloor || yearMin, onYearFloorChange: setYearFloor, groupBy, onGroupByChange: setGroupBy }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { ref: containerRef, className: "graph-canvas", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "canvas-corner-tl", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => setSelectedNodeId(id) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "graph-layout", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFloor: yearFloor || yearMin, onYearFloorChange: setYearFloor, nodes: projectedNodes, affiliations, homeInstitutionId }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { ref: containerRef, className: "graph-canvas", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "canvas-corner-tl", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
             "tenant \xB7 ",
-            /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: me?.tenant || "\u2014" })
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("em", { children: me?.tenant || "\u2014" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
             "role \xB7 ",
-            /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: me?.role || "\u2014" })
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("em", { children: me?.role || "\u2014" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
             "scope \xB7 ",
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(ForceGraph, { nodes: projectedNodes, links: projectedEdges, width: dims.width, height: dims.height, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id), groupBy, affiliations })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(ForceGraph, { nodes: projectedNodes, links: projectedEdges, width: dims.width, height: dims.height, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id), affiliations, homeInstitutionId })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(NodeDetail, { nodeId: selectedNodeId, onClose: () => setSelectedNodeId(null) }) })
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(NodeDetail, { nodeId: selectedNodeId, onClose: () => setSelectedNodeId(null) }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(StatsBar, { nodes: projectedNodes, edges: projectedEdges, doiCount }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { marginTop: 20, borderTop: "1px solid var(--border-soft)", paddingTop: 20 }, children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(FilteredCharts, { matchingDois: chartDois, totalDois: doiCount }) })
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatsBar, { nodes: projectedNodes, edges: projectedEdges, doiCount }),
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { marginTop: 20, borderTop: "1px solid var(--border-soft)", paddingTop: 20 }, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(FilteredCharts, { matchingDois: chartDois, totalDois: doiCount }) })
   ] });
 }
 
 // public/relationships.tsx
-var import_jsx_runtime22 = __toESM(require_jsx_runtime());
+var import_jsx_runtime26 = __toESM(require_jsx_runtime());
 var root = null;
 function mount() {
   const el = document.getElementById("relationships-root");
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphExplorerBody, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphExplorerBody, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/relationships-bundle.js"] = mount;
