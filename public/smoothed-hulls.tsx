@@ -12,7 +12,7 @@ interface RingState { radii: number[]; cx: number; cy: number }
 
 const DEFAULT_LERP_ALPHA = 0.18;
 const DEFAULT_PAD = 32;
-const MIN_GROUP_SIZE = 3;
+const MIN_GROUP_SIZE = 2;
 
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 
