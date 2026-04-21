@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import type { CommunityAdapter } from './types';
 import type { SimN } from './forces';
 
@@ -14,33 +14,48 @@ interface Args<N> {
   height: number;
 }
 
-/** Transform follows the live tick position so the target stays centered
- *  even as the sim settles. The CSS transition on the <g> node is only
- *  applied during the first ~500ms after a zoom change; after that the
- *  transform snaps per-tick so transitions don't keep restarting toward
- *  moving targets. Returns both the transform and whether to animate. */
+const EASE_MS = 500;
+
+/** On zoom change: capture the target's position once, hold it stable for
+ *  EASE_MS so the CSS transition has a fixed endpoint to interpolate to.
+ *  After the ease, track the live tick position (snap, no transition) so
+ *  the centered node stays centered as the sim continues to settle. */
 export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adapter, width, height }: Args<N>): { t: ViewTransform | null; animate: boolean } {
   const lastZoomIdRef = useRef<string | null | undefined>(null);
-  const animateUntilRef = useRef<number>(0);
+  const frozenRef = useRef<ViewTransform | null>(null);
+  const easeUntilRef = useRef<number>(0);
+
+  const now = typeof performance !== 'undefined' ? performance.now() : 0;
 
   if (lastZoomIdRef.current !== zoomToId) {
     lastZoomIdRef.current = zoomToId;
-    animateUntilRef.current = typeof performance !== 'undefined' ? performance.now() + 500 : 500;
+    easeUntilRef.current = now + EASE_MS;
+    if (zoomToId) {
+      const target = nodes.find(n => adapter.getId(n) === zoomToId);
+      frozenRef.current = target ? {
+        tx: width / 2 - target.x * zoomScale,
+        ty: height / 2 - target.y * zoomScale,
+        scale: zoomScale,
+      } : null;
+    } else {
+      frozenRef.current = null;
+    }
   }
-
-  useEffect(() => { /* bind lifecycle; no-op */ }, [zoomToId]);
 
   if (override) return { t: override, animate: true };
   if (!zoomToId) return { t: null, animate: true };
+
+  const easing = now < easeUntilRef.current;
+  if (easing && frozenRef.current) return { t: frozenRef.current, animate: true };
+
   const target = nodes.find(n => adapter.getId(n) === zoomToId);
   if (!target) return { t: null, animate: false };
-  const now = typeof performance !== 'undefined' ? performance.now() : 0;
   return {
     t: {
       tx: width / 2 - target.x * zoomScale,
       ty: height / 2 - target.y * zoomScale,
       scale: zoomScale,
     },
-    animate: now < animateUntilRef.current,
+    animate: false,
   };
 }

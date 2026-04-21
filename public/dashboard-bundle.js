@@ -14405,27 +14405,39 @@ var DEFAULT_FORCE_CONFIG = {
 
 // public/community-graph/use-view-transform.ts
 var import_react4 = __toESM(require_react());
+var EASE_MS = 500;
 function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height }) {
   const lastZoomIdRef = (0, import_react4.useRef)(null);
-  const animateUntilRef = (0, import_react4.useRef)(0);
+  const frozenRef = (0, import_react4.useRef)(null);
+  const easeUntilRef = (0, import_react4.useRef)(0);
+  const now2 = typeof performance !== "undefined" ? performance.now() : 0;
   if (lastZoomIdRef.current !== zoomToId) {
     lastZoomIdRef.current = zoomToId;
-    animateUntilRef.current = typeof performance !== "undefined" ? performance.now() + 500 : 500;
+    easeUntilRef.current = now2 + EASE_MS;
+    if (zoomToId) {
+      const target2 = nodes.find((n) => adapter.getId(n) === zoomToId);
+      frozenRef.current = target2 ? {
+        tx: width / 2 - target2.x * zoomScale,
+        ty: height / 2 - target2.y * zoomScale,
+        scale: zoomScale
+      } : null;
+    } else {
+      frozenRef.current = null;
+    }
   }
-  (0, import_react4.useEffect)(() => {
-  }, [zoomToId]);
   if (override) return { t: override, animate: true };
   if (!zoomToId) return { t: null, animate: true };
+  const easing = now2 < easeUntilRef.current;
+  if (easing && frozenRef.current) return { t: frozenRef.current, animate: true };
   const target = nodes.find((n) => adapter.getId(n) === zoomToId);
   if (!target) return { t: null, animate: false };
-  const now2 = typeof performance !== "undefined" ? performance.now() : 0;
   return {
     t: {
       tx: width / 2 - target.x * zoomScale,
       ty: height / 2 - target.y * zoomScale,
       scale: zoomScale
     },
-    animate: now2 < animateUntilRef.current
+    animate: false
   };
 }
 
