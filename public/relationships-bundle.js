@@ -14776,13 +14776,17 @@ function explorerCommunityKey(n, institutionCountsByAuthor, homeInstitutionId, j
   if (n.group === "author") {
     const counts = institutionCountsByAuthor.get(n.id);
     if (!counts || counts.size === 0) return null;
-    if (homeInstitutionId && counts.has(homeInstitutionId)) return homeInstitutionId;
     let bestKey = null;
     let bestCount = -1;
     for (const [k, c2] of counts) {
-      if (c2 > bestCount || c2 === bestCount && bestKey !== null && k < bestKey) {
+      if (c2 > bestCount) {
         bestKey = k;
         bestCount = c2;
+        continue;
+      }
+      if (c2 === bestCount && bestKey !== null) {
+        if (k === homeInstitutionId) bestKey = k;
+        else if (bestKey !== homeInstitutionId && k < bestKey) bestKey = k;
       }
     }
     return bestKey;

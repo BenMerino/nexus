@@ -1,9 +1,12 @@
 import type { EnrichedSimNode } from './relationship-types';
 
-/** Pick the community key for an Explorer node. Authors go to their home
- *  institution (if affiliated) or the institution they publish with most.
- *  Institutions are their own community. When papers are visible, journals
- *  become their own community and papers inherit theirs. */
+/** Pick the community key for an Explorer node. Authors go to the
+ *  institution they publish with most — their actual primary affiliation,
+ *  not wherever they happen to share a paper with the tenant. Institutions
+ *  are their own community. When papers are visible, journals become their
+ *  own community and papers inherit theirs.
+ *  homeInstitutionId is accepted only as a tie-breaker so authors with an
+ *  equal split prefer the tenant's own institution. */
 export function explorerCommunityKey(
   n: EnrichedSimNode,
   institutionCountsByAuthor: Map<string, Map<string, number>>,
@@ -14,13 +17,14 @@ export function explorerCommunityKey(
   if (n.group === 'author') {
     const counts = institutionCountsByAuthor.get(n.id);
     if (!counts || counts.size === 0) return null;
-    if (homeInstitutionId && counts.has(homeInstitutionId)) return homeInstitutionId;
     let bestKey: string | null = null;
     let bestCount = -1;
     for (const [k, c] of counts) {
-      if (c > bestCount || (c === bestCount && bestKey !== null && k < bestKey)) {
-        bestKey = k;
-        bestCount = c;
+      if (c > bestCount) { bestKey = k; bestCount = c; continue; }
+      if (c === bestCount && bestKey !== null) {
+        // tie-break: home institution wins; otherwise lexicographic for stability
+        if (k === homeInstitutionId) bestKey = k;
+        else if (bestKey !== homeInstitutionId && k < bestKey) bestKey = k;
       }
     }
     return bestKey;
