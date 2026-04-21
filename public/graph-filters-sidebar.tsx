@@ -86,7 +86,7 @@ export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloo
       {nodes.length > 0 && (
         <div className="filter-group legend">
           <div className="filter-label">Communities</div>
-          <CommunityLegend nodes={nodes} adapter={legendAdapter} primaryKey={homeInstitutionId} />
+          <CommunityLegend nodes={nodes} adapter={legendAdapter} primaryKey={homeInstitutionId} minSize={1} />
         </div>
       )}
 

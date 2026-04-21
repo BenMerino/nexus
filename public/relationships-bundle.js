@@ -14917,7 +14917,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       clusterStrengthX: clusterStrength,
       clusterStrengthY: clusterStrength,
       collidePad: 6,
-      minCommunitySize: journalByDoi ? 1 : 2,
+      minCommunitySize: 1,
       orbitRadius: 0.36
     };
   }, [width, height, nodes.length, journalByDoi]);
@@ -15202,7 +15202,7 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
     ] }),
     nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "filter-group legend", children: [
       /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "filter-label", children: "Communities" }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId })
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId, minSize: 1 })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
   ] });
@@ -15368,7 +15368,7 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
     getCommunityLabel: (key) => labelById.get(key) || key
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById]);
   const buckets = (0, import_react15.useMemo)(() => {
-    const minSize = journalByDoi ? 1 : 2;
+    const minSize = 1;
     const colors = buildCommunityColors(nodes, adapter, homeInstitutionId, minSize);
     const major = majorCommunities(nodes, adapter, homeInstitutionId, minSize);
     const map = /* @__PURE__ */ new Map();
@@ -15472,7 +15472,7 @@ function explorerSelectedColor(selectedId, nodes, affiliations, homeInstitutionI
     },
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId
   };
-  const minSize = journalByDoi ? 1 : 2;
+  const minSize = 1;
   const colors = buildCommunityColors(nodes, adapter, homeInstitutionId, minSize);
   const major = majorCommunities(nodes, adapter, homeInstitutionId, minSize);
   const key = effectiveKey(node, adapter, major);

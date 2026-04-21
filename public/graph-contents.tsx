@@ -59,7 +59,7 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById]);
 
   const buckets = useMemo<Bucket[]>(() => {
-    const minSize = journalByDoi ? 1 : 2;
+    const minSize = 1;
     const colors = buildCommunityColors(nodes, adapter, homeInstitutionId, minSize);
     const major = majorCommunities(nodes, adapter, homeInstitutionId, minSize);
     const map = new Map<string, Bucket>();

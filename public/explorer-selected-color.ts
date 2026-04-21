@@ -38,7 +38,7 @@ export function explorerSelectedColor(
     isEgo: (n: EnrichedSimNode) => !!egoAuthorId && n.id === egoAuthorId,
   };
 
-  const minSize = journalByDoi ? 1 : 2;
+  const minSize = 1;
   const colors = buildCommunityColors(nodes, adapter, homeInstitutionId, minSize);
   const major = majorCommunities(nodes, adapter, homeInstitutionId, minSize);
   const key = effectiveKey(node, adapter, major);

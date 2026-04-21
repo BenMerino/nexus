@@ -90,7 +90,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       clusterStrengthX: clusterStrength,
       clusterStrengthY: clusterStrength,
       collidePad: 6,
-      minCommunitySize: journalByDoi ? 1 : 2,
+      minCommunitySize: 1,
       orbitRadius: 0.36,
     };
   }, [width, height, nodes.length, journalByDoi]);
