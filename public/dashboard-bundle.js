@@ -13406,7 +13406,6 @@ function GraphScene({
   onMouseDown,
   onNodeClick,
   transform,
-  animate,
   ego,
   hovered,
   showHover
@@ -13414,7 +13413,7 @@ function GraphScene({
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GraphDefs, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { style: { transform: t, transformOrigin: "0 0", transition: animate ? "transform 400ms cubic-bezier(0.4, 0, 0.2, 1)" : "none" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected }),
@@ -14417,40 +14416,70 @@ var DEFAULT_FORCE_CONFIG = {
 
 // public/community-graph/use-view-transform.ts
 var import_react4 = __toESM(require_react());
-var EASE_MS = 500;
+var EASE_MS = 400;
+var IDENTITY = { tx: 0, ty: 0, scale: 1 };
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+function lerp2(a2, b, t) {
+  return a2 + (b - a2) * t;
+}
+function targetFor(zoomToId, nodes, adapter, zoomScale, width, height) {
+  if (!zoomToId) return IDENTITY;
+  const target = nodes.find((n) => adapter.getId(n) === zoomToId);
+  if (!target) return null;
+  return { tx: width / 2 - target.x * zoomScale, ty: height / 2 - target.y * zoomScale, scale: zoomScale };
+}
 function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height }) {
+  const [, bump] = (0, import_react4.useState)(0);
+  const startRef = (0, import_react4.useRef)(IDENTITY);
+  const endRef = (0, import_react4.useRef)(IDENTITY);
+  const startTimeRef = (0, import_react4.useRef)(0);
+  const currentRef = (0, import_react4.useRef)(IDENTITY);
   const lastZoomIdRef = (0, import_react4.useRef)(null);
-  const frozenRef = (0, import_react4.useRef)(null);
-  const easeUntilRef = (0, import_react4.useRef)(0);
-  const now2 = typeof performance !== "undefined" ? performance.now() : 0;
+  const rafRef = (0, import_react4.useRef)(null);
   if (lastZoomIdRef.current !== zoomToId) {
     lastZoomIdRef.current = zoomToId;
-    easeUntilRef.current = now2 + EASE_MS;
-    if (zoomToId) {
-      const target2 = nodes.find((n) => adapter.getId(n) === zoomToId);
-      frozenRef.current = target2 ? {
-        tx: width / 2 - target2.x * zoomScale,
-        ty: height / 2 - target2.y * zoomScale,
-        scale: zoomScale
-      } : null;
-    } else {
-      frozenRef.current = null;
-    }
+    startRef.current = { ...currentRef.current };
+    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height);
+    startTimeRef.current = typeof performance !== "undefined" ? performance.now() : 0;
   }
-  if (override) return { t: override, animate: true };
-  if (!zoomToId) return { t: null, animate: true };
-  const easing = now2 < easeUntilRef.current;
-  if (easing && frozenRef.current) return { t: frozenRef.current, animate: true };
-  const target = nodes.find((n) => adapter.getId(n) === zoomToId);
-  if (!target) return { t: null, animate: false };
-  return {
-    t: {
-      tx: width / 2 - target.x * zoomScale,
-      ty: height / 2 - target.y * zoomScale,
-      scale: zoomScale
-    },
-    animate: false
-  };
+  (0, import_react4.useEffect)(() => {
+    let cancelled = false;
+    const tick = (now2) => {
+      if (cancelled) return;
+      const end = endRef.current;
+      if (!end) {
+        rafRef.current = null;
+        return;
+      }
+      const elapsed = now2 - startTimeRef.current;
+      const p = Math.min(1, elapsed / EASE_MS);
+      const e = easeOutCubic(p);
+      currentRef.current = {
+        tx: lerp2(startRef.current.tx, end.tx, e),
+        ty: lerp2(startRef.current.ty, end.ty, e),
+        scale: lerp2(startRef.current.scale, end.scale, e)
+      };
+      if (p >= 1 && zoomToId) {
+        const live = targetFor(zoomToId, nodes, adapter, zoomScale, width, height);
+        if (live) {
+          endRef.current = live;
+          currentRef.current = live;
+        }
+      }
+      bump((v) => (v + 1) % 1e9);
+      if (p < 1 || zoomToId) rafRef.current = requestAnimationFrame(tick);
+      else rafRef.current = null;
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [zoomToId, zoomScale, width, height, nodes, adapter]);
+  if (override) return { t: override };
+  return { t: currentRef.current };
 }
 
 // public/community-graph/CommunityGraph.tsx
@@ -14542,7 +14571,7 @@ function CommunityGraph({
     const isEgo = adapter.isEgo(node);
     startDrag(e, node, svgRef.current, simRef.current, pinDraggedNodes || isEgo);
   };
-  const { t: effectiveTransform, animate } = useViewTransform({
+  const { t: effectiveTransform } = useViewTransform({
     override: viewTransform,
     zoomToId,
     zoomScale,
@@ -14572,7 +14601,6 @@ function CommunityGraph({
       onMouseDown: handleMouseDown,
       onNodeClick,
       transform: effectiveTransform,
-      animate,
       ego,
       hovered: hovered ?? null,
       showHover: !!showHover
