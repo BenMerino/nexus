@@ -106,10 +106,12 @@ export function createSimulation<N, L extends BaseLink>({
     });
 }
 
+const VIEWPORT_PAD = 40;
 function clampToViewport<N>(nodes: SimN<N>[], adapter: CommunityAdapter<N>, width: number, height: number) {
   for (const n of nodes) {
     const r = adapter.getRadius(n);
-    n.x = Math.max(r + 2, Math.min(width - r - 2, n.x));
-    n.y = Math.max(r + 2, Math.min(height - r - 2, n.y));
+    const m = r + VIEWPORT_PAD;
+    n.x = Math.max(m, Math.min(width - m, n.x));
+    n.y = Math.max(m, Math.min(height - m, n.y));
   }
 }

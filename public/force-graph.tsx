@@ -3,6 +3,7 @@ import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
 import { COLORS, nodeRadius } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
 import { CommunityGraph, type CommunityAdapter } from './community-graph';
+import { explorerCommunityKey } from './explorer-community';
 
 interface Props {
   nodes: EnrichedSimNode[];
@@ -20,29 +21,6 @@ interface Props {
 
 function radius(n: EnrichedSimNode): number {
   return nodeRadius(n.weight || 1, n.role);
-}
-
-/** Pick the community key for an Explorer node. Authors inherit their first
- *  institution; institution nodes are their own community. When papers are
- *  visible, journals become their own community and papers inherit theirs —
- *  so journal hulls gather their papers. Otherwise journals/papers return
- *  null (land in "Other"). */
-function communityKeyFor(
-  n: EnrichedSimNode,
-  institutionsByAuthor: Map<string, Set<string>>,
-  journalByDoi: Map<string, string> | null,
-): string | null {
-  if (n.group === 'institution') return n.id;
-  if (n.group === 'author') {
-    const insts = institutionsByAuthor.get(n.id);
-    if (!insts || insts.size === 0) return null;
-    return [...insts].sort()[0];
-  }
-  if (journalByDoi) {
-    if (n.group === 'journal') return n.id;
-    if (n.group === 'doi') return journalByDoi.get(n.id) ?? null;
-  }
-  return null;
 }
 
 export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null }: Props) {
@@ -69,7 +47,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     getRadius: radius,
     getCommunityKey: n => {
       if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
-      return communityKeyFor(n, affiliations.institutionsByAuthor, journalByDoi);
+      return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi);
     },
     isEgo: n => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: key => labelById.get(key) || key,
@@ -103,7 +81,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       clusterStrengthY: clusterStrength,
       collidePad: 6,
       minCommunitySize: journalByDoi ? 1 : 2,
-      orbitRadius: 0.45,
+      orbitRadius: 0.36,
     };
   }, [width, height, nodes.length, journalByDoi]);
 

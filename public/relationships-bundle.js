@@ -15366,11 +15366,13 @@ function createSimulation({
     onTick();
   });
 }
+var VIEWPORT_PAD = 40;
 function clampToViewport(nodes, adapter, width, height) {
   for (const n of nodes) {
     const r = adapter.getRadius(n);
-    n.x = Math.max(r + 2, Math.min(width - r - 2, n.x));
-    n.y = Math.max(r + 2, Math.min(height - r - 2, n.y));
+    const m2 = r + VIEWPORT_PAD;
+    n.x = Math.max(m2, Math.min(width - m2, n.x));
+    n.y = Math.max(m2, Math.min(height - m2, n.y));
   }
 }
 
@@ -15540,23 +15542,34 @@ function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
   ] }, key)) });
 }
 
-// public/force-graph.tsx
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
-function radius(n) {
-  return nodeRadius(n.weight || 1, n.role);
-}
-function communityKeyFor(n, institutionsByAuthor, journalByDoi) {
+// public/explorer-community.ts
+function explorerCommunityKey(n, institutionCountsByAuthor, homeInstitutionId, journalByDoi) {
   if (n.group === "institution") return n.id;
   if (n.group === "author") {
-    const insts = institutionsByAuthor.get(n.id);
-    if (!insts || insts.size === 0) return null;
-    return [...insts].sort()[0];
+    const counts = institutionCountsByAuthor.get(n.id);
+    if (!counts || counts.size === 0) return null;
+    if (homeInstitutionId && counts.has(homeInstitutionId)) return homeInstitutionId;
+    let bestKey = null;
+    let bestCount = -1;
+    for (const [k, c2] of counts) {
+      if (c2 > bestCount || c2 === bestCount && bestKey !== null && k < bestKey) {
+        bestKey = k;
+        bestCount = c2;
+      }
+    }
+    return bestKey;
   }
   if (journalByDoi) {
     if (n.group === "journal") return n.id;
     if (n.group === "doi") return journalByDoi.get(n.id) ?? null;
   }
   return null;
+}
+
+// public/force-graph.tsx
+var import_jsx_runtime21 = __toESM(require_jsx_runtime());
+function radius(n) {
+  return nodeRadius(n.weight || 1, n.role);
 }
 function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null }) {
   const labelById = (0, import_react12.useMemo)(() => {
@@ -15579,7 +15592,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     getRadius: radius,
     getCommunityKey: (n) => {
       if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
-      return communityKeyFor(n, affiliations.institutionsByAuthor, journalByDoi);
+      return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi);
     },
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: (key) => labelById.get(key) || key,
@@ -15611,7 +15624,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       clusterStrengthY: clusterStrength,
       collidePad: 6,
       minCommunitySize: journalByDoi ? 1 : 2,
-      orbitRadius: 0.45
+      orbitRadius: 0.36
     };
   }, [width, height, nodes.length, journalByDoi]);
   return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
@@ -15829,36 +15842,28 @@ function applyTheme(me) {
 // public/graph-filters-sidebar.tsx
 var import_react18 = __toESM(require_react());
 var import_jsx_runtime25 = __toESM(require_jsx_runtime());
-var LEGEND = [
-  { group: "author", label: "Author" },
-  { group: "institution", label: "Institution" },
-  { group: "journal", label: "Journal" },
-  { group: "paper", label: "Paper" }
-];
-function pickCommunityKey(n, institutionsByAuthor) {
-  if (n.group === "institution") return n.id;
-  if (n.group === "author") {
-    const insts = institutionsByAuthor.get(n.id);
-    if (!insts || insts.size === 0) return null;
-    return [...insts].sort()[0];
-  }
-  return null;
-}
 function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, affiliations, homeInstitutionId }) {
   const paperColor = "#888";
-  const institutionLabelById = (0, import_react18.useMemo)(() => {
+  const labelById = (0, import_react18.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
-    for (const n of nodes) if (n.group === "institution") m2.set(n.id, n.label);
+    for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [nodes]);
+  const journalByDoi = (0, import_react18.useMemo)(() => {
+    const hasPapers = nodes.some((n) => n.group === "doi");
+    if (!hasPapers) return null;
+    const m2 = /* @__PURE__ */ new Map();
+    for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m2.set(d, jId);
+    return m2;
+  }, [nodes, affiliations.doisByJournal]);
   const legendAdapter = (0, import_react18.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
-    getCommunityKey: (n) => pickCommunityKey(n, affiliations.institutionsByAuthor),
+    getCommunityKey: (n) => explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi),
     isEgo: () => false,
-    getCommunityLabel: (key) => institutionLabelById.get(key) || key
-  }), [affiliations, institutionLabelById]);
+    getCommunityLabel: (key) => labelById.get(key) || key
+  }), [affiliations, labelById, homeInstitutionId, journalByDoi]);
   return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("aside", { className: "graph-filters", children: [
     /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "filter-group", children: [
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "filter-label", children: "Node types" }),
@@ -15887,13 +15892,6 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "filter-group legend", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "filter-label", children: "Node types" }),
-      LEGEND.map((l) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "legend-row", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { className: "dot", style: { background: l.group === "paper" ? paperColor : COLORS[l.group] } }),
-        l.label
-      ] }, l.group))
-    ] }),
     nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "filter-group legend", children: [
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "filter-label", children: "Communities" }),
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId })
@@ -15913,6 +15911,7 @@ function buildExplorerAffiliations(rawNodes, rawEdges) {
     tagsByDoi.set(e.source, list);
   }
   const institutionsByAuthor = /* @__PURE__ */ new Map();
+  const institutionCountsByAuthor = /* @__PURE__ */ new Map();
   const journalsByAuthor = /* @__PURE__ */ new Map();
   const doisByJournal = /* @__PURE__ */ new Map();
   for (const [doiId, tagIds] of tagsByDoi) {
@@ -15927,7 +15926,12 @@ function buildExplorerAffiliations(rawNodes, rawEdges) {
     }
     for (const a2 of authors) {
       if (!institutionsByAuthor.has(a2)) institutionsByAuthor.set(a2, /* @__PURE__ */ new Set());
-      for (const i of institutions) institutionsByAuthor.get(a2).add(i);
+      if (!institutionCountsByAuthor.has(a2)) institutionCountsByAuthor.set(a2, /* @__PURE__ */ new Map());
+      const counts = institutionCountsByAuthor.get(a2);
+      for (const i of institutions) {
+        institutionsByAuthor.get(a2).add(i);
+        counts.set(i, (counts.get(i) || 0) + 1);
+      }
       if (!journalsByAuthor.has(a2)) journalsByAuthor.set(a2, /* @__PURE__ */ new Set());
       for (const j of journals) journalsByAuthor.get(a2).add(j);
     }
@@ -15940,7 +15944,7 @@ function buildExplorerAffiliations(rawNodes, rawEdges) {
   for (const n of rawNodes) {
     if (n.group === "doi" && n.published) yearByDoi.set(n.id, n.published.slice(0, 4));
   }
-  return { institutionsByAuthor, journalsByAuthor, doisByJournal, yearByDoi };
+  return { institutionsByAuthor, institutionCountsByAuthor, journalsByAuthor, doisByJournal, yearByDoi };
 }
 
 // public/use-explorer-ego.ts

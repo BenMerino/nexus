@@ -14335,11 +14335,13 @@ function createSimulation({
     onTick();
   });
 }
+var VIEWPORT_PAD = 40;
 function clampToViewport(nodes, adapter, width, height) {
   for (const n of nodes) {
     const r = adapter.getRadius(n);
-    n.x = Math.max(r + 2, Math.min(width - r - 2, n.x));
-    n.y = Math.max(r + 2, Math.min(height - r - 2, n.y));
+    const m2 = r + VIEWPORT_PAD;
+    n.x = Math.max(m2, Math.min(width - m2, n.x));
+    n.y = Math.max(m2, Math.min(height - m2, n.y));
   }
 }
 

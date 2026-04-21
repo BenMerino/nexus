@@ -3,6 +3,7 @@ import { Check } from './ui-primitives';
 import { COLORS, type EnrichedSimNode } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
 import { CommunityLegend, type CommunityAdapter } from './community-graph';
+import { explorerCommunityKey } from './explorer-community';
 
 export interface NodeTypeFlags {
   institution: boolean;
@@ -24,40 +25,31 @@ interface Props {
   homeInstitutionId: string | null;
 }
 
-const LEGEND: { group: keyof NodeTypeFlags; label: string }[] = [
-  { group: 'author',      label: 'Author' },
-  { group: 'institution', label: 'Institution' },
-  { group: 'journal',     label: 'Journal' },
-  { group: 'paper',       label: 'Paper' },
-];
-
-function pickCommunityKey(n: EnrichedSimNode, institutionsByAuthor: Map<string, Set<string>>): string | null {
-  if (n.group === 'institution') return n.id;
-  if (n.group === 'author') {
-    const insts = institutionsByAuthor.get(n.id);
-    if (!insts || insts.size === 0) return null;
-    return [...insts].sort()[0];
-  }
-  return null;
-}
-
 export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, affiliations, homeInstitutionId }: Props) {
   const paperColor = '#888';
 
-  const institutionLabelById = useMemo(() => {
+  const labelById = useMemo(() => {
     const m = new Map<string, string>();
-    for (const n of nodes) if (n.group === 'institution') m.set(n.id, n.label);
+    for (const n of nodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
     return m;
   }, [nodes]);
+
+  const journalByDoi = useMemo(() => {
+    const hasPapers = nodes.some(n => n.group === 'doi');
+    if (!hasPapers) return null;
+    const m = new Map<string, string>();
+    for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m.set(d, jId);
+    return m;
+  }, [nodes, affiliations.doisByJournal]);
 
   const legendAdapter = useMemo<CommunityAdapter<EnrichedSimNode>>(() => ({
     getId: n => n.id,
     getLabel: n => n.label,
     getRadius: () => 0,
-    getCommunityKey: n => pickCommunityKey(n, affiliations.institutionsByAuthor),
+    getCommunityKey: n => explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi),
     isEgo: () => false,
-    getCommunityLabel: key => institutionLabelById.get(key) || key,
-  }), [affiliations, institutionLabelById]);
+    getCommunityLabel: key => labelById.get(key) || key,
+  }), [affiliations, labelById, homeInstitutionId, journalByDoi]);
 
   return (
     <aside className="graph-filters">
@@ -80,16 +72,6 @@ export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloo
           </div>
         </div>
       )}
-
-      <div className="filter-group legend">
-        <div className="filter-label">Node types</div>
-        {LEGEND.map(l => (
-          <div key={l.group} className="legend-row">
-            <span className="dot" style={{ background: l.group === 'paper' ? paperColor : COLORS[l.group] }} />
-            {l.label}
-          </div>
-        ))}
-      </div>
 
       {nodes.length > 0 && (
         <div className="filter-group legend">

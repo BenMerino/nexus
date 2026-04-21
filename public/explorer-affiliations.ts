@@ -3,6 +3,8 @@ import type { RawNode, RawEdge } from './relationship-types';
 export interface ExplorerAffiliations {
   /** authorId → set of institution node ids the author shares a paper with. */
   institutionsByAuthor: Map<string, Set<string>>;
+  /** authorId → institution node id → count of papers tying them together. */
+  institutionCountsByAuthor: Map<string, Map<string, number>>;
   /** authorId → set of journal node ids the author shares a paper with. */
   journalsByAuthor: Map<string, Set<string>>;
   /** journalId → set of doi node ids published in that journal. */
@@ -24,6 +26,7 @@ export function buildExplorerAffiliations(rawNodes: RawNode[], rawEdges: RawEdge
   }
 
   const institutionsByAuthor = new Map<string, Set<string>>();
+  const institutionCountsByAuthor = new Map<string, Map<string, number>>();
   const journalsByAuthor = new Map<string, Set<string>>();
   const doisByJournal = new Map<string, Set<string>>();
 
@@ -39,7 +42,12 @@ export function buildExplorerAffiliations(rawNodes: RawNode[], rawEdges: RawEdge
     }
     for (const a of authors) {
       if (!institutionsByAuthor.has(a)) institutionsByAuthor.set(a, new Set());
-      for (const i of institutions) institutionsByAuthor.get(a)!.add(i);
+      if (!institutionCountsByAuthor.has(a)) institutionCountsByAuthor.set(a, new Map());
+      const counts = institutionCountsByAuthor.get(a)!;
+      for (const i of institutions) {
+        institutionsByAuthor.get(a)!.add(i);
+        counts.set(i, (counts.get(i) || 0) + 1);
+      }
       if (!journalsByAuthor.has(a)) journalsByAuthor.set(a, new Set());
       for (const j of journals) journalsByAuthor.get(a)!.add(j);
     }
@@ -54,5 +62,5 @@ export function buildExplorerAffiliations(rawNodes: RawNode[], rawEdges: RawEdge
     if (n.group === 'doi' && n.published) yearByDoi.set(n.id, n.published.slice(0, 4));
   }
 
-  return { institutionsByAuthor, journalsByAuthor, doisByJournal, yearByDoi };
+  return { institutionsByAuthor, institutionCountsByAuthor, journalsByAuthor, doisByJournal, yearByDoi };
 }
