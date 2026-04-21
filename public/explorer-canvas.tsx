@@ -23,16 +23,16 @@ export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, 
     if (!el) return;
     const measure = () => {
       const r = el.getBoundingClientRect();
-      if (r.width > 0) setSize({ w: r.width, h: Math.max(minHeight, r.height) });
+      if (r.width > 0 && r.height > 0) setSize({ w: r.width, h: r.height });
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [minHeight]);
+  }, []);
 
   return (
-    <div ref={ref} style={{ position: 'relative', width: '100%', height: '100%', minHeight }}>
+    <div ref={ref} style={{ position: 'relative', width: '100%', height: '100%', minHeight, overflow: 'hidden' }}>
       {size && (
         <ForceGraph
           nodes={nodes}

@@ -15640,14 +15640,14 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
     if (!el) return;
     const measure = () => {
       const r = el.getBoundingClientRect();
-      if (r.width > 0) setSize({ w: r.width, h: Math.max(minHeight, r.height) });
+      if (r.width > 0 && r.height > 0) setSize({ w: r.width, h: r.height });
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [minHeight]);
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight }, children: size && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+  }, []);
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight, overflow: "hidden" }, children: size && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
     ForceGraph,
     {
       nodes,
