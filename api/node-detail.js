@@ -45,14 +45,22 @@ async function authorDetail(scope, ext_id, label) {
   return { type: "author", name: u?.full_name || label, orcid: ext_id, faculty: u?.faculty, role: u?.position, papersCount: papers.length, citations, papers };
 }
 
+async function tagLabel(category, ext_id) {
+  if (!ext_id) return null;
+  const r = await sql`SELECT value FROM tags WHERE category = ${category} AND ext_id = ${ext_id} AND value IS NOT NULL AND value <> '' ORDER BY LENGTH(value) DESC LIMIT 1`;
+  return r.rows[0]?.value || null;
+}
+
 async function institutionDetail(scope, ext_id, label) {
   const { rows: papers } = await papersByTag(scope, "institution", ext_id, label);
-  return { type: "institution", name: label, ror: ext_id, papersCount: papers.length, papers };
+  const name = (await tagLabel("institution", ext_id)) || label;
+  return { type: "institution", name, ror: ext_id, papersCount: papers.length, papers };
 }
 
 async function journalDetail(scope, ext_id, label) {
   const { rows: papers } = await papersByTag(scope, "journal", ext_id, label);
-  return { type: "journal", name: label, issn: ext_id, papersCount: papers.length, papers };
+  const name = (await tagLabel("journal", ext_id)) || label;
+  return { type: "journal", name, issn: ext_id, papersCount: papers.length, papers };
 }
 
 async function paperDetail(scope, doi) {

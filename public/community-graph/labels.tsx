@@ -6,18 +6,19 @@ type Positioned<N> = N & { x: number; y: number };
 interface EgoProps<N> {
   ego: Positioned<N>;
   adapter: CommunityAdapter<N>;
+  scale: number;
 }
 
-export function EgoLabel<N>({ ego, adapter }: EgoProps<N>) {
+export function EgoLabel<N>({ ego, adapter, scale }: EgoProps<N>) {
   const r = adapter.getRadius(ego);
   const x = (ego as unknown as { x: number }).x;
   const y = (ego as unknown as { y: number }).y;
   return (
     <text
       x={x}
-      y={y + r + 14}
+      y={y + r + 14 / scale}
       textAnchor="middle"
-      style={{ pointerEvents: 'none', fontSize: 11, fill: 'rgba(255,255,255,0.85)', paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.6)', strokeWidth: 3, strokeLinejoin: 'round' }}
+      style={{ pointerEvents: 'none', fontSize: 11 / scale, fill: 'rgba(255,255,255,0.85)', paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.6)', strokeWidth: 3 / scale, strokeLinejoin: 'round' }}
     >
       {adapter.getLabel(ego)}
     </text>
@@ -27,9 +28,10 @@ export function EgoLabel<N>({ ego, adapter }: EgoProps<N>) {
 interface HoverProps<N> {
   node: Positioned<N>;
   adapter: CommunityAdapter<N>;
+  scale: number;
 }
 
-export function HoverTooltip<N>({ node, adapter }: HoverProps<N>) {
+export function HoverTooltip<N>({ node, adapter, scale }: HoverProps<N>) {
   const r = adapter.getRadius(node);
   const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
   const footnote = adapter.getHoverFootnote?.(node) ?? null;
@@ -38,18 +40,19 @@ export function HoverTooltip<N>({ node, adapter }: HoverProps<N>) {
   const lines: string[] = [adapter.getLabel(node)];
   if (subtitle) lines.push(subtitle);
   if (footnote) lines.push(footnote);
-  const topY = y - r - 10 - (lines.length - 1) * 14;
+  const line = 14 / scale;
+  const topY = y - r - 10 / scale - (lines.length - 1) * line;
   return (
     <g style={{ pointerEvents: 'none' }}>
-      {lines.map((line, i) => (
-        <text key={i} x={x} y={topY + i * 14} textAnchor="middle"
+      {lines.map((l, i) => (
+        <text key={i} x={x} y={topY + i * line} textAnchor="middle"
           style={{
-            fontSize: i === 0 ? 12 : 11,
+            fontSize: (i === 0 ? 12 : 11) / scale,
             fill: i === 0 ? 'var(--fg)' : 'var(--fg-muted)',
             fontWeight: i === 0 ? 500 : 400,
-            paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.7)', strokeWidth: 3, strokeLinejoin: 'round',
+            paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.7)', strokeWidth: 3 / scale, strokeLinejoin: 'round',
           }}
-        >{line}</text>
+        >{l}</text>
       ))}
     </g>
   );

@@ -51,8 +51,8 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
           onHoverStart={onHoverStart} onHoverEnd={onHoverEnd} onMouseDown={onMouseDown}
           onClick={n => onNodeClick?.(n)}
         />
-        {ego && <EgoLabel ego={ego} adapter={adapter} />}
-        {showHover && hovered && <HoverTooltip node={hovered} adapter={adapter} />}
+        {ego && <EgoLabel ego={ego} adapter={adapter} scale={transform?.scale ?? 1} />}
+        {showHover && hovered && <HoverTooltip node={hovered} adapter={adapter} scale={transform?.scale ?? 1} />}
       </g>
     </svg>
   );

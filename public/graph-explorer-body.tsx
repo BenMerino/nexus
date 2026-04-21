@@ -12,6 +12,7 @@ import { buildExplorerAffiliations } from './explorer-affiliations';
 import { useExplorerEgo } from './use-explorer-ego';
 import { useExplorerNodes } from './use-explorer-nodes';
 import { GraphContents } from './graph-contents';
+import { explorerSelectedColor } from './explorer-selected-color';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 
@@ -115,6 +116,7 @@ export function GraphExplorerBody() {
           <NodeDetail
             nodeId={selectedNodeId}
             onClose={() => setSelectedNodeId(null)}
+            accentColor={explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId)}
             empty={<GraphContents nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} onSelect={id => { setSelectedNodeId(id); expand(id); }} />}
           />
         </aside>

@@ -13117,7 +13117,7 @@ function useNodeDetail(id) {
   }, [id]);
   return { data, loading, error };
 }
-function NodeDetail({ nodeId, onClose, empty }) {
+function NodeDetail({ nodeId, onClose, empty, accentColor }) {
   const { data, loading, error } = useNodeDetail(nodeId);
   const fallback = empty ?? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(EmptyState, {});
   if (!nodeId) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: fallback });
@@ -13127,10 +13127,12 @@ function NodeDetail({ nodeId, onClose, empty }) {
     error
   ] }) });
   if (!data) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: fallback });
-  if (data.type === "author") return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuthorView, { d: data, onClose });
-  if (data.type === "institution") return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InstitutionView, { d: data, onClose });
-  if (data.type === "journal") return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(JournalView, { d: data, onClose });
-  if (data.type === "paper") return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperView, { d: data, onClose });
+  const style = accentColor ? { ["--detail-accent"]: accentColor } : void 0;
+  const wrap = (child) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: accentColor ? "detail-accented" : void 0, style, children: child });
+  if (data.type === "author") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuthorView, { d: data, onClose }));
+  if (data.type === "institution") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InstitutionView, { d: data, onClose }));
+  if (data.type === "journal") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(JournalView, { d: data, onClose }));
+  if (data.type === "paper") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperView, { d: data, onClose }));
   return null;
 }
 
@@ -13426,7 +13428,7 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize }) {
 
 // public/community-graph/labels.tsx
 var import_jsx_runtime8 = __toESM(require_jsx_runtime());
-function EgoLabel({ ego, adapter }) {
+function EgoLabel({ ego, adapter, scale }) {
   const r = adapter.getRadius(ego);
   const x3 = ego.x;
   const y3 = ego.y;
@@ -13434,14 +13436,14 @@ function EgoLabel({ ego, adapter }) {
     "text",
     {
       x: x3,
-      y: y3 + r + 14,
+      y: y3 + r + 14 / scale,
       textAnchor: "middle",
-      style: { pointerEvents: "none", fontSize: 11, fill: "rgba(255,255,255,0.85)", paintOrder: "stroke", stroke: "rgba(0,0,0,0.6)", strokeWidth: 3, strokeLinejoin: "round" },
+      style: { pointerEvents: "none", fontSize: 11 / scale, fill: "rgba(255,255,255,0.85)", paintOrder: "stroke", stroke: "rgba(0,0,0,0.6)", strokeWidth: 3 / scale, strokeLinejoin: "round" },
       children: adapter.getLabel(ego)
     }
   );
 }
-function HoverTooltip({ node, adapter }) {
+function HoverTooltip({ node, adapter, scale }) {
   const r = adapter.getRadius(node);
   const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
   const footnote = adapter.getHoverFootnote?.(node) ?? null;
@@ -13450,23 +13452,24 @@ function HoverTooltip({ node, adapter }) {
   const lines = [adapter.getLabel(node)];
   if (subtitle) lines.push(subtitle);
   if (footnote) lines.push(footnote);
-  const topY = y3 - r - 10 - (lines.length - 1) * 14;
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("g", { style: { pointerEvents: "none" }, children: lines.map((line, i) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+  const line = 14 / scale;
+  const topY = y3 - r - 10 / scale - (lines.length - 1) * line;
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("g", { style: { pointerEvents: "none" }, children: lines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
     "text",
     {
       x: x3,
-      y: topY + i * 14,
+      y: topY + i * line,
       textAnchor: "middle",
       style: {
-        fontSize: i === 0 ? 12 : 11,
+        fontSize: (i === 0 ? 12 : 11) / scale,
         fill: i === 0 ? "var(--fg)" : "var(--fg-muted)",
         fontWeight: i === 0 ? 500 : 400,
         paintOrder: "stroke",
         stroke: "rgba(0,0,0,0.7)",
-        strokeWidth: 3,
+        strokeWidth: 3 / scale,
         strokeLinejoin: "round"
       },
-      children: line
+      children: l
     },
     i
   )) });
@@ -13519,8 +13522,8 @@ function GraphScene({
           onClick: (n) => onNodeClick?.(n)
         }
       ),
-      ego && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(EgoLabel, { ego, adapter }),
-      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(HoverTooltip, { node: hovered, adapter })
+      ego && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1 }),
+      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1 })
     ] })
   ] });
 }
@@ -15375,6 +15378,36 @@ function NodeList({ label, color, ns, onSelect }) {
   ] });
 }
 
+// public/explorer-selected-color.ts
+function explorerSelectedColor(selectedId, nodes, affiliations, homeInstitutionId, egoAuthorId) {
+  if (!selectedId) return null;
+  const node = nodes.find((n) => n.id === selectedId);
+  if (!node) return null;
+  const hasPapers = nodes.some((n) => n.group === "doi");
+  const journalByDoi = hasPapers ? (() => {
+    const m2 = /* @__PURE__ */ new Map();
+    for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m2.set(d, jId);
+    return m2;
+  })() : null;
+  const adapter = {
+    getId: (n) => n.id,
+    getLabel: (n) => n.label,
+    getRadius: () => 0,
+    getCommunityKey: (n) => {
+      if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
+      return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi);
+    },
+    isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId
+  };
+  const minSize = journalByDoi ? 1 : 2;
+  const colors = buildCommunityColors(nodes, adapter, homeInstitutionId, minSize);
+  const major = majorCommunities(nodes, adapter, homeInstitutionId, minSize);
+  const key = effectiveKey(node, adapter, major);
+  if (!key) return COLORS[node.group] || null;
+  if (key === OTHER_KEY) return colors.get(OTHER_KEY) || null;
+  return colors.get(key) || null;
+}
+
 // public/graph-explorer-body.tsx
 var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
@@ -15487,6 +15520,7 @@ function GraphExplorerBody() {
         {
           nodeId: selectedNodeId,
           onClose: () => setSelectedNodeId(null),
+          accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
           empty: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             setSelectedNodeId(id);
             expand(id);

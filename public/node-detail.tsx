@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { AuthorView, InstitutionView, JournalView, PaperView, EmptyState, type Detail } from './node-detail-views';
 
+interface NodeDetailProps {
+  nodeId: string | null;
+  onClose: () => void;
+  empty?: React.ReactNode;
+  accentColor?: string | null;
+}
+
 function useNodeDetail(id: string | null) {
   const [data, setData] = useState<Detail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -19,16 +26,18 @@ function useNodeDetail(id: string | null) {
   return { data, loading, error };
 }
 
-export function NodeDetail({ nodeId, onClose, empty }: { nodeId: string | null; onClose: () => void; empty?: React.ReactNode }) {
+export function NodeDetail({ nodeId, onClose, empty, accentColor }: NodeDetailProps) {
   const { data, loading, error } = useNodeDetail(nodeId);
   const fallback = empty ?? <EmptyState />;
   if (!nodeId) return <>{fallback}</>;
   if (loading && !data) return <div className="detail-empty"><div className="eyebrow">Loading…</div></div>;
   if (error) return <div className="detail-empty"><div className="status error">Error: {error}</div></div>;
   if (!data) return <>{fallback}</>;
-  if (data.type === 'author') return <AuthorView d={data} onClose={onClose} />;
-  if (data.type === 'institution') return <InstitutionView d={data} onClose={onClose} />;
-  if (data.type === 'journal') return <JournalView d={data} onClose={onClose} />;
-  if (data.type === 'paper') return <PaperView d={data} onClose={onClose} />;
+  const style = accentColor ? ({ ['--detail-accent' as string]: accentColor } as React.CSSProperties) : undefined;
+  const wrap = (child: React.ReactNode) => <div className={accentColor ? 'detail-accented' : undefined} style={style}>{child}</div>;
+  if (data.type === 'author') return wrap(<AuthorView d={data} onClose={onClose} />);
+  if (data.type === 'institution') return wrap(<InstitutionView d={data} onClose={onClose} />);
+  if (data.type === 'journal') return wrap(<JournalView d={data} onClose={onClose} />);
+  if (data.type === 'paper') return wrap(<PaperView d={data} onClose={onClose} />);
   return null;
 }
