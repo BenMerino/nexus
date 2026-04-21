@@ -14544,7 +14544,8 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
   const startTimeRef = (0, import_react3.useRef)(0);
   const currentRef = (0, import_react3.useRef)(IDENTITY);
   const lastZoomIdRef = (0, import_react3.useRef)(null);
-  const rafRef = (0, import_react3.useRef)(null);
+  const liveRef = (0, import_react3.useRef)({ zoomToId, zoomScale, nodes, adapter, width, height });
+  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height };
   if (lastZoomIdRef.current !== zoomToId) {
     lastZoomIdRef.current = zoomToId;
     startRef.current = { ...currentRef.current };
@@ -14553,13 +14554,11 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
   }
   (0, import_react3.useEffect)(() => {
     let cancelled = false;
+    let raf = 0;
     const tick = (now2) => {
       if (cancelled) return;
       const end = endRef.current;
-      if (!end) {
-        rafRef.current = null;
-        return;
-      }
+      if (!end) return;
       const elapsed = now2 - startTimeRef.current;
       const p = Math.min(1, elapsed / EASE_MS);
       const e = easeOutCubic(p);
@@ -14568,23 +14567,23 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
         ty: lerp2(startRef.current.ty, end.ty, e),
         scale: lerp2(startRef.current.scale, end.scale, e)
       };
-      if (p >= 1 && zoomToId) {
-        const live = targetFor(zoomToId, nodes, adapter, zoomScale, width, height);
+      if (p >= 1) {
+        const l = liveRef.current;
+        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height);
         if (live) {
           endRef.current = live;
           currentRef.current = live;
         }
       }
       bump((v) => (v + 1) % 1e9);
-      if (p < 1 || zoomToId) rafRef.current = requestAnimationFrame(tick);
-      else rafRef.current = null;
+      raf = requestAnimationFrame(tick);
     };
-    rafRef.current = requestAnimationFrame(tick);
+    raf = requestAnimationFrame(tick);
     return () => {
       cancelled = true;
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      cancelAnimationFrame(raf);
     };
-  }, [zoomToId, zoomScale, width, height, nodes, adapter]);
+  }, []);
   if (override) return { t: override };
   return { t: currentRef.current };
 }

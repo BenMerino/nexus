@@ -38,8 +38,13 @@ export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adap
   const startTimeRef = useRef<number>(0);
   const currentRef = useRef<ViewTransform>(IDENTITY);
   const lastZoomIdRef = useRef<string | null | undefined>(null);
-  const rafRef = useRef<number | null>(null);
 
+  // Keep these fresh each render so the rAF loop sees the latest, without
+  // restarting on every adapter / nodes-array identity change.
+  const liveRef = useRef({ zoomToId, zoomScale, nodes, adapter, width, height });
+  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height };
+
+  // Retarget on zoom change — runs in render to be ready before the next frame.
   if (lastZoomIdRef.current !== zoomToId) {
     lastZoomIdRef.current = zoomToId;
     startRef.current = { ...currentRef.current };
@@ -49,10 +54,11 @@ export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adap
 
   useEffect(() => {
     let cancelled = false;
+    let raf = 0;
     const tick = (now: number) => {
       if (cancelled) return;
       const end = endRef.current;
-      if (!end) { rafRef.current = null; return; }
+      if (!end) return;
       const elapsed = now - startTimeRef.current;
       const p = Math.min(1, elapsed / EASE_MS);
       const e = easeOutCubic(p);
@@ -61,18 +67,18 @@ export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adap
         ty: lerp(startRef.current.ty, end.ty, e),
         scale: lerp(startRef.current.scale, end.scale, e),
       };
-      // While zoomed, keep tracking the live target position after the ease lands.
-      if (p >= 1 && zoomToId) {
-        const live = targetFor(zoomToId, nodes, adapter, zoomScale, width, height);
+      // After the ease lands, keep the view locked on the live target position.
+      if (p >= 1) {
+        const l = liveRef.current;
+        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height);
         if (live) { endRef.current = live; currentRef.current = live; }
       }
       bump(v => (v + 1) % 1e9);
-      if (p < 1 || zoomToId) rafRef.current = requestAnimationFrame(tick);
-      else rafRef.current = null;
+      raf = requestAnimationFrame(tick);
     };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { cancelled = true; if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [zoomToId, zoomScale, width, height, nodes, adapter]);
+    raf = requestAnimationFrame(tick);
+    return () => { cancelled = true; cancelAnimationFrame(raf); };
+  }, []);
 
   if (override) return { t: override };
   return { t: currentRef.current };
