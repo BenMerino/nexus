@@ -420,6 +420,14 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   from { transform: translateX(-100%); }
   to   { transform: translateX(0); }
 }
+@keyframes node-detail-slide-out-right {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+@keyframes node-detail-slide-out-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
 .node-detail-swap {
   animation-duration: 240ms;
   animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
@@ -434,8 +442,10 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   position: absolute; top: 24px; left: 24px; right: 24px; bottom: 24px;
   overflow: auto; background: var(--bg-card);
 }
-.node-detail-swap.slide-forward { animation-name: node-detail-slide-in-right; }
-.node-detail-swap.slide-back    { animation-name: node-detail-slide-in-left; }
+.node-detail-swap.slide-forward    { animation-name: node-detail-slide-in-right; }
+.node-detail-swap.slide-back       { animation-name: node-detail-slide-in-left; }
+.node-detail-swap.slide-out-right  { animation-name: node-detail-slide-out-right; }
+.node-detail-swap.slide-out-left   { animation-name: node-detail-slide-out-left; }
 .detail-accented .detail-head { border-bottom-color: var(--detail-accent); }
 .detail-accented .detail-head h3 { color: var(--detail-accent); }
 .detail-accented .detail-head .eyebrow { color: var(--detail-accent); }

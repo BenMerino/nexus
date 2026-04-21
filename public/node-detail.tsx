@@ -73,13 +73,33 @@ export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir
   // on top when selected. Anything that happens in the detail panel — mount,
   // unmount, animations — never touches the sidebar, so it can't flash.
   const showingDetail = key !== 'empty';
+  // When the detail closes, keep the last view mounted long enough to play
+  // a slide-out animation before unmounting.
+  const [exiting, setExiting] = useState<{ key: string; content: React.ReactNode; accented: boolean; style?: React.CSSProperties } | null>(null);
+  const lastShown = useRef<{ key: string; content: React.ReactNode; accented: boolean; style?: React.CSSProperties } | null>(null);
+  useEffect(() => {
+    if (showingDetail) {
+      lastShown.current = { key, content, accented, style };
+      if (exiting) setExiting(null);
+    } else if (lastShown.current && !exiting) {
+      setExiting(lastShown.current);
+      const t = setTimeout(() => setExiting(null), 240);
+      return () => clearTimeout(t);
+    }
+  }, [showingDetail, key]);
   const dirClass = navDir === 'back' ? 'slide-back' : 'slide-forward';
+  const exitClass = navDir === 'back' ? 'slide-out-right' : 'slide-out-left';
   return (
     <>
       <div className="node-detail-home">{fallback}</div>
       {showingDetail && (
         <div key={key} className={`node-detail-swap as-overlay ${dirClass}${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
           {content}
+        </div>
+      )}
+      {!showingDetail && exiting && (
+        <div key={`exit-${exiting.key}`} className={`node-detail-swap as-overlay ${exitClass}${exiting.accented && accentColor ? ' detail-accented' : ''}`} style={exiting.style}>
+          {exiting.content}
         </div>
       )}
     </>
