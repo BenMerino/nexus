@@ -8,6 +8,8 @@ export interface ExplorerAffiliations {
   institutionCountsByAuthor: Map<string, Map<string, number>>;
   /** authorId → set of journal node ids the author shares a paper with. */
   journalsByAuthor: Map<string, Set<string>>;
+  /** authorId → journal node id → papers they published in that journal. */
+  journalCountsByAuthor: Map<string, Map<string, number>>;
   /** journalId → set of doi node ids published in that journal. */
   doisByJournal: Map<string, Set<string>>;
   /** doiNodeId → YYYY year string. */
@@ -50,6 +52,7 @@ export function buildExplorerAffiliations(
   }
 
   const journalsByAuthor = new Map<string, Set<string>>();
+  const journalCountsByAuthor = new Map<string, Map<string, number>>();
   const doisByJournal = new Map<string, Set<string>>();
   for (const [doiId, tagIds] of tagsByDoi) {
     const authors: string[] = [];
@@ -61,7 +64,12 @@ export function buildExplorerAffiliations(
     }
     for (const a of authors) {
       if (!journalsByAuthor.has(a)) journalsByAuthor.set(a, new Set());
-      for (const j of journals) journalsByAuthor.get(a)!.add(j);
+      if (!journalCountsByAuthor.has(a)) journalCountsByAuthor.set(a, new Map());
+      const counts = journalCountsByAuthor.get(a)!;
+      for (const j of journals) {
+        journalsByAuthor.get(a)!.add(j);
+        counts.set(j, (counts.get(j) || 0) + 1);
+      }
     }
     for (const j of journals) {
       if (!doisByJournal.has(j)) doisByJournal.set(j, new Set());
@@ -74,5 +82,5 @@ export function buildExplorerAffiliations(
     if (n.group === 'doi' && n.published) yearByDoi.set(n.id, n.published.slice(0, 4));
   }
 
-  return { institutionsByAuthor, institutionCountsByAuthor, journalsByAuthor, doisByJournal, yearByDoi };
+  return { institutionsByAuthor, institutionCountsByAuthor, journalsByAuthor, journalCountsByAuthor, doisByJournal, yearByDoi };
 }

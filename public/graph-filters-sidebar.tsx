@@ -3,7 +3,7 @@ import { Check } from './ui-primitives';
 import { COLORS, type EnrichedSimNode } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
 import { CommunityLegend, type CommunityAdapter } from './community-graph';
-import { explorerCommunityKey } from './explorer-community';
+import { explorerCommunityKey, type HullTier } from './explorer-community';
 
 /** Last-ditch label for a community key when the label map misses. Strips
  *  the group:prefix and any ROR/URL noise so at least something human lands
@@ -52,14 +52,20 @@ export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloo
     return m;
   }, [nodes, affiliations.doisByJournal]);
 
+  const hullTier: HullTier = useMemo(() => {
+    if (nodes.some(n => n.group === 'institution')) return 'institution';
+    if (nodes.some(n => n.group === 'journal')) return 'journal';
+    return 'none';
+  }, [nodes]);
+
   const legendAdapter = useMemo<CommunityAdapter<EnrichedSimNode>>(() => ({
     getId: n => n.id,
     getLabel: n => n.label,
     getRadius: () => 0,
-    getCommunityKey: n => explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi),
+    getCommunityKey: n => explorerCommunityKey(n, affiliations.institutionCountsByAuthor, affiliations.journalCountsByAuthor, homeInstitutionId, journalByDoi, hullTier),
     isEgo: () => false,
     getCommunityLabel: key => labelById.get(key) || prettyFallback(key),
-  }), [affiliations, labelById, homeInstitutionId, journalByDoi]);
+  }), [affiliations, labelById, homeInstitutionId, journalByDoi, hullTier]);
 
   return (
     <aside className="graph-filters">

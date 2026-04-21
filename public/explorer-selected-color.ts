@@ -1,7 +1,7 @@
 import type { EnrichedSimNode } from './relationship-types';
 import { COLORS } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
-import { explorerCommunityKey } from './explorer-community';
+import { explorerCommunityKey, type HullTier } from './explorer-community';
 import { buildCommunityColors, majorCommunities, effectiveKey, OTHER_KEY } from './community-graph/communities';
 
 /** Mirror the canvas logic to pick the accent color for a given node id:
@@ -27,13 +27,16 @@ export function explorerSelectedColor(
       })()
     : null;
 
+  const hullTier: HullTier = nodes.some(n => n.group === 'institution')
+    ? 'institution' : nodes.some(n => n.group === 'journal') ? 'journal' : 'none';
+
   const adapter = {
     getId: (n: EnrichedSimNode) => n.id,
     getLabel: (n: EnrichedSimNode) => n.label,
     getRadius: () => 0,
     getCommunityKey: (n: EnrichedSimNode) => {
-      if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
-      return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi);
+      if (hullTier === 'institution' && egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
+      return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, affiliations.journalCountsByAuthor, homeInstitutionId, journalByDoi, hullTier);
     },
     isEgo: (n: EnrichedSimNode) => !!egoAuthorId && n.id === egoAuthorId,
   };

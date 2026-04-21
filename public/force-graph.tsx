@@ -3,8 +3,14 @@ import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
 import { COLORS, nodeRadius } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
 import { CommunityGraph, type CommunityAdapter } from './community-graph';
-import { explorerCommunityKey } from './explorer-community';
+import { explorerCommunityKey, type HullTier } from './explorer-community';
 import { computeVisibility } from './explorer-visibility';
+
+function hullTierFor(nodes: EnrichedSimNode[]): HullTier {
+  if (nodes.some(n => n.group === 'institution')) return 'institution';
+  if (nodes.some(n => n.group === 'journal')) return 'journal';
+  return 'none';
+}
 
 const PLACEHOLDER_RADIUS = 3;
 const PLACEHOLDER_COLOR = 'rgba(255,255,255,0.22)';
@@ -51,13 +57,15 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds],
   );
 
+  const hullTier = useMemo(() => hullTierFor(nodes), [nodes]);
+
   const adapter = useMemo<CommunityAdapter<EnrichedSimNode>>(() => ({
     getId: n => n.id,
     getLabel: n => n.label,
     getRadius: n => (placeholder.has(n.id) ? PLACEHOLDER_RADIUS : baseRadius(n)),
     getCommunityKey: n => {
-      if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
-      return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi);
+      if (hullTier === 'institution' && egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
+      return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, affiliations.journalCountsByAuthor, homeInstitutionId, journalByDoi, hullTier);
     },
     isEgo: n => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: key => labelById.get(key) || key,
@@ -74,7 +82,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       return labelById.get(firstId) || null;
     },
     getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
-  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder]);
+  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier]);
 
   const forceConfig = useMemo(() => {
     const area = Math.max(width * height, 1);
