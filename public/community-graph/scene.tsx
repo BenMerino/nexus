@@ -25,6 +25,7 @@ interface Props<N, L extends BaseLink & { weight?: number }> {
   onMouseDown: (e: React.MouseEvent, n: SimN<N>) => void;
   onNodeClick?: (n: N) => void;
   transform: ViewTransform | null;
+  animate: boolean;
   ego: SimN<N> | undefined;
   hovered: SimN<N> | null;
   showHover: boolean;
@@ -33,13 +34,13 @@ interface Props<N, L extends BaseLink & { weight?: number }> {
 export function GraphScene<N, L extends BaseLink & { weight?: number }>({
   svgRef, width, height, nodes, links, adapter, primaryKey, communityColors, minCommunitySize,
   hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick,
-  transform, ego, hovered, showHover,
+  transform, animate, ego, hovered, showHover,
 }: Props<N, L>) {
   const t = transform ? `translate(${transform.tx} ${transform.ty}) scale(${transform.scale})` : undefined;
   return (
     <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none' }}>
       <GraphDefs />
-      <g transform={t} style={{ transition: 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1)' }}>
+      <g transform={t} style={{ transition: animate ? 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1)' : 'none' }}>
         <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} />
         <Links links={links} connected={connected} />
         <Nodes

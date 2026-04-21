@@ -106,7 +106,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
     startDrag(e, node, svgRef.current!, simRef.current, pinDraggedNodes || isEgo);
   };
 
-  const effectiveTransform = useViewTransform({
+  const { t: effectiveTransform, animate } = useViewTransform({
     override: viewTransform, zoomToId, zoomScale, nodes, adapter, width, height,
   });
 
@@ -121,6 +121,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         onHoverStart={setHoverId} onHoverEnd={() => setHoverId(null)}
         onMouseDown={handleMouseDown} onNodeClick={onNodeClick}
         transform={effectiveTransform}
+        animate={animate}
         ego={ego} hovered={hovered ?? null} showHover={!!showHover}
       />
     </div>
