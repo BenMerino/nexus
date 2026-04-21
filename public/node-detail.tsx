@@ -69,13 +69,20 @@ export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir
     return { key: `${data.type}:${dataId}`, content: <>{back}{ch}</>, accented: true };
   };
   const { key, content, accented } = contentFor();
-  // The "empty" state is the GraphContents sidebar — the home view, not a
-  // content swap. Skip the slide animation there so backing out of a detail
-  // doesn't flash the whole sidebar in every time.
-  const dirClass = key === 'empty' ? '' : navDir === 'back' ? 'slide-back' : 'slide-forward';
+  // Keep the empty view (GraphContents sidebar) mounted at all times so its
+  // expensive bucket/adapter memos and FLIP state survive detail navigation —
+  // otherwise backing out re-mounts the whole list and reads as a flash.
+  // The detail wrapper renders on top when a node is selected.
+  const showingDetail = key !== 'empty';
+  const dirClass = navDir === 'back' ? 'slide-back' : 'slide-forward';
   return (
-    <div key={key} className={`node-detail-swap${dirClass ? ' ' + dirClass : ''}${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
-      {content}
-    </div>
+    <>
+      <div className="node-detail-home" hidden={showingDetail}>{fallback}</div>
+      {showingDetail && (
+        <div key={key} className={`node-detail-swap ${dirClass}${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
+          {content}
+        </div>
+      )}
+    </>
   );
 }

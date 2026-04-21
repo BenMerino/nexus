@@ -13169,8 +13169,12 @@ function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir = "for
     ] }), accented: true };
   };
   const { key, content, accented } = contentFor();
-  const dirClass = key === "empty" ? "" : navDir === "back" ? "slide-back" : "slide-forward";
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: `node-detail-swap${dirClass ? " " + dirClass : ""}${accented && accentColor ? " detail-accented" : ""}`, style: accented ? style : void 0, children: content }, key);
+  const showingDetail = key !== "empty";
+  const dirClass = navDir === "back" ? "slide-back" : "slide-forward";
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "node-detail-home", hidden: showingDetail, children: fallback }),
+    showingDetail && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: `node-detail-swap ${dirClass}${accented && accentColor ? " detail-accented" : ""}`, style: accented ? style : void 0, children: content }, key)
+  ] });
 }
 
 // public/explorer-canvas.tsx
