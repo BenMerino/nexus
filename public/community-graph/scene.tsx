@@ -1,6 +1,7 @@
 import React from 'react';
 import { GraphDefs, Links, Nodes } from './render';
 import { CommunityHulls } from './hulls';
+import { EgoLabel, HoverTooltip } from './labels';
 import type { CommunityAdapter } from './types';
 import type { SimN, SimL, BaseLink } from './forces';
 import type { ViewTransform } from './use-view-transform';
@@ -24,11 +25,15 @@ interface Props<N, L extends BaseLink & { weight?: number }> {
   onMouseDown: (e: React.MouseEvent, n: SimN<N>) => void;
   onNodeClick?: (n: N) => void;
   transform: ViewTransform | null;
+  ego: SimN<N> | undefined;
+  hovered: SimN<N> | null;
+  showHover: boolean;
 }
 
 export function GraphScene<N, L extends BaseLink & { weight?: number }>({
   svgRef, width, height, nodes, links, adapter, primaryKey, communityColors, minCommunitySize,
-  hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick, transform,
+  hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick,
+  transform, ego, hovered, showHover,
 }: Props<N, L>) {
   const t = transform ? `translate(${transform.tx} ${transform.ty}) scale(${transform.scale})` : undefined;
   return (
@@ -43,6 +48,8 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
           onHoverStart={onHoverStart} onHoverEnd={onHoverEnd} onMouseDown={onMouseDown}
           onClick={n => onNodeClick?.(n)}
         />
+        {ego && <EgoLabel ego={ego} adapter={adapter} />}
+        {showHover && hovered && <HoverTooltip node={hovered} adapter={adapter} />}
       </g>
     </svg>
   );

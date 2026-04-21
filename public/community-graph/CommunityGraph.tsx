@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Simulation } from 'd3-force';
 import { buildCommunityColors, majorCommunities, effectiveKey, OTHER_KEY } from './communities';
-import { EgoLabel, HoverTooltip } from './labels';
 import { startDrag } from './drag';
 import { GraphScene } from './scene';
 import {
@@ -124,9 +123,8 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         onHoverStart={setHoverId} onHoverEnd={() => setHoverId(null)}
         onMouseDown={handleMouseDown} onNodeClick={onNodeClick}
         transform={effectiveTransform}
+        ego={ego} hovered={hovered ?? null} showHover={!!showHover}
       />
-      {ego && <EgoLabel ego={ego} adapter={adapter} />}
-      {showHover && hovered && <HoverTooltip node={hovered} adapter={adapter} />}
     </div>
   );
 }

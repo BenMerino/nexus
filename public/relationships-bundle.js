@@ -14132,61 +14132,6 @@ function buildCommunityColors(nodes, adapter, primaryKey, minSize) {
   return map;
 }
 
-// public/community-graph/labels.tsx
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
-function EgoLabel({ ego, adapter }) {
-  const r = adapter.getRadius(ego);
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
-    "div",
-    {
-      style: {
-        position: "absolute",
-        left: ego.x,
-        top: ego.y + r + 6,
-        transform: "translate(-50%, 0)",
-        pointerEvents: "none",
-        fontSize: 11,
-        color: "rgba(255,255,255,0.85)",
-        whiteSpace: "nowrap",
-        zIndex: 1,
-        textShadow: "0 1px 2px rgba(0,0,0,0.6)"
-      },
-      children: adapter.getLabel(ego)
-    }
-  );
-}
-function HoverTooltip({ node, adapter }) {
-  const r = adapter.getRadius(node);
-  const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
-  const footnote = adapter.getHoverFootnote?.(node) ?? null;
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
-    "div",
-    {
-      style: {
-        position: "absolute",
-        left: node.x,
-        top: node.y - r - 8,
-        transform: "translate(-50%, -100%)",
-        pointerEvents: "none",
-        background: "var(--bg-card)",
-        border: "1px solid var(--border-soft)",
-        borderRadius: 4,
-        padding: "6px 10px",
-        fontSize: 12,
-        color: "var(--fg)",
-        whiteSpace: "nowrap",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-        zIndex: 2
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { fontWeight: 500 }, children: adapter.getLabel(node) }),
-        subtitle && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", marginTop: 2 }, children: subtitle }),
-        footnote && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)", marginTop: 2 }, children: footnote })
-      ]
-    }
-  );
-}
-
 // public/community-graph/drag.ts
 function startDrag(e, node, svg, sim, pinAfterDrag) {
   e.preventDefault();
@@ -14216,21 +14161,21 @@ function startDrag(e, node, svg, sim, pinAfterDrag) {
 }
 
 // public/community-graph/render.tsx
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 function GraphDefs() {
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("radialGradient", { id: "community-glow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("radialGradient", { id: "community-glow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
   ] }) });
 }
 function Links({ links, connected }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("g", { children: links.map((l, i) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("g", { children: links.map((l, i) => {
     const s = typeof l.source === "object" ? l.source : null;
     const t = typeof l.target === "object" ? l.target : null;
     if (!s || !t) return null;
     const dim = connected && !(connected.has(s.id) && connected.has(t.id));
     const w = l.weight || 1;
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
       "line",
       {
         x1: s.x,
@@ -14245,13 +14190,13 @@ function Links({ links, connected }) {
   }) });
 }
 function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("g", { children: nodes.map((n) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("g", { children: nodes.map((n) => {
     const id = adapter.getId(n);
     const r = adapter.getRadius(n);
     const isHov = id === hoverId;
     const isSel = id === selectedId;
     const dim = connected && !connected.has(id);
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
       "g",
       {
         transform: `translate(${n.x}, ${n.y})`,
@@ -14265,8 +14210,8 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
         },
         style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
         children: [
-          (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+          (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
             "circle",
             {
               r,
@@ -14342,7 +14287,7 @@ function smoothClosedPath(pts, tension) {
 }
 
 // public/smoothed-hulls.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
 var DEFAULT_LERP_ALPHA = 0.18;
 var DEFAULT_PAD = 32;
 var MIN_GROUP_SIZE = 2;
@@ -14375,7 +14320,7 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
   for (const key of [...state.keys()]) {
     if (!seenKeys.has(key)) state.delete(key);
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("g", { children: paths.map((p) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("g", { children: paths.map((p) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
     "path",
     {
       d: p.d,
@@ -14390,7 +14335,7 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
 }
 
 // public/community-graph/hulls.tsx
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
 function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize }) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const groups = /* @__PURE__ */ new Map();
@@ -14410,7 +14355,55 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize }) {
       emphasis: key === primaryKey
     });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SmoothedHulls, { groups: hullGroups });
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SmoothedHulls, { groups: hullGroups });
+}
+
+// public/community-graph/labels.tsx
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+function EgoLabel({ ego, adapter }) {
+  const r = adapter.getRadius(ego);
+  const x3 = ego.x;
+  const y3 = ego.y;
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+    "text",
+    {
+      x: x3,
+      y: y3 + r + 14,
+      textAnchor: "middle",
+      style: { pointerEvents: "none", fontSize: 11, fill: "rgba(255,255,255,0.85)", paintOrder: "stroke", stroke: "rgba(0,0,0,0.6)", strokeWidth: 3, strokeLinejoin: "round" },
+      children: adapter.getLabel(ego)
+    }
+  );
+}
+function HoverTooltip({ node, adapter }) {
+  const r = adapter.getRadius(node);
+  const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
+  const footnote = adapter.getHoverFootnote?.(node) ?? null;
+  const x3 = node.x;
+  const y3 = node.y;
+  const lines = [adapter.getLabel(node)];
+  if (subtitle) lines.push(subtitle);
+  if (footnote) lines.push(footnote);
+  const topY = y3 - r - 10 - (lines.length - 1) * 14;
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("g", { style: { pointerEvents: "none" }, children: lines.map((line, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+    "text",
+    {
+      x: x3,
+      y: topY + i * 14,
+      textAnchor: "middle",
+      style: {
+        fontSize: i === 0 ? 12 : 11,
+        fill: i === 0 ? "var(--fg)" : "var(--fg-muted)",
+        fontWeight: i === 0 ? 500 : 400,
+        paintOrder: "stroke",
+        stroke: "rgba(0,0,0,0.7)",
+        strokeWidth: 3,
+        strokeLinejoin: "round"
+      },
+      children: line
+    },
+    i
+  )) });
 }
 
 // public/community-graph/scene.tsx
@@ -14433,7 +14426,10 @@ function GraphScene({
   onHoverEnd,
   onMouseDown,
   onNodeClick,
-  transform
+  transform,
+  ego,
+  hovered,
+  showHover
 }) {
   const t = transform ? `translate(${transform.tx} ${transform.ty}) scale(${transform.scale})` : void 0;
   return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
@@ -14455,7 +14451,9 @@ function GraphScene({
           onMouseDown,
           onClick: (n) => onNodeClick?.(n)
         }
-      )
+      ),
+      ego && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(EgoLabel, { ego, adapter }),
+      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(HoverTooltip, { node: hovered, adapter })
     ] })
   ] });
 }
@@ -15561,33 +15559,32 @@ function CommunityGraph({
     width,
     height
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { position: "relative", width, height }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
-      GraphScene,
-      {
-        svgRef,
-        width,
-        height,
-        nodes,
-        links,
-        adapter,
-        primaryKey,
-        communityColors,
-        minCommunitySize: config.minCommunitySize,
-        hoverId,
-        selectedId: selectedId ?? null,
-        connected,
-        nodeColor,
-        onHoverStart: setHoverId,
-        onHoverEnd: () => setHoverId(null),
-        onMouseDown: handleMouseDown,
-        onNodeClick,
-        transform: effectiveTransform
-      }
-    ),
-    ego && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(EgoLabel, { ego, adapter }),
-    showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(HoverTooltip, { node: hovered, adapter })
-  ] });
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { position: "relative", width, height }, children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+    GraphScene,
+    {
+      svgRef,
+      width,
+      height,
+      nodes,
+      links,
+      adapter,
+      primaryKey,
+      communityColors,
+      minCommunitySize: config.minCommunitySize,
+      hoverId,
+      selectedId: selectedId ?? null,
+      connected,
+      nodeColor,
+      onHoverStart: setHoverId,
+      onHoverEnd: () => setHoverId(null),
+      onMouseDown: handleMouseDown,
+      onNodeClick,
+      transform: effectiveTransform,
+      ego,
+      hovered: hovered ?? null,
+      showHover: !!showHover
+    }
+  ) });
 }
 
 // public/community-graph/legend.tsx
