@@ -13148,14 +13148,16 @@ function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: "Back" })
   ] }) : null;
   const contentFor = () => {
-    if (!nodeId) return { key: "empty", content: fallback, accented: false };
-    if (error) return { key: "error", content: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "status error", children: [
-      "Error: ",
-      error
-    ] }) }), accented: false };
-    if (!data) return { key: "empty-pending", content: fallback, accented: false };
+    if (!nodeId || !data) {
+      if (error) return { key: "error", content: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "status error", children: [
+        "Error: ",
+        error
+      ] }) }), accented: false };
+      return { key: "empty", content: fallback, accented: false };
+    }
     const ch = data.type === "author" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuthorView, { d: data, onClose }) : data.type === "institution" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InstitutionView, { d: data, onClose }) : data.type === "journal" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(JournalView, { d: data, onClose }) : data.type === "paper" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperView, { d: data, onClose }) : null;
-    return { key: `${data.type}:${nodeId}`, content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+    const dataId = data.doi ?? data.orcid ?? data.ror ?? data.issn ?? data.type;
+    return { key: `${data.type}:${dataId}`, content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
       back,
       ch
     ] }), accented: true };

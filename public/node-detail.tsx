@@ -40,15 +40,26 @@ export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }: Node
   // Key identifies the current view so React remounts the wrapper on every
   // state change — lets the CSS fade-in fire for each swap.
   const contentFor = (): { key: string; content: React.ReactNode; accented: boolean } => {
-    if (!nodeId) return { key: 'empty', content: fallback, accented: false };
-    if (error) return { key: 'error', content: <div className="detail-empty"><div className="status error">Error: {error}</div></div>, accented: false };
-    if (!data) return { key: 'empty-pending', content: fallback, accented: false };
+    // Treat "no selection" and "selection pending fetch" as the same view so
+    // the fallback doesn't remount (and re-fade) between them.
+    if (!nodeId || !data) {
+      if (error) return { key: 'error', content: <div className="detail-empty"><div className="status error">Error: {error}</div></div>, accented: false };
+      return { key: 'empty', content: fallback, accented: false };
+    }
     const ch = data.type === 'author' ? <AuthorView d={data} onClose={onClose} />
       : data.type === 'institution' ? <InstitutionView d={data} onClose={onClose} />
       : data.type === 'journal' ? <JournalView d={data} onClose={onClose} />
       : data.type === 'paper' ? <PaperView d={data} onClose={onClose} />
       : null;
-    return { key: `${data.type}:${nodeId}`, content: <>{back}{ch}</>, accented: true };
+    // Key off the data itself so we only remount when the fetched detail
+    // actually changes — not transiently while nodeId has advanced but
+    // data is still the previous view.
+    const dataId = (data as { doi?: string; orcid?: string; ror?: string; issn?: string }).doi
+      ?? (data as { orcid?: string }).orcid
+      ?? (data as { ror?: string }).ror
+      ?? (data as { issn?: string }).issn
+      ?? data.type;
+    return { key: `${data.type}:${dataId}`, content: <>{back}{ch}</>, accented: true };
   };
   const { key, content, accented } = contentFor();
   return (
