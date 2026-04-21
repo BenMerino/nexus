@@ -15632,7 +15632,10 @@ function GraphExplorerBody() {
     return [...prev, id];
   }), []);
   const popSelection = (0, import_react17.useCallback)(() => setSelectionStack((prev) => prev.length ? prev.slice(0, -1) : prev), []);
-  const [hoverId, setHoverId] = (0, import_react17.useState)(null);
+  const [hover, setHover] = (0, import_react17.useState)({ id: null, source: "canvas" });
+  const hoverId = hover.id;
+  const hoverFromCanvas = (0, import_react17.useCallback)((id) => setHover({ id, source: "canvas" }), []);
+  const hoverFromSidebar = (0, import_react17.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
   const [expandedIds, setExpandedIds] = (0, import_react17.useState)(/* @__PURE__ */ new Set());
   const expand = (0, import_react17.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
@@ -15727,7 +15730,7 @@ function GraphExplorerBody() {
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: setHoverId })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         NodeDetail,
@@ -15739,7 +15742,7 @@ function GraphExplorerBody() {
           empty: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);
             expand(id);
-          }, onHover: setHoverId, hoveredId: hoverId })
+          }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null })
         }
       ) })
     ] })
