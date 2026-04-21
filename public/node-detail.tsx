@@ -19,12 +19,13 @@ function useNodeDetail(id: string | null) {
   return { data, loading, error };
 }
 
-export function NodeDetail({ nodeId, onClose }: { nodeId: string | null; onClose: () => void }) {
+export function NodeDetail({ nodeId, onClose, empty }: { nodeId: string | null; onClose: () => void; empty?: React.ReactNode }) {
   const { data, loading, error } = useNodeDetail(nodeId);
-  if (!nodeId) return <EmptyState />;
+  const fallback = empty ?? <EmptyState />;
+  if (!nodeId) return <>{fallback}</>;
   if (loading && !data) return <div className="detail-empty"><div className="eyebrow">Loading…</div></div>;
   if (error) return <div className="detail-empty"><div className="status error">Error: {error}</div></div>;
-  if (!data) return <EmptyState />;
+  if (!data) return <>{fallback}</>;
   if (data.type === 'author') return <AuthorView d={data} onClose={onClose} />;
   if (data.type === 'institution') return <InstitutionView d={data} onClose={onClose} />;
   if (data.type === 'journal') return <JournalView d={data} onClose={onClose} />;

@@ -12,6 +12,7 @@ import { GraphFiltersSidebar, type NodeTypeFlags } from './graph-filters-sidebar
 import { buildExplorerAffiliations } from './explorer-affiliations';
 import { useExplorerEgo } from './use-explorer-ego';
 import { useExplorerNodes } from './use-explorer-nodes';
+import { GraphContents } from './graph-contents';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 
@@ -116,7 +117,11 @@ export function GraphExplorerBody() {
         </div>
 
         <aside className="detail-panel">
-          <NodeDetail nodeId={selectedNodeId} onClose={() => setSelectedNodeId(null)} />
+          <NodeDetail
+            nodeId={selectedNodeId}
+            onClose={() => setSelectedNodeId(null)}
+            empty={<GraphContents nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} onSelect={setSelectedNodeId} />}
+          />
         </aside>
       </div>
 
