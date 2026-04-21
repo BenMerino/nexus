@@ -12809,7 +12809,7 @@ function classifyNodes(nodes, edges, allNodes, communityMap) {
 }
 
 // public/project-graph.ts
-function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags, expandedJournal) {
+function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags, expandedJournal, includePapers = false) {
   const doiToTags = /* @__PURE__ */ new Map();
   const doiLabels = /* @__PURE__ */ new Map();
   for (const n of rawNodes) {
@@ -12852,7 +12852,7 @@ function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags, expanded
     addNode(j.id, j.label, "journal", papers.length, papers, j.id.replace(/^[^:]+:/, ""));
     for (const auth of authors) allEdges.push({ source: auth.id, target: j.id, weight: papers.length, sharedDois: [] });
     for (const p of papers) matchingDois.add(p.doi);
-    if (expandedJournal === jId) {
+    if (expandedJournal === jId || includePapers) {
       for (const p of papers) {
         addNode("doi:" + p.doi, p.title, "doi", 0);
         allEdges.push({ source: jId, target: "doi:" + p.doi, weight: 1, sharedDois: [] });
@@ -16022,8 +16022,8 @@ function GraphExplorerBody() {
     return { nodes, edges };
   }, [rawNodes, rawEdges, yearFloor, yearMin]);
   const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = (0, import_react20.useMemo)(
-    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null),
-    [filteredRaw]
+    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, flags.paper),
+    [filteredRaw, flags.paper]
   );
   const projectedNodes = (0, import_react20.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);

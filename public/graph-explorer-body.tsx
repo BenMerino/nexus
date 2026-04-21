@@ -56,8 +56,8 @@ export function GraphExplorerBody() {
   }, [rawNodes, rawEdges, yearFloor, yearMin]);
 
   const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = useMemo(
-    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, new Set(['institution', 'author', 'journal']), [], null),
-    [filteredRaw]);
+    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, new Set(['institution', 'author', 'journal']), [], null, flags.paper),
+    [filteredRaw, flags.paper]);
 
   const projectedNodes = useMemo(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);

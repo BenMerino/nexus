@@ -4,6 +4,7 @@ import { classifyNodes } from './node-classify';
 /**
  * Hierarchy: Institution → Author → Journal (papers embedded as data, not nodes).
  * When expandedJournal is set, only that journal + its paper nodes are shown.
+ * When includePapers is true, every paper becomes a doi node linked to its journal.
  */
 export function projectGraph(
   rawNodes: RawNode[],
@@ -11,6 +12,7 @@ export function projectGraph(
   activeCategories: Set<Category>,
   pinnedTags: string[],
   expandedJournal?: string | null,
+  includePapers: boolean = false,
 ): { nodes: EnrichedTagNode[]; edges: ProjectedEdge[]; matchingDois: Set<string> } {
   const doiToTags = new Map<string, string[]>();
   const doiLabels = new Map<string, string>();
@@ -61,7 +63,7 @@ export function projectGraph(
     addNode(j.id, j.label, 'journal', papers.length, papers, j.id.replace(/^[^:]+:/, ''));
     for (const auth of authors) allEdges.push({ source: auth.id, target: j.id, weight: papers.length, sharedDois: [] });
     for (const p of papers) matchingDois.add(p.doi);
-    if (expandedJournal === jId) {
+    if (expandedJournal === jId || includePapers) {
       for (const p of papers) {
         addNode('doi:' + p.doi, p.title, 'doi', 0);
         allEdges.push({ source: jId, target: 'doi:' + p.doi, weight: 1, sharedDois: [] });
