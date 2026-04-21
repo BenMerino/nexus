@@ -13163,6 +13163,40 @@ function useNodeDetail(id) {
   }, [id]);
   return { data, error };
 }
+var EYEBROW_BY_GROUP = {
+  author: "Author",
+  institution: "Institution",
+  journal: "Journal",
+  doi: "Paper"
+};
+function DetailSkeleton({ nodeId }) {
+  const group = nodeId.split(":", 1)[0];
+  const eyebrow = EYEBROW_BY_GROUP[group] ?? "";
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail detail-skeleton", "aria-busy": "true", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-head", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "eyebrow", children: eyebrow }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "sk-bar sk-title" }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "sk-bar sk-subtitle" })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-stats", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sk-bar sk-stat" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "\xA0" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sk-bar sk-stat" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "\xA0" })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-section-label", children: "Recent papers" }),
+      [0, 1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-item", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "sk-bar sk-row" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "sk-bar sk-row-sub" })
+      ] }, i))
+    ] })
+  ] });
+}
 function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
   const { data, error } = useNodeDetail(nodeId);
   const fallback = empty ?? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(EmptyState, {});
@@ -13176,7 +13210,11 @@ function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
       "Error: ",
       error
     ] }) });
-    if (!nodeId || !data) return null;
+    if (!nodeId) return null;
+    if (!data) return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+      back,
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(DetailSkeleton, { nodeId })
+    ] });
     const ch = data.type === "author" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuthorView, { d: data, onClose }) : data.type === "institution" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InstitutionView, { d: data, onClose }) : data.type === "journal" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(JournalView, { d: data, onClose }) : data.type === "paper" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperView, { d: data, onClose }) : null;
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
       back,

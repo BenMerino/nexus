@@ -53,6 +53,39 @@ function useNodeDetail(id: string | null) {
   return { data, error };
 }
 
+const EYEBROW_BY_GROUP: Record<string, string> = {
+  author: 'Author', institution: 'Institution', journal: 'Journal', doi: 'Paper',
+};
+
+function DetailSkeleton({ nodeId }: { nodeId: string }) {
+  const group = nodeId.split(':', 1)[0];
+  const eyebrow = EYEBROW_BY_GROUP[group] ?? '';
+  return (
+    <div className="detail detail-skeleton" aria-busy="true">
+      <div className="detail-head">
+        <div>
+          <div className="eyebrow">{eyebrow}</div>
+          <div className="sk-bar sk-title" />
+          <div className="sk-bar sk-subtitle" />
+        </div>
+      </div>
+      <div className="detail-stats">
+        <div><span className="sk-bar sk-stat" /><label>&nbsp;</label></div>
+        <div><span className="sk-bar sk-stat" /><label>&nbsp;</label></div>
+      </div>
+      <div className="detail-section">
+        <div className="detail-section-label">Recent papers</div>
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="detail-item">
+            <div className="sk-bar sk-row" />
+            <div className="sk-bar sk-row-sub" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }: NodeDetailProps) {
   const { data, error } = useNodeDetail(nodeId);
   const fallback = empty ?? <EmptyState />;
@@ -65,7 +98,8 @@ export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }: Node
 
   const detailBody = (() => {
     if (error) return <div className="detail-empty"><div className="status error">Error: {error}</div></div>;
-    if (!nodeId || !data) return null;
+    if (!nodeId) return null;
+    if (!data) return <>{back}<DetailSkeleton nodeId={nodeId} /></>;
     const ch = data.type === 'author' ? <AuthorView d={data} onClose={onClose} />
       : data.type === 'institution' ? <InstitutionView d={data} onClose={onClose} />
       : data.type === 'journal' ? <JournalView d={data} onClose={onClose} />
