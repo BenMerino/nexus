@@ -12750,7 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react22 = __toESM(require_react());
+var import_react23 = __toESM(require_react());
 
 // public/node-classify.ts
 function percentile(sorted, p) {
@@ -14082,13 +14082,13 @@ function FilteredCharts({ matchingDois, totalDois }) {
 }
 
 // public/explorer-canvas.tsx
-var import_react13 = __toESM(require_react());
+var import_react14 = __toESM(require_react());
 
 // public/force-graph.tsx
-var import_react12 = __toESM(require_react());
+var import_react13 = __toESM(require_react());
 
 // public/community-graph/CommunityGraph.tsx
-var import_react10 = __toESM(require_react());
+var import_react11 = __toESM(require_react());
 
 // public/community-graph/communities.ts
 var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1"];
@@ -14288,8 +14288,8 @@ function computeRawRadii(points, cx, cy) {
 function radiiToPath(radii, cx, cy, pad) {
   const ring = radii.map((r, i) => {
     const angle = i / RING_SAMPLES * Math.PI * 2;
-    const radius2 = r + pad;
-    return { x: cx + Math.cos(angle) * radius2, y: cy + Math.sin(angle) * radius2 };
+    const radius = r + pad;
+    return { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
   });
   return smoothClosedPath(ring, 0.5);
 }
@@ -14522,14 +14522,14 @@ function quad_default(node, x0, y0, x1, y1) {
 }
 
 // node_modules/d3-quadtree/src/find.js
-function find_default(x3, y3, radius2) {
+function find_default(x3, y3, radius) {
   var data, x0 = this._x0, y0 = this._y0, x1, y1, x22, y22, x32 = this._x1, y32 = this._y1, quads = [], node = this._root, q, i;
   if (node) quads.push(new quad_default(node, x0, y0, x32, y32));
-  if (radius2 == null) radius2 = Infinity;
+  if (radius == null) radius = Infinity;
   else {
-    x0 = x3 - radius2, y0 = y3 - radius2;
-    x32 = x3 + radius2, y32 = y3 + radius2;
-    radius2 *= radius2;
+    x0 = x3 - radius, y0 = y3 - radius;
+    x32 = x3 + radius, y32 = y3 + radius;
+    radius *= radius;
   }
   while (q = quads.pop()) {
     if (!(node = q.node) || (x1 = q.x0) > x32 || (y1 = q.y0) > y32 || (x22 = q.x1) < x0 || (y22 = q.y1) < y0) continue;
@@ -14548,8 +14548,8 @@ function find_default(x3, y3, radius2) {
       }
     } else {
       var dx = x3 - +this._x.call(null, node.data), dy = y3 - +this._y.call(null, node.data), d2 = dx * dx + dy * dy;
-      if (d2 < radius2) {
-        var d = Math.sqrt(radius2 = d2);
+      if (d2 < radius) {
+        var d = Math.sqrt(radius = d2);
         x0 = x3 - d, y0 = y3 - d;
         x32 = x3 + d, y32 = y3 + d;
         data = node.data;
@@ -14727,9 +14727,9 @@ function x(d) {
 function y(d) {
   return d.y + d.vy;
 }
-function collide_default(radius2) {
+function collide_default(radius) {
   var nodes, radii, random, strength = 1, iterations = 1;
-  if (typeof radius2 !== "function") radius2 = constant_default(radius2 == null ? 1 : +radius2);
+  if (typeof radius !== "function") radius = constant_default(radius == null ? 1 : +radius);
   function force() {
     var i, n = nodes.length, tree, node, xi, yi, ri, ri2;
     for (var k = 0; k < iterations; ++k) {
@@ -14774,7 +14774,7 @@ function collide_default(radius2) {
     if (!nodes) return;
     var i, n = nodes.length, node;
     radii = new Array(n);
-    for (i = 0; i < n; ++i) node = nodes[i], radii[node.index] = +radius2(node, i, nodes);
+    for (i = 0; i < n; ++i) node = nodes[i], radii[node.index] = +radius(node, i, nodes);
   }
   force.initialize = function(_nodes, _random) {
     nodes = _nodes;
@@ -14788,7 +14788,7 @@ function collide_default(radius2) {
     return arguments.length ? (strength = +_, force) : strength;
   };
   force.radius = function(_) {
-    return arguments.length ? (radius2 = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : radius2;
+    return arguments.length ? (radius = typeof _ === "function" ? _ : constant_default(+_), initialize(), force) : radius;
   };
   return force;
 }
@@ -15100,9 +15100,9 @@ function simulation_default(nodes) {
       if (node.fx != null) node.x = node.fx;
       if (node.fy != null) node.y = node.fy;
       if (isNaN(node.x) || isNaN(node.y)) {
-        var radius2 = initialRadius * Math.sqrt(0.5 + i), angle = i * initialAngle;
-        node.x = radius2 * Math.cos(angle);
-        node.y = radius2 * Math.sin(angle);
+        var radius = initialRadius * Math.sqrt(0.5 + i), angle = i * initialAngle;
+        node.x = radius * Math.cos(angle);
+        node.y = radius * Math.sin(angle);
       }
       if (isNaN(node.vx) || isNaN(node.vy)) {
         node.vx = node.vy = 0;
@@ -15146,16 +15146,16 @@ function simulation_default(nodes) {
     force: function(name, _) {
       return arguments.length > 1 ? (_ == null ? forces.delete(name) : forces.set(name, initializeForce(_)), simulation) : forces.get(name);
     },
-    find: function(x3, y3, radius2) {
+    find: function(x3, y3, radius) {
       var i = 0, n = nodes.length, dx, dy, d2, node, closest;
-      if (radius2 == null) radius2 = Infinity;
-      else radius2 *= radius2;
+      if (radius == null) radius = Infinity;
+      else radius *= radius;
       for (i = 0; i < n; ++i) {
         node = nodes[i];
         dx = x3 - node.x;
         dy = y3 - node.y;
         d2 = dx * dx + dy * dy;
-        if (d2 < radius2) closest = node, radius2 = d2;
+        if (d2 < radius) closest = node, radius = d2;
       }
       return closest;
     },
@@ -15389,6 +15389,22 @@ var DEFAULT_FORCE_CONFIG = {
   orbitRadius: 0.38
 };
 
+// public/community-graph/use-view-transform.ts
+var import_react10 = __toESM(require_react());
+function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height }) {
+  return (0, import_react10.useMemo)(() => {
+    if (override) return override;
+    if (!zoomToId) return null;
+    const target = nodes.find((n) => adapter.getId(n) === zoomToId);
+    if (!target) return null;
+    return {
+      tx: width / 2 - target.x * zoomScale,
+      ty: height / 2 - target.y * zoomScale,
+      scale: zoomScale
+    };
+  }, [override, zoomToId, zoomScale, nodes, adapter, width, height]);
+}
+
 // public/community-graph/CommunityGraph.tsx
 var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 function CommunityGraph({
@@ -15401,31 +15417,34 @@ function CommunityGraph({
   selectedId,
   forceConfig,
   onNodeClick,
-  pinDraggedNodes = false
+  pinDraggedNodes = false,
+  viewTransform,
+  zoomToId,
+  zoomScale = 2
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
-  const svgRef = (0, import_react10.useRef)(null);
-  const simRef = (0, import_react10.useRef)(null);
-  const [, tick] = (0, import_react10.useState)(0);
-  const [hoverId, setHoverId] = (0, import_react10.useState)(null);
-  const communityColors = (0, import_react10.useMemo)(
+  const svgRef = (0, import_react11.useRef)(null);
+  const simRef = (0, import_react11.useRef)(null);
+  const [, tick] = (0, import_react11.useState)(0);
+  const [hoverId, setHoverId] = (0, import_react11.useState)(null);
+  const communityColors = (0, import_react11.useMemo)(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const major = (0, import_react10.useMemo)(
+  const major = (0, import_react11.useMemo)(
     () => majorCommunities(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const { nodes, links } = (0, import_react10.useMemo)(() => {
+  const { nodes, links } = (0, import_react11.useMemo)(() => {
     const ns = initialNodes(inNodes, adapter, width, height);
     const ls = initialLinks(inLinks, ns, adapter);
     return { nodes: ns, links: ls };
   }, [inNodes, inLinks, adapter, width, height]);
-  const anchors = (0, import_react10.useMemo)(
+  const anchors = (0, import_react11.useMemo)(
     () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
     [nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
   );
-  (0, import_react10.useEffect)(() => {
+  (0, import_react11.useEffect)(() => {
     const sim = createSimulation({
       nodes,
       links,
@@ -15455,7 +15474,7 @@ function CommunityGraph({
     if (override) return override;
     return communityColor || "var(--fg-muted)";
   };
-  const connected = (0, import_react10.useMemo)(() => {
+  const connected = (0, import_react11.useMemo)(() => {
     const focusId = hoverId || selectedId || null;
     if (!focusId) return null;
     const set2 = /* @__PURE__ */ new Set([focusId]);
@@ -15474,33 +15493,51 @@ function CommunityGraph({
     const isEgo = adapter.isEgo(node);
     startDrag(e, node, svgRef.current, simRef.current, pinDraggedNodes || isEgo);
   };
+  const effectiveTransform = useViewTransform({
+    override: viewTransform,
+    zoomToId,
+    zoomScale,
+    nodes,
+    adapter,
+    width,
+    height
+  });
   return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: { position: "relative", width, height }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphDefs, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
-        CommunityHulls,
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
+        "g",
         {
-          nodes,
-          adapter,
-          primaryKey,
-          colors: communityColors,
-          minSize: config.minCommunitySize
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Links, { links, connected }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
-        Nodes,
-        {
-          nodes,
-          adapter,
-          hoverId,
-          selectedId: selectedId ?? null,
-          connected,
-          nodeColor,
-          onHoverStart: setHoverId,
-          onHoverEnd: () => setHoverId(null),
-          onMouseDown: handleMouseDown,
-          onClick: (n) => onNodeClick?.(n)
+          transform: effectiveTransform ? `translate(${effectiveTransform.tx} ${effectiveTransform.ty}) scale(${effectiveTransform.scale})` : void 0,
+          style: { transition: "transform 400ms cubic-bezier(0.4, 0, 0.2, 1)" },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+              CommunityHulls,
+              {
+                nodes,
+                adapter,
+                primaryKey,
+                colors: communityColors,
+                minSize: config.minCommunitySize
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Links, { links, connected }),
+            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+              Nodes,
+              {
+                nodes,
+                adapter,
+                hoverId,
+                selectedId: selectedId ?? null,
+                connected,
+                nodeColor,
+                onHoverStart: setHoverId,
+                onHoverEnd: () => setHoverId(null),
+                onMouseDown: handleMouseDown,
+                onClick: (n) => onNodeClick?.(n)
+              }
+            )
+          ]
         }
       )
     ] }),
@@ -15510,12 +15547,12 @@ function CommunityGraph({
 }
 
 // public/community-graph/legend.tsx
-var import_react11 = __toESM(require_react());
+var import_react12 = __toESM(require_react());
 var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
-  const colors = (0, import_react11.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const major = (0, import_react11.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const items = (0, import_react11.useMemo)(() => {
+  const colors = (0, import_react12.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const major = (0, import_react12.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const items = (0, import_react12.useMemo)(() => {
     const byKey = /* @__PURE__ */ new Map();
     for (const n of nodes) {
       const key = effectiveKey(n, adapter, major);
@@ -15567,18 +15604,79 @@ function explorerCommunityKey(n, institutionCountsByAuthor, homeInstitutionId, j
   return null;
 }
 
+// public/explorer-visibility.ts
+function computeVisibility(nodes, edges, affiliations, egoAuthorId, homeInstitutionId, expandedIds) {
+  const visible = /* @__PURE__ */ new Set();
+  const allIds = new Set(nodes.map((n) => n.id));
+  for (const n of nodes) {
+    if (n.group === "institution") visible.add(n.id);
+  }
+  if (egoAuthorId && allIds.has(egoAuthorId)) visible.add(egoAuthorId);
+  const papersByAuthor = /* @__PURE__ */ new Map();
+  const papersByJournal = /* @__PURE__ */ new Map();
+  for (const e of edges) {
+    if (e.target.startsWith("doi:") && e.source.startsWith("author:")) {
+      const set2 = papersByAuthor.get(e.source) || /* @__PURE__ */ new Set();
+      set2.add(e.target);
+      papersByAuthor.set(e.source, set2);
+    }
+    if (e.source.startsWith("journal:") && e.target.startsWith("doi:")) {
+      const set2 = papersByJournal.get(e.source) || /* @__PURE__ */ new Set();
+      set2.add(e.target);
+      papersByJournal.set(e.source, set2);
+    }
+  }
+  const authorsByInstitution = /* @__PURE__ */ new Map();
+  for (const [authorId, counts] of affiliations.institutionCountsByAuthor) {
+    if (!allIds.has(authorId)) continue;
+    let chosen = null;
+    if (homeInstitutionId && counts.has(homeInstitutionId)) chosen = homeInstitutionId;
+    else {
+      let best = -1;
+      for (const [instId, c2] of counts) if (c2 > best) {
+        best = c2;
+        chosen = instId;
+      }
+    }
+    if (!chosen) continue;
+    const set2 = authorsByInstitution.get(chosen) || /* @__PURE__ */ new Set();
+    set2.add(authorId);
+    authorsByInstitution.set(chosen, set2);
+  }
+  for (const id of expandedIds) {
+    if (!allIds.has(id)) continue;
+    visible.add(id);
+    if (id.startsWith("institution:")) {
+      const authors = authorsByInstitution.get(id);
+      if (authors) for (const a2 of authors) visible.add(a2);
+    } else if (id.startsWith("author:")) {
+      const papers = papersByAuthor.get(id);
+      if (papers) for (const p of papers) visible.add(p);
+    } else if (id.startsWith("journal:")) {
+      const papers = papersByJournal.get(id);
+      if (papers) for (const p of papers) visible.add(p);
+    }
+  }
+  const placeholder = /* @__PURE__ */ new Set();
+  for (const n of nodes) if (!visible.has(n.id)) placeholder.add(n.id);
+  return { visible, placeholder };
+}
+
 // public/force-graph.tsx
 var import_jsx_runtime21 = __toESM(require_jsx_runtime());
-function radius(n) {
+var PLACEHOLDER_RADIUS = 3;
+var PLACEHOLDER_COLOR = "rgba(255,255,255,0.22)";
+var ZOOM_SCALE = 2.1;
+function baseRadius(n) {
   return nodeRadius(n.weight || 1, n.role);
 }
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null }) {
-  const labelById = (0, import_react12.useMemo)(() => {
+function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand }) {
+  const labelById = (0, import_react13.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [nodes]);
-  const journalByDoi = (0, import_react12.useMemo)(() => {
+  const journalByDoi = (0, import_react13.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
     const m2 = /* @__PURE__ */ new Map();
@@ -15587,10 +15685,14 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     }
     return m2;
   }, [nodes, affiliations.doisByJournal]);
-  const adapter = (0, import_react12.useMemo)(() => ({
+  const { placeholder } = (0, import_react13.useMemo)(
+    () => computeVisibility(nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds),
+    [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds]
+  );
+  const adapter = (0, import_react13.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
-    getRadius: radius,
+    getRadius: (n) => placeholder.has(n.id) ? PLACEHOLDER_RADIUS : baseRadius(n),
     getCommunityKey: (n) => {
       if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
       return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi);
@@ -15598,6 +15700,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: (key) => labelById.get(key) || key,
     getNodeColor: (n, communityColor) => {
+      if (placeholder.has(n.id)) return PLACEHOLDER_COLOR;
       if (n.group === "institution" || n.group === "author") return communityColor;
       if (n.group === "journal" && journalByDoi) return communityColor;
       return COLORS[n.group] || null;
@@ -15610,8 +15713,8 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       return labelById.get(firstId) || null;
     },
     getHoverFootnote: (n) => n.weight ? `${n.weight} ${n.weight === 1 ? "paper" : "papers"}` : null
-  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId]);
-  const forceConfig = (0, import_react12.useMemo)(() => {
+  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder]);
+  const forceConfig = (0, import_react13.useMemo)(() => {
     const area = Math.max(width * height, 1);
     const perNode = Math.sqrt(area / Math.max(nodes.length, 1));
     const linkDistance = Math.max(24, Math.min(140, perNode * 0.8));
@@ -15628,6 +15731,14 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       orbitRadius: 0.36
     };
   }, [width, height, nodes.length, journalByDoi]);
+  const handleClick = (n) => {
+    if (placeholder.has(n.id)) {
+      onExpand(n.id);
+      return;
+    }
+    onNodeClick?.(n);
+    onExpand(n.id);
+  };
   return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
     CommunityGraph,
     {
@@ -15638,18 +15749,20 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       width,
       height,
       selectedId: selectedId ?? null,
-      onNodeClick,
-      forceConfig
+      onNodeClick: handleClick,
+      forceConfig,
+      zoomToId: selectedId ?? null,
+      zoomScale: ZOOM_SCALE
     }
   );
 }
 
 // public/explorer-canvas.tsx
 var import_jsx_runtime22 = __toESM(require_jsx_runtime());
-function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, minHeight = 480 }) {
-  const ref = (0, import_react13.useRef)(null);
-  const [size, setSize] = (0, import_react13.useState)(null);
-  (0, import_react13.useEffect)(() => {
+function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, minHeight = 480 }) {
+  const ref = (0, import_react14.useRef)(null);
+  const [size, setSize] = (0, import_react14.useState)(null);
+  (0, import_react14.useEffect)(() => {
     const el = ref.current;
     if (!el) return;
     const measure = () => {
@@ -15672,18 +15785,20 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
       onNodeClick,
       affiliations,
       homeInstitutionId,
-      egoAuthorId
+      egoAuthorId,
+      expandedIds,
+      onExpand
     }
   ) });
 }
 
 // public/graph-search.tsx
-var import_react14 = __toESM(require_react());
+var import_react15 = __toESM(require_react());
 var import_jsx_runtime23 = __toESM(require_jsx_runtime());
 function GraphSearch({ nodes, onSelect }) {
-  const [query, setQuery] = (0, import_react14.useState)("");
-  const [open, setOpen] = (0, import_react14.useState)(false);
-  const matches = (0, import_react14.useMemo)(() => {
+  const [query, setQuery] = (0, import_react15.useState)("");
+  const [open, setOpen] = (0, import_react15.useState)(false);
+  const matches = (0, import_react15.useMemo)(() => {
     if (!query || query.length < 2) return [];
     const q = query.toLowerCase();
     return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
@@ -15759,7 +15874,7 @@ function GraphSearch({ nodes, onSelect }) {
 }
 
 // public/time-slider.tsx
-var import_react15 = __toESM(require_react());
+var import_react16 = __toESM(require_react());
 var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
@@ -15767,7 +15882,7 @@ function yearOf(n) {
   return y3 > 1900 ? y3 : 0;
 }
 function useTimeRange(nodes) {
-  return (0, import_react15.useMemo)(() => {
+  return (0, import_react16.useMemo)(() => {
     let min = 9999, max = 0;
     for (const n of nodes) {
       const y3 = yearOf(n);
@@ -15781,13 +15896,13 @@ function useTimeRange(nodes) {
 }
 
 // public/use-graph-data.ts
-var import_react16 = __toESM(require_react());
+var import_react17 = __toESM(require_react());
 function useGraphData() {
-  const [rawNodes, setRawNodes] = (0, import_react16.useState)([]);
-  const [rawEdges, setRawEdges] = (0, import_react16.useState)([]);
-  const [tagMeta, setTagMeta] = (0, import_react16.useState)({});
-  const [loading, setLoading] = (0, import_react16.useState)(true);
-  (0, import_react16.useEffect)(() => {
+  const [rawNodes, setRawNodes] = (0, import_react17.useState)([]);
+  const [rawEdges, setRawEdges] = (0, import_react17.useState)([]);
+  const [tagMeta, setTagMeta] = (0, import_react17.useState)({});
+  const [loading, setLoading] = (0, import_react17.useState)(true);
+  (0, import_react17.useEffect)(() => {
     fetch("/api/graph").then((r) => r.json()).then((d) => {
       setRawNodes(d.nodes);
       setRawEdges(d.edges);
@@ -15800,10 +15915,10 @@ function useGraphData() {
 }
 
 // public/shell-helpers.ts
-var import_react17 = __toESM(require_react());
+var import_react18 = __toESM(require_react());
 var CACHE_KEY = "nexus.me";
 function useCurrentUser() {
-  const [me, setMe] = (0, import_react17.useState)(() => {
+  const [me, setMe] = (0, import_react18.useState)(() => {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -15811,9 +15926,9 @@ function useCurrentUser() {
       return null;
     }
   });
-  const [loading, setLoading] = (0, import_react17.useState)(!me);
-  const [error, setError] = (0, import_react17.useState)(null);
-  (0, import_react17.useEffect)(() => {
+  const [loading, setLoading] = (0, import_react18.useState)(!me);
+  const [error, setError] = (0, import_react18.useState)(null);
+  (0, import_react18.useEffect)(() => {
     let cancelled = false;
     fetch("/api/auth?action=me").then((r) => r.status === 401 ? null : r.json()).then((d) => {
       if (cancelled) return;
@@ -15841,23 +15956,23 @@ function applyTheme(me) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_react18 = __toESM(require_react());
+var import_react19 = __toESM(require_react());
 var import_jsx_runtime25 = __toESM(require_jsx_runtime());
 function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, affiliations, homeInstitutionId }) {
   const paperColor = "#888";
-  const labelById = (0, import_react18.useMemo)(() => {
+  const labelById = (0, import_react19.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [nodes]);
-  const journalByDoi = (0, import_react18.useMemo)(() => {
+  const journalByDoi = (0, import_react19.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
     const m2 = /* @__PURE__ */ new Map();
     for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m2.set(d, jId);
     return m2;
   }, [nodes, affiliations.doisByJournal]);
-  const legendAdapter = (0, import_react18.useMemo)(() => ({
+  const legendAdapter = (0, import_react19.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -15949,21 +16064,21 @@ function buildExplorerAffiliations(rawNodes, rawEdges) {
 }
 
 // public/use-explorer-ego.ts
-var import_react19 = __toESM(require_react());
+var import_react20 = __toESM(require_react());
 function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) {
-  const homeInstitutionId = (0, import_react19.useMemo)(() => {
+  const homeInstitutionId = (0, import_react20.useMemo)(() => {
     const ror = me?.profile.ror;
     if (!ror) return null;
     const hit = rawNodes.find((n) => n.group === "institution" && n.ext_id === ror);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const egoAuthorId = (0, import_react19.useMemo)(() => {
+  const egoAuthorId = (0, import_react20.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = projectedNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, projectedNodes]);
-  const effectiveHomeKey = (0, import_react19.useMemo)(() => {
+  const effectiveHomeKey = (0, import_react20.useMemo)(() => {
     if (homeInstitutionId) return homeInstitutionId;
     if (!egoAuthorId) return null;
     const insts = institutionsByAuthor.get(egoAuthorId);
@@ -15974,7 +16089,7 @@ function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) 
 }
 
 // public/use-explorer-nodes.ts
-var import_react20 = __toESM(require_react());
+var import_react21 = __toESM(require_react());
 
 // public/enrich-meta.ts
 function enrichWithMeta(nodes, tagMeta) {
@@ -16009,14 +16124,14 @@ function buildCoauthorSet(rawEdges, egoAuthorId) {
 
 // public/use-explorer-nodes.ts
 function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags }) {
-  const rawEgoAuthorId = (0, import_react20.useMemo)(() => {
+  const rawEgoAuthorId = (0, import_react21.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = rawNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const coauthorIds = (0, import_react20.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
-  const projectedNodes = (0, import_react20.useMemo)(() => {
+  const coauthorIds = (0, import_react21.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
+  const projectedNodes = (0, import_react21.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     const authorAllowed = (id) => {
       if (id === rawEgoAuthorId) return flags.author || flags.coauthor;
@@ -16029,26 +16144,26 @@ function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags
 }
 
 // public/graph-contents.tsx
-var import_react21 = __toESM(require_react());
+var import_react22 = __toESM(require_react());
 var import_jsx_runtime26 = __toESM(require_jsx_runtime());
 function sortByWeightThenLabel(a2, b) {
   const d = (b.weight || 0) - (a2.weight || 0);
   return d !== 0 ? d : a2.label.localeCompare(b.label);
 }
 function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect }) {
-  const journalByDoi = (0, import_react21.useMemo)(() => {
+  const journalByDoi = (0, import_react22.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
     const m2 = /* @__PURE__ */ new Map();
     for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m2.set(d, jId);
     return m2;
   }, [nodes, affiliations.doisByJournal]);
-  const labelById = (0, import_react21.useMemo)(() => {
+  const labelById = (0, import_react22.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [nodes]);
-  const adapter = (0, import_react21.useMemo)(() => ({
+  const adapter = (0, import_react22.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -16059,7 +16174,7 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: (key) => labelById.get(key) || key
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById]);
-  const buckets = (0, import_react21.useMemo)(() => {
+  const buckets = (0, import_react22.useMemo)(() => {
     const minSize = journalByDoi ? 1 : 2;
     const colors = buildCommunityColors(nodes, adapter, homeInstitutionId, minSize);
     const major = majorCommunities(nodes, adapter, homeInstitutionId, minSize);
@@ -16153,25 +16268,31 @@ function yearOf2(n) {
 }
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
-  const [selectedNodeId, setSelectedNodeId] = (0, import_react22.useState)(null);
-  const [flags, setFlags] = (0, import_react22.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react22.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
-  const [yearFloor, setYearFloor] = (0, import_react22.useState)(0);
-  const highlightedIds = (0, import_react22.useMemo)(() => {
+  const [selectedNodeId, setSelectedNodeId] = (0, import_react23.useState)(null);
+  const [expandedIds, setExpandedIds] = (0, import_react23.useState)(/* @__PURE__ */ new Set());
+  const expand = (0, import_react23.useCallback)((id) => setExpandedIds((prev) => {
+    const n = new Set(prev);
+    n.add(id);
+    return n;
+  }), []);
+  const [flags, setFlags] = (0, import_react23.useState)(DEFAULT_FLAGS);
+  const setFlag = (0, import_react23.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
+  const [yearFloor, setYearFloor] = (0, import_react23.useState)(0);
+  const highlightedIds = (0, import_react23.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  (0, import_react22.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) setSelectedNodeId(f);
   }, [rawNodes, highlightedIds]);
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  (0, import_react22.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     if (yearMin && !yearFloor) setYearFloor(yearMin);
   }, [yearMin, yearFloor]);
-  const filteredRaw = (0, import_react22.useMemo)(() => {
+  const filteredRaw = (0, import_react23.useMemo)(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
     const nodes = rawNodes.filter((n) => {
@@ -16184,24 +16305,24 @@ function GraphExplorerBody() {
     const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
     return { nodes, edges };
   }, [rawNodes, rawEdges, yearFloor, yearMin]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = (0, import_react22.useMemo)(
+  const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = (0, import_react23.useMemo)(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, flags.paper),
     [filteredRaw, flags.paper]
   );
   const { projectedNodes } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
-  const projectedEdges = (0, import_react22.useMemo)(() => {
+  const projectedEdges = (0, import_react23.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const doiCount = (0, import_react22.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
-  const affiliations = (0, import_react22.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
+  const doiCount = (0, import_react23.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
+  const affiliations = (0, import_react23.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
     rawNodes,
     projectedNodes,
     institutionsByAuthor: affiliations.institutionsByAuthor
   });
-  const chartDois = (0, import_react22.useMemo)(() => {
+  const chartDois = (0, import_react23.useMemo)(() => {
     if (!selectedNodeId) return matchingDois;
     const nodeDois = /* @__PURE__ */ new Set();
     for (const e of rawEdges) if (e.target === selectedNodeId) {
@@ -16251,14 +16372,17 @@ function GraphExplorerBody() {
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id) })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id), expandedIds, onExpand: expand })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
         NodeDetail,
         {
           nodeId: selectedNodeId,
           onClose: () => setSelectedNodeId(null),
-          empty: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: setSelectedNodeId })
+          empty: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
+            setSelectedNodeId(id);
+            expand(id);
+          } })
         }
       ) })
     ] }),

@@ -4,6 +4,11 @@ import { COLORS, nodeRadius } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
 import { CommunityGraph, type CommunityAdapter } from './community-graph';
 import { explorerCommunityKey } from './explorer-community';
+import { computeVisibility } from './explorer-visibility';
+
+const PLACEHOLDER_RADIUS = 3;
+const PLACEHOLDER_COLOR = 'rgba(255,255,255,0.22)';
+const ZOOM_SCALE = 2.1;
 
 interface Props {
   nodes: EnrichedSimNode[];
@@ -13,17 +18,17 @@ interface Props {
   selectedId?: string | null;
   onNodeClick?: (n: EnrichedSimNode) => void;
   affiliations: ExplorerAffiliations;
-  /** Home institution node id — receives accent color + hull emphasis. */
   homeInstitutionId?: string | null;
-  /** Logged-in user's author node id — pinned at center as ego. */
   egoAuthorId?: string | null;
+  expandedIds: Set<string>;
+  onExpand: (id: string) => void;
 }
 
-function radius(n: EnrichedSimNode): number {
+function baseRadius(n: EnrichedSimNode): number {
   return nodeRadius(n.weight || 1, n.role);
 }
 
-export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null }: Props) {
+export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand }: Props) {
   const labelById = useMemo(() => {
     const m = new Map<string, string>();
     for (const n of nodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
@@ -41,10 +46,15 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     return m;
   }, [nodes, affiliations.doisByJournal]);
 
+  const { placeholder } = useMemo(
+    () => computeVisibility(nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds),
+    [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds],
+  );
+
   const adapter = useMemo<CommunityAdapter<EnrichedSimNode>>(() => ({
     getId: n => n.id,
     getLabel: n => n.label,
-    getRadius: radius,
+    getRadius: n => (placeholder.has(n.id) ? PLACEHOLDER_RADIUS : baseRadius(n)),
     getCommunityKey: n => {
       if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
       return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi);
@@ -52,8 +62,8 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     isEgo: n => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: key => labelById.get(key) || key,
     getNodeColor: (n, communityColor) => {
+      if (placeholder.has(n.id)) return PLACEHOLDER_COLOR;
       if (n.group === 'institution' || n.group === 'author') return communityColor;
-      // Journals match their hull when papers are shown; otherwise stay static type color.
       if (n.group === 'journal' && journalByDoi) return communityColor;
       return COLORS[n.group] || null;
     },
@@ -65,7 +75,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       return labelById.get(firstId) || null;
     },
     getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
-  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId]);
+  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder]);
 
   const forceConfig = useMemo(() => {
     const area = Math.max(width * height, 1);
@@ -85,6 +95,15 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     };
   }, [width, height, nodes.length, journalByDoi]);
 
+  const handleClick = (n: EnrichedSimNode) => {
+    if (placeholder.has(n.id)) {
+      onExpand(n.id);
+      return;
+    }
+    onNodeClick?.(n);
+    onExpand(n.id);
+  };
+
   return (
     <CommunityGraph<EnrichedSimNode, ProjectedEdge>
       nodes={nodes}
@@ -94,8 +113,10 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       width={width}
       height={height}
       selectedId={selectedId ?? null}
-      onNodeClick={onNodeClick}
+      onNodeClick={handleClick}
       forceConfig={forceConfig}
+      zoomToId={selectedId ?? null}
+      zoomScale={ZOOM_SCALE}
     />
   );
 }

@@ -11,6 +11,7 @@ import {
 } from './forces';
 import type { CommunityAdapter, ForceConfig } from './types';
 import { DEFAULT_FORCE_CONFIG } from './types';
+import { useViewTransform } from './use-view-transform';
 
 export interface CommunityGraphProps<N, L extends BaseLink> {
   nodes: N[];
@@ -25,11 +26,16 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
   onNodeClick?: (n: N) => void;
   /** If true, a node's position stays pinned after dragging. Useful for ego-centric views. */
   pinDraggedNodes?: boolean;
+  /** Optional SVG-space transform (translate + scale) applied to the rendered graph — enables zoom/pan. */
+  viewTransform?: { tx: number; ty: number; scale: number };
+  /** If set, center the view on this node at the given scale (2 = 200%). */
+  zoomToId?: string | null;
+  zoomScale?: number;
 }
 
 export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   nodes: inNodes, links: inLinks, adapter, primaryKey = null, width, height, selectedId,
-  forceConfig, onNodeClick, pinDraggedNodes = false,
+  forceConfig, onNodeClick, pinDraggedNodes = false, viewTransform, zoomToId, zoomScale = 2,
 }: CommunityGraphProps<N, L>) {
   const config: ForceConfig = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -102,30 +108,39 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
     startDrag(e, node, svgRef.current!, simRef.current, pinDraggedNodes || isEgo);
   };
 
+  const effectiveTransform = useViewTransform({
+    override: viewTransform, zoomToId, zoomScale, nodes, adapter, width, height,
+  });
+
   return (
     <div style={{ position: 'relative', width, height }}>
       <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none' }}>
         <GraphDefs />
-        <CommunityHulls
-          nodes={nodes}
-          adapter={adapter}
-          primaryKey={primaryKey}
-          colors={communityColors}
-          minSize={config.minCommunitySize}
-        />
-        <Links links={links} connected={connected} />
-        <Nodes
-          nodes={nodes}
-          adapter={adapter}
-          hoverId={hoverId}
-          selectedId={selectedId ?? null}
-          connected={connected}
-          nodeColor={nodeColor}
-          onHoverStart={setHoverId}
-          onHoverEnd={() => setHoverId(null)}
-          onMouseDown={handleMouseDown}
-          onClick={n => onNodeClick?.(n)}
-        />
+        <g
+          transform={effectiveTransform ? `translate(${effectiveTransform.tx} ${effectiveTransform.ty}) scale(${effectiveTransform.scale})` : undefined}
+          style={{ transition: 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1)' }}
+        >
+          <CommunityHulls
+            nodes={nodes}
+            adapter={adapter}
+            primaryKey={primaryKey}
+            colors={communityColors}
+            minSize={config.minCommunitySize}
+          />
+          <Links links={links} connected={connected} />
+          <Nodes
+            nodes={nodes}
+            adapter={adapter}
+            hoverId={hoverId}
+            selectedId={selectedId ?? null}
+            connected={connected}
+            nodeColor={nodeColor}
+            onHoverStart={setHoverId}
+            onHoverEnd={() => setHoverId(null)}
+            onMouseDown={handleMouseDown}
+            onClick={n => onNodeClick?.(n)}
+          />
+        </g>
       </svg>
       {ego && <EgoLabel ego={ego} adapter={adapter} />}
       {showHover && hovered && <HoverTooltip node={hovered} adapter={adapter} />}

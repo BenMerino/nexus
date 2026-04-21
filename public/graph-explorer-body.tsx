@@ -25,6 +25,8 @@ function yearOf(n: { group: string; published?: string | null }): number {
 export function GraphExplorerBody() {
   const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const expand = useCallback((id: string) => setExpandedIds(prev => { const n = new Set(prev); n.add(id); return n; }), []);
   const [flags, setFlags] = useState<NodeTypeFlags>(DEFAULT_FLAGS);
   const setFlag = useCallback((k: keyof NodeTypeFlags, v: boolean) => setFlags(f => ({ ...f, [k]: v })), []);
   const [yearFloor, setYearFloor] = useState(0);
@@ -113,14 +115,14 @@ export function GraphExplorerBody() {
           </div>
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} />}
+            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} expandedIds={expandedIds} onExpand={expand} />}
         </div>
 
         <aside className="detail-panel">
           <NodeDetail
             nodeId={selectedNodeId}
             onClose={() => setSelectedNodeId(null)}
-            empty={<GraphContents nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} onSelect={setSelectedNodeId} />}
+            empty={<GraphContents nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} onSelect={id => { setSelectedNodeId(id); expand(id); }} />}
           />
         </aside>
       </div>

@@ -11,10 +11,12 @@ interface Props {
   egoAuthorId: string | null;
   selectedId: string | null;
   onNodeClick: (n: EnrichedSimNode) => void;
+  expandedIds: Set<string>;
+  onExpand: (id: string) => void;
   minHeight?: number;
 }
 
-export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, minHeight = 480 }: Props) {
+export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, minHeight = 480 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
 
@@ -44,6 +46,8 @@ export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, 
           affiliations={affiliations}
           homeInstitutionId={homeInstitutionId}
           egoAuthorId={egoAuthorId}
+          expandedIds={expandedIds}
+          onExpand={onExpand}
         />
       )}
     </div>
