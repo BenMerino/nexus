@@ -13,9 +13,10 @@ interface Props {
   egoAuthorId: string | null;
   onSelect: (id: string) => void;
   onHover?: (id: string | null) => void;
+  hoveredId?: string | null;
 }
 
-export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover }: Props) {
+export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId }: Props) {
   const journalByDoi = useMemo(() => {
     const hasPapers = nodes.some(n => n.group === 'doi');
     if (!hasPapers) return null;
@@ -48,8 +49,14 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
     getCommunityLabel: key => labelById.get(key) || key,
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById, hullTier]);
 
-  const buckets = useMemo(() => buildBuckets(nodes, adapter, homeInstitutionId, labelById),
-    [nodes, adapter, homeInstitutionId, labelById]);
+  const focusKey = useMemo(() => {
+    if (!hoveredId) return null;
+    const hovered = nodes.find(n => n.id === hoveredId);
+    return hovered ? adapter.getCommunityKey(hovered) : null;
+  }, [hoveredId, nodes, adapter]);
+
+  const buckets = useMemo(() => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
+    [nodes, adapter, homeInstitutionId, labelById, focusKey]);
 
   if (!nodes.length) return null;
 

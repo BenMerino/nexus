@@ -24,6 +24,7 @@ export function buildBuckets(
   adapter: CommunityAdapter<EnrichedSimNode>,
   homeInstitutionId: string | null,
   labelById: Map<string, string>,
+  focusKey: string | null = null,
 ): Bucket[] {
   const minSize = 1;
   const colors = buildCommunityColors(nodes, adapter, homeInstitutionId, minSize);
@@ -53,12 +54,16 @@ export function buildBuckets(
     else if (n.group === 'doi') b.papers.push(n);
   }
   const ordered = [...map.values()];
+  const sizeOf = (b: Bucket) => b.institutions.length + b.authors.length + b.journals.length + b.papers.length;
   ordered.sort((a, b) => {
+    // Hovered community always floats to the top.
+    if (focusKey) {
+      if (a.key === focusKey && b.key !== focusKey) return -1;
+      if (b.key === focusKey && a.key !== focusKey) return 1;
+    }
     if (a.emphasis !== b.emphasis) return a.emphasis ? -1 : 1;
     if ((a.key === OTHER_KEY) !== (b.key === OTHER_KEY)) return a.key === OTHER_KEY ? 1 : -1;
-    const sizeA = a.institutions.length + a.authors.length + a.journals.length + a.papers.length;
-    const sizeB = b.institutions.length + b.authors.length + b.journals.length + b.papers.length;
-    return sizeB - sizeA;
+    return sizeOf(b) - sizeOf(a);
   });
   for (const b of ordered) {
     b.institutions.sort(sortByWeightThenLabel);

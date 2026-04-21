@@ -32,12 +32,14 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
   /** Externally-driven hover — e.g. hovering a row in a sidebar should
    *  highlight the matching node on the canvas. Overrides internal pointer hover. */
   externalHoverId?: string | null;
+  /** Fires when the internal pointer hover changes so parents can mirror it. */
+  onHoverChange?: (id: string | null) => void;
 }
 
 export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   nodes: inNodes, links: inLinks, adapter, primaryKey = null, width, height, selectedId,
   forceConfig, onNodeClick, pinDraggedNodes = false, viewTransform, zoomToId, zoomScale = 2,
-  externalHoverId,
+  externalHoverId, onHoverChange,
 }: CommunityGraphProps<N, L>) {
   const config: ForceConfig = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -130,7 +132,8 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         communityColors={communityColors} minCommunitySize={config.minCommunitySize}
         focusKey={focusKey} hoverId={hoverId} selectedId={selectedId ?? null} connected={connected}
         nodeColor={nodeColor}
-        onHoverStart={setInternalHoverId} onHoverEnd={() => setInternalHoverId(null)}
+        onHoverStart={id => { setInternalHoverId(id); onHoverChange?.(id); }}
+        onHoverEnd={() => { setInternalHoverId(null); onHoverChange?.(null); }}
         onMouseDown={handleMouseDown} onNodeClick={onNodeClick}
         transform={effectiveTransform}
         ego={ego} hovered={hovered ?? null} showHover={!!showHover}

@@ -14637,7 +14637,8 @@ function CommunityGraph({
   viewTransform,
   zoomToId,
   zoomScale = 2,
-  externalHoverId
+  externalHoverId,
+  onHoverChange
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react4.useRef)(null);
@@ -14739,8 +14740,14 @@ function CommunityGraph({
       selectedId: selectedId ?? null,
       connected,
       nodeColor,
-      onHoverStart: setInternalHoverId,
-      onHoverEnd: () => setInternalHoverId(null),
+      onHoverStart: (id) => {
+        setInternalHoverId(id);
+        onHoverChange?.(id);
+      },
+      onHoverEnd: () => {
+        setInternalHoverId(null);
+        onHoverChange?.(null);
+      },
       onMouseDown: handleMouseDown,
       onNodeClick,
       transform: effectiveTransform,
@@ -14894,7 +14901,7 @@ var ZOOM_SCALE = 2.1;
 function baseRadius(n) {
   return nodeRadius(n.weight || 1, n.role);
 }
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId }) {
+function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange }) {
   const labelById = (0, import_react6.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
@@ -14974,14 +14981,15 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       forceConfig,
       zoomToId: selectedId ?? null,
       zoomScale: ZOOM_SCALE,
-      externalHoverId: externalHoverId ?? null
+      externalHoverId: externalHoverId ?? null,
+      onHoverChange
     }
   );
 }
 
 // public/explorer-canvas.tsx
 var import_jsx_runtime13 = __toESM(require_jsx_runtime());
-function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, minHeight = 480 }) {
+function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, minHeight = 480 }) {
   const ref = (0, import_react7.useRef)(null);
   const [size, setSize] = (0, import_react7.useState)(null);
   (0, import_react7.useEffect)(() => {
@@ -15010,7 +15018,8 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
       egoAuthorId,
       expandedIds,
       onExpand,
-      externalHoverId: hoverId ?? null
+      externalHoverId: hoverId ?? null,
+      onHoverChange
     }
   ) });
 }
@@ -15395,7 +15404,7 @@ function sortByWeightThenLabel(a2, b) {
   const d = (b.weight || 0) - (a2.weight || 0);
   return d !== 0 ? d : a2.label.localeCompare(b.label);
 }
-function buildBuckets(nodes, adapter, homeInstitutionId, labelById) {
+function buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey = null) {
   const minSize = 1;
   const colors = buildCommunityColors(nodes, adapter, homeInstitutionId, minSize);
   const major = majorCommunities(nodes, adapter, homeInstitutionId, minSize);
@@ -15427,12 +15436,15 @@ function buildBuckets(nodes, adapter, homeInstitutionId, labelById) {
     else if (n.group === "doi") b.papers.push(n);
   }
   const ordered = [...map.values()];
+  const sizeOf = (b) => b.institutions.length + b.authors.length + b.journals.length + b.papers.length;
   ordered.sort((a2, b) => {
+    if (focusKey) {
+      if (a2.key === focusKey && b.key !== focusKey) return -1;
+      if (b.key === focusKey && a2.key !== focusKey) return 1;
+    }
     if (a2.emphasis !== b.emphasis) return a2.emphasis ? -1 : 1;
     if (a2.key === OTHER_KEY !== (b.key === OTHER_KEY)) return a2.key === OTHER_KEY ? 1 : -1;
-    const sizeA = a2.institutions.length + a2.authors.length + a2.journals.length + a2.papers.length;
-    const sizeB = b.institutions.length + b.authors.length + b.journals.length + b.papers.length;
-    return sizeB - sizeA;
+    return sizeOf(b) - sizeOf(a2);
   });
   for (const b of ordered) {
     b.institutions.sort(sortByWeightThenLabel);
@@ -15445,7 +15457,7 @@ function buildBuckets(nodes, adapter, homeInstitutionId, labelById) {
 
 // public/graph-contents.tsx
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover }) {
+function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId }) {
   const journalByDoi = (0, import_react15.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
@@ -15474,9 +15486,14 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: (key) => labelById.get(key) || key
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById, hullTier]);
+  const focusKey = (0, import_react15.useMemo)(() => {
+    if (!hoveredId) return null;
+    const hovered = nodes.find((n) => n.id === hoveredId);
+    return hovered ? adapter.getCommunityKey(hovered) : null;
+  }, [hoveredId, nodes, adapter]);
   const buckets = (0, import_react15.useMemo)(
-    () => buildBuckets(nodes, adapter, homeInstitutionId, labelById),
-    [nodes, adapter, homeInstitutionId, labelById]
+    () => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
+    [nodes, adapter, homeInstitutionId, labelById, focusKey]
   );
   if (!nodes.length) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "graph-contents", children: [
@@ -15679,7 +15696,7 @@ function GraphExplorerBody() {
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: setHoverId })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         NodeDetail,
@@ -15691,7 +15708,7 @@ function GraphExplorerBody() {
           empty: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);
             expand(id);
-          }, onHover: setHoverId })
+          }, onHover: setHoverId, hoveredId: hoverId })
         }
       ) })
     ] })

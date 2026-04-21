@@ -14508,7 +14508,8 @@ function CommunityGraph({
   viewTransform,
   zoomToId,
   zoomScale = 2,
-  externalHoverId
+  externalHoverId,
+  onHoverChange
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react5.useRef)(null);
@@ -14610,8 +14611,14 @@ function CommunityGraph({
       selectedId: selectedId ?? null,
       connected,
       nodeColor,
-      onHoverStart: setInternalHoverId,
-      onHoverEnd: () => setInternalHoverId(null),
+      onHoverStart: (id) => {
+        setInternalHoverId(id);
+        onHoverChange?.(id);
+      },
+      onHoverEnd: () => {
+        setInternalHoverId(null);
+        onHoverChange?.(null);
+      },
       onMouseDown: handleMouseDown,
       onNodeClick,
       transform: effectiveTransform,

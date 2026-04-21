@@ -14,10 +14,11 @@ interface Props {
   expandedIds: Set<string>;
   onExpand: (id: string) => void;
   hoverId?: string | null;
+  onHoverChange?: (id: string | null) => void;
   minHeight?: number;
 }
 
-export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, minHeight = 480 }: Props) {
+export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, minHeight = 480 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
 
@@ -50,6 +51,7 @@ export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, 
           expandedIds={expandedIds}
           onExpand={onExpand}
           externalHoverId={hoverId ?? null}
+          onHoverChange={onHoverChange}
         />
       )}
     </div>
