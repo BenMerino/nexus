@@ -13242,10 +13242,16 @@ function startDrag(e, node, svg, sim, pinAfterDrag) {
 // public/community-graph/render.tsx
 var import_jsx_runtime5 = __toESM(require_jsx_runtime());
 function GraphDefs() {
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("radialGradient", { id: "community-glow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
-  ] }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("defs", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("radialGradient", { id: "community-glow", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("pattern", { id: "graph-grid", x: "0", y: "0", width: "40", height: "40", patternUnits: "userSpaceOnUse", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M 40 0 L 0 0 0 40", fill: "none", stroke: "var(--border-soft)", strokeWidth: "1" }) })
+  ] });
+}
+function GridBackdrop() {
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)" });
 }
 function Links({ links, connected }) {
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { children: links.map((l, i) => {
@@ -13516,6 +13522,7 @@ function GraphScene({
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GraphDefs, {}),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { style: { transform: t, transformOrigin: "0 0", transition: animate ? "transform 400ms cubic-bezier(0.4, 0, 0.2, 1)" : "none" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
@@ -15089,13 +15096,18 @@ function applyTheme(me) {
 // public/graph-filters-sidebar.tsx
 var import_react12 = __toESM(require_react());
 var import_jsx_runtime16 = __toESM(require_jsx_runtime());
-function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, affiliations, homeInstitutionId }) {
+function prettyFallback(key) {
+  const bare = key.replace(/^[a-z]+:/, "");
+  const m2 = bare.match(/\/([^/]+)\/?$/);
+  return m2 ? m2[1] : bare;
+}
+function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, allNodes, affiliations, homeInstitutionId }) {
   const paperColor = "#888";
   const labelById = (0, import_react12.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
-    for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
+    for (const n of allNodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
-  }, [nodes]);
+  }, [allNodes]);
   const journalByDoi = (0, import_react12.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
@@ -15109,7 +15121,7 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
     getRadius: () => 0,
     getCommunityKey: (n) => explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi),
     isEgo: () => false,
-    getCommunityLabel: (key) => labelById.get(key) || key
+    getCommunityLabel: (key) => labelById.get(key) || prettyFallback(key)
   }), [affiliations, labelById, homeInstitutionId, journalByDoi]);
   return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("aside", { className: "graph-filters", children: [
     /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "filter-group", children: [
@@ -15515,7 +15527,7 @@ function GraphExplorerBody() {
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => pushSelection(id) }) }),
     /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "graph-layout", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFloor: yearFloor || yearMin, onYearFloorChange: setYearFloor, nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFloor: yearFloor || yearMin, onYearFloorChange: setYearFloor, nodes: projectedNodes, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "graph-canvas", children: [
         /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "canvas-corner-tl", children: [
           /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
@@ -15538,7 +15550,7 @@ function GraphExplorerBody() {
         {
           nodeId: selectedNodeId,
           onClose: () => pushSelection(null),
-          onBack: selectionStack.length > 1 ? popSelection : void 0,
+          onBack: selectionStack.length >= 1 ? popSelection : void 0,
           accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
           empty: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);

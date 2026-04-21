@@ -380,11 +380,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .graph-canvas {
   background: var(--bg-card); border: 1px solid var(--border-soft);
   border-radius: var(--radius); position: relative; overflow: hidden;
-  background-image:
-    radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%),
-    linear-gradient(var(--border-soft) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
-  background-size: auto, 40px 40px, 40px 40px;
+  background-image: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%);
 }
 .canvas-corner-tl {
   position: absolute; top: 14px; left: 14px;

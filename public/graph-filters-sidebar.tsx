@@ -5,6 +5,15 @@ import type { ExplorerAffiliations } from './explorer-affiliations';
 import { CommunityLegend, type CommunityAdapter } from './community-graph';
 import { explorerCommunityKey } from './explorer-community';
 
+/** Last-ditch label for a community key when the label map misses. Strips
+ *  the group:prefix and any ROR/URL noise so at least something human lands
+ *  on screen instead of the raw identifier. */
+function prettyFallback(key: string): string {
+  const bare = key.replace(/^[a-z]+:/, '');
+  const m = bare.match(/\/([^/]+)\/?$/);
+  return m ? m[1] : bare;
+}
+
 export interface NodeTypeFlags {
   institution: boolean;
   author: boolean;
@@ -21,18 +30,19 @@ interface Props {
   yearFloor: number;
   onYearFloorChange: (y: number) => void;
   nodes: EnrichedSimNode[];
+  allNodes: { id: string; group: string; label: string }[];
   affiliations: ExplorerAffiliations;
   homeInstitutionId: string | null;
 }
 
-export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, affiliations, homeInstitutionId }: Props) {
+export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, allNodes, affiliations, homeInstitutionId }: Props) {
   const paperColor = '#888';
 
   const labelById = useMemo(() => {
     const m = new Map<string, string>();
-    for (const n of nodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
+    for (const n of allNodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
     return m;
-  }, [nodes]);
+  }, [allNodes]);
 
   const journalByDoi = useMemo(() => {
     const hasPapers = nodes.some(n => n.group === 'doi');
@@ -48,7 +58,7 @@ export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloo
     getRadius: () => 0,
     getCommunityKey: n => explorerCommunityKey(n, affiliations.institutionCountsByAuthor, homeInstitutionId, journalByDoi),
     isEgo: () => false,
-    getCommunityLabel: key => labelById.get(key) || key,
+    getCommunityLabel: key => labelById.get(key) || prettyFallback(key),
   }), [affiliations, labelById, homeInstitutionId, journalByDoi]);
 
   return (

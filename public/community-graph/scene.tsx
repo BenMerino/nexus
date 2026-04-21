@@ -1,5 +1,5 @@
 import React from 'react';
-import { GraphDefs, Links, Nodes } from './render';
+import { GraphDefs, GridBackdrop, Links, Nodes } from './render';
 import { CommunityHulls } from './hulls';
 import { EgoLabel, HoverTooltip } from './labels';
 import type { CommunityAdapter } from './types';
@@ -43,6 +43,7 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
     <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none' }}>
       <GraphDefs />
       <g style={{ transform: t, transformOrigin: '0 0', transition: animate ? 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1)' : 'none' }}>
+        <GridBackdrop />
         <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} />
         <Links links={links} connected={connected} />
         <Nodes

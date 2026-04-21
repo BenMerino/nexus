@@ -13135,10 +13135,16 @@ function startDrag(e, node, svg, sim, pinAfterDrag) {
 // public/community-graph/render.tsx
 var import_jsx_runtime5 = __toESM(require_jsx_runtime());
 function GraphDefs() {
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("radialGradient", { id: "community-glow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
-  ] }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("defs", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("radialGradient", { id: "community-glow", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("pattern", { id: "graph-grid", x: "0", y: "0", width: "40", height: "40", patternUnits: "userSpaceOnUse", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M 40 0 L 0 0 0 40", fill: "none", stroke: "var(--border-soft)", strokeWidth: "1" }) })
+  ] });
+}
+function GridBackdrop() {
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)" });
 }
 function Links({ links, connected }) {
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { children: links.map((l, i) => {
@@ -13409,6 +13415,7 @@ function GraphScene({
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GraphDefs, {}),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { style: { transform: t, transformOrigin: "0 0", transition: animate ? "transform 400ms cubic-bezier(0.4, 0, 0.2, 1)" : "none" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(

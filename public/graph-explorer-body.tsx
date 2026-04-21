@@ -106,7 +106,7 @@ export function GraphExplorerBody() {
       <div style={{ marginBottom: 12 }}><GraphSearch nodes={projectedNodes} onSelect={id => pushSelection(id)} /></div>
 
       <div className="graph-layout">
-        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFloor={yearFloor || yearMin} onYearFloorChange={setYearFloor} nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} />
+        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFloor={yearFloor || yearMin} onYearFloorChange={setYearFloor} nodes={projectedNodes} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} />
 
         <div className="graph-canvas">
           <div className="canvas-corner-tl">
@@ -123,7 +123,7 @@ export function GraphExplorerBody() {
           <NodeDetail
             nodeId={selectedNodeId}
             onClose={() => pushSelection(null)}
-            onBack={selectionStack.length > 1 ? popSelection : undefined}
+            onBack={selectionStack.length >= 1 ? popSelection : undefined}
             accentColor={explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId)}
             empty={<GraphContents nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} onSelect={id => { pushSelection(id); expand(id); }} />}
           />

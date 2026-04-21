@@ -9,8 +9,18 @@ export function GraphDefs() {
         <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.5" />
         <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
       </radialGradient>
+      <pattern id="graph-grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--border-soft)" strokeWidth="1" />
+      </pattern>
     </defs>
   );
+}
+
+/** A very large rect filled with the grid pattern. Sits behind the
+ *  graph content inside the transform group so it pans + scales with
+ *  the rest of the scene — the canvas reads as a larger plane. */
+export function GridBackdrop() {
+  return <rect x={-5000} y={-5000} width={10000} height={10000} fill="url(#graph-grid)" />;
 }
 
 interface LinksProps<N, L extends BaseLink & { weight?: number }> {
