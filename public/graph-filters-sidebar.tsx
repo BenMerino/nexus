@@ -4,6 +4,7 @@ import { COLORS, type EnrichedSimNode } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
 import { CommunityLegend, type CommunityAdapter } from './community-graph';
 import { explorerCommunityKey, type HullTier } from './explorer-community';
+import { YearRangeSlider } from './year-range-slider';
 
 /** Last-ditch label for a community key when the label map misses. Strips
  *  the group:prefix and any ROR/URL noise so at least something human lands
@@ -27,15 +28,16 @@ interface Props {
   setFlag: (k: keyof NodeTypeFlags, v: boolean) => void;
   yearMin: number;
   yearMax: number;
-  yearFloor: number;
-  onYearFloorChange: (y: number) => void;
+  yearFrom: number;
+  yearTo: number;
+  onYearRangeChange: (from: number, to: number) => void;
   nodes: EnrichedSimNode[];
   allNodes: { id: string; group: string; label: string }[];
   affiliations: ExplorerAffiliations;
   homeInstitutionId: string | null;
 }
 
-export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, allNodes, affiliations, homeInstitutionId }: Props) {
+export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange, nodes, allNodes, affiliations, homeInstitutionId }: Props) {
   const paperColor = '#888';
 
   const labelById = useMemo(() => {
@@ -80,12 +82,8 @@ export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloo
 
       {yearMax > yearMin && (
         <div className="filter-group">
-          <div className="filter-label">Year floor</div>
-          <div className="year-slider">
-            <input type="range" min={yearMin} max={yearMax} value={yearFloor}
-              onChange={e => onYearFloorChange(parseInt(e.target.value))} />
-            <div className="year-val mono">≥ {yearFloor}</div>
-          </div>
+          <div className="filter-label">Year range</div>
+          <YearRangeSlider min={yearMin} max={yearMax} from={yearFrom} to={yearTo} onChange={onYearRangeChange} />
         </div>
       )}
 

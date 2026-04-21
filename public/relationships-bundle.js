@@ -766,7 +766,7 @@ var require_react = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React12 = require_react();
+    var React13 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React12.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React13.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React12 = require_react();
+    var React13 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React12.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React13.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React12.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React13.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12750,7 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react18 = __toESM(require_react());
+var import_react20 = __toESM(require_react());
 
 // public/node-classify.ts
 function percentile(sorted, p) {
@@ -15093,38 +15093,16 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
   ) });
 }
 
-// public/time-slider.tsx
-var import_react8 = __toESM(require_react());
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
-function yearOf(n) {
-  if (n.group !== "doi" || !n.published) return 0;
-  const y3 = parseInt(n.published.substring(0, 4));
-  return y3 > 1900 ? y3 : 0;
-}
-function useTimeRange(nodes) {
-  return (0, import_react8.useMemo)(() => {
-    let min = 9999, max = 0;
-    for (const n of nodes) {
-      const y3 = yearOf(n);
-      if (y3) {
-        min = Math.min(min, y3);
-        max = Math.max(max, y3);
-      }
-    }
-    return { min: min > max ? 0 : min, max };
-  }, [nodes]);
-}
-
 // public/use-graph-data.ts
-var import_react9 = __toESM(require_react());
+var import_react8 = __toESM(require_react());
 var EMPTY_AFFS = { byAuthor: {} };
 function useGraphData() {
-  const [rawNodes, setRawNodes] = (0, import_react9.useState)([]);
-  const [rawEdges, setRawEdges] = (0, import_react9.useState)([]);
-  const [affiliations, setAffiliations] = (0, import_react9.useState)(EMPTY_AFFS);
-  const [tagMeta, setTagMeta] = (0, import_react9.useState)({});
-  const [loading, setLoading] = (0, import_react9.useState)(true);
-  (0, import_react9.useEffect)(() => {
+  const [rawNodes, setRawNodes] = (0, import_react8.useState)([]);
+  const [rawEdges, setRawEdges] = (0, import_react8.useState)([]);
+  const [affiliations, setAffiliations] = (0, import_react8.useState)(EMPTY_AFFS);
+  const [tagMeta, setTagMeta] = (0, import_react8.useState)({});
+  const [loading, setLoading] = (0, import_react8.useState)(true);
+  (0, import_react8.useEffect)(() => {
     fetch("/api/graph").then((r) => r.json()).then((d) => {
       setRawNodes(d.nodes);
       setRawEdges(d.edges);
@@ -15138,10 +15116,10 @@ function useGraphData() {
 }
 
 // public/shell-helpers.ts
-var import_react10 = __toESM(require_react());
+var import_react9 = __toESM(require_react());
 var CACHE_KEY = "nexus.me";
 function useCurrentUser() {
-  const [me, setMe] = (0, import_react10.useState)(() => {
+  const [me, setMe] = (0, import_react9.useState)(() => {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -15149,9 +15127,9 @@ function useCurrentUser() {
       return null;
     }
   });
-  const [loading, setLoading] = (0, import_react10.useState)(!me);
-  const [error, setError] = (0, import_react10.useState)(null);
-  (0, import_react10.useEffect)(() => {
+  const [loading, setLoading] = (0, import_react9.useState)(!me);
+  const [error, setError] = (0, import_react9.useState)(null);
+  (0, import_react9.useEffect)(() => {
     let cancelled = false;
     fetch("/api/auth?action=me").then((r) => r.status === 401 ? null : r.json()).then((d) => {
       if (cancelled) return;
@@ -15180,13 +15158,69 @@ function applyTheme(me) {
 
 // public/graph-filters-sidebar.tsx
 var import_react11 = __toESM(require_react());
+
+// public/year-range-slider.tsx
+var import_react10 = __toESM(require_react());
+var import_jsx_runtime14 = __toESM(require_jsx_runtime());
+function YearRangeSlider({ min, max, from, to, onChange }) {
+  const span = max - min || 1;
+  const leftPct = (from - min) / span * 100;
+  const rightPct = (to - min) / span * 100;
+  const onFrom = (0, import_react10.useCallback)((e) => {
+    const v = Math.min(parseInt(e.target.value), to);
+    onChange(v, to);
+  }, [to, onChange]);
+  const onTo = (0, import_react10.useCallback)((e) => {
+    const v = Math.max(parseInt(e.target.value), from);
+    onChange(from, v);
+  }, [from, onChange]);
+  const fillStyle = {
+    left: `${leftPct}%`,
+    width: `${Math.max(rightPct - leftPct, 0)}%`
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "year-range", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "year-range-track", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "year-range-fill", style: fillStyle }),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+        "input",
+        {
+          type: "range",
+          min,
+          max,
+          value: from,
+          onChange: onFrom,
+          className: "year-range-input year-range-from",
+          style: from >= to ? { zIndex: 4 } : void 0
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+        "input",
+        {
+          type: "range",
+          min,
+          max,
+          value: to,
+          onChange: onTo,
+          className: "year-range-input year-range-to"
+        }
+      )
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "year-range-readout mono", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: from }),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "muted", children: "\u2013" }),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: to })
+    ] })
+  ] });
+}
+
+// public/graph-filters-sidebar.tsx
 var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 function prettyFallback(key) {
   const bare = key.replace(/^[a-z]+:/, "");
   const m2 = bare.match(/\/([^/]+)\/?$/);
   return m2 ? m2[1] : bare;
 }
-function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, allNodes, affiliations, homeInstitutionId }) {
+function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange, nodes, allNodes, affiliations, homeInstitutionId }) {
   const paperColor = "#888";
   const labelById = (0, import_react11.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
@@ -15223,23 +15257,8 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
       /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Check, { checked: flags.paper, onChange: (v) => setFlag("paper", v), label: "Papers", color: paperColor })
     ] }),
     yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "filter-label", children: "Year floor" }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "year-slider", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
-          "input",
-          {
-            type: "range",
-            min: yearMin,
-            max: yearMax,
-            value: yearFloor,
-            onChange: (e) => onYearFloorChange(parseInt(e.target.value))
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "year-val mono", children: [
-          "\u2265 ",
-          yearFloor
-        ] })
-      ] })
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "filter-label", children: "Year range" }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: onYearRangeChange })
     ] }),
     nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "filter-group legend", children: [
       /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "filter-label", children: "Communities" }),
@@ -15716,136 +15735,170 @@ function useSelectionStack() {
   return { selectionStack, selectedNodeId, navDir, pushSelection, popSelection };
 }
 
-// public/graph-explorer-body.tsx
+// public/use-year-range-filter.ts
+var import_react19 = __toESM(require_react());
+
+// public/time-slider.tsx
+var import_react18 = __toESM(require_react());
 var import_jsx_runtime18 = __toESM(require_jsx_runtime());
-var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
+function yearOf(n) {
+  if (n.group !== "doi" || !n.published) return 0;
+  const y3 = parseInt(n.published.substring(0, 4));
+  return y3 > 1900 ? y3 : 0;
+}
+function useTimeRange(nodes) {
+  return (0, import_react18.useMemo)(() => {
+    let min = 9999, max = 0;
+    for (const n of nodes) {
+      const y3 = yearOf(n);
+      if (y3) {
+        min = Math.min(min, y3);
+        max = Math.max(max, y3);
+      }
+    }
+    return { min: min > max ? 0 : min, max };
+  }, [nodes]);
+}
+
+// public/use-year-range-filter.ts
 function yearOf2(n) {
   if (n.group !== "doi" || !n.published) return 0;
   const y3 = parseInt(n.published.substring(0, 4));
   return y3 > 1900 ? y3 : 0;
 }
+function useYearRangeFilter(rawNodes, rawEdges) {
+  const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
+  const [range, setRange] = (0, import_react19.useState)(null);
+  (0, import_react19.useEffect)(() => {
+    if (yearMin && yearMax && !range) setRange([yearMin, yearMax]);
+  }, [yearMin, yearMax, range]);
+  const yearFrom = range ? range[0] : yearMin;
+  const yearTo = range ? range[1] : yearMax;
+  const filteredRaw = (0, import_react19.useMemo)(() => {
+    const fullSpan = yearFrom <= yearMin && yearTo >= yearMax;
+    if (fullSpan) return { nodes: rawNodes, edges: rawEdges };
+    const keep = /* @__PURE__ */ new Set();
+    const nodes = rawNodes.filter((n) => {
+      if (n.group !== "doi") return true;
+      const y3 = yearOf2(n);
+      const ok = !y3 || y3 >= yearFrom && y3 <= yearTo;
+      if (ok) keep.add(n.id);
+      return ok;
+    });
+    const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
+    return { nodes, edges };
+  }, [rawNodes, rawEdges, yearFrom, yearTo, yearMin, yearMax]);
+  return { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw };
+}
+
+// public/graph-explorer-body.tsx
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
   const { selectionStack, selectedNodeId, navDir, pushSelection, popSelection } = useSelectionStack();
-  const detailPanelRef = (0, import_react18.useRef)(null);
-  const [hover, setHover] = (0, import_react18.useState)({ id: null, source: "canvas" });
+  const detailPanelRef = (0, import_react20.useRef)(null);
+  const [hover, setHover] = (0, import_react20.useState)({ id: null, source: "canvas" });
   const hoverId = hover.id;
-  const prefetchTimer = (0, import_react18.useRef)(null);
-  const schedulePrefetch = (0, import_react18.useCallback)((id) => {
+  const prefetchTimer = (0, import_react20.useRef)(null);
+  const schedulePrefetch = (0, import_react20.useCallback)((id) => {
     if (prefetchTimer.current) {
       clearTimeout(prefetchTimer.current);
       prefetchTimer.current = null;
     }
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, []);
-  const hoverFromCanvas = (0, import_react18.useCallback)((id) => {
+  const hoverFromCanvas = (0, import_react20.useCallback)((id) => {
     setHover({ id, source: "canvas" });
     schedulePrefetch(id);
   }, [schedulePrefetch]);
-  const hoverFromSidebar = (0, import_react18.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
-  const [expandedIds, setExpandedIds] = (0, import_react18.useState)(/* @__PURE__ */ new Set());
-  const expand = (0, import_react18.useCallback)((id) => setExpandedIds((prev) => {
+  const hoverFromSidebar = (0, import_react20.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
+  const [expandedIds, setExpandedIds] = (0, import_react20.useState)(/* @__PURE__ */ new Set());
+  const expand = (0, import_react20.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
     const n = new Set(prev);
     n.add(id);
     return n;
   }), []);
-  const [flags, setFlags] = (0, import_react18.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react18.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
-  const [yearFloor, setYearFloor] = (0, import_react18.useState)(0);
-  const highlightedIds = (0, import_react18.useMemo)(() => {
+  const [flags, setFlags] = (0, import_react20.useState)(DEFAULT_FLAGS);
+  const setFlag = (0, import_react20.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
+  const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
+  const highlightedIds = (0, import_react20.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  (0, import_react18.useEffect)(() => {
+  (0, import_react20.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) pushSelection(f);
   }, [rawNodes, highlightedIds]);
-  const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  (0, import_react18.useEffect)(() => {
-    if (yearMin && !yearFloor) setYearFloor(yearMin);
-  }, [yearMin, yearFloor]);
-  (0, import_react18.useEffect)(() => {
+  (0, import_react20.useEffect)(() => {
     const el = detailPanelRef.current;
     if (!el) return;
     el.querySelectorAll(".node-detail-pane").forEach((p) => {
       p.scrollTop = 0;
     });
   }, [selectedNodeId]);
-  const filteredRaw = (0, import_react18.useMemo)(() => {
-    if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
-    const keep = /* @__PURE__ */ new Set();
-    const nodes = rawNodes.filter((n) => {
-      if (n.group !== "doi") return true;
-      const y3 = yearOf2(n);
-      const ok = !y3 || y3 >= yearFloor;
-      if (ok) keep.add(n.id);
-      return ok;
-    });
-    const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
-    return { nodes, edges };
-  }, [rawNodes, rawEdges, yearFloor, yearMin]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react18.useMemo)(
+  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react20.useMemo)(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, flags.paper),
     [filteredRaw, flags.paper]
   );
   const { projectedNodes } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
-  const projectedEdges = (0, import_react18.useMemo)(() => {
+  const projectedEdges = (0, import_react20.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const affiliations = (0, import_react18.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
+  const affiliations = (0, import_react20.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
     rawNodes,
     projectedNodes,
     institutionsByAuthor: affiliations.institutionsByAuthor
   });
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
-  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "view graph-view", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("header", { className: "view-head compact", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("h1", { className: "view-title tight", children: [
+  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
+  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "eyebrow", children: "No data." }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "view graph-view", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("header", { className: "view-head compact", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("h1", { className: "view-title tight", children: [
           "The institution as a ",
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("em", { children: "network" }),
+          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("em", { children: "network" }),
           "."
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(Tag, { mono: true, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(Tag, { mono: true, children: [
           projectedNodes.length,
           " NODES"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(Tag, { mono: true, tone: "muted", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(Tag, { mono: true, tone: "muted", children: [
           projectedEdges.length,
           " EDGES"
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "graph-layout", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFloor: yearFloor || yearMin, onYearFloorChange: setYearFloor, nodes: projectedNodes, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "graph-canvas", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "canvas-corner-tl", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "graph-layout", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), nodes: projectedNodes, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "graph-canvas", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "canvas-corner-tl", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { children: [
             "tenant \xB7 ",
-            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("em", { children: me?.tenant || "\u2014" })
+            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("em", { children: me?.tenant || "\u2014" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { children: [
             "role \xB7 ",
-            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("em", { children: me?.role || "\u2014" })
+            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("em", { children: me?.role || "\u2014" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { children: [
             "scope \xB7 ",
-            yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
+            yearFrom > yearMin || yearTo < yearMax ? `${yearFrom}\u2013${yearTo}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         NodeDetail,
         {
           nodeId: selectedNodeId,
@@ -15853,7 +15906,7 @@ function GraphExplorerBody() {
           onBack: selectionStack.length >= 1 ? popSelection : void 0,
           accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
           navDir,
-          empty: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
+          empty: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);
             expand(id);
           }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, onSearchSelect: (id) => pushSelection(id) })
@@ -15864,14 +15917,14 @@ function GraphExplorerBody() {
 }
 
 // public/relationships.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 var root = null;
 function mount() {
   const el = document.getElementById("relationships-root");
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphExplorerBody, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime20.jsx)(GraphExplorerBody, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/relationships-bundle.js"] = mount;

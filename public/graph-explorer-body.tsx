@@ -3,7 +3,6 @@ import { projectGraph } from './project-graph';
 import { NodeDetail, prefetchNodeDetail } from './node-detail';
 import { ExplorerCanvas } from './explorer-canvas';
 import { GraphSearch } from './graph-search';
-import { useTimeRange } from './time-slider';
 import { useGraphData } from './use-graph-data';
 import { useCurrentUser } from './shell-helpers';
 import { Tag } from './ui-primitives';
@@ -14,14 +13,9 @@ import { useExplorerNodes } from './use-explorer-nodes';
 import { GraphContents } from './graph-contents';
 import { explorerSelectedColor } from './explorer-selected-color';
 import { useSelectionStack } from './use-selection-stack';
+import { useYearRangeFilter } from './use-year-range-filter';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, coauthor: true, journal: true, paper: false };
-
-function yearOf(n: { group: string; published?: string | null }): number {
-  if (n.group !== 'doi' || !n.published) return 0;
-  const y = parseInt(n.published.substring(0, 4));
-  return y > 1900 ? y : 0;
-}
 
 export function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
@@ -46,7 +40,7 @@ export function GraphExplorerBody() {
   }), []);
   const [flags, setFlags] = useState<NodeTypeFlags>(DEFAULT_FLAGS);
   const setFlag = useCallback((k: keyof NodeTypeFlags, v: boolean) => setFlags(f => ({ ...f, [k]: v })), []);
-  const [yearFloor, setYearFloor] = useState(0);
+  const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
   const highlightedIds = useMemo(() => {
     const o = new URLSearchParams(window.location.search).get('highlight');
     return o ? new Set([`author:${o}`]) : new Set<string>();
@@ -59,9 +53,6 @@ export function GraphExplorerBody() {
     if (f && rawNodes.some(n => n.id === f)) pushSelection(f);
   }, [rawNodes, highlightedIds]);
 
-  const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  useEffect(() => { if (yearMin && !yearFloor) setYearFloor(yearMin); }, [yearMin, yearFloor]);
-
   // Reset the scroll position of each pane on selection change so the user
   // lands at the top of whatever pane slides into view.
   useEffect(() => {
@@ -69,18 +60,6 @@ export function GraphExplorerBody() {
     if (!el) return;
     el.querySelectorAll<HTMLElement>('.node-detail-pane').forEach(p => { p.scrollTop = 0; });
   }, [selectedNodeId]);
-
-  const filteredRaw = useMemo(() => {
-    if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
-    const keep = new Set<string>();
-    const nodes = rawNodes.filter(n => {
-      if (n.group !== 'doi') return true;
-      const y = yearOf(n); const ok = !y || y >= yearFloor;
-      if (ok) keep.add(n.id); return ok;
-    });
-    const edges = rawEdges.filter(e => !e.source.startsWith('doi:') || keep.has(e.source));
-    return { nodes, edges };
-  }, [rawNodes, rawEdges, yearFloor, yearMin]);
 
   const { nodes: projectedRaw, edges: projectedEdgesAll } = useMemo(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, new Set(['institution', 'author', 'journal']), [], null, flags.paper),
@@ -119,13 +98,13 @@ export function GraphExplorerBody() {
       </header>
 
       <div className="graph-layout">
-        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFloor={yearFloor || yearMin} onYearFloorChange={setYearFloor} nodes={projectedNodes} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} />
+        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFrom={yearFrom} yearTo={yearTo} onYearRangeChange={(f, t) => setRange([f, t])} nodes={projectedNodes} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} />
 
         <div className="graph-canvas">
           <div className="canvas-corner-tl">
             <div>tenant · <em>{me?.tenant || '—'}</em></div>
             <div>role · <em>{me?.role || '—'}</em></div>
-            <div>scope · {yearFloor > yearMin ? `≥ ${yearFloor}` : 'all years'}</div>
+            <div>scope · {(yearFrom > yearMin || yearTo < yearMax) ? `${yearFrom}–${yearTo}` : 'all years'}</div>
           </div>
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
