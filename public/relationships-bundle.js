@@ -15623,10 +15623,10 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       clusterStrengthX: clusterStrength,
       clusterStrengthY: clusterStrength,
       collidePad: 6,
-      minCommunitySize: 2,
+      minCommunitySize: journalByDoi ? 1 : 2,
       orbitRadius: 0.45
     };
-  }, [width, height, nodes.length]);
+  }, [width, height, nodes.length, journalByDoi]);
   return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
     CommunityGraph,
     {

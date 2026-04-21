@@ -102,10 +102,10 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       clusterStrengthX: clusterStrength,
       clusterStrengthY: clusterStrength,
       collidePad: 6,
-      minCommunitySize: 2,
+      minCommunitySize: journalByDoi ? 1 : 2,
       orbitRadius: 0.45,
     };
-  }, [width, height, nodes.length]);
+  }, [width, height, nodes.length, journalByDoi]);
 
   return (
     <CommunityGraph<EnrichedSimNode, ProjectedEdge>
