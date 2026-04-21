@@ -14791,10 +14791,8 @@ function explorerCommunityKey(n, institutionCountsByAuthor, homeInstitutionId, j
     }
     return bestKey;
   }
-  if (journalByDoi) {
-    if (n.group === "journal") return n.id;
-    if (n.group === "doi") return journalByDoi.get(n.id) ?? null;
-  }
+  if (n.group === "journal") return n.id;
+  if (n.group === "doi" && journalByDoi) return journalByDoi.get(n.id) ?? null;
   return null;
 }
 
@@ -14895,8 +14893,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     getCommunityLabel: (key) => labelById.get(key) || key,
     getNodeColor: (n, communityColor) => {
       if (placeholder.has(n.id)) return PLACEHOLDER_COLOR;
-      if (n.group === "institution" || n.group === "author") return communityColor;
-      if (n.group === "journal" && journalByDoi) return communityColor;
+      if (n.group === "institution" || n.group === "author" || n.group === "journal") return communityColor;
       return COLORS[n.group] || null;
     },
     getHoverSubtitle: (n) => {

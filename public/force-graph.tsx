@@ -63,8 +63,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     getCommunityLabel: key => labelById.get(key) || key,
     getNodeColor: (n, communityColor) => {
       if (placeholder.has(n.id)) return PLACEHOLDER_COLOR;
-      if (n.group === 'institution' || n.group === 'author') return communityColor;
-      if (n.group === 'journal' && journalByDoi) return communityColor;
+      if (n.group === 'institution' || n.group === 'author' || n.group === 'journal') return communityColor;
       return COLORS[n.group] || null;
     },
     getHoverSubtitle: n => {

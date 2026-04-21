@@ -28,9 +28,7 @@ export function explorerCommunityKey(
     }
     return bestKey;
   }
-  if (journalByDoi) {
-    if (n.group === 'journal') return n.id;
-    if (n.group === 'doi') return journalByDoi.get(n.id) ?? null;
-  }
+  if (n.group === 'journal') return n.id;
+  if (n.group === 'doi' && journalByDoi) return journalByDoi.get(n.id) ?? null;
   return null;
 }
