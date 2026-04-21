@@ -15774,12 +15774,8 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
   }, [width, height, nodes.length, journalByDoi]);
   const handleClick = (n) => {
     if (n.id === selectedId) return;
-    if (placeholder.has(n.id)) {
-      onExpand(n.id);
-      return;
-    }
-    onNodeClick?.(n);
     onExpand(n.id);
+    onNodeClick?.(n);
   };
   return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
     CommunityGraph,
