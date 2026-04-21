@@ -12750,7 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react17 = __toESM(require_react());
+var import_react18 = __toESM(require_react());
 
 // public/node-classify.ts
 function percentile(sorted, p) {
@@ -13139,7 +13139,7 @@ function useNodeDetail(id) {
   }, [id]);
   return { data, error };
 }
-function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
+function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir = "forward" }) {
   const { data, error } = useNodeDetail(nodeId);
   const fallback = empty ?? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(EmptyState, {});
   const style = accentColor ? { ["--detail-accent"]: accentColor } : void 0;
@@ -13163,7 +13163,8 @@ function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
     ] }), accented: true };
   };
   const { key, content, accented } = contentFor();
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: `node-detail-swap${accented && accentColor ? " detail-accented" : ""}`, style: accented ? style : void 0, children: content }, key);
+  const dirClass = navDir === "back" ? "slide-back" : "slide-forward";
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: `node-detail-swap ${dirClass}${accented && accentColor ? " detail-accented" : ""}`, style: accented ? style : void 0, children: content }, key);
 }
 
 // public/explorer-canvas.tsx
@@ -15611,6 +15612,29 @@ function explorerSelectedColor(selectedId, nodes, affiliations, homeInstitutionI
   return colors.get(key) || null;
 }
 
+// public/use-selection-stack.ts
+var import_react17 = __toESM(require_react());
+function useSelectionStack() {
+  const [selectionStack, setSelectionStack] = (0, import_react17.useState)([]);
+  const [navDir, setNavDir] = (0, import_react17.useState)("forward");
+  const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
+  const pushSelection = (0, import_react17.useCallback)((id) => setSelectionStack((prev) => {
+    if (id === null) {
+      setNavDir("back");
+      return [];
+    }
+    if (prev.length && prev[prev.length - 1] === id) return prev;
+    setNavDir("forward");
+    return [...prev, id];
+  }), []);
+  const popSelection = (0, import_react17.useCallback)(() => setSelectionStack((prev) => {
+    if (!prev.length) return prev;
+    setNavDir("back");
+    return prev.slice(0, -1);
+  }), []);
+  return { selectionStack, selectedNodeId, navDir, pushSelection, popSelection };
+}
+
 // public/graph-explorer-body.tsx
 var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
@@ -15621,48 +15645,41 @@ function yearOf2(n) {
 }
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
-  const [selectionStack, setSelectionStack] = (0, import_react17.useState)([]);
-  const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
-  const pushSelection = (0, import_react17.useCallback)((id) => setSelectionStack((prev) => {
-    if (id === null) return [];
-    if (prev.length && prev[prev.length - 1] === id) return prev;
-    return [...prev, id];
-  }), []);
-  const popSelection = (0, import_react17.useCallback)(() => setSelectionStack((prev) => prev.length ? prev.slice(0, -1) : prev), []);
-  const detailPanelRef = (0, import_react17.useRef)(null);
-  const [hover, setHover] = (0, import_react17.useState)({ id: null, source: "canvas" });
+  const { selectionStack, selectedNodeId, navDir, pushSelection, popSelection } = useSelectionStack();
+  const detailPanelRef = (0, import_react18.useRef)(null);
+  const [hover, setHover] = (0, import_react18.useState)({ id: null, source: "canvas" });
   const hoverId = hover.id;
-  const hoverFromCanvas = (0, import_react17.useCallback)((id) => setHover({ id, source: "canvas" }), []);
-  const hoverFromSidebar = (0, import_react17.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
-  const [expandedIds, setExpandedIds] = (0, import_react17.useState)(/* @__PURE__ */ new Set());
-  const expand = (0, import_react17.useCallback)((id) => setExpandedIds((prev) => {
+  const hoverFromCanvas = (0, import_react18.useCallback)((id) => setHover({ id, source: "canvas" }), []);
+  const hoverFromSidebar = (0, import_react18.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
+  const [expandedIds, setExpandedIds] = (0, import_react18.useState)(/* @__PURE__ */ new Set());
+  const expand = (0, import_react18.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
     const n = new Set(prev);
     n.add(id);
     return n;
   }), []);
-  const [flags, setFlags] = (0, import_react17.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react17.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
-  const [yearFloor, setYearFloor] = (0, import_react17.useState)(0);
-  const highlightedIds = (0, import_react17.useMemo)(() => {
+  const [flags, setFlags] = (0, import_react18.useState)(DEFAULT_FLAGS);
+  const setFlag = (0, import_react18.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
+  const [yearFloor, setYearFloor] = (0, import_react18.useState)(0);
+  const highlightedIds = (0, import_react18.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  (0, import_react17.useEffect)(() => {
+  (0, import_react18.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) pushSelection(f);
   }, [rawNodes, highlightedIds]);
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  (0, import_react17.useEffect)(() => {
+  (0, import_react18.useEffect)(() => {
     if (yearMin && !yearFloor) setYearFloor(yearMin);
   }, [yearMin, yearFloor]);
-  (0, import_react17.useEffect)(() => {
+  (0, import_react18.useEffect)(() => {
     const el = detailPanelRef.current;
     if (el) el.scrollTo({ top: 0, behavior: "smooth" });
   }, [selectedNodeId]);
-  const filteredRaw = (0, import_react17.useMemo)(() => {
+  const filteredRaw = (0, import_react18.useMemo)(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
     const nodes = rawNodes.filter((n) => {
@@ -15675,16 +15692,16 @@ function GraphExplorerBody() {
     const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
     return { nodes, edges };
   }, [rawNodes, rawEdges, yearFloor, yearMin]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react17.useMemo)(
+  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react18.useMemo)(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, flags.paper),
     [filteredRaw, flags.paper]
   );
   const { projectedNodes } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
-  const projectedEdges = (0, import_react17.useMemo)(() => {
+  const projectedEdges = (0, import_react18.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const affiliations = (0, import_react17.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
+  const affiliations = (0, import_react18.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
     rawNodes,
@@ -15741,6 +15758,7 @@ function GraphExplorerBody() {
           onClose: () => pushSelection(null),
           onBack: selectionStack.length >= 1 ? popSelection : void 0,
           accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
+          navDir,
           empty: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);
             expand(id);

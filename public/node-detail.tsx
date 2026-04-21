@@ -8,6 +8,7 @@ interface NodeDetailProps {
   onBack?: () => void;
   empty?: React.ReactNode;
   accentColor?: string | null;
+  navDir?: 'forward' | 'back';
 }
 
 function useNodeDetail(id: string | null) {
@@ -28,7 +29,7 @@ function useNodeDetail(id: string | null) {
   return { data, error };
 }
 
-export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }: NodeDetailProps) {
+export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir = 'forward' }: NodeDetailProps) {
   const { data, error } = useNodeDetail(nodeId);
   const fallback = empty ?? <EmptyState />;
   const style = accentColor ? ({ ['--detail-accent' as string]: accentColor } as React.CSSProperties) : undefined;
@@ -62,8 +63,9 @@ export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }: Node
     return { key: `${data.type}:${dataId}`, content: <>{back}{ch}</>, accented: true };
   };
   const { key, content, accented } = contentFor();
+  const dirClass = navDir === 'back' ? 'slide-back' : 'slide-forward';
   return (
-    <div key={key} className={`node-detail-swap${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
+    <div key={key} className={`node-detail-swap ${dirClass}${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
       {content}
     </div>
   );

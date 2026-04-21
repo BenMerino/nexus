@@ -13,6 +13,7 @@ import { useExplorerEgo } from './use-explorer-ego';
 import { useExplorerNodes } from './use-explorer-nodes';
 import { GraphContents } from './graph-contents';
 import { explorerSelectedColor } from './explorer-selected-color';
+import { useSelectionStack } from './use-selection-stack';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 
@@ -24,14 +25,7 @@ function yearOf(n: { group: string; published?: string | null }): number {
 
 export function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
-  const [selectionStack, setSelectionStack] = useState<string[]>([]);
-  const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
-  const pushSelection = useCallback((id: string | null) => setSelectionStack(prev => {
-    if (id === null) return [];
-    if (prev.length && prev[prev.length - 1] === id) return prev;
-    return [...prev, id];
-  }), []);
-  const popSelection = useCallback(() => setSelectionStack(prev => prev.length ? prev.slice(0, -1) : prev), []);
+  const { selectionStack, selectedNodeId, navDir, pushSelection, popSelection } = useSelectionStack();
   const detailPanelRef = useRef<HTMLElement>(null);
   const [hover, setHover] = useState<{ id: string | null; source: 'canvas' | 'sidebar' }>({ id: null, source: 'canvas' });
   const hoverId = hover.id;
@@ -138,6 +132,7 @@ export function GraphExplorerBody() {
             onClose={() => pushSelection(null)}
             onBack={selectionStack.length >= 1 ? popSelection : undefined}
             accentColor={explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId)}
+            navDir={navDir}
             empty={<GraphContents nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} onSelect={id => { pushSelection(id); expand(id); }} onHover={hoverFromSidebar} hoveredId={hover.source === 'canvas' ? hoverId : null} />}
           />
         </aside>
