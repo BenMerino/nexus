@@ -423,9 +423,14 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   animation-fill-mode: both;
   will-change: transform, opacity;
 }
-/* Hide the persistent sidebar without display:none — that would restart the
- * gc-community / gc-list li fade animations every time a detail closes. */
-.node-detail-home.is-hidden { visibility: hidden; height: 0; overflow: hidden; }
+/* Sidebar stays fully painted behind the detail panel; the detail wrapper
+ * overlays on top when a node is selected. Prevents any disappear/reappear
+ * flash since nothing about the sidebar changes when navigating in or out. */
+.detail-panel { position: relative; }
+.node-detail-swap.as-overlay {
+  position: absolute; top: 24px; left: 24px; right: 24px; bottom: 24px;
+  overflow: auto; background: var(--bg-card);
+}
 .node-detail-swap.slide-forward { animation-name: node-detail-slide-in-right; }
 .node-detail-swap.slide-back    { animation-name: node-detail-slide-in-left; }
 .detail-accented .detail-head { border-bottom-color: var(--detail-accent); }

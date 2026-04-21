@@ -69,17 +69,16 @@ export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir
     return { key: `${data.type}:${dataId}`, content: <>{back}{ch}</>, accented: true };
   };
   const { key, content, accented } = contentFor();
-  // Keep the empty view (GraphContents sidebar) mounted at all times so its
-  // expensive bucket/adapter memos and FLIP state survive detail navigation —
-  // otherwise backing out re-mounts the whole list and reads as a flash.
-  // The detail wrapper renders on top when a node is selected.
+  // Sidebar (empty state) stays fully rendered and untouched; detail overlays
+  // on top when selected. Anything that happens in the detail panel — mount,
+  // unmount, animations — never touches the sidebar, so it can't flash.
   const showingDetail = key !== 'empty';
   const dirClass = navDir === 'back' ? 'slide-back' : 'slide-forward';
   return (
     <>
-      <div className={`node-detail-home${showingDetail ? ' is-hidden' : ''}`}>{fallback}</div>
+      <div className="node-detail-home">{fallback}</div>
       {showingDetail && (
-        <div key={key} className={`node-detail-swap ${dirClass}${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
+        <div key={key} className={`node-detail-swap as-overlay ${dirClass}${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
           {content}
         </div>
       )}
