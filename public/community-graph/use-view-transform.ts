@@ -1,21 +1,7 @@
-import { useEffect } from 'react';
 import type { CommunityAdapter } from './types';
 import type { SimN } from './forces';
 
 export interface ViewTransform { tx: number; ty: number; scale: number }
-
-/** While a node is the zoom target, pin it so the sim stops moving it.
- *  Otherwise the 400ms transform transition chases a drifting node and jitters. */
-export function usePinZoomTarget<N>(nodes: SimN<N>[], adapter: CommunityAdapter<N>, zoomToId: string | null | undefined) {
-  useEffect(() => {
-    if (!zoomToId) return;
-    const target = nodes.find(n => adapter.getId(n) === zoomToId);
-    if (!target) return;
-    target.fx = target.x;
-    target.fy = target.y;
-    return () => { target.fx = null; target.fy = null; };
-  }, [zoomToId, nodes, adapter]);
-}
 
 interface Args<N> {
   override: ViewTransform | undefined;

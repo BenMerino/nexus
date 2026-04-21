@@ -9,7 +9,7 @@ import {
 } from './forces';
 import type { CommunityAdapter, ForceConfig } from './types';
 import { DEFAULT_FORCE_CONFIG } from './types';
-import { useViewTransform, usePinZoomTarget } from './use-view-transform';
+import { useViewTransform } from './use-view-transform';
 
 export interface CommunityGraphProps<N, L extends BaseLink> {
   nodes: N[];
@@ -69,8 +69,6 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
     simRef.current = sim;
     return () => { sim.stop(); };
   }, [nodes, links, anchors, adapter, primaryKey, width, height]);
-
-  usePinZoomTarget(nodes, adapter, zoomToId);
 
   const nodeColor = (n: SimN<N>): string => {
     let communityColor: string | null = null;
