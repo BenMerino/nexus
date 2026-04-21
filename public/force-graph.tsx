@@ -28,13 +28,14 @@ interface Props {
   egoAuthorId?: string | null;
   expandedIds: Set<string>;
   onExpand: (id: string) => void;
+  externalHoverId?: string | null;
 }
 
 function baseRadius(n: EnrichedSimNode): number {
   return nodeRadius(n.weight || 1, n.role);
 }
 
-export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand }: Props) {
+export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId }: Props) {
   const labelById = useMemo(() => {
     const m = new Map<string, string>();
     for (const n of nodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
@@ -121,6 +122,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       forceConfig={forceConfig}
       zoomToId={selectedId ?? null}
       zoomScale={ZOOM_SCALE}
+      externalHoverId={externalHoverId ?? null}
     />
   );
 }

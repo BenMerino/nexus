@@ -12,9 +12,10 @@ interface Props {
   homeInstitutionId: string | null;
   egoAuthorId: string | null;
   onSelect: (id: string) => void;
+  onHover?: (id: string | null) => void;
 }
 
-export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect }: Props) {
+export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover }: Props) {
   const journalByDoi = useMemo(() => {
     const hasPapers = nodes.some(n => n.group === 'doi');
     if (!hasPapers) return null;
@@ -58,38 +59,47 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
         <div className="eyebrow">Graph contents</div>
         <p className="muted">Everything visible on the canvas, grouped by community. Click a row to open its detail.</p>
       </div>
-      {buckets.map(b => <BucketView key={b.key} b={b} onSelect={onSelect} />)}
+      {buckets.map(b => <BucketView key={b.key} b={b} onSelect={onSelect} onHover={onHover} />)}
     </div>
   );
 }
 
-function BucketView({ b, onSelect }: { b: Bucket; onSelect: (id: string) => void }) {
+function BucketView({ b, onSelect, onHover }: { b: Bucket; onSelect: (id: string) => void; onHover?: (id: string | null) => void }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
+  const headInstId = b.institutions[0]?.id;
   return (
     <section className={`gc-community${b.emphasis ? ' emphasis' : ''}`} style={{ borderColor: b.color }}>
       <header className="gc-community-head">
         <span className="gc-swatch" style={{ background: b.color }} />
-        <button type="button" className="gc-community-title" onClick={() => b.institutions[0] && onSelect(b.institutions[0].id)}>
+        <button type="button" className="gc-community-title"
+          onClick={() => headInstId && onSelect(headInstId)}
+          onMouseEnter={() => headInstId && onHover?.(headInstId)}
+          onMouseLeave={() => onHover?.(null)}>
           <h4>{b.label}</h4>
         </button>
         <span className="mono muted gc-count">{total}</span>
       </header>
-      <NodeList label="Authors"  color={COLORS.author}  ns={b.authors}  onSelect={onSelect} />
-      <NodeList label="Journals" color={COLORS.journal} ns={b.journals} onSelect={onSelect} />
-      <NodeList label="Papers"   color="#888"           ns={b.papers}   onSelect={onSelect} />
+      <NodeList label="Authors"  color={COLORS.author}  ns={b.authors}  onSelect={onSelect} onHover={onHover} />
+      <NodeList label="Journals" color={COLORS.journal} ns={b.journals} onSelect={onSelect} onHover={onHover} />
+      <NodeList label="Papers"   color="#888"           ns={b.papers}   onSelect={onSelect} onHover={onHover} />
     </section>
   );
 }
 
-function NodeList({ label, color, ns, onSelect }: { label: string; color: string; ns: EnrichedSimNode[]; onSelect: (id: string) => void }) {
+function NodeList({ label, color, ns, onSelect, onHover }: { label: string; color: string; ns: EnrichedSimNode[]; onSelect: (id: string) => void; onHover?: (id: string | null) => void }) {
   if (ns.length === 0) return null;
   return (
     <div className="gc-list">
       <div className="gc-list-label"><span className="dot" style={{ background: color }} /> {label} <span className="mono muted">{ns.length}</span></div>
       <ul>
         {ns.map(n => (
-          <li key={n.id}><button type="button" onClick={() => onSelect(n.id)}>{n.label}</button></li>
+          <li key={n.id}>
+            <button type="button"
+              onClick={() => onSelect(n.id)}
+              onMouseEnter={() => onHover?.(n.id)}
+              onMouseLeave={() => onHover?.(null)}>{n.label}</button>
+          </li>
         ))}
       </ul>
     </div>

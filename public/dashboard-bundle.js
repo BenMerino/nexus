@@ -14496,13 +14496,15 @@ function CommunityGraph({
   pinDraggedNodes = false,
   viewTransform,
   zoomToId,
-  zoomScale = 2
+  zoomScale = 2,
+  externalHoverId
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react5.useRef)(null);
   const simRef = (0, import_react5.useRef)(null);
   const [, tick] = (0, import_react5.useState)(0);
-  const [hoverId, setHoverId] = (0, import_react5.useState)(null);
+  const [internalHoverId, setInternalHoverId] = (0, import_react5.useState)(null);
+  const hoverId = externalHoverId ?? internalHoverId;
   const communityColors = (0, import_react5.useMemo)(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
@@ -14595,8 +14597,8 @@ function CommunityGraph({
       selectedId: selectedId ?? null,
       connected,
       nodeColor,
-      onHoverStart: setHoverId,
-      onHoverEnd: () => setHoverId(null),
+      onHoverStart: setInternalHoverId,
+      onHoverEnd: () => setInternalHoverId(null),
       onMouseDown: handleMouseDown,
       onNodeClick,
       transform: effectiveTransform,

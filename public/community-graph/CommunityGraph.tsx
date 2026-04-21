@@ -29,17 +29,22 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
   /** If set, center the view on this node at the given scale (2 = 200%). */
   zoomToId?: string | null;
   zoomScale?: number;
+  /** Externally-driven hover — e.g. hovering a row in a sidebar should
+   *  highlight the matching node on the canvas. Overrides internal pointer hover. */
+  externalHoverId?: string | null;
 }
 
 export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   nodes: inNodes, links: inLinks, adapter, primaryKey = null, width, height, selectedId,
   forceConfig, onNodeClick, pinDraggedNodes = false, viewTransform, zoomToId, zoomScale = 2,
+  externalHoverId,
 }: CommunityGraphProps<N, L>) {
   const config: ForceConfig = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = useRef<SVGSVGElement | null>(null);
   const simRef = useRef<Simulation<SimN<N>, SimL<L>> | null>(null);
   const [, tick] = useState(0);
-  const [hoverId, setHoverId] = useState<string | null>(null);
+  const [internalHoverId, setInternalHoverId] = useState<string | null>(null);
+  const hoverId = externalHoverId ?? internalHoverId;
 
   const communityColors = useMemo(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
@@ -124,7 +129,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         communityColors={communityColors} minCommunitySize={config.minCommunitySize}
         hoverId={hoverId} selectedId={selectedId ?? null} connected={connected}
         nodeColor={nodeColor}
-        onHoverStart={setHoverId} onHoverEnd={() => setHoverId(null)}
+        onHoverStart={setInternalHoverId} onHoverEnd={() => setInternalHoverId(null)}
         onMouseDown={handleMouseDown} onNodeClick={onNodeClick}
         transform={effectiveTransform}
         ego={ego} hovered={hovered ?? null} showHover={!!showHover}

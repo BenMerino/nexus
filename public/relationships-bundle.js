@@ -14625,13 +14625,15 @@ function CommunityGraph({
   pinDraggedNodes = false,
   viewTransform,
   zoomToId,
-  zoomScale = 2
+  zoomScale = 2,
+  externalHoverId
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react4.useRef)(null);
   const simRef = (0, import_react4.useRef)(null);
   const [, tick] = (0, import_react4.useState)(0);
-  const [hoverId, setHoverId] = (0, import_react4.useState)(null);
+  const [internalHoverId, setInternalHoverId] = (0, import_react4.useState)(null);
+  const hoverId = externalHoverId ?? internalHoverId;
   const communityColors = (0, import_react4.useMemo)(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
@@ -14724,8 +14726,8 @@ function CommunityGraph({
       selectedId: selectedId ?? null,
       connected,
       nodeColor,
-      onHoverStart: setHoverId,
-      onHoverEnd: () => setHoverId(null),
+      onHoverStart: setInternalHoverId,
+      onHoverEnd: () => setInternalHoverId(null),
       onMouseDown: handleMouseDown,
       onNodeClick,
       transform: effectiveTransform,
@@ -14879,7 +14881,7 @@ var ZOOM_SCALE = 2.1;
 function baseRadius(n) {
   return nodeRadius(n.weight || 1, n.role);
 }
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand }) {
+function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId }) {
   const labelById = (0, import_react6.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
@@ -14958,14 +14960,15 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       onNodeClick: handleClick,
       forceConfig,
       zoomToId: selectedId ?? null,
-      zoomScale: ZOOM_SCALE
+      zoomScale: ZOOM_SCALE,
+      externalHoverId: externalHoverId ?? null
     }
   );
 }
 
 // public/explorer-canvas.tsx
 var import_jsx_runtime13 = __toESM(require_jsx_runtime());
-function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, minHeight = 480 }) {
+function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, minHeight = 480 }) {
   const ref = (0, import_react7.useRef)(null);
   const [size, setSize] = (0, import_react7.useState)(null);
   (0, import_react7.useEffect)(() => {
@@ -14993,7 +14996,8 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
       homeInstitutionId,
       egoAuthorId,
       expandedIds,
-      onExpand
+      onExpand,
+      externalHoverId: hoverId ?? null
     }
   ) });
 }
@@ -15428,7 +15432,7 @@ function buildBuckets(nodes, adapter, homeInstitutionId, labelById) {
 
 // public/graph-contents.tsx
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect }) {
+function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover }) {
   const journalByDoi = (0, import_react15.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
@@ -15467,24 +15471,35 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { className: "muted", children: "Everything visible on the canvas, grouped by community. Click a row to open its detail." })
     ] }),
-    buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BucketView, { b, onSelect }, b.key))
+    buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BucketView, { b, onSelect, onHover }, b.key))
   ] });
 }
-function BucketView({ b, onSelect }) {
+function BucketView({ b, onSelect, onHover }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
+  const headInstId = b.institutions[0]?.id;
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("header", { className: "gc-community-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("button", { type: "button", className: "gc-community-title", onClick: () => b.institutions[0] && onSelect(b.institutions[0].id), children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("h4", { children: b.label }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        "button",
+        {
+          type: "button",
+          className: "gc-community-title",
+          onClick: () => headInstId && onSelect(headInstId),
+          onMouseEnter: () => headInstId && onHover?.(headInstId),
+          onMouseLeave: () => onHover?.(null),
+          children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("h4", { children: b.label })
+        }
+      ),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "mono muted gc-count", children: total })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect })
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
   ] });
 }
-function NodeList({ label, color, ns, onSelect }) {
+function NodeList({ label, color, ns, onSelect, onHover }) {
   if (ns.length === 0) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "gc-list", children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "gc-list-label", children: [
@@ -15494,7 +15509,16 @@ function NodeList({ label, color, ns, onSelect }) {
       " ",
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "mono muted", children: ns.length })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("button", { type: "button", onClick: () => onSelect(n.id), children: n.label }) }, n.id)) })
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+      "button",
+      {
+        type: "button",
+        onClick: () => onSelect(n.id),
+        onMouseEnter: () => onHover?.(n.id),
+        onMouseLeave: () => onHover?.(null),
+        children: n.label
+      }
+    ) }, n.id)) })
   ] });
 }
 
@@ -15547,6 +15571,7 @@ function GraphExplorerBody() {
     return [...prev, id];
   }), []);
   const popSelection = (0, import_react16.useCallback)(() => setSelectionStack((prev) => prev.length ? prev.slice(0, -1) : prev), []);
+  const [hoverId, setHoverId] = (0, import_react16.useState)(null);
   const [expandedIds, setExpandedIds] = (0, import_react16.useState)(/* @__PURE__ */ new Set());
   const expand = (0, import_react16.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
@@ -15641,7 +15666,7 @@ function GraphExplorerBody() {
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         NodeDetail,
@@ -15653,7 +15678,7 @@ function GraphExplorerBody() {
           empty: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);
             expand(id);
-          } })
+          }, onHover: setHoverId })
         }
       ) })
     ] })
