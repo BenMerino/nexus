@@ -96,6 +96,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
   }, [width, height, nodes.length, journalByDoi]);
 
   const handleClick = (n: EnrichedSimNode) => {
+    if (n.id === selectedId) return;
     if (placeholder.has(n.id)) {
       onExpand(n.id);
       return;

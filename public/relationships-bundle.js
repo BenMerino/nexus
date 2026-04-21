@@ -15776,6 +15776,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     };
   }, [width, height, nodes.length, journalByDoi]);
   const handleClick = (n) => {
+    if (n.id === selectedId) return;
     if (placeholder.has(n.id)) {
       onExpand(n.id);
       return;
@@ -16315,6 +16316,7 @@ function GraphExplorerBody() {
   const [selectedNodeId, setSelectedNodeId] = (0, import_react23.useState)(null);
   const [expandedIds, setExpandedIds] = (0, import_react23.useState)(/* @__PURE__ */ new Set());
   const expand = (0, import_react23.useCallback)((id) => setExpandedIds((prev) => {
+    if (prev.has(id)) return prev;
     const n = new Set(prev);
     n.add(id);
     return n;

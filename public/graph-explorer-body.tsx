@@ -26,7 +26,10 @@ export function GraphExplorerBody() {
   const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const expand = useCallback((id: string) => setExpandedIds(prev => { const n = new Set(prev); n.add(id); return n; }), []);
+  const expand = useCallback((id: string) => setExpandedIds(prev => {
+    if (prev.has(id)) return prev;
+    const n = new Set(prev); n.add(id); return n;
+  }), []);
   const [flags, setFlags] = useState<NodeTypeFlags>(DEFAULT_FLAGS);
   const setFlag = useCallback((k: keyof NodeTypeFlags, v: boolean) => setFlags(f => ({ ...f, [k]: v })), []);
   const [yearFloor, setYearFloor] = useState(0);
