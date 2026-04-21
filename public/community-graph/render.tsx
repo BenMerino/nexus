@@ -20,7 +20,7 @@ export function GraphDefs() {
  *  graph content inside the transform group so it pans + scales with
  *  the rest of the scene — the canvas reads as a larger plane. */
 export function GridBackdrop() {
-  return <rect x={-5000} y={-5000} width={10000} height={10000} fill="url(#graph-grid)" />;
+  return <rect x={-5000} y={-5000} width={10000} height={10000} fill="url(#graph-grid)" style={{ pointerEvents: 'none' }} />;
 }
 
 interface LinksProps<N, L extends BaseLink & { weight?: number }> {
@@ -30,7 +30,7 @@ interface LinksProps<N, L extends BaseLink & { weight?: number }> {
 
 export function Links<N, L extends BaseLink & { weight?: number }>({ links, connected }: LinksProps<N, L>) {
   return (
-    <g>
+    <g style={{ pointerEvents: 'none' }}>
       {links.map((l, i) => {
         const s = typeof l.source === 'object' ? l.source : null;
         const t = typeof l.target === 'object' ? l.target : null;

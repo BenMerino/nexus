@@ -61,7 +61,7 @@ export function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_L
   }
 
   return (
-    <g>
+    <g style={{ pointerEvents: 'none' }}>
       {paths.map(p => (
         <path
           key={p.key}
