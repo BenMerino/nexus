@@ -13118,18 +13118,24 @@ function EmptyState() {
 // public/node-detail.tsx
 var import_jsx_runtime4 = __toESM(require_jsx_runtime());
 function useNodeDetail(id) {
-  const [data, setData] = (0, import_react.useState)(null);
+  const cacheRef = (0, import_react.useRef)(/* @__PURE__ */ new Map());
+  const [data, setData] = (0, import_react.useState)(() => id && cacheRef.current.get(id) || null);
   const [error, setError] = (0, import_react.useState)(null);
   (0, import_react.useEffect)(() => {
-    if (!id) {
-      setData(null);
-      setError(null);
+    setError(null);
+    if (!id) return;
+    const cached = cacheRef.current.get(id);
+    if (cached) {
+      setData(cached);
       return;
     }
+    setData(null);
     let cancelled = false;
-    setError(null);
     fetch(`/api/node-detail?id=${encodeURIComponent(id)}`).then(async (r) => r.ok ? r.json() : Promise.reject((await r.json()).error || r.statusText)).then((d) => {
-      if (!cancelled) setData(d);
+      if (!cancelled) {
+        cacheRef.current.set(id, d);
+        setData(d);
+      }
     }).catch((e) => {
       if (!cancelled) setError(String(e));
     });

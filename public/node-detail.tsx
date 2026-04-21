@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AuthorView, InstitutionView, JournalView, PaperView, EmptyState, type Detail } from './node-detail-views';
 import { Ico } from './ui-primitives';
 
@@ -12,17 +12,23 @@ interface NodeDetailProps {
 }
 
 function useNodeDetail(id: string | null) {
-  // Keep the previous detail visible while fetching a new one — swap in place
-  // when the fetch lands. Prevents a "Loading…" flash on every selection.
-  const [data, setData] = useState<Detail | null>(null);
+  // Cache fetched details so going back and re-entering the same node
+  // returns instantly (no refetch, no remount, no animation replay).
+  const cacheRef = useRef<Map<string, Detail>>(new Map());
+  const [data, setData] = useState<Detail | null>(() => (id && cacheRef.current.get(id)) || null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    if (!id) { setData(null); setError(null); return; }
-    let cancelled = false;
     setError(null);
+    if (!id) return; // keep data as-is; wrapper will render the empty state anyway
+    const cached = cacheRef.current.get(id);
+    if (cached) { setData(cached); return; }
+    // Unknown id: clear so we don't briefly render the previous detail
+    // into the new wrapper while the fetch is in flight.
+    setData(null);
+    let cancelled = false;
     fetch(`/api/node-detail?id=${encodeURIComponent(id)}`)
       .then(async r => r.ok ? r.json() : Promise.reject((await r.json()).error || r.statusText))
-      .then(d => { if (!cancelled) setData(d as Detail); })
+      .then(d => { if (!cancelled) { cacheRef.current.set(id, d as Detail); setData(d as Detail); } })
       .catch(e => { if (!cancelled) setError(String(e)); });
     return () => { cancelled = true; };
   }, [id]);
