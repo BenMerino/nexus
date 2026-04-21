@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { projectGraph } from './project-graph';
 import { NodeDetail } from './node-detail';
-import { StatsBar, FilteredCharts } from './filtered-charts';
 import { ExplorerCanvas } from './explorer-canvas';
 import { GraphSearch } from './graph-search';
 import { useTimeRange } from './time-slider';
@@ -60,7 +59,7 @@ export function GraphExplorerBody() {
     return { nodes, edges };
   }, [rawNodes, rawEdges, yearFloor, yearMin]);
 
-  const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = useMemo(
+  const { nodes: projectedRaw, edges: projectedEdgesAll } = useMemo(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, new Set(['institution', 'author', 'journal']), [], null, flags.paper),
     [filteredRaw, flags.paper]);
 
@@ -71,8 +70,6 @@ export function GraphExplorerBody() {
     return projectedEdgesAll.filter(e => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
 
-  const doiCount = useMemo(() => rawNodes.filter(n => n.group === 'doi').length, [rawNodes]);
-
   const affiliations = useMemo(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
 
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
@@ -81,13 +78,6 @@ export function GraphExplorerBody() {
     projectedNodes,
     institutionsByAuthor: affiliations.institutionsByAuthor,
   });
-
-  const chartDois = useMemo(() => {
-    if (!selectedNodeId) return matchingDois;
-    const nodeDois = new Set<string>();
-    for (const e of rawEdges) if (e.target === selectedNodeId) { const doi = e.source.replace('doi:', ''); if (matchingDois.has(doi)) nodeDois.add(doi); }
-    return nodeDois;
-  }, [selectedNodeId, rawEdges, matchingDois]);
 
   if (loading) return <div className="view"><div className="eyebrow">Loading graph data…</div></div>;
   if (!rawNodes.length) return <div className="view"><div className="eyebrow">No data.</div></div>;
@@ -129,9 +119,6 @@ export function GraphExplorerBody() {
           />
         </aside>
       </div>
-
-      <StatsBar nodes={projectedNodes} edges={projectedEdges} doiCount={doiCount} />
-      <div style={{ marginTop: 20, borderTop: '1px solid var(--border-soft)', paddingTop: 20 }}><FilteredCharts matchingDois={chartDois} totalDois={doiCount} /></div>
     </div>
   );
 }
