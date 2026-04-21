@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import type { EnrichedSimNode } from './relationship-types';
 import { COLORS } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
@@ -6,6 +6,7 @@ import { explorerCommunityKey, type HullTier } from './explorer-community';
 import type { CommunityAdapter } from './community-graph';
 import { buildBuckets, type Bucket } from './graph-contents-buckets';
 import { useFlipReorder } from './use-flip-reorder';
+import { prefetchNodeDetail } from './node-detail';
 
 interface Props {
   nodes: EnrichedSimNode[];
@@ -62,6 +63,17 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
   const listRef = useRef<HTMLDivElement>(null);
   useFlipReorder(listRef, buckets.map(b => b.key));
 
+  // Debounced prefetch on hover. Fires ~120ms after the cursor settles on a
+  // row so sweeping across the list doesn't burn a request per node. By the
+  // time the user actually clicks, the detail is usually cached and the
+  // filmstrip slide reveals a fully-populated pane instead of a blank one.
+  const prefetchTimer = useRef<number | null>(null);
+  const onRowHover = useCallback((id: string | null) => {
+    onHover?.(id);
+    if (prefetchTimer.current) { clearTimeout(prefetchTimer.current); prefetchTimer.current = null; }
+    if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
+  }, [onHover]);
+
   if (!nodes.length) return null;
 
   return (
@@ -71,7 +83,7 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
         <p className="muted">Everything visible on the canvas, grouped by community. Click a row to open its detail.</p>
       </div>
       <div ref={listRef} className="graph-contents-list">
-        {buckets.map(b => <BucketView key={b.key} b={b} onSelect={onSelect} onHover={onHover} />)}
+        {buckets.map(b => <BucketView key={b.key} b={b} onSelect={onSelect} onHover={onRowHover} />)}
       </div>
     </div>
   );

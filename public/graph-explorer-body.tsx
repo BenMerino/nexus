@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { projectGraph } from './project-graph';
-import { NodeDetail } from './node-detail';
+import { NodeDetail, prefetchNodeDetail } from './node-detail';
 import { ExplorerCanvas } from './explorer-canvas';
 import { GraphSearch } from './graph-search';
 import { useTimeRange } from './time-slider';
@@ -29,7 +29,15 @@ export function GraphExplorerBody() {
   const detailPanelRef = useRef<HTMLElement>(null);
   const [hover, setHover] = useState<{ id: string | null; source: 'canvas' | 'sidebar' }>({ id: null, source: 'canvas' });
   const hoverId = hover.id;
-  const hoverFromCanvas = useCallback((id: string | null) => setHover({ id, source: 'canvas' }), []);
+  const prefetchTimer = useRef<number | null>(null);
+  const schedulePrefetch = useCallback((id: string | null) => {
+    if (prefetchTimer.current) { clearTimeout(prefetchTimer.current); prefetchTimer.current = null; }
+    if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
+  }, []);
+  const hoverFromCanvas = useCallback((id: string | null) => {
+    setHover({ id, source: 'canvas' });
+    schedulePrefetch(id);
+  }, [schedulePrefetch]);
   const hoverFromSidebar = useCallback((id: string | null) => setHover({ id, source: 'sidebar' }), []);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const expand = useCallback((id: string) => setExpandedIds(prev => {

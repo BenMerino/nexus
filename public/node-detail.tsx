@@ -11,22 +11,42 @@ interface NodeDetailProps {
   navDir?: 'forward' | 'back';
 }
 
+// Module-level cache so hover-prefetch and the component share state.
+// Stores settled Detail objects; in-flight promises are deduped in `inflight`.
+const detailCache = new Map<string, Detail>();
+const inflight = new Map<string, Promise<Detail>>();
+
+function fetchDetail(id: string): Promise<Detail> {
+  const cached = detailCache.get(id);
+  if (cached) return Promise.resolve(cached);
+  const existing = inflight.get(id);
+  if (existing) return existing;
+  const p = fetch(`/api/node-detail?id=${encodeURIComponent(id)}`)
+    .then(async r => r.ok ? r.json() : Promise.reject((await r.json()).error || r.statusText))
+    .then((d: Detail) => { detailCache.set(id, d); inflight.delete(id); return d; })
+    .catch(e => { inflight.delete(id); throw e; });
+  inflight.set(id, p);
+  return p;
+}
+
+/** Seed the detail cache for a node the user is likely to click next.
+ *  Safe to call repeatedly; dedupes in-flight and served from cache on hit. */
+export function prefetchNodeDetail(id: string): void {
+  fetchDetail(id).catch(() => { /* swallow — not user-initiated */ });
+}
+
 function useNodeDetail(id: string | null) {
-  // Cache fetched details so going back and re-entering the same node
-  // returns instantly (no refetch, no remount, no animation replay).
-  const cacheRef = useRef<Map<string, Detail>>(new Map());
-  const [data, setData] = useState<Detail | null>(() => (id && cacheRef.current.get(id)) || null);
+  const [data, setData] = useState<Detail | null>(() => (id && detailCache.get(id)) || null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     setError(null);
-    if (!id) return; // keep data as-is; wrapper will render the empty state anyway
-    const cached = cacheRef.current.get(id);
+    if (!id) return;
+    const cached = detailCache.get(id);
     if (cached) { setData(cached); return; }
     setData(null);
     let cancelled = false;
-    fetch(`/api/node-detail?id=${encodeURIComponent(id)}`)
-      .then(async r => r.ok ? r.json() : Promise.reject((await r.json()).error || r.statusText))
-      .then(d => { if (!cancelled) { cacheRef.current.set(id, d as Detail); setData(d as Detail); } })
+    fetchDetail(id)
+      .then(d => { if (!cancelled) setData(d); })
       .catch(e => { if (!cancelled) setError(String(e)); });
     return () => { cancelled = true; };
   }, [id]);

@@ -13117,25 +13117,43 @@ function EmptyState() {
 
 // public/node-detail.tsx
 var import_jsx_runtime4 = __toESM(require_jsx_runtime());
+var detailCache = /* @__PURE__ */ new Map();
+var inflight = /* @__PURE__ */ new Map();
+function fetchDetail(id) {
+  const cached = detailCache.get(id);
+  if (cached) return Promise.resolve(cached);
+  const existing = inflight.get(id);
+  if (existing) return existing;
+  const p = fetch(`/api/node-detail?id=${encodeURIComponent(id)}`).then(async (r) => r.ok ? r.json() : Promise.reject((await r.json()).error || r.statusText)).then((d) => {
+    detailCache.set(id, d);
+    inflight.delete(id);
+    return d;
+  }).catch((e) => {
+    inflight.delete(id);
+    throw e;
+  });
+  inflight.set(id, p);
+  return p;
+}
+function prefetchNodeDetail(id) {
+  fetchDetail(id).catch(() => {
+  });
+}
 function useNodeDetail(id) {
-  const cacheRef = (0, import_react.useRef)(/* @__PURE__ */ new Map());
-  const [data, setData] = (0, import_react.useState)(() => id && cacheRef.current.get(id) || null);
+  const [data, setData] = (0, import_react.useState)(() => id && detailCache.get(id) || null);
   const [error, setError] = (0, import_react.useState)(null);
   (0, import_react.useEffect)(() => {
     setError(null);
     if (!id) return;
-    const cached = cacheRef.current.get(id);
+    const cached = detailCache.get(id);
     if (cached) {
       setData(cached);
       return;
     }
     setData(null);
     let cancelled = false;
-    fetch(`/api/node-detail?id=${encodeURIComponent(id)}`).then(async (r) => r.ok ? r.json() : Promise.reject((await r.json()).error || r.statusText)).then((d) => {
-      if (!cancelled) {
-        cacheRef.current.set(id, d);
-        setData(d);
-      }
+    fetchDetail(id).then((d) => {
+      if (!cancelled) setData(d);
     }).catch((e) => {
       if (!cancelled) setError(String(e));
     });
@@ -15539,13 +15557,22 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
   );
   const listRef = (0, import_react16.useRef)(null);
   useFlipReorder(listRef, buckets.map((b) => b.key));
+  const prefetchTimer = (0, import_react16.useRef)(null);
+  const onRowHover = (0, import_react16.useCallback)((id) => {
+    onHover?.(id);
+    if (prefetchTimer.current) {
+      clearTimeout(prefetchTimer.current);
+      prefetchTimer.current = null;
+    }
+    if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
+  }, [onHover]);
   if (!nodes.length) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "graph-contents", children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "graph-contents-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { className: "muted", children: "Everything visible on the canvas, grouped by community. Click a row to open its detail." })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BucketView, { b, onSelect, onHover }, b.key)) })
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
   ] });
 }
 function BucketView({ b, onSelect, onHover }) {
@@ -15664,7 +15691,18 @@ function GraphExplorerBody() {
   const detailPanelRef = (0, import_react18.useRef)(null);
   const [hover, setHover] = (0, import_react18.useState)({ id: null, source: "canvas" });
   const hoverId = hover.id;
-  const hoverFromCanvas = (0, import_react18.useCallback)((id) => setHover({ id, source: "canvas" }), []);
+  const prefetchTimer = (0, import_react18.useRef)(null);
+  const schedulePrefetch = (0, import_react18.useCallback)((id) => {
+    if (prefetchTimer.current) {
+      clearTimeout(prefetchTimer.current);
+      prefetchTimer.current = null;
+    }
+    if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
+  }, []);
+  const hoverFromCanvas = (0, import_react18.useCallback)((id) => {
+    setHover({ id, source: "canvas" });
+    schedulePrefetch(id);
+  }, [schedulePrefetch]);
   const hoverFromSidebar = (0, import_react18.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
   const [expandedIds, setExpandedIds] = (0, import_react18.useState)(/* @__PURE__ */ new Set());
   const expand = (0, import_react18.useCallback)((id) => setExpandedIds((prev) => {
