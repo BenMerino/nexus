@@ -68,6 +68,24 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
   }), [affiliations, institutionLabelById, egoAuthorId, homeInstitutionId]);
 
+  const forceConfig = useMemo(() => {
+    const area = Math.max(width * height, 1);
+    const perNode = Math.sqrt(area / Math.max(nodes.length, 1));
+    const linkDistance = Math.max(24, Math.min(140, perNode * 0.8));
+    const clusterStrength = Math.max(0.12, Math.min(0.45, 0.12 + 2 / Math.sqrt(Math.max(nodes.length, 1))));
+    const charge = -Math.min(400, perNode * 6);
+    return {
+      linkDistance,
+      linkStrength: 0.1,
+      charge: (g: string | undefined) => (g === 'doi' ? charge * 0.3 : charge),
+      clusterStrengthX: clusterStrength,
+      clusterStrengthY: clusterStrength,
+      collidePad: 6,
+      minCommunitySize: 2,
+      orbitRadius: 0.45,
+    };
+  }, [width, height, nodes.length]);
+
   return (
     <CommunityGraph<EnrichedSimNode, ProjectedEdge>
       nodes={nodes}
@@ -78,16 +96,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       height={height}
       selectedId={selectedId ?? null}
       onNodeClick={onNodeClick}
-      forceConfig={{
-        linkDistance: 60,
-        linkStrength: 0.3,
-        charge: g => (g === 'doi' ? -80 : -260),
-        clusterStrengthX: 0.05,
-        clusterStrengthY: 0.05,
-        collidePad: 6,
-        minCommunitySize: 2,
-        orbitRadius: 0.45,
-      }}
+      forceConfig={forceConfig}
     />
   );
 }
