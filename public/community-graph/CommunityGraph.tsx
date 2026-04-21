@@ -1,17 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Simulation } from 'd3-force';
 import { buildCommunityColors, majorCommunities, effectiveKey, OTHER_KEY } from './communities';
-import { GraphDefs, Links, Nodes } from './render';
 import { EgoLabel, HoverTooltip } from './labels';
-import { CommunityHulls } from './hulls';
 import { startDrag } from './drag';
+import { GraphScene } from './scene';
 import {
   initialNodes, initialLinks, buildAnchors, createSimulation,
   type SimN, type SimL, type BaseLink,
 } from './forces';
 import type { CommunityAdapter, ForceConfig } from './types';
 import { DEFAULT_FORCE_CONFIG } from './types';
-import { useViewTransform } from './use-view-transform';
+import { useViewTransform, usePinZoomTarget } from './use-view-transform';
 
 export interface CommunityGraphProps<N, L extends BaseLink> {
   nodes: N[];
@@ -72,6 +71,8 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
     return () => { sim.stop(); };
   }, [nodes, links, anchors, adapter, primaryKey, width, height]);
 
+  usePinZoomTarget(nodes, adapter, zoomToId);
+
   const nodeColor = (n: SimN<N>): string => {
     let communityColor: string | null = null;
     if (adapter.isEgo(n)) {
@@ -114,34 +115,16 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
 
   return (
     <div style={{ position: 'relative', width, height }}>
-      <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none' }}>
-        <GraphDefs />
-        <g
-          transform={effectiveTransform ? `translate(${effectiveTransform.tx} ${effectiveTransform.ty}) scale(${effectiveTransform.scale})` : undefined}
-          style={{ transition: 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1)' }}
-        >
-          <CommunityHulls
-            nodes={nodes}
-            adapter={adapter}
-            primaryKey={primaryKey}
-            colors={communityColors}
-            minSize={config.minCommunitySize}
-          />
-          <Links links={links} connected={connected} />
-          <Nodes
-            nodes={nodes}
-            adapter={adapter}
-            hoverId={hoverId}
-            selectedId={selectedId ?? null}
-            connected={connected}
-            nodeColor={nodeColor}
-            onHoverStart={setHoverId}
-            onHoverEnd={() => setHoverId(null)}
-            onMouseDown={handleMouseDown}
-            onClick={n => onNodeClick?.(n)}
-          />
-        </g>
-      </svg>
+      <GraphScene
+        svgRef={svgRef} width={width} height={height}
+        nodes={nodes} links={links} adapter={adapter} primaryKey={primaryKey}
+        communityColors={communityColors} minCommunitySize={config.minCommunitySize}
+        hoverId={hoverId} selectedId={selectedId ?? null} connected={connected}
+        nodeColor={nodeColor}
+        onHoverStart={setHoverId} onHoverEnd={() => setHoverId(null)}
+        onMouseDown={handleMouseDown} onNodeClick={onNodeClick}
+        transform={effectiveTransform}
+      />
       {ego && <EgoLabel ego={ego} adapter={adapter} />}
       {showHover && hovered && <HoverTooltip node={hovered} adapter={adapter} />}
     </div>

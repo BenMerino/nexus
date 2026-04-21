@@ -13100,78 +13100,11 @@ function buildCommunityColors(nodes, adapter, primaryKey, minSize) {
   return map;
 }
 
-// public/community-graph/render.tsx
-var import_jsx_runtime5 = __toESM(require_jsx_runtime());
-function GraphDefs() {
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("radialGradient", { id: "community-glow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
-  ] }) });
-}
-function Links({ links, connected }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { children: links.map((l, i) => {
-    const s = typeof l.source === "object" ? l.source : null;
-    const t = typeof l.target === "object" ? l.target : null;
-    if (!s || !t) return null;
-    const dim = connected && !(connected.has(s.id) && connected.has(t.id));
-    const w = l.weight || 1;
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-      "line",
-      {
-        x1: s.x,
-        y1: s.y,
-        x2: t.x,
-        y2: t.y,
-        stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
-        strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
-      },
-      i
-    );
-  }) });
-}
-function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { children: nodes.map((n) => {
-    const id = adapter.getId(n);
-    const r = adapter.getRadius(n);
-    const isHov = id === hoverId;
-    const isSel = id === selectedId;
-    const dim = connected && !connected.has(id);
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-      "g",
-      {
-        transform: `translate(${n.x}, ${n.y})`,
-        onMouseEnter: () => onHoverStart(id),
-        onMouseLeave: onHoverEnd,
-        onMouseDown: (e) => onMouseDown(e, n),
-        onClick: (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          onClick(n);
-        },
-        style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
-        children: [
-          (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-            "circle",
-            {
-              r,
-              fill: nodeColor(n),
-              stroke: isHov || isSel ? "#fff" : "rgba(255,255,255,0.2)",
-              strokeWidth: isHov || isSel ? 2 : 1
-            }
-          )
-        ]
-      },
-      id
-    );
-  }) });
-}
-
 // public/community-graph/labels.tsx
-var import_jsx_runtime6 = __toESM(require_jsx_runtime());
+var import_jsx_runtime5 = __toESM(require_jsx_runtime());
 function EgoLabel({ ego, adapter }) {
   const r = adapter.getRadius(ego);
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
     "div",
     {
       style: {
@@ -13194,7 +13127,7 @@ function HoverTooltip({ node, adapter }) {
   const r = adapter.getRadius(node);
   const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
   const footnote = adapter.getHoverFootnote?.(node) ?? null;
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
     "div",
     {
       style: {
@@ -13214,12 +13147,107 @@ function HoverTooltip({ node, adapter }) {
         zIndex: 2
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { fontWeight: 500 }, children: adapter.getLabel(node) }),
-        subtitle && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", marginTop: 2 }, children: subtitle }),
-        footnote && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)", marginTop: 2 }, children: footnote })
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { fontWeight: 500 }, children: adapter.getLabel(node) }),
+        subtitle && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", marginTop: 2 }, children: subtitle }),
+        footnote && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)", marginTop: 2 }, children: footnote })
       ]
     }
   );
+}
+
+// public/community-graph/drag.ts
+function startDrag(e, node, svg, sim, pinAfterDrag) {
+  e.preventDefault();
+  e.stopPropagation();
+  const pt = svg.createSVGPoint();
+  node.fx = node.x;
+  node.fy = node.y;
+  sim?.alphaTarget(0.3).restart();
+  const onMove = (ev) => {
+    pt.x = ev.clientX;
+    pt.y = ev.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    node.fx = p.x;
+    node.fy = p.y;
+  };
+  const onUp = () => {
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+    sim?.alphaTarget(0);
+    if (!pinAfterDrag) {
+      node.fx = null;
+      node.fy = null;
+    }
+  };
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+}
+
+// public/community-graph/render.tsx
+var import_jsx_runtime6 = __toESM(require_jsx_runtime());
+function GraphDefs() {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("radialGradient", { id: "community-glow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
+  ] }) });
+}
+function Links({ links, connected }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { children: links.map((l, i) => {
+    const s = typeof l.source === "object" ? l.source : null;
+    const t = typeof l.target === "object" ? l.target : null;
+    if (!s || !t) return null;
+    const dim = connected && !(connected.has(s.id) && connected.has(t.id));
+    const w = l.weight || 1;
+    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      "line",
+      {
+        x1: s.x,
+        y1: s.y,
+        x2: t.x,
+        y2: t.y,
+        stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
+        strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
+      },
+      i
+    );
+  }) });
+}
+function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { children: nodes.map((n) => {
+    const id = adapter.getId(n);
+    const r = adapter.getRadius(n);
+    const isHov = id === hoverId;
+    const isSel = id === selectedId;
+    const dim = connected && !connected.has(id);
+    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+      "g",
+      {
+        transform: `translate(${n.x}, ${n.y})`,
+        onMouseEnter: () => onHoverStart(id),
+        onMouseLeave: onHoverEnd,
+        onMouseDown: (e) => onMouseDown(e, n),
+        onClick: (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          onClick(n);
+        },
+        style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
+        children: [
+          (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+            "circle",
+            {
+              r,
+              fill: nodeColor(n),
+              stroke: isHov || isSel ? "#fff" : "rgba(255,255,255,0.2)",
+              strokeWidth: isHov || isSel ? 2 : 1
+            }
+          )
+        ]
+      },
+      id
+    );
+  }) });
 }
 
 // public/smoothed-hulls.tsx
@@ -13353,32 +13381,51 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize }) {
   return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(SmoothedHulls, { groups: hullGroups });
 }
 
-// public/community-graph/drag.ts
-function startDrag(e, node, svg, sim, pinAfterDrag) {
-  e.preventDefault();
-  e.stopPropagation();
-  const pt = svg.createSVGPoint();
-  node.fx = node.x;
-  node.fy = node.y;
-  sim?.alphaTarget(0.3).restart();
-  const onMove = (ev) => {
-    pt.x = ev.clientX;
-    pt.y = ev.clientY;
-    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-    node.fx = p.x;
-    node.fy = p.y;
-  };
-  const onUp = () => {
-    window.removeEventListener("mousemove", onMove);
-    window.removeEventListener("mouseup", onUp);
-    sim?.alphaTarget(0);
-    if (!pinAfterDrag) {
-      node.fx = null;
-      node.fy = null;
-    }
-  };
-  window.addEventListener("mousemove", onMove);
-  window.addEventListener("mouseup", onUp);
+// public/community-graph/scene.tsx
+var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+function GraphScene({
+  svgRef,
+  width,
+  height,
+  nodes,
+  links,
+  adapter,
+  primaryKey,
+  communityColors,
+  minCommunitySize,
+  hoverId,
+  selectedId,
+  connected,
+  nodeColor,
+  onHoverStart,
+  onHoverEnd,
+  onMouseDown,
+  onNodeClick,
+  transform
+}) {
+  const t = transform ? `translate(${transform.tx} ${transform.ty}) scale(${transform.scale})` : void 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GraphDefs, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { transform: t, style: { transition: "transform 400ms cubic-bezier(0.4, 0, 0.2, 1)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+        Nodes,
+        {
+          nodes,
+          adapter,
+          hoverId,
+          selectedId,
+          connected,
+          nodeColor,
+          onHoverStart,
+          onHoverEnd,
+          onMouseDown,
+          onClick: (n) => onNodeClick?.(n)
+        }
+      )
+    ] })
+  ] });
 }
 
 // node_modules/d3-quadtree/src/add.js
@@ -14359,22 +14406,33 @@ var DEFAULT_FORCE_CONFIG = {
 
 // public/community-graph/use-view-transform.ts
 var import_react4 = __toESM(require_react());
-function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height }) {
-  return (0, import_react4.useMemo)(() => {
-    if (override) return override;
-    if (!zoomToId) return null;
+function usePinZoomTarget(nodes, adapter, zoomToId) {
+  (0, import_react4.useEffect)(() => {
+    if (!zoomToId) return;
     const target = nodes.find((n) => adapter.getId(n) === zoomToId);
-    if (!target) return null;
-    return {
-      tx: width / 2 - target.x * zoomScale,
-      ty: height / 2 - target.y * zoomScale,
-      scale: zoomScale
+    if (!target) return;
+    target.fx = target.x;
+    target.fy = target.y;
+    return () => {
+      target.fx = null;
+      target.fy = null;
     };
-  }, [override, zoomToId, zoomScale, nodes, adapter, width, height]);
+  }, [zoomToId, nodes, adapter]);
+}
+function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height }) {
+  if (override) return override;
+  if (!zoomToId) return null;
+  const target = nodes.find((n) => adapter.getId(n) === zoomToId);
+  if (!target) return null;
+  return {
+    tx: width / 2 - target.x * zoomScale,
+    ty: height / 2 - target.y * zoomScale,
+    scale: zoomScale
+  };
 }
 
 // public/community-graph/CommunityGraph.tsx
-var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+var import_jsx_runtime10 = __toESM(require_jsx_runtime());
 function CommunityGraph({
   nodes: inNodes,
   links: inLinks,
@@ -14429,6 +14487,7 @@ function CommunityGraph({
       sim.stop();
     };
   }, [nodes, links, anchors, adapter, primaryKey, width, height]);
+  usePinZoomTarget(nodes, adapter, zoomToId);
   const nodeColor = (n) => {
     let communityColor = null;
     if (adapter.isEgo(n)) {
@@ -14470,53 +14529,38 @@ function CommunityGraph({
     width,
     height
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { position: "relative", width, height }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GraphDefs, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
-        "g",
-        {
-          transform: effectiveTransform ? `translate(${effectiveTransform.tx} ${effectiveTransform.ty}) scale(${effectiveTransform.scale})` : void 0,
-          style: { transition: "transform 400ms cubic-bezier(0.4, 0, 0.2, 1)" },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
-              CommunityHulls,
-              {
-                nodes,
-                adapter,
-                primaryKey,
-                colors: communityColors,
-                minSize: config.minCommunitySize
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected }),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
-              Nodes,
-              {
-                nodes,
-                adapter,
-                hoverId,
-                selectedId: selectedId ?? null,
-                connected,
-                nodeColor,
-                onHoverStart: setHoverId,
-                onHoverEnd: () => setHoverId(null),
-                onMouseDown: handleMouseDown,
-                onClick: (n) => onNodeClick?.(n)
-              }
-            )
-          ]
-        }
-      )
-    ] }),
-    ego && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(EgoLabel, { ego, adapter }),
-    showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(HoverTooltip, { node: hovered, adapter })
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { position: "relative", width, height }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+      GraphScene,
+      {
+        svgRef,
+        width,
+        height,
+        nodes,
+        links,
+        adapter,
+        primaryKey,
+        communityColors,
+        minCommunitySize: config.minCommunitySize,
+        hoverId,
+        selectedId: selectedId ?? null,
+        connected,
+        nodeColor,
+        onHoverStart: setHoverId,
+        onHoverEnd: () => setHoverId(null),
+        onMouseDown: handleMouseDown,
+        onNodeClick,
+        transform: effectiveTransform
+      }
+    ),
+    ego && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(EgoLabel, { ego, adapter }),
+    showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(HoverTooltip, { node: hovered, adapter })
   ] });
 }
 
 // public/community-graph/legend.tsx
 var import_react6 = __toESM(require_react());
-var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
   const colors = (0, import_react6.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
   const major = (0, import_react6.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
@@ -14538,10 +14582,10 @@ function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
       return b[1].count - a2[1].count;
     });
   }, [nodes, adapter, major, primaryKey]);
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: info.name }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: info.name }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
       "\xB7",
       info.count
     ] })
@@ -14549,7 +14593,7 @@ function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
 }
 
 // public/coauthor-graph-sim.tsx
-var import_jsx_runtime11 = __toESM(require_jsx_runtime());
+var import_jsx_runtime12 = __toESM(require_jsx_runtime());
 function radius(n) {
   return n.isMe ? 12 : 5 + Math.min(10, Math.sqrt(n.weight) * 1.5);
 }
@@ -14565,7 +14609,7 @@ function CoAuthorSim({ graph, width, height, onNodeClick }) {
     getHoverSubtitle: (n) => n.affiliation?.name || null,
     getHoverFootnote: (n) => `${n.weight} shared ${n.weight === 1 ? "paper" : "papers"}`
   }), []);
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
     CommunityGraph,
     {
       nodes: graph.nodes,
@@ -14582,7 +14626,7 @@ function CoAuthorSim({ graph, width, height, onNodeClick }) {
 }
 
 // public/coauthor-graph-preview.tsx
-var import_jsx_runtime12 = __toESM(require_jsx_runtime());
+var import_jsx_runtime13 = __toESM(require_jsx_runtime());
 function CoAuthorGraphPanel({ graph }) {
   const ref = (0, import_react8.useRef)(null);
   const [size, setSize] = (0, import_react8.useState)(null);
@@ -14609,42 +14653,42 @@ function CoAuthorGraphPanel({ graph }) {
     getCommunityLabel: (_key, sample) => sample.affiliation?.name || _key
   }), []);
   const emptyMsg = !graph ? "Co-author graph unavailable." : nodes.length === 0 ? "No papers indexed yet." : nodes.length === 1 ? "Papers indexed, but no co-authors have ORCIDs attached." : null;
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "card card-graph-preview", style: { display: "flex", gap: 18, alignItems: "stretch" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("aside", { style: { width: 180, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "eyebrow", children: "Network" }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "section-title", children: "Your co-author graph" })
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("section", { className: "card card-graph-preview", style: { display: "flex", gap: 18, alignItems: "stretch" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("aside", { style: { width: 180, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "eyebrow", children: "Network" }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h2", { className: "section-title", children: "Your co-author graph" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("a", { className: "link-btn", href: "/overview.html", style: { alignSelf: "flex-start" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("a", { className: "link-btn", href: "/overview.html", style: { alignSelf: "flex-start" }, children: [
         "Open explorer ",
         Ico.arrow
       ] }),
-      !emptyMsg && graph && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(CommunityLegend, { nodes: graph.nodes, adapter: legendAdapter, primaryKey: myRor })
+      !emptyMsg && graph && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(CommunityLegend, { nodes: graph.nodes, adapter: legendAdapter, primaryKey: myRor })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { ref, style: { position: "relative", flex: 1, minHeight: 260 }, children: emptyMsg ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "muted", children: emptyMsg }) : size && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(CoAuthorSim, { graph, width: size.w, height: size.h }) })
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { ref, style: { position: "relative", flex: 1, minHeight: 260 }, children: emptyMsg ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "muted", children: emptyMsg }) : size && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(CoAuthorSim, { graph, width: size.w, height: size.h }) })
   ] });
 }
 function CoAuthorGraphPanelSkeleton() {
   const legendNames = ["Universidad de Talca", "Pontificia U. Cat\xF3lica", "Universidad de Chile", "U. Austral de Chile", "U. de Concepci\xF3n"];
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "card card-graph-preview", style: { display: "flex", gap: 18, alignItems: "stretch" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("aside", { style: { width: 180, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "eyebrow", children: "Network" }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "section-title", children: "Your co-author graph" })
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("section", { className: "card card-graph-preview", style: { display: "flex", gap: 18, alignItems: "stretch" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("aside", { style: { width: 180, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "eyebrow", children: "Network" }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h2", { className: "section-title", children: "Your co-author graph" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("a", { className: "link-btn", style: { alignSelf: "flex-start" }, children: "Open explorer \u2192" }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }, children: legendNames.map((name, i) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { style: { display: "inline-flex", gap: 6, alignItems: "center" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: "var(--bg-inset)" } }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "skel", style: { fontSize: 11 }, children: name })
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("a", { className: "link-btn", style: { alignSelf: "flex-start" }, children: "Open explorer \u2192" }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }, children: legendNames.map((name, i) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { style: { display: "inline-flex", gap: 6, alignItems: "center" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: "var(--bg-inset)" } }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "skel", style: { fontSize: 11 }, children: name })
       ] }, i)) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { position: "relative", flex: 1, minHeight: 260 }, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.4 } }) })
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { position: "relative", flex: 1, minHeight: 260 }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.4 } }) })
   ] });
 }
 
 // public/portfolio-velocity.tsx
 var import_react9 = __toESM(require_react());
-var import_jsx_runtime13 = __toESM(require_jsx_runtime());
+var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 var TREND_SYMBOL = { rising: "\u25B2", flat: "\u2192", falling: "\u25BC" };
 var TREND_COLOR = { rising: "var(--ok)", flat: "var(--fg-dim)", falling: "var(--err)" };
 function VelocityPanel({ velocity }) {
@@ -14682,30 +14726,30 @@ function VelocityPanel({ velocity }) {
     ...forecast.map((p) => ({ year: p.year, y: p.total }))
   ];
   const fcPath = `M${bridgeStartX},${bridgeStartY}` + fcSource.map((p) => ` L${xScale(p.year)},${yScale(p.y)}`).join("");
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { ref: wrapRef, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", color: "var(--accent)", lineHeight: 1 }, children: score.toFixed(2) }),
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "score" })
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { ref: wrapRef, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", color: "var(--accent)", lineHeight: 1 }, children: score.toFixed(2) }),
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "score" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { color: TREND_COLOR[trend], fontSize: 16, fontFamily: "var(--mono)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { color: TREND_COLOR[trend], fontSize: 16, fontFamily: "var(--mono)" }, children: [
         TREND_SYMBOL[trend],
         " ",
         trend
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("svg", { width: w, height: h, style: { display: "block" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: histPath, fill: "none", stroke: "var(--accent)", strokeWidth: 2 }),
-      fcSource.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: fcPath, fill: "none", stroke: "var(--accent)", strokeWidth: 2, strokeDasharray: "4 4", opacity: 0.5 }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("svg", { width: w, height: h, style: { display: "block" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { d: histPath, fill: "none", stroke: "var(--accent)", strokeWidth: 2 }),
+      fcSource.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { d: fcPath, fill: "none", stroke: "var(--accent)", strokeWidth: 2, strokeDasharray: "4 4", opacity: 0.5 }),
       allPoints.map((p, i) => {
         const cx = xScale(p.year), cy = yScale(p.y);
         const isForecast = p.kind === "fc";
         const isPartial = p.partial;
-        return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("g", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("circle", { cx, cy, r: 3, fill: isForecast || isPartial ? "var(--bg-card)" : "var(--accent)", stroke: "var(--accent)", strokeWidth: 1.5 }),
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("text", { x: cx, y: h - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: p.year }),
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("text", { x: cx, y: cy - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg)", fontFamily: "var(--mono)", children: p.y }),
-          isPartial && /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("text", { x: cx, y: cy + 14, fontSize: 8, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: [
+        return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("g", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("circle", { cx, cy, r: 3, fill: isForecast || isPartial ? "var(--bg-card)" : "var(--accent)", stroke: "var(--accent)", strokeWidth: 1.5 }),
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("text", { x: cx, y: h - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: p.year }),
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("text", { x: cx, y: cy - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg)", fontFamily: "var(--mono)", children: p.y }),
+          isPartial && /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("text", { x: cx, y: cy + 14, fontSize: 8, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: [
             "(",
             p.raw,
             " so far)"
@@ -14713,20 +14757,20 @@ function VelocityPanel({ velocity }) {
         ] }, i);
       })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
   ] });
 }
 function VelocityPanelSkeleton() {
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "skel", style: { display: "inline-block", fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }, children: "0.00" }),
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "score" })
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "skel", style: { display: "inline-block", fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }, children: "0.00" }),
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "score" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "skel", style: { display: "inline-block", fontSize: 16, fontFamily: "var(--mono)" }, children: "\u25B2 rising" })
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "skel", style: { display: "inline-block", fontSize: 16, fontFamily: "var(--mono)" }, children: "\u25B2 rising" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.5 } }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.5 } }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
   ] });
 }
 
@@ -14753,7 +14797,7 @@ var typeRank = (t) => TYPE_METAL[t]?.rank ?? 99;
 var typeMetalName = (t) => TYPE_METAL[t]?.name || "";
 
 // public/portfolio-cadence.tsx
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 var typeLabel = (t) => TYPE_DISPLAY_LABELS[t] || (t === "unknown" ? "Unknown" : t);
 function CadencePanel({ cadence }) {
   const { series, types, meanPerYear } = cadence;
@@ -14770,7 +14814,7 @@ function CadencePanel({ cadence }) {
     return () => ro.disconnect();
   }, []);
   if (!series.length) {
-    return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No publication years on record." });
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No publication years on record." });
   }
   const max = Math.max(1, ...series.map((p) => p.count));
   const h = 140;
@@ -14781,24 +14825,24 @@ function CadencePanel({ cadence }) {
   const yScale = (v) => h - pad - v / max * (h - pad * 2);
   const meanY = yScale(meanPerYear);
   const baseY = h - pad;
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { ref: wrapRef, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", color: "var(--accent)", lineHeight: 1 }, children: meanPerYear.toFixed(1) }),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "papers / year (avg)" })
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { ref: wrapRef, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", color: "var(--accent)", lineHeight: 1 }, children: meanPerYear.toFixed(1) }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "papers / year (avg)" })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("svg", { width: w, height: h, style: { display: "block" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("line", { x1: pad, x2: w - pad, y1: meanY, y2: meanY, stroke: "var(--fg-dim)", strokeWidth: 1, strokeDasharray: "3 3", opacity: 0.5 }),
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("svg", { width: w, height: h, style: { display: "block" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("line", { x1: pad, x2: w - pad, y1: meanY, y2: meanY, stroke: "var(--fg-dim)", strokeWidth: 1, strokeDasharray: "3 3", opacity: 0.5 }),
       series.map((p, i) => {
         const cx = xCenter(i);
         const totalH = p.count / max * (h - pad * 2);
         const bx = cx - barW / 2;
         let yCursor = baseY;
-        return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("g", { children: [
+        return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("g", { children: [
           p.segments.map((seg) => {
             if (!seg.count) return null;
             const segH = seg.count / max * (h - pad * 2);
             yCursor -= segH;
-            return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+            return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
               "rect",
               {
                 x: bx,
@@ -14807,28 +14851,28 @@ function CadencePanel({ cadence }) {
                 height: segH,
                 fill: typeColor(seg.type),
                 opacity: 0.85,
-                children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("title", { children: `${p.year} \xB7 ${typeLabel(seg.type)}: ${seg.count}` })
+                children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("title", { children: `${p.year} \xB7 ${typeLabel(seg.type)}: ${seg.count}` })
               },
               seg.type
             );
           }),
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("text", { x: cx, y: h - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: p.year }),
-          p.count > 0 && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("text", { x: cx, y: baseY - totalH - 4, fontSize: 10, textAnchor: "middle", fill: "var(--fg)", fontFamily: "var(--mono)", children: p.count })
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("text", { x: cx, y: h - 6, fontSize: 10, textAnchor: "middle", fill: "var(--fg-dim)", fontFamily: "var(--mono)", children: p.year }),
+          p.count > 0 && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("text", { x: cx, y: baseY - totalH - 4, fontSize: 10, textAnchor: "middle", fill: "var(--fg)", fontFamily: "var(--mono)", children: p.count })
         ] }, p.year);
       })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: [...types].sort((a2, b) => typeRank(a2) - typeRank(b)).map((t) => {
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: [...types].sort((a2, b) => typeRank(a2) - typeRank(b)).map((t) => {
       const metal = typeMetalName(t);
-      return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: "inline-block" } }),
+      return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: "inline-block" } }),
         typeLabel(t),
-        metal ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { color: "var(--fg-muted)", opacity: 0.7 }, children: [
+        metal ? /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { style: { color: "var(--fg-muted)", opacity: 0.7 }, children: [
           " \xB7 ",
           metal
         ] }) : null
       ] }, t);
     }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: [
       "Publications per year (",
       series[0].year,
       "\u2013",
@@ -14839,43 +14883,43 @@ function CadencePanel({ cadence }) {
 }
 function CadencePanelSkeleton() {
   const legendPlaceholders = ["Article", "Conference paper", "Review", "Book chapter"];
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "skel", style: { display: "inline-block", fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }, children: "0.0" }),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "papers / year (avg)" })
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { display: "flex", alignItems: "baseline", gap: 16, marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "skel", style: { display: "inline-block", fontFamily: "var(--display)", fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }, children: "0.0" }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { fontSize: 10, textTransform: "uppercase", color: "var(--fg-dim)", letterSpacing: "0.12em", fontFamily: "var(--mono)", marginTop: 4 }, children: "papers / year (avg)" })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.5 } }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: legendPlaceholders.map((label, i) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { width: 10, height: 10, background: "var(--bg-inset)", borderRadius: 2, display: "inline-block" } }),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "skel", style: { display: "inline-block" }, children: label })
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.5 } }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: legendPlaceholders.map((label, i) => /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { width: 10, height: 10, background: "var(--bg-inset)", borderRadius: 2, display: "inline-block" } }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { display: "inline-block" }, children: label })
     ] }, i)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Publications per year, stacked by type. Dashed line: average." })
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Publications per year, stacked by type. Dashed line: average." })
   ] });
 }
 
 // public/portfolio-topcited.tsx
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
 function TopCitedPanel({ items }) {
-  if (!items.length) return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No citation data yet." });
+  if (!items.length) return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No citation data yet." });
   const max = Math.max(1, ...items.map((i) => i.citation_count || 0));
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 10 }, children: items.map((w, i) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 10 }, children: items.map((w, i) => {
     const cites = w.citation_count || 0;
     const pct = cites / max * 100;
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "baseline", minWidth: 0, flex: 1 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { style: { fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)", minWidth: 18 }, children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "baseline", minWidth: 0, flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { style: { fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)", minWidth: 18 }, children: [
             "#",
             i + 1
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { fontSize: 13, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }, children: w.title || w.doi })
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { fontSize: 13, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }, children: w.title || w.doi })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6, whiteSpace: "nowrap" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { fontFamily: "var(--mono)", fontSize: 14, color: "var(--accent)", fontWeight: 600 }, children: cites.toLocaleString() }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }, children: w.year || "" })
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6, whiteSpace: "nowrap" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { fontFamily: "var(--mono)", fontSize: 14, color: "var(--accent)", fontWeight: 600 }, children: cites.toLocaleString() }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }, children: w.year || "" })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { height: 3, background: "var(--bg-inset)", borderRadius: 2, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { width: `${pct}%`, height: "100%", background: "var(--accent)", opacity: 0.7 } }) })
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { height: 3, background: "var(--bg-inset)", borderRadius: 2, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { width: `${pct}%`, height: "100%", background: "var(--accent)", opacity: 0.7 } }) })
     ] }, w.doi);
   }) });
 }
@@ -14888,34 +14932,34 @@ function TopCitedPanelSkeleton({ rows = 5 }) {
     "A medium-length title placeholder for ranking"
   ];
   const bars = [88, 64, 50, 38, 22];
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 10 }, children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "baseline", minWidth: 0, flex: 1 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { style: { fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)", minWidth: 18 }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 10 }, children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "baseline", minWidth: 0, flex: 1 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { style: { fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)", minWidth: 18 }, children: [
           "#",
           i + 1
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { fontSize: 13, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }, children: titles[i % titles.length] })
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { fontSize: 13, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }, children: titles[i % titles.length] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6, whiteSpace: "nowrap" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { fontFamily: "var(--mono)", fontSize: 14, fontWeight: 600 }, children: "0,000" }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "skel", style: { fontFamily: "var(--mono)", fontSize: 10 }, children: "0000" })
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6, whiteSpace: "nowrap" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { fontFamily: "var(--mono)", fontSize: 14, fontWeight: 600 }, children: "0,000" }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { fontFamily: "var(--mono)", fontSize: 10 }, children: "0000" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { height: 3, background: "var(--bg-inset)", borderRadius: 2, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { width: `${bars[i % bars.length]}%`, height: "100%", background: "var(--border-soft)" } }) })
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { height: 3, background: "var(--bg-inset)", borderRadius: 2, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { width: `${bars[i % bars.length]}%`, height: "100%", background: "var(--border-soft)" } }) })
   ] }, i)) });
 }
 
 // public/portfolio-concepts.tsx
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
 function ConceptsPanel({ concepts }) {
   if (!concepts.length) {
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No concepts indexed yet \u2014 backfill needed." });
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { style: { color: "var(--fg-muted)" }, children: "No concepts indexed yet \u2014 backfill needed." });
   }
   const max = Math.max(1, ...concepts.map((c2) => c2.works));
   const totalWorks = concepts.reduce((s, c2) => s + c2.works, 0);
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("p", { style: { fontSize: 12, color: "var(--fg-dim)", margin: "0 0 4px 0" }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("p", { style: { fontSize: 12, color: "var(--fg-dim)", margin: "0 0 4px 0" }, children: [
       "Topics on your works, by OpenAlex Concept (top ",
       concepts.length,
       ")."
@@ -14923,22 +14967,22 @@ function ConceptsPanel({ concepts }) {
     concepts.map((c2) => {
       const pct = c2.works / max * 100;
       const share = totalWorks > 0 ? Math.round(c2.works / totalWorks * 100) : 0;
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 3 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { fontSize: 13 }, children: c2.name }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { style: { fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)", whiteSpace: "nowrap" }, children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 3 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { fontSize: 13 }, children: c2.name }),
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)", whiteSpace: "nowrap" }, children: [
             c2.works,
             " ",
             c2.works === 1 ? "work" : "works",
             " ",
-            /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { style: { opacity: 0.6 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { opacity: 0.6 }, children: [
               "\xB7 ",
               share,
               "%"
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { height: 6, background: "var(--bg-inset)", borderRadius: 3, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { width: `${pct}%`, height: "100%", background: "var(--accent)" } }) })
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { height: 6, background: "var(--bg-inset)", borderRadius: 3, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { width: `${pct}%`, height: "100%", background: "var(--accent)" } }) })
       ] }, c2.name);
     })
   ] });
@@ -14946,20 +14990,20 @@ function ConceptsPanel({ concepts }) {
 function ConceptsPanelSkeleton({ rows = 6 }) {
   const names = ["Machine learning", "Public health", "Educational policy", "Renewable energy", "Cellular biology", "Computational physics"];
   const bars = [92, 78, 64, 50, 36, 22];
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { style: { fontSize: 12, color: "var(--fg-dim)", margin: "0 0 4px 0" }, children: "Topics on your works, by OpenAlex Concept." }),
-    Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 3 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { fontSize: 13 }, children: names[i % names.length] }),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "skel", style: { fontFamily: "var(--mono)", fontSize: 11, whiteSpace: "nowrap" }, children: "00 works \xB7 00%" })
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { style: { fontSize: 12, color: "var(--fg-dim)", margin: "0 0 4px 0" }, children: "Topics on your works, by OpenAlex Concept." }),
+    Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 3 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { fontSize: 13 }, children: names[i % names.length] }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { fontFamily: "var(--mono)", fontSize: 11, whiteSpace: "nowrap" }, children: "00 works \xB7 00%" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { height: 6, background: "var(--bg-inset)", borderRadius: 3, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { width: `${bars[i % bars.length]}%`, height: "100%", background: "var(--border-soft)" } }) })
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { height: 6, background: "var(--bg-inset)", borderRadius: 3, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { width: `${bars[i % bars.length]}%`, height: "100%", background: "var(--border-soft)" } }) })
     ] }, i))
   ] });
 }
 
 // public/dashboard-panels-skeletons.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 var JOURNAL_NAMES = [
   "Revista M\xE9dica de Chile",
   "PLOS ONE",
@@ -14976,32 +15020,32 @@ var PARTNER_NAMES = [
   "Universidad de Santiago"
 ];
 function RankedListSkel({ titles, counts }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ul", { className: "ranked-list", children: titles.map((title, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("li", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank", children: String(i + 1).padStart(2, "0") }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-title skel", children: title }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "rank-count skel", children: counts[i % counts.length] })
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("ul", { className: "ranked-list", children: titles.map((title, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("li", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "rank", children: String(i + 1).padStart(2, "0") }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "rank-label", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "rank-title skel", children: title }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "rank-count skel", children: counts[i % counts.length] })
   ] }, i)) });
 }
 function TopJournalsSkeleton() {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Venues", title: "Top journals" }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RankedListSkel, { titles: JOURNAL_NAMES, counts: ["28", "24", "22", "20", "18"] })
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Venues", title: "Top journals" }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(RankedListSkel, { titles: JOURNAL_NAMES, counts: ["28", "24", "22", "20", "18"] })
   ] });
 }
 function PartnerInstitutionsSkeleton() {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Collaborations", title: "Partner institutions" }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(RankedListSkel, { titles: PARTNER_NAMES, counts: ["28", "24", "22", "20", "18", "16"] })
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Collaborations", title: "Partner institutions" }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(RankedListSkel, { titles: PARTNER_NAMES, counts: ["28", "24", "22", "20", "18", "16"] })
   ] });
 }
 function BarChartSkeleton() {
   const heights = [55, 72, 48, 88, 64, 78];
   const years = ["2020", "2021", "2022", "2023", "2024", "2025"];
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card card-chart", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Output", title: "Publications per year", right: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Tag, { mono: true, tone: "muted", children: "2020\u20132025" }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-chart", children: heights.map((h, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "bar-col", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar skel", style: { height: `${h}%` } }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "bar-label skel", children: years[i] })
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card card-chart", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Output", title: "Publications per year", right: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(Tag, { mono: true, tone: "muted", children: "2020\u20132025" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "bar-chart", children: heights.map((h, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "bar-col", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "bar-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "bar skel", style: { height: `${h}%` } }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "bar-label skel", children: years[i] })
     ] }, i)) })
   ] });
 }
@@ -15013,32 +15057,32 @@ function RecentlyIndexedSkeleton({ rows = 5 }) {
     "Short placeholder title",
     "Medium-length placeholder title for a recent paper"
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: "card card-span-2", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SectionHead, { eyebrow: "Ledger", title: "Recently indexed" }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("table", { className: "paper-table", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("tr", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: "Title" }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: "Type" }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: "Journal" }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: "Published" }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: "Cites" })
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card card-span-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Ledger", title: "Recently indexed" }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("table", { className: "paper-table", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("tr", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("th", { children: "Title" }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("th", { children: "Type" }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("th", { children: "Journal" }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("th", { children: "Published" }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("th", { children: "Cites" })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("tbody", { children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("tr", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("td", { className: "paper-title", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", children: titles[i % titles.length] }),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "mono paper-doi", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", children: "10.0000/example.0000.000000" }) })
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("tbody", { children: Array.from({ length: rows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("tr", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("td", { className: "paper-title", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "skel", children: titles[i % titles.length] }),
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "mono paper-doi", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "skel", children: "10.0000/example.0000.000000" }) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "tag type mono skel", children: "Article" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", children: "Revista M\xE9dica de Chile" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", children: "2024" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", children: "000" }) })
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "tag type mono skel", children: "Article" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "skel", children: "Revista M\xE9dica de Chile" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "skel", children: "2024" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "skel", children: "000" }) })
       ] }, i)) })
     ] })
   ] });
 }
 
 // public/dashboard-loading.tsx
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 var PERSONAL_STATS = [
   { label: "Publications", sub: "indexed via ORCID" },
   { label: "Total citations", sub: "OpenAlex \xB7 last sync" },
@@ -15058,67 +15102,67 @@ function DashboardLoading() {
   const firstName = displayName.split(" ")[0];
   const isPersonal = !!me?.profile.orcid;
   const stats = isPersonal ? PERSONAL_STATS : INSTITUTIONAL_STATS;
-  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
+  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
     greeting(),
     ", ",
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("em", { children: firstName }),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("em", { children: firstName }),
     "."
-  ] }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("em", { children: tenantName }),
+  ] }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("em", { children: tenantName }),
     "."
   ] });
   const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "view dashboard", "aria-busy": "true", "aria-live": "polite", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h1", { className: "view-title", children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "view-sub", children: sub })
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "view dashboard", "aria-busy": "true", "aria-live": "polite", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("header", { className: "view-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h1", { className: "view-title", children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "view-sub", children: sub })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "stat-row", children: stats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(StatSkeleton, { label: s.label, sub: s.sub }, i)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "dash-grid", children: isPersonal ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PersonalCards, {}) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(InstitutionalCards, {}) })
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "stat-row", children: stats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(StatSkeleton, { label: s.label, sub: s.sub }, i)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "dash-grid", children: isPersonal ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PersonalCards, {}) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(InstitutionalCards, {}) })
   ] });
 }
 function PersonalCards() {
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card card-chart", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(VelocityPanelSkeleton, {})
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card card-chart", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(VelocityPanelSkeleton, {})
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card card-chart", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CadencePanelSkeleton, {})
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card card-chart", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CadencePanelSkeleton, {})
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CoAuthorGraphPanelSkeleton, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TopCitedPanelSkeleton, {})
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CoAuthorGraphPanelSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TopCitedPanelSkeleton, {})
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("section", { className: "card", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ConceptsPanelSkeleton, {})
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { className: "card", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ConceptsPanelSkeleton, {})
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TopJournalsSkeleton, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PartnerInstitutionsSkeleton, {})
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TopJournalsSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PartnerInstitutionsSkeleton, {})
   ] });
 }
 function InstitutionalCards() {
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(BarChartSkeleton, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CoAuthorGraphPanelSkeleton, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TopJournalsSkeleton, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PartnerInstitutionsSkeleton, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(RecentlyIndexedSkeleton, {})
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(BarChartSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CoAuthorGraphPanelSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TopJournalsSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PartnerInstitutionsSkeleton, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(RecentlyIndexedSkeleton, {})
   ] });
 }
 
 // public/h-index-breakdown.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 var H_INDEX_TYPES = [
   { key: "journal-article", label: "journal" },
   { key: "conference-paper", label: "conf" },
@@ -15131,19 +15175,19 @@ function entries(byType) {
   return H_INDEX_TYPES.map((t) => ({ label: t.label, value: byType[t.key] })).filter((e) => e.value != null && e.value > 0);
 }
 function HIndexBreakdown({ byType }) {
-  if (!byType) return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_jsx_runtime19.Fragment, { children: "computed \xB7 real-time" });
+  if (!byType) return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(import_jsx_runtime20.Fragment, { children: "computed \xB7 real-time" });
   const rows = entries(byType);
-  if (rows.length === 0) return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_jsx_runtime19.Fragment, { children: "computed \xB7 real-time" });
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "hindex-breakdown", children: rows.map((e, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { children: [
+  if (rows.length === 0) return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(import_jsx_runtime20.Fragment, { children: "computed \xB7 real-time" });
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "hindex-breakdown", children: rows.map((e, i) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
     i > 0 ? " \xB7 " : "",
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("strong", { children: e.value }),
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("strong", { children: e.value }),
     " ",
     e.label
   ] }, e.label)) });
 }
 
 // public/dashboard-charts.tsx
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
+var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 function DashboardContent({ data }) {
   const { me } = useCurrentUser();
   const years = yearlyCounts(data);
@@ -15158,7 +15202,7 @@ function DashboardContent({ data }) {
   const heroStats = isPersonal ? [
     { label: "Publications", value: pubCount.toLocaleString(), sub: "indexed via ORCID" },
     { label: "Total citations", value: totalCit.toLocaleString(), sub: "OpenAlex \xB7 last sync" },
-    { label: "h-index", value: me?.hIndex ?? "\u2014", sub: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(HIndexBreakdown, { byType: me?.hIndexByType }), accent: true },
+    { label: "h-index", value: me?.hIndex ?? "\u2014", sub: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(HIndexBreakdown, { byType: me?.hIndexByType }), accent: true },
     { label: "Collaborators", value: collabCount.toLocaleString(), sub: "unique, all years" }
   ] : [
     { label: "Publications", value: data.totalPubs.toLocaleString(), sub: "indexed records" },
@@ -15166,58 +15210,58 @@ function DashboardContent({ data }) {
     { label: "Open access", value: data.totalPubs > 0 ? `${Math.round(data.oaCount / data.totalPubs * 100)}%` : "\u2014", sub: "of total output", accent: true },
     { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
-  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
+  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
     greeting(),
     ", ",
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("em", { children: firstName }),
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: firstName }),
     "."
-  ] }) : /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("em", { children: tenantName }),
+  ] }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: tenantName }),
     "."
   ] });
   const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "view dashboard", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("h1", { className: "view-title", children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "view-sub", children: sub })
+  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "view dashboard", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("header", { className: "view-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("h1", { className: "view-title", children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "view-sub", children: sub })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Stat, { ...s }, i)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card card-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(VelocityPanel, { velocity: p.velocity })
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(Stat, { ...s }, i)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(VelocityPanel, { velocity: p.velocity })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card card-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
-        p.cadence && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(CadencePanel, { cadence: p.cadence })
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
+        p.cadence && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(CadencePanel, { cadence: p.cadence })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(TopCitedPanel, { items: p.topCited || [] })
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("section", { className: "card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(TopCitedPanel, { items: p.topCited || [] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { className: "card", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
-        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(ConceptsPanel, { concepts: p.concepts || [] })
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("section", { className: "card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(ConceptsPanel, { concepts: p.concepts || [] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(TopJournals, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(PartnerInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(ClaimPaperPanel, { onClaimed: () => window.location.reload() })
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
-      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "muted", children: "No year data." }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(TopJournals, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(PartnerInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(RecentlyIndexed, { data })
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(ClaimPaperPanel, { onClaimed: () => window.location.reload() })
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
+      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "muted", children: "No year data." }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(RecentlyIndexed, { data })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { id: "import-slot" })
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { id: "import-slot" })
   ] });
 }
 function App() {
@@ -15226,13 +15270,13 @@ function App() {
   (0, import_react11.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
-    err && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "status error", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
+    err && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "status error", children: [
       "Error: ",
       err
     ] }) }),
-    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(DashboardLoading, {}),
-    data && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(DashboardContent, { data })
+    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(DashboardLoading, {}),
+    data && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(DashboardContent, { data })
   ] });
 }
 var root = null;
@@ -15241,7 +15285,7 @@ function mount() {
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime20.jsx)(App, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime21.jsx)(App, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/dashboard-bundle.js"] = mount;

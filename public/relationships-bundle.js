@@ -14132,78 +14132,11 @@ function buildCommunityColors(nodes, adapter, primaryKey, minSize) {
   return map;
 }
 
-// public/community-graph/render.tsx
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
-function GraphDefs() {
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("radialGradient", { id: "community-glow", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
-  ] }) });
-}
-function Links({ links, connected }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("g", { children: links.map((l, i) => {
-    const s = typeof l.source === "object" ? l.source : null;
-    const t = typeof l.target === "object" ? l.target : null;
-    if (!s || !t) return null;
-    const dim = connected && !(connected.has(s.id) && connected.has(t.id));
-    const w = l.weight || 1;
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
-      "line",
-      {
-        x1: s.x,
-        y1: s.y,
-        x2: t.x,
-        y2: t.y,
-        stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
-        strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
-      },
-      i
-    );
-  }) });
-}
-function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("g", { children: nodes.map((n) => {
-    const id = adapter.getId(n);
-    const r = adapter.getRadius(n);
-    const isHov = id === hoverId;
-    const isSel = id === selectedId;
-    const dim = connected && !connected.has(id);
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
-      "g",
-      {
-        transform: `translate(${n.x}, ${n.y})`,
-        onMouseEnter: () => onHoverStart(id),
-        onMouseLeave: onHoverEnd,
-        onMouseDown: (e) => onMouseDown(e, n),
-        onClick: (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          onClick(n);
-        },
-        style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
-        children: [
-          (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
-            "circle",
-            {
-              r,
-              fill: nodeColor(n),
-              stroke: isHov || isSel ? "#fff" : "rgba(255,255,255,0.2)",
-              strokeWidth: isHov || isSel ? 2 : 1
-            }
-          )
-        ]
-      },
-      id
-    );
-  }) });
-}
-
 // public/community-graph/labels.tsx
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 function EgoLabel({ ego, adapter }) {
   const r = adapter.getRadius(ego);
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
     "div",
     {
       style: {
@@ -14226,7 +14159,7 @@ function HoverTooltip({ node, adapter }) {
   const r = adapter.getRadius(node);
   const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
   const footnote = adapter.getHoverFootnote?.(node) ?? null;
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
     "div",
     {
       style: {
@@ -14246,12 +14179,107 @@ function HoverTooltip({ node, adapter }) {
         zIndex: 2
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontWeight: 500 }, children: adapter.getLabel(node) }),
-        subtitle && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", marginTop: 2 }, children: subtitle }),
-        footnote && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)", marginTop: 2 }, children: footnote })
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { fontWeight: 500 }, children: adapter.getLabel(node) }),
+        subtitle && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { fontSize: 11, color: "var(--fg-muted)", marginTop: 2 }, children: subtitle }),
+        footnote && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)", marginTop: 2 }, children: footnote })
       ]
     }
   );
+}
+
+// public/community-graph/drag.ts
+function startDrag(e, node, svg, sim, pinAfterDrag) {
+  e.preventDefault();
+  e.stopPropagation();
+  const pt = svg.createSVGPoint();
+  node.fx = node.x;
+  node.fy = node.y;
+  sim?.alphaTarget(0.3).restart();
+  const onMove = (ev) => {
+    pt.x = ev.clientX;
+    pt.y = ev.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    node.fx = p.x;
+    node.fy = p.y;
+  };
+  const onUp = () => {
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+    sim?.alphaTarget(0);
+    if (!pinAfterDrag) {
+      node.fx = null;
+      node.fy = null;
+    }
+  };
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+}
+
+// public/community-graph/render.tsx
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+function GraphDefs() {
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("radialGradient", { id: "community-glow", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
+  ] }) });
+}
+function Links({ links, connected }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("g", { children: links.map((l, i) => {
+    const s = typeof l.source === "object" ? l.source : null;
+    const t = typeof l.target === "object" ? l.target : null;
+    if (!s || !t) return null;
+    const dim = connected && !(connected.has(s.id) && connected.has(t.id));
+    const w = l.weight || 1;
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+      "line",
+      {
+        x1: s.x,
+        y1: s.y,
+        x2: t.x,
+        y2: t.y,
+        stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
+        strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
+      },
+      i
+    );
+  }) });
+}
+function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("g", { children: nodes.map((n) => {
+    const id = adapter.getId(n);
+    const r = adapter.getRadius(n);
+    const isHov = id === hoverId;
+    const isSel = id === selectedId;
+    const dim = connected && !connected.has(id);
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+      "g",
+      {
+        transform: `translate(${n.x}, ${n.y})`,
+        onMouseEnter: () => onHoverStart(id),
+        onMouseLeave: onHoverEnd,
+        onMouseDown: (e) => onMouseDown(e, n),
+        onClick: (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          onClick(n);
+        },
+        style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
+        children: [
+          (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+            "circle",
+            {
+              r,
+              fill: nodeColor(n),
+              stroke: isHov || isSel ? "#fff" : "rgba(255,255,255,0.2)",
+              strokeWidth: isHov || isSel ? 2 : 1
+            }
+          )
+        ]
+      },
+      id
+    );
+  }) });
 }
 
 // public/smoothed-hulls.tsx
@@ -14385,32 +14413,51 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize }) {
   return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(SmoothedHulls, { groups: hullGroups });
 }
 
-// public/community-graph/drag.ts
-function startDrag(e, node, svg, sim, pinAfterDrag) {
-  e.preventDefault();
-  e.stopPropagation();
-  const pt = svg.createSVGPoint();
-  node.fx = node.x;
-  node.fy = node.y;
-  sim?.alphaTarget(0.3).restart();
-  const onMove = (ev) => {
-    pt.x = ev.clientX;
-    pt.y = ev.clientY;
-    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-    node.fx = p.x;
-    node.fy = p.y;
-  };
-  const onUp = () => {
-    window.removeEventListener("mousemove", onMove);
-    window.removeEventListener("mouseup", onUp);
-    sim?.alphaTarget(0);
-    if (!pinAfterDrag) {
-      node.fx = null;
-      node.fy = null;
-    }
-  };
-  window.addEventListener("mousemove", onMove);
-  window.addEventListener("mouseup", onUp);
+// public/community-graph/scene.tsx
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+function GraphScene({
+  svgRef,
+  width,
+  height,
+  nodes,
+  links,
+  adapter,
+  primaryKey,
+  communityColors,
+  minCommunitySize,
+  hoverId,
+  selectedId,
+  connected,
+  nodeColor,
+  onHoverStart,
+  onHoverEnd,
+  onMouseDown,
+  onNodeClick,
+  transform
+}) {
+  const t = transform ? `translate(${transform.tx} ${transform.ty}) scale(${transform.scale})` : void 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphDefs, {}),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("g", { transform: t, style: { transition: "transform 400ms cubic-bezier(0.4, 0, 0.2, 1)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Links, { links, connected }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+        Nodes,
+        {
+          nodes,
+          adapter,
+          hoverId,
+          selectedId,
+          connected,
+          nodeColor,
+          onHoverStart,
+          onHoverEnd,
+          onMouseDown,
+          onClick: (n) => onNodeClick?.(n)
+        }
+      )
+    ] })
+  ] });
 }
 
 // node_modules/d3-quadtree/src/add.js
@@ -15391,22 +15438,33 @@ var DEFAULT_FORCE_CONFIG = {
 
 // public/community-graph/use-view-transform.ts
 var import_react10 = __toESM(require_react());
-function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height }) {
-  return (0, import_react10.useMemo)(() => {
-    if (override) return override;
-    if (!zoomToId) return null;
+function usePinZoomTarget(nodes, adapter, zoomToId) {
+  (0, import_react10.useEffect)(() => {
+    if (!zoomToId) return;
     const target = nodes.find((n) => adapter.getId(n) === zoomToId);
-    if (!target) return null;
-    return {
-      tx: width / 2 - target.x * zoomScale,
-      ty: height / 2 - target.y * zoomScale,
-      scale: zoomScale
+    if (!target) return;
+    target.fx = target.x;
+    target.fy = target.y;
+    return () => {
+      target.fx = null;
+      target.fy = null;
     };
-  }, [override, zoomToId, zoomScale, nodes, adapter, width, height]);
+  }, [zoomToId, nodes, adapter]);
+}
+function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height }) {
+  if (override) return override;
+  if (!zoomToId) return null;
+  const target = nodes.find((n) => adapter.getId(n) === zoomToId);
+  if (!target) return null;
+  return {
+    tx: width / 2 - target.x * zoomScale,
+    ty: height / 2 - target.y * zoomScale,
+    scale: zoomScale
+  };
 }
 
 // public/community-graph/CommunityGraph.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 function CommunityGraph({
   nodes: inNodes,
   links: inLinks,
@@ -15461,6 +15519,7 @@ function CommunityGraph({
       sim.stop();
     };
   }, [nodes, links, anchors, adapter, primaryKey, width, height]);
+  usePinZoomTarget(nodes, adapter, zoomToId);
   const nodeColor = (n) => {
     let communityColor = null;
     if (adapter.isEgo(n)) {
@@ -15502,53 +15561,38 @@ function CommunityGraph({
     width,
     height
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: { position: "relative", width, height }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphDefs, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
-        "g",
-        {
-          transform: effectiveTransform ? `translate(${effectiveTransform.tx} ${effectiveTransform.ty}) scale(${effectiveTransform.scale})` : void 0,
-          style: { transition: "transform 400ms cubic-bezier(0.4, 0, 0.2, 1)" },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
-              CommunityHulls,
-              {
-                nodes,
-                adapter,
-                primaryKey,
-                colors: communityColors,
-                minSize: config.minCommunitySize
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Links, { links, connected }),
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
-              Nodes,
-              {
-                nodes,
-                adapter,
-                hoverId,
-                selectedId: selectedId ?? null,
-                connected,
-                nodeColor,
-                onHoverStart: setHoverId,
-                onHoverEnd: () => setHoverId(null),
-                onMouseDown: handleMouseDown,
-                onClick: (n) => onNodeClick?.(n)
-              }
-            )
-          ]
-        }
-      )
-    ] }),
-    ego && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(EgoLabel, { ego, adapter }),
-    showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(HoverTooltip, { node: hovered, adapter })
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { position: "relative", width, height }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+      GraphScene,
+      {
+        svgRef,
+        width,
+        height,
+        nodes,
+        links,
+        adapter,
+        primaryKey,
+        communityColors,
+        minCommunitySize: config.minCommunitySize,
+        hoverId,
+        selectedId: selectedId ?? null,
+        connected,
+        nodeColor,
+        onHoverStart: setHoverId,
+        onHoverEnd: () => setHoverId(null),
+        onMouseDown: handleMouseDown,
+        onNodeClick,
+        transform: effectiveTransform
+      }
+    ),
+    ego && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(EgoLabel, { ego, adapter }),
+    showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(HoverTooltip, { node: hovered, adapter })
   ] });
 }
 
 // public/community-graph/legend.tsx
 var import_react12 = __toESM(require_react());
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
+var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
   const colors = (0, import_react12.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
   const major = (0, import_react12.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
@@ -15570,10 +15614,10 @@ function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
       return b[1].count - a2[1].count;
     });
   }, [nodes, adapter, major, primaryKey]);
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: info.name }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: info.name }),
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
       "\xB7",
       info.count
     ] })
@@ -15663,7 +15707,7 @@ function computeVisibility(nodes, edges, affiliations, egoAuthorId, homeInstitut
 }
 
 // public/force-graph.tsx
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
+var import_jsx_runtime22 = __toESM(require_jsx_runtime());
 var PLACEHOLDER_RADIUS = 3;
 var PLACEHOLDER_COLOR = "rgba(255,255,255,0.22)";
 var ZOOM_SCALE = 2.1;
@@ -15739,7 +15783,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     onNodeClick?.(n);
     onExpand(n.id);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
     CommunityGraph,
     {
       nodes,
@@ -15758,7 +15802,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
 }
 
 // public/explorer-canvas.tsx
-var import_jsx_runtime22 = __toESM(require_jsx_runtime());
+var import_jsx_runtime23 = __toESM(require_jsx_runtime());
 function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, minHeight = 480 }) {
   const ref = (0, import_react14.useRef)(null);
   const [size, setSize] = (0, import_react14.useState)(null);
@@ -15774,7 +15818,7 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight, overflow: "hidden" }, children: size && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight, overflow: "hidden" }, children: size && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
     ForceGraph,
     {
       nodes,
@@ -15794,7 +15838,7 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
 
 // public/graph-search.tsx
 var import_react15 = __toESM(require_react());
-var import_jsx_runtime23 = __toESM(require_jsx_runtime());
+var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 function GraphSearch({ nodes, onSelect }) {
   const [query, setQuery] = (0, import_react15.useState)("");
   const [open, setOpen] = (0, import_react15.useState)(false);
@@ -15803,7 +15847,7 @@ function GraphSearch({ nodes, onSelect }) {
     const q = query.toLowerCase();
     return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
   }, [query, nodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
     "div",
     {
       style: { position: "relative", display: "inline-block" },
@@ -15811,7 +15855,7 @@ function GraphSearch({ nodes, onSelect }) {
         if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           "input",
           {
             value: query,
@@ -15824,7 +15868,7 @@ function GraphSearch({ nodes, onSelect }) {
             style: { fontFamily: "var(--mono)", fontSize: 12, padding: "6px 10px", width: 180 }
           }
         ),
-        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: {
+        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: {
           position: "absolute",
           top: "100%",
           left: 0,
@@ -15837,7 +15881,7 @@ function GraphSearch({ nodes, onSelect }) {
           overflow: "auto",
           width: 280,
           marginTop: 4
-        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
           "div",
           {
             tabIndex: 0,
@@ -15861,9 +15905,9 @@ function GraphSearch({ nodes, onSelect }) {
             onMouseOver: (e) => e.currentTarget.style.background = "var(--bg-elev)",
             onMouseOut: (e) => e.currentTarget.style.background = "transparent",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
+              /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
+              /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
             ]
           },
           n.id
@@ -15875,7 +15919,7 @@ function GraphSearch({ nodes, onSelect }) {
 
 // public/time-slider.tsx
 var import_react16 = __toESM(require_react());
-var import_jsx_runtime24 = __toESM(require_jsx_runtime());
+var import_jsx_runtime25 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
   const y3 = parseInt(n.published.substring(0, 4));
@@ -15957,7 +16001,7 @@ function applyTheme(me) {
 
 // public/graph-filters-sidebar.tsx
 var import_react19 = __toESM(require_react());
-var import_jsx_runtime25 = __toESM(require_jsx_runtime());
+var import_jsx_runtime26 = __toESM(require_jsx_runtime());
 function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, affiliations, homeInstitutionId }) {
   const paperColor = "#888";
   const labelById = (0, import_react19.useMemo)(() => {
@@ -15980,19 +16024,19 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
     isEgo: () => false,
     getCommunityLabel: (key) => labelById.get(key) || key
   }), [affiliations, labelById, homeInstitutionId, journalByDoi]);
-  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("aside", { className: "graph-filters", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "filter-label", children: "Node types" }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Check, { checked: flags.author, onChange: (v) => setFlag("author", v), label: "Authors", color: COLORS.author }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Check, { checked: flags.coauthor, onChange: (v) => setFlag("coauthor", v), label: "Co-authors", color: COLORS.author }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Check, { checked: flags.institution, onChange: (v) => setFlag("institution", v), label: "Institutions", color: COLORS.institution }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Check, { checked: flags.journal, onChange: (v) => setFlag("journal", v), label: "Journals", color: COLORS.journal }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Check, { checked: flags.paper, onChange: (v) => setFlag("paper", v), label: "Papers", color: paperColor })
+  return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("aside", { className: "graph-filters", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "filter-label", children: "Node types" }),
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(Check, { checked: flags.author, onChange: (v) => setFlag("author", v), label: "Authors", color: COLORS.author }),
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(Check, { checked: flags.coauthor, onChange: (v) => setFlag("coauthor", v), label: "Co-authors", color: COLORS.author }),
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(Check, { checked: flags.institution, onChange: (v) => setFlag("institution", v), label: "Institutions", color: COLORS.institution }),
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(Check, { checked: flags.journal, onChange: (v) => setFlag("journal", v), label: "Journals", color: COLORS.journal }),
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(Check, { checked: flags.paper, onChange: (v) => setFlag("paper", v), label: "Papers", color: paperColor })
     ] }),
-    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "filter-label", children: "Year floor" }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "year-slider", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "filter-label", children: "Year floor" }),
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "year-slider", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
           "input",
           {
             type: "range",
@@ -16002,17 +16046,17 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
             onChange: (e) => onYearFloorChange(parseInt(e.target.value))
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "year-val mono", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "year-val mono", children: [
           "\u2265 ",
           yearFloor
         ] })
       ] })
     ] }),
-    nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "filter-group legend", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "filter-label", children: "Communities" }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId })
+    nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "filter-group legend", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "filter-label", children: "Communities" }),
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
+    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
   ] });
 }
 
@@ -16145,7 +16189,7 @@ function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags
 
 // public/graph-contents.tsx
 var import_react22 = __toESM(require_react());
-var import_jsx_runtime26 = __toESM(require_jsx_runtime());
+var import_jsx_runtime27 = __toESM(require_jsx_runtime());
 function sortByWeightThenLabel(a2, b) {
   const d = (b.weight || 0) - (a2.weight || 0);
   return d !== 0 ? d : a2.label.localeCompare(b.label);
@@ -16222,44 +16266,44 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
     return ordered;
   }, [nodes, adapter, homeInstitutionId, journalByDoi, labelById]);
   if (!nodes.length) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "graph-contents", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "graph-contents-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("p", { className: "muted", children: "Everything visible on the canvas, grouped by community. Click a row to open its detail." })
+  return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "graph-contents", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "graph-contents-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("p", { className: "muted", children: "Everything visible on the canvas, grouped by community. Click a row to open its detail." })
     ] }),
-    buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(BucketView, { b, onSelect }, b.key))
+    buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(BucketView, { b, onSelect }, b.key))
   ] });
 }
 function BucketView({ b, onSelect }) {
   const total = b.institutions.length + b.authors.length + b.journals.length + b.papers.length;
-  return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("section", { className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("header", { className: "gc-community-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("h4", { children: b.label }),
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { className: "mono muted gc-count", children: total })
+  return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("section", { className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("header", { className: "gc-community-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("h4", { children: b.label }),
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { className: "mono muted gc-count", children: total })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(NodeList, { label: "Institutions", color: COLORS.institution, ns: b.institutions, onSelect }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect })
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(NodeList, { label: "Institutions", color: COLORS.institution, ns: b.institutions, onSelect }),
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect }),
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect }),
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect })
   ] });
 }
 function NodeList({ label, color, ns, onSelect }) {
   if (ns.length === 0) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "gc-list", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "gc-list-label", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { className: "dot", style: { background: color } }),
+  return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "gc-list", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "gc-list-label", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { className: "dot", style: { background: color } }),
       " ",
       label,
       " ",
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { className: "mono muted", children: ns.length })
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { className: "mono muted", children: ns.length })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("button", { type: "button", onClick: () => onSelect(n.id), children: n.label }) }, n.id)) })
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("button", { type: "button", onClick: () => onSelect(n.id), children: n.label }) }, n.id)) })
   ] });
 }
 
 // public/graph-explorer-body.tsx
-var import_jsx_runtime27 = __toESM(require_jsx_runtime());
+var import_jsx_runtime28 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 function yearOf2(n) {
   if (n.group !== "doi" || !n.published) return 0;
@@ -16331,75 +16375,75 @@ function GraphExplorerBody() {
     }
     return nodeDois;
   }, [selectedNodeId, rawEdges, matchingDois]);
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
-  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "view graph-view", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("header", { className: "view-head compact", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("h1", { className: "view-title tight", children: [
+  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
+  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { className: "eyebrow", children: "No data." }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { className: "view graph-view", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("header", { className: "view-head compact", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("h1", { className: "view-title tight", children: [
           "The institution as a ",
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("em", { children: "network" }),
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("em", { children: "network" }),
           "."
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(Tag, { mono: true, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(Tag, { mono: true, children: [
           projectedNodes.length,
           " NODES"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(Tag, { mono: true, tone: "muted", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(Tag, { mono: true, tone: "muted", children: [
           projectedEdges.length,
           " EDGES"
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => setSelectedNodeId(id) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "graph-layout", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFloor: yearFloor || yearMin, onYearFloorChange: setYearFloor, nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey }),
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "graph-canvas", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "canvas-corner-tl", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => setSelectedNodeId(id) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { className: "graph-layout", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFloor: yearFloor || yearMin, onYearFloorChange: setYearFloor, nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey }),
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { className: "graph-canvas", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { className: "canvas-corner-tl", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { children: [
             "tenant \xB7 ",
-            /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("em", { children: me?.tenant || "\u2014" })
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("em", { children: me?.tenant || "\u2014" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { children: [
             "role \xB7 ",
-            /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("em", { children: me?.role || "\u2014" })
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("em", { children: me?.role || "\u2014" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { children: [
             "scope \xB7 ",
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id), expandedIds, onExpand: expand })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id), expandedIds, onExpand: expand })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
         NodeDetail,
         {
           nodeId: selectedNodeId,
           onClose: () => setSelectedNodeId(null),
-          empty: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
+          empty: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             setSelectedNodeId(id);
             expand(id);
           } })
         }
       ) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(StatsBar, { nodes: projectedNodes, edges: projectedEdges, doiCount }),
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { marginTop: 20, borderTop: "1px solid var(--border-soft)", paddingTop: 20 }, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(FilteredCharts, { matchingDois: chartDois, totalDois: doiCount }) })
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(StatsBar, { nodes: projectedNodes, edges: projectedEdges, doiCount }),
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { marginTop: 20, borderTop: "1px solid var(--border-soft)", paddingTop: 20 }, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(FilteredCharts, { matchingDois: chartDois, totalDois: doiCount }) })
   ] });
 }
 
 // public/relationships.tsx
-var import_jsx_runtime28 = __toESM(require_jsx_runtime());
+var import_jsx_runtime29 = __toESM(require_jsx_runtime());
 var root = null;
 function mount() {
   const el = document.getElementById("relationships-root");
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime28.jsx)(GraphExplorerBody, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime29.jsx)(GraphExplorerBody, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/relationships-bundle.js"] = mount;
