@@ -15627,6 +15627,7 @@ function GraphExplorerBody() {
     return [...prev, id];
   }), []);
   const popSelection = (0, import_react17.useCallback)(() => setSelectionStack((prev) => prev.length ? prev.slice(0, -1) : prev), []);
+  const detailPanelRef = (0, import_react17.useRef)(null);
   const [hover, setHover] = (0, import_react17.useState)({ id: null, source: "canvas" });
   const hoverId = hover.id;
   const hoverFromCanvas = (0, import_react17.useCallback)((id) => setHover({ id, source: "canvas" }), []);
@@ -15655,6 +15656,10 @@ function GraphExplorerBody() {
   (0, import_react17.useEffect)(() => {
     if (yearMin && !yearFloor) setYearFloor(yearMin);
   }, [yearMin, yearFloor]);
+  (0, import_react17.useEffect)(() => {
+    const el = detailPanelRef.current;
+    if (el) el.scrollTo({ top: 0, behavior: "smooth" });
+  }, [selectedNodeId]);
   const filteredRaw = (0, import_react17.useMemo)(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
@@ -15727,7 +15732,7 @@ function GraphExplorerBody() {
         ] }),
         projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         NodeDetail,
         {
           nodeId: selectedNodeId,

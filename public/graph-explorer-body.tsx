@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { projectGraph } from './project-graph';
 import { NodeDetail } from './node-detail';
 import { ExplorerCanvas } from './explorer-canvas';
@@ -32,6 +32,7 @@ export function GraphExplorerBody() {
     return [...prev, id];
   }), []);
   const popSelection = useCallback(() => setSelectionStack(prev => prev.length ? prev.slice(0, -1) : prev), []);
+  const detailPanelRef = useRef<HTMLElement>(null);
   const [hover, setHover] = useState<{ id: string | null; source: 'canvas' | 'sidebar' }>({ id: null, source: 'canvas' });
   const hoverId = hover.id;
   const hoverFromCanvas = useCallback((id: string | null) => setHover({ id, source: 'canvas' }), []);
@@ -58,6 +59,14 @@ export function GraphExplorerBody() {
 
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
   useEffect(() => { if (yearMin && !yearFloor) setYearFloor(yearMin); }, [yearMin, yearFloor]);
+
+  // Scroll the detail panel to the top whenever the selection changes so
+  // the user lands on the header of the new detail view instead of wherever
+  // they had scrolled in the previous one (or deep in GraphContents).
+  useEffect(() => {
+    const el = detailPanelRef.current;
+    if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedNodeId]);
 
   const filteredRaw = useMemo(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
@@ -123,7 +132,7 @@ export function GraphExplorerBody() {
             : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} />}
         </div>
 
-        <aside className="detail-panel">
+        <aside className="detail-panel" ref={detailPanelRef}>
           <NodeDetail
             nodeId={selectedNodeId}
             onClose={() => pushSelection(null)}
