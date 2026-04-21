@@ -388,6 +388,9 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   letter-spacing: 0.04em; pointer-events: none; font-family: var(--mono);
 }
 .canvas-corner-tl em { color: var(--accent); }
+.canvas-corner-tr {
+  position: absolute; top: 14px; right: 14px; z-index: 2;
+}
 
 /* ═══ DETAIL PANEL ═══ */
 .detail-panel {

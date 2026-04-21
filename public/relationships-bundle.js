@@ -15741,7 +15741,6 @@ function GraphExplorerBody() {
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => pushSelection(id) }) }),
     /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "graph-layout", children: [
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFloor: yearFloor || yearMin, onYearFloorChange: setYearFloor, nodes: projectedNodes, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "graph-canvas", children: [
@@ -15759,6 +15758,7 @@ function GraphExplorerBody() {
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "canvas-corner-tr", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => pushSelection(id) }) }),
         projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(

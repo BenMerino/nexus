@@ -112,8 +112,6 @@ export function GraphExplorerBody() {
         </div>
       </header>
 
-      <div style={{ marginBottom: 12 }}><GraphSearch nodes={projectedNodes} onSelect={id => pushSelection(id)} /></div>
-
       <div className="graph-layout">
         <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFloor={yearFloor || yearMin} onYearFloorChange={setYearFloor} nodes={projectedNodes} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} />
 
@@ -123,6 +121,7 @@ export function GraphExplorerBody() {
             <div>role · <em>{me?.role || '—'}</em></div>
             <div>scope · {yearFloor > yearMin ? `≥ ${yearFloor}` : 'all years'}</div>
           </div>
+          <div className="canvas-corner-tr"><GraphSearch nodes={projectedNodes} onSelect={id => pushSelection(id)} /></div>
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
             : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} />}
