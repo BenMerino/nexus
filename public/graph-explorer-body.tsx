@@ -56,10 +56,12 @@ export function GraphExplorerBody() {
 
   // Scroll the detail panel to the top whenever the selection changes so
   // the user lands on the header of the new detail view instead of wherever
-  // they had scrolled in the previous one (or deep in GraphContents).
+  // they had scrolled in the previous one. Instant, not smooth — the slide
+  // animation on the detail wrapper is the one the user should see; a
+  // simultaneous smooth scroll fights it and reads as a flash.
   useEffect(() => {
     const el = detailPanelRef.current;
-    if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
+    if (el) el.scrollTop = 0;
   }, [selectedNodeId]);
 
   const filteredRaw = useMemo(() => {

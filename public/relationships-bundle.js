@@ -15677,7 +15677,7 @@ function GraphExplorerBody() {
   }, [yearMin, yearFloor]);
   (0, import_react18.useEffect)(() => {
     const el = detailPanelRef.current;
-    if (el) el.scrollTo({ top: 0, behavior: "smooth" });
+    if (el) el.scrollTop = 0;
   }, [selectedNodeId]);
   const filteredRaw = (0, import_react18.useMemo)(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
