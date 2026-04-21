@@ -77,7 +77,7 @@ export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir
   const dirClass = navDir === 'back' ? 'slide-back' : 'slide-forward';
   return (
     <>
-      <div className="node-detail-home" hidden={showingDetail}>{fallback}</div>
+      <div className={`node-detail-home${showingDetail ? ' is-hidden' : ''}`}>{fallback}</div>
       {showingDetail && (
         <div key={key} className={`node-detail-swap ${dirClass}${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
           {content}
