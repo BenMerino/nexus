@@ -416,15 +416,21 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 /* Filmstrip: sidebar and detail sit side-by-side inside a track that's twice
  * the viewport width. Translating the track by 50% slides the next pane into
  * view and the current one out of view in lockstep — a true adjacent swap. */
-.node-detail-viewport { overflow: hidden; height: 100%; }
+.node-detail-viewport { overflow: hidden; height: 100%; contain: layout paint; }
 .node-detail-track {
   display: flex; width: 200%; height: 100%;
-  transform: translateX(0);
-  transition: transform 280ms cubic-bezier(0.2, 0, 0, 1);
+  transform: translate3d(0, 0, 0);
+  transition: transform 260ms cubic-bezier(0.2, 0, 0, 1);
   will-change: transform;
+  backface-visibility: hidden;
 }
-.node-detail-viewport.showing-detail .node-detail-track { transform: translateX(-50%); }
-.node-detail-pane { flex: 0 0 50%; min-width: 0; overflow: auto; }
+.node-detail-viewport.showing-detail .node-detail-track { transform: translate3d(-50%, 0, 0); }
+.node-detail-pane {
+  flex: 0 0 50%; min-width: 0; overflow: auto;
+  background: var(--bg-card);
+  transform: translateZ(0);
+  contain: layout paint;
+}
 .detail-accented .detail-head { border-bottom-color: var(--detail-accent); }
 .detail-accented .detail-head h3 { color: var(--detail-accent); }
 .detail-accented .detail-head .eyebrow { color: var(--detail-accent); }
