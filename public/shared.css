@@ -388,9 +388,6 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   letter-spacing: 0.04em; pointer-events: none; font-family: var(--mono);
 }
 .canvas-corner-tl em { color: var(--accent); }
-.canvas-corner-tr {
-  position: absolute; top: 14px; right: 14px; z-index: 2;
-}
 
 /* ═══ DETAIL PANEL ═══ */
 .detail-panel {
@@ -487,6 +484,8 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .graph-contents-list { display: flex; flex-direction: column; gap: 18px; }
 .graph-contents-head { padding-bottom: 12px; border-bottom: 1px solid var(--border-soft); }
 .graph-contents-head p { margin: 6px 0 0; color: var(--fg-muted); font-size: 12px; }
+.graph-contents-search { margin-top: 10px; }
+.graph-contents-search > div, .graph-contents-search input { width: 100%; }
 @keyframes gc-fade {
   from { opacity: 0; }
   to   { opacity: 1; }

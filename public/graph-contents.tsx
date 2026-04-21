@@ -7,6 +7,7 @@ import type { CommunityAdapter } from './community-graph';
 import { buildBuckets, type Bucket } from './graph-contents-buckets';
 import { useFlipReorder } from './use-flip-reorder';
 import { prefetchNodeDetail } from './node-detail';
+import { GraphSearch } from './graph-search';
 
 interface Props {
   nodes: EnrichedSimNode[];
@@ -16,9 +17,10 @@ interface Props {
   onSelect: (id: string) => void;
   onHover?: (id: string | null) => void;
   hoveredId?: string | null;
+  onSearchSelect?: (id: string) => void;
 }
 
-export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId }: Props) {
+export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId, onSearchSelect }: Props) {
   const journalByDoi = useMemo(() => {
     const hasPapers = nodes.some(n => n.group === 'doi');
     if (!hasPapers) return null;
@@ -81,6 +83,9 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
       <div className="graph-contents-head">
         <div className="eyebrow">Graph contents</div>
         <p className="muted">Everything visible on the canvas, grouped by community. Click a row to open its detail.</p>
+        <div className="graph-contents-search">
+          <GraphSearch nodes={nodes} onSelect={id => (onSearchSelect || onSelect)(id)} />
+        </div>
       </div>
       <div ref={listRef} className="graph-contents-list">
         {buckets.map(b => <BucketView key={b.key} b={b} onSelect={onSelect} onHover={onRowHover} />)}

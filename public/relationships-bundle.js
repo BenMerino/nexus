@@ -15093,97 +15093,16 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
   ) });
 }
 
-// public/graph-search.tsx
+// public/time-slider.tsx
 var import_react8 = __toESM(require_react());
 var import_jsx_runtime14 = __toESM(require_jsx_runtime());
-function GraphSearch({ nodes, onSelect }) {
-  const [query, setQuery] = (0, import_react8.useState)("");
-  const [open, setOpen] = (0, import_react8.useState)(false);
-  const matches = (0, import_react8.useMemo)(() => {
-    if (!query || query.length < 2) return [];
-    const q = query.toLowerCase();
-    return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
-  }, [query, nodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-    "div",
-    {
-      style: { position: "relative", display: "inline-block" },
-      onBlur: (e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-          "input",
-          {
-            value: query,
-            onChange: (e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            },
-            onFocus: () => setOpen(true),
-            placeholder: "Search nodes\u2026",
-            style: { fontFamily: "var(--mono)", fontSize: 12, padding: "6px 10px", width: 180 }
-          }
-        ),
-        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: {
-          position: "absolute",
-          top: "100%",
-          left: 0,
-          zIndex: 10,
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          borderRadius: 4,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-          maxHeight: 240,
-          overflow: "auto",
-          width: 280,
-          marginTop: 4
-        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-          "div",
-          {
-            tabIndex: 0,
-            onMouseDown: (e) => {
-              e.preventDefault();
-              onSelect(n.id);
-              setQuery("");
-              setOpen(false);
-            },
-            style: {
-              padding: "6px 10px",
-              cursor: "pointer",
-              fontSize: 11,
-              fontFamily: "var(--mono)",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              borderBottom: "1px solid var(--border-soft)",
-              color: "var(--fg)"
-            },
-            onMouseOver: (e) => e.currentTarget.style.background = "var(--bg-elev)",
-            onMouseOut: (e) => e.currentTarget.style.background = "transparent",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
-            ]
-          },
-          n.id
-        )) })
-      ]
-    }
-  );
-}
-
-// public/time-slider.tsx
-var import_react9 = __toESM(require_react());
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
   const y3 = parseInt(n.published.substring(0, 4));
   return y3 > 1900 ? y3 : 0;
 }
 function useTimeRange(nodes) {
-  return (0, import_react9.useMemo)(() => {
+  return (0, import_react8.useMemo)(() => {
     let min = 9999, max = 0;
     for (const n of nodes) {
       const y3 = yearOf(n);
@@ -15197,15 +15116,15 @@ function useTimeRange(nodes) {
 }
 
 // public/use-graph-data.ts
-var import_react10 = __toESM(require_react());
+var import_react9 = __toESM(require_react());
 var EMPTY_AFFS = { byAuthor: {} };
 function useGraphData() {
-  const [rawNodes, setRawNodes] = (0, import_react10.useState)([]);
-  const [rawEdges, setRawEdges] = (0, import_react10.useState)([]);
-  const [affiliations, setAffiliations] = (0, import_react10.useState)(EMPTY_AFFS);
-  const [tagMeta, setTagMeta] = (0, import_react10.useState)({});
-  const [loading, setLoading] = (0, import_react10.useState)(true);
-  (0, import_react10.useEffect)(() => {
+  const [rawNodes, setRawNodes] = (0, import_react9.useState)([]);
+  const [rawEdges, setRawEdges] = (0, import_react9.useState)([]);
+  const [affiliations, setAffiliations] = (0, import_react9.useState)(EMPTY_AFFS);
+  const [tagMeta, setTagMeta] = (0, import_react9.useState)({});
+  const [loading, setLoading] = (0, import_react9.useState)(true);
+  (0, import_react9.useEffect)(() => {
     fetch("/api/graph").then((r) => r.json()).then((d) => {
       setRawNodes(d.nodes);
       setRawEdges(d.edges);
@@ -15219,10 +15138,10 @@ function useGraphData() {
 }
 
 // public/shell-helpers.ts
-var import_react11 = __toESM(require_react());
+var import_react10 = __toESM(require_react());
 var CACHE_KEY = "nexus.me";
 function useCurrentUser() {
-  const [me, setMe] = (0, import_react11.useState)(() => {
+  const [me, setMe] = (0, import_react10.useState)(() => {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -15230,9 +15149,9 @@ function useCurrentUser() {
       return null;
     }
   });
-  const [loading, setLoading] = (0, import_react11.useState)(!me);
-  const [error, setError] = (0, import_react11.useState)(null);
-  (0, import_react11.useEffect)(() => {
+  const [loading, setLoading] = (0, import_react10.useState)(!me);
+  const [error, setError] = (0, import_react10.useState)(null);
+  (0, import_react10.useEffect)(() => {
     let cancelled = false;
     fetch("/api/auth?action=me").then((r) => r.status === 401 ? null : r.json()).then((d) => {
       if (cancelled) return;
@@ -15260,8 +15179,8 @@ function applyTheme(me) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_react12 = __toESM(require_react());
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_react11 = __toESM(require_react());
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 function prettyFallback(key) {
   const bare = key.replace(/^[a-z]+:/, "");
   const m2 = bare.match(/\/([^/]+)\/?$/);
@@ -15269,24 +15188,24 @@ function prettyFallback(key) {
 }
 function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYearFloorChange, nodes, allNodes, affiliations, homeInstitutionId }) {
   const paperColor = "#888";
-  const labelById = (0, import_react12.useMemo)(() => {
+  const labelById = (0, import_react11.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of allNodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [allNodes]);
-  const journalByDoi = (0, import_react12.useMemo)(() => {
+  const journalByDoi = (0, import_react11.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
     const m2 = /* @__PURE__ */ new Map();
     for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m2.set(d, jId);
     return m2;
   }, [nodes, affiliations.doisByJournal]);
-  const hullTier = (0, import_react12.useMemo)(() => {
+  const hullTier = (0, import_react11.useMemo)(() => {
     if (nodes.some((n) => n.group === "institution")) return "institution";
     if (nodes.some((n) => n.group === "journal")) return "journal";
     return "none";
   }, [nodes]);
-  const legendAdapter = (0, import_react12.useMemo)(() => ({
+  const legendAdapter = (0, import_react11.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -15294,19 +15213,19 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
     isEgo: () => false,
     getCommunityLabel: (key) => labelById.get(key) || prettyFallback(key)
   }), [affiliations, labelById, homeInstitutionId, journalByDoi, hullTier]);
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("aside", { className: "graph-filters", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "filter-label", children: "Node types" }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Check, { checked: flags.author, onChange: (v) => setFlag("author", v), label: "Authors", color: COLORS.author }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Check, { checked: flags.coauthor, onChange: (v) => setFlag("coauthor", v), label: "Co-authors", color: COLORS.author }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Check, { checked: flags.institution, onChange: (v) => setFlag("institution", v), label: "Institutions", color: COLORS.institution }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Check, { checked: flags.journal, onChange: (v) => setFlag("journal", v), label: "Journals", color: COLORS.journal }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Check, { checked: flags.paper, onChange: (v) => setFlag("paper", v), label: "Papers", color: paperColor })
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("aside", { className: "graph-filters", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "filter-label", children: "Node types" }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Check, { checked: flags.author, onChange: (v) => setFlag("author", v), label: "Authors", color: COLORS.author }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Check, { checked: flags.coauthor, onChange: (v) => setFlag("coauthor", v), label: "Co-authors", color: COLORS.author }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Check, { checked: flags.institution, onChange: (v) => setFlag("institution", v), label: "Institutions", color: COLORS.institution }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Check, { checked: flags.journal, onChange: (v) => setFlag("journal", v), label: "Journals", color: COLORS.journal }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Check, { checked: flags.paper, onChange: (v) => setFlag("paper", v), label: "Papers", color: paperColor })
     ] }),
-    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "filter-label", children: "Year floor" }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-slider", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "filter-label", children: "Year floor" }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "year-slider", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
           "input",
           {
             type: "range",
@@ -15316,17 +15235,17 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
             onChange: (e) => onYearFloorChange(parseInt(e.target.value))
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-val mono", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "year-val mono", children: [
           "\u2265 ",
           yearFloor
         ] })
       ] })
     ] }),
-    nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "filter-group legend", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "filter-label", children: "Communities" }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId, minSize: 1 })
+    nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "filter-group legend", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "filter-label", children: "Communities" }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId, minSize: 1 })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
   ] });
 }
 
@@ -15385,22 +15304,22 @@ function buildExplorerAffiliations(rawNodes, rawEdges, authoritative) {
 }
 
 // public/use-explorer-ego.ts
-var import_react13 = __toESM(require_react());
+var import_react12 = __toESM(require_react());
 var bareRor = (r) => r ? r.replace(/^https?:\/\/ror\.org\//, "") : null;
 function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) {
-  const homeInstitutionId = (0, import_react13.useMemo)(() => {
+  const homeInstitutionId = (0, import_react12.useMemo)(() => {
     const ror = bareRor(me?.profile.ror);
     if (!ror) return null;
     const hit = rawNodes.find((n) => n.group === "institution" && bareRor(n.ext_id) === ror);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const egoAuthorId = (0, import_react13.useMemo)(() => {
+  const egoAuthorId = (0, import_react12.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = projectedNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, projectedNodes]);
-  const effectiveHomeKey = (0, import_react13.useMemo)(() => {
+  const effectiveHomeKey = (0, import_react12.useMemo)(() => {
     if (homeInstitutionId) return homeInstitutionId;
     if (!egoAuthorId) return null;
     const insts = institutionsByAuthor.get(egoAuthorId);
@@ -15411,7 +15330,7 @@ function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) 
 }
 
 // public/use-explorer-nodes.ts
-var import_react14 = __toESM(require_react());
+var import_react13 = __toESM(require_react());
 
 // public/enrich-meta.ts
 function enrichWithMeta(nodes, tagMeta) {
@@ -15446,14 +15365,14 @@ function buildCoauthorSet(rawEdges, egoAuthorId) {
 
 // public/use-explorer-nodes.ts
 function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags }) {
-  const rawEgoAuthorId = (0, import_react14.useMemo)(() => {
+  const rawEgoAuthorId = (0, import_react13.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = rawNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const coauthorIds = (0, import_react14.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
-  const projectedNodes = (0, import_react14.useMemo)(() => {
+  const coauthorIds = (0, import_react13.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
+  const projectedNodes = (0, import_react13.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     const authorAllowed = (id) => {
       if (id === rawEgoAuthorId) return flags.author || flags.coauthor;
@@ -15525,10 +15444,10 @@ function buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey = n
 }
 
 // public/use-flip-reorder.ts
-var import_react15 = __toESM(require_react());
+var import_react14 = __toESM(require_react());
 function useFlipReorder(container, keys, durationMs = 260) {
-  const prevTops = (0, import_react15.useRef)(/* @__PURE__ */ new Map());
-  (0, import_react15.useLayoutEffect)(() => {
+  const prevTops = (0, import_react14.useRef)(/* @__PURE__ */ new Map());
+  (0, import_react14.useLayoutEffect)(() => {
     const el = container.current;
     if (!el) return;
     const children = Array.from(el.querySelectorAll("[data-flip-key]"));
@@ -15553,9 +15472,90 @@ function useFlipReorder(container, keys, durationMs = 260) {
   }, [container, keys.join("|"), durationMs]);
 }
 
+// public/graph-search.tsx
+var import_react15 = __toESM(require_react());
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+function GraphSearch({ nodes, onSelect }) {
+  const [query, setQuery] = (0, import_react15.useState)("");
+  const [open, setOpen] = (0, import_react15.useState)(false);
+  const matches = (0, import_react15.useMemo)(() => {
+    if (!query || query.length < 2) return [];
+    const q = query.toLowerCase();
+    return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
+  }, [query, nodes]);
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+    "div",
+    {
+      style: { position: "relative", display: "inline-block" },
+      onBlur: (e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+          "input",
+          {
+            value: query,
+            onChange: (e) => {
+              setQuery(e.target.value);
+              setOpen(true);
+            },
+            onFocus: () => setOpen(true),
+            placeholder: "Search nodes\u2026",
+            style: { fontFamily: "var(--mono)", fontSize: 12, padding: "6px 10px", width: 180 }
+          }
+        ),
+        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: {
+          position: "absolute",
+          top: "100%",
+          left: 0,
+          zIndex: 10,
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: 4,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+          maxHeight: 240,
+          overflow: "auto",
+          width: 280,
+          marginTop: 4
+        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+          "div",
+          {
+            tabIndex: 0,
+            onMouseDown: (e) => {
+              e.preventDefault();
+              onSelect(n.id);
+              setQuery("");
+              setOpen(false);
+            },
+            style: {
+              padding: "6px 10px",
+              cursor: "pointer",
+              fontSize: 11,
+              fontFamily: "var(--mono)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              borderBottom: "1px solid var(--border-soft)",
+              color: "var(--fg)"
+            },
+            onMouseOver: (e) => e.currentTarget.style.background = "var(--bg-elev)",
+            onMouseOut: (e) => e.currentTarget.style.background = "transparent",
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
+            ]
+          },
+          n.id
+        )) })
+      ]
+    }
+  );
+}
+
 // public/graph-contents.tsx
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId }) {
+function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId, onSearchSelect }) {
   const journalByDoi = (0, import_react16.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
@@ -15608,7 +15608,8 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "graph-contents", children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "graph-contents-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { className: "muted", children: "Everything visible on the canvas, grouped by community. Click a row to open its detail." })
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { className: "muted", children: "Everything visible on the canvas, grouped by community. Click a row to open its detail." }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "graph-contents-search", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(GraphSearch, { nodes, onSelect: (id) => (onSearchSelect || onSelect)(id) }) })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
   ] });
@@ -15842,7 +15843,6 @@ function GraphExplorerBody() {
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "canvas-corner-tr", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => pushSelection(id) }) }),
         projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
@@ -15856,7 +15856,7 @@ function GraphExplorerBody() {
           empty: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);
             expand(id);
-          }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null })
+          }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, onSearchSelect: (id) => pushSelection(id) })
         }
       ) })
     ] })
