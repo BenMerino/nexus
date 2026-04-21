@@ -23,7 +23,7 @@ function yearOf(n: { group: string; published?: string | null }): number {
 }
 
 export function GraphExplorerBody() {
-  const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
+  const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
   const [selectionStack, setSelectionStack] = useState<string[]>([]);
   const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
   const pushSelection = useCallback((id: string | null) => setSelectionStack(prev => {
@@ -78,7 +78,7 @@ export function GraphExplorerBody() {
     return projectedEdgesAll.filter(e => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
 
-  const affiliations = useMemo(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
+  const affiliations = useMemo(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
 
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,

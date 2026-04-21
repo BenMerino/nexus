@@ -15088,21 +15088,24 @@ function useTimeRange(nodes) {
 
 // public/use-graph-data.ts
 var import_react10 = __toESM(require_react());
+var EMPTY_AFFS = { byAuthor: {} };
 function useGraphData() {
   const [rawNodes, setRawNodes] = (0, import_react10.useState)([]);
   const [rawEdges, setRawEdges] = (0, import_react10.useState)([]);
+  const [affiliations, setAffiliations] = (0, import_react10.useState)(EMPTY_AFFS);
   const [tagMeta, setTagMeta] = (0, import_react10.useState)({});
   const [loading, setLoading] = (0, import_react10.useState)(true);
   (0, import_react10.useEffect)(() => {
     fetch("/api/graph").then((r) => r.json()).then((d) => {
       setRawNodes(d.nodes);
       setRawEdges(d.edges);
+      setAffiliations(d.affiliations || EMPTY_AFFS);
       setLoading(false);
     }).catch(() => setLoading(false));
     fetch("/api/graph-metadata").then((r) => r.json()).then((d) => setTagMeta(d.tagMeta || {})).catch(() => {
     });
   }, []);
-  return { rawNodes, rawEdges, tagMeta, loading };
+  return { rawNodes, rawEdges, affiliations, tagMeta, loading };
 }
 
 // public/shell-helpers.ts
@@ -15213,37 +15216,38 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
 }
 
 // public/explorer-affiliations.ts
-function buildExplorerAffiliations(rawNodes, rawEdges) {
+function buildExplorerAffiliations(rawNodes, rawEdges, authoritative) {
   const groupByNodeId = /* @__PURE__ */ new Map();
   for (const n of rawNodes) groupByNodeId.set(n.id, n.group);
+  const institutionsByAuthor = /* @__PURE__ */ new Map();
+  const institutionCountsByAuthor = /* @__PURE__ */ new Map();
+  for (const [authorId, instMap] of Object.entries(authoritative.byAuthor)) {
+    const counts = /* @__PURE__ */ new Map();
+    const set2 = /* @__PURE__ */ new Set();
+    for (const [instId, c2] of Object.entries(instMap)) {
+      counts.set(instId, c2);
+      set2.add(instId);
+    }
+    institutionCountsByAuthor.set(authorId, counts);
+    institutionsByAuthor.set(authorId, set2);
+  }
   const tagsByDoi = /* @__PURE__ */ new Map();
   for (const e of rawEdges) {
     const list = tagsByDoi.get(e.source) || [];
     list.push(e.target);
     tagsByDoi.set(e.source, list);
   }
-  const institutionsByAuthor = /* @__PURE__ */ new Map();
-  const institutionCountsByAuthor = /* @__PURE__ */ new Map();
   const journalsByAuthor = /* @__PURE__ */ new Map();
   const doisByJournal = /* @__PURE__ */ new Map();
   for (const [doiId, tagIds] of tagsByDoi) {
     const authors = [];
-    const institutions = [];
     const journals = [];
     for (const id of tagIds) {
       const g = groupByNodeId.get(id);
       if (g === "author") authors.push(id);
-      else if (g === "institution") institutions.push(id);
       else if (g === "journal") journals.push(id);
     }
     for (const a2 of authors) {
-      if (!institutionsByAuthor.has(a2)) institutionsByAuthor.set(a2, /* @__PURE__ */ new Set());
-      if (!institutionCountsByAuthor.has(a2)) institutionCountsByAuthor.set(a2, /* @__PURE__ */ new Map());
-      const counts = institutionCountsByAuthor.get(a2);
-      for (const i of institutions) {
-        institutionsByAuthor.get(a2).add(i);
-        counts.set(i, (counts.get(i) || 0) + 1);
-      }
       if (!journalsByAuthor.has(a2)) journalsByAuthor.set(a2, /* @__PURE__ */ new Set());
       for (const j of journals) journalsByAuthor.get(a2).add(j);
     }
@@ -15494,7 +15498,7 @@ function yearOf2(n) {
   return y3 > 1900 ? y3 : 0;
 }
 function GraphExplorerBody() {
-  const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
+  const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
   const [selectionStack, setSelectionStack] = (0, import_react16.useState)([]);
   const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
   const pushSelection = (0, import_react16.useCallback)((id) => setSelectionStack((prev) => {
@@ -15549,7 +15553,7 @@ function GraphExplorerBody() {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const affiliations = (0, import_react16.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
+  const affiliations = (0, import_react16.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
     rawNodes,

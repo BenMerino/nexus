@@ -1,9 +1,10 @@
 import type { RawNode, RawEdge } from './relationship-types';
+import type { AuthorAffiliationsMap } from './use-graph-data';
 
 export interface ExplorerAffiliations {
-  /** authorId → set of institution node ids the author shares a paper with. */
+  /** authorId → set of institution node ids the author is actually affiliated with. */
   institutionsByAuthor: Map<string, Set<string>>;
-  /** authorId → institution node id → count of papers tying them together. */
+  /** authorId → institution node id → papers with that affiliation. */
   institutionCountsByAuthor: Map<string, Map<string, number>>;
   /** authorId → set of journal node ids the author shares a paper with. */
   journalsByAuthor: Map<string, Set<string>>;
@@ -13,11 +14,34 @@ export interface ExplorerAffiliations {
   yearByDoi: Map<string, string>;
 }
 
-export function buildExplorerAffiliations(rawNodes: RawNode[], rawEdges: RawEdge[]): ExplorerAffiliations {
+/** Build the explorer's lookup maps. The author→institution maps come from
+ *  the API's authoritative affiliations (derived from doi_records.authors
+ *  JSON) — this is ground truth for each author's actual affiliation.
+ *  Journal/year maps still come from the doi→tag edges (those pairings are
+ *  unambiguous at the paper level — one journal per DOI). */
+export function buildExplorerAffiliations(
+  rawNodes: RawNode[],
+  rawEdges: RawEdge[],
+  authoritative: AuthorAffiliationsMap,
+): ExplorerAffiliations {
   const groupByNodeId = new Map<string, string>();
   for (const n of rawNodes) groupByNodeId.set(n.id, n.group);
 
-  // Each raw edge is doi → tag (tag is author/institution/journal). Group tags by their source doi.
+  const institutionsByAuthor = new Map<string, Set<string>>();
+  const institutionCountsByAuthor = new Map<string, Map<string, number>>();
+  for (const [authorId, instMap] of Object.entries(authoritative.byAuthor)) {
+    const counts = new Map<string, number>();
+    const set = new Set<string>();
+    for (const [instId, c] of Object.entries(instMap)) {
+      counts.set(instId, c);
+      set.add(instId);
+    }
+    institutionCountsByAuthor.set(authorId, counts);
+    institutionsByAuthor.set(authorId, set);
+  }
+
+  // Journal-by-author + dois-by-journal still come from doi→tag edges: a paper
+  // unambiguously has one journal, and all authors on it published there.
   const tagsByDoi = new Map<string, string[]>();
   for (const e of rawEdges) {
     const list = tagsByDoi.get(e.source) || [];
@@ -25,29 +49,17 @@ export function buildExplorerAffiliations(rawNodes: RawNode[], rawEdges: RawEdge
     tagsByDoi.set(e.source, list);
   }
 
-  const institutionsByAuthor = new Map<string, Set<string>>();
-  const institutionCountsByAuthor = new Map<string, Map<string, number>>();
   const journalsByAuthor = new Map<string, Set<string>>();
   const doisByJournal = new Map<string, Set<string>>();
-
   for (const [doiId, tagIds] of tagsByDoi) {
     const authors: string[] = [];
-    const institutions: string[] = [];
     const journals: string[] = [];
     for (const id of tagIds) {
       const g = groupByNodeId.get(id);
       if (g === 'author') authors.push(id);
-      else if (g === 'institution') institutions.push(id);
       else if (g === 'journal') journals.push(id);
     }
     for (const a of authors) {
-      if (!institutionsByAuthor.has(a)) institutionsByAuthor.set(a, new Set());
-      if (!institutionCountsByAuthor.has(a)) institutionCountsByAuthor.set(a, new Map());
-      const counts = institutionCountsByAuthor.get(a)!;
-      for (const i of institutions) {
-        institutionsByAuthor.get(a)!.add(i);
-        counts.set(i, (counts.get(i) || 0) + 1);
-      }
       if (!journalsByAuthor.has(a)) journalsByAuthor.set(a, new Set());
       for (const j of journals) journalsByAuthor.get(a)!.add(j);
     }

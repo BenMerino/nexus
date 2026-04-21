@@ -1,12 +1,11 @@
 import type { EnrichedSimNode } from './relationship-types';
 
 /** Pick the community key for an Explorer node. Authors go to the
- *  institution they publish with most — their actual primary affiliation,
- *  not wherever they happen to share a paper with the tenant. Institutions
- *  are their own community. When papers are visible, journals become their
- *  own community and papers inherit theirs.
- *  homeInstitutionId is accepted only as a tie-breaker so authors with an
- *  equal split prefer the tenant's own institution. */
+ *  institution with the highest paper count in their authoritative
+ *  affiliations (from doi_records.authors JSON, not co-occurrence).
+ *  Institutions are their own community. When papers are visible,
+ *  journals become their own community and papers inherit theirs.
+ *  Home breaks ties so equal-split authors prefer the tenant. */
 export function explorerCommunityKey(
   n: EnrichedSimNode,
   institutionCountsByAuthor: Map<string, Map<string, number>>,
