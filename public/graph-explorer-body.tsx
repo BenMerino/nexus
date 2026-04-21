@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type { EnrichedSimNode } from './relationship-types';
 import { enrichWithMeta } from './enrich-meta';
 import { projectGraph } from './project-graph';
 import { NodeDetail } from './node-detail';
 import { StatsBar, FilteredCharts } from './filtered-charts';
-import { CoauthorCanvas } from './coauthor-canvas';
-import { useCoauthorGraph } from './use-coauthor-graph';
+import { ExplorerCanvas } from './explorer-canvas';
 import { GraphSearch } from './graph-search';
 import { useTimeRange } from './time-slider';
 import { useGraphData } from './use-graph-data';
@@ -34,9 +33,6 @@ export function GraphExplorerBody() {
     return o ? new Set([`author:${o}`]) : new Set<string>();
   }, []);
   const { me } = useCurrentUser();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dims, setDims] = useState({ width: 900, height: 600 });
-  const coauthorGraph = useCoauthorGraph();
 
   useEffect(() => {
     if (!rawNodes.length) return;
@@ -46,18 +42,6 @@ export function GraphExplorerBody() {
 
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
   useEffect(() => { if (yearMin && !yearFloor) setYearFloor(yearMin); }, [yearMin, yearFloor]);
-
-  useEffect(() => {
-    const el = containerRef.current; if (!el) return;
-    const obs = new ResizeObserver(entries => {
-      const r = entries[0].contentRect;
-      if (r.width > 0 && r.height > 0) setDims({ width: r.width, height: r.height });
-    });
-    obs.observe(el);
-    const r = el.getBoundingClientRect();
-    if (r.width > 0) setDims({ width: r.width, height: r.height });
-    return () => obs.disconnect();
-  }, []);
 
   const filteredRaw = useMemo(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
@@ -125,17 +109,15 @@ export function GraphExplorerBody() {
       <div className="graph-layout">
         <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFloor={yearFloor || yearMin} onYearFloorChange={setYearFloor} nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} />
 
-        <div ref={containerRef} className="graph-canvas">
+        <div className="graph-canvas">
           <div className="canvas-corner-tl">
             <div>tenant · <em>{me?.tenant || '—'}</em></div>
             <div>role · <em>{me?.role || '—'}</em></div>
             <div>scope · {yearFloor > yearMin ? `≥ ${yearFloor}` : 'all years'}</div>
           </div>
-          {!coauthorGraph
-            ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">Loading co-author network…</div>
-            : coauthorGraph.nodes.length < 2
-              ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No co-authors yet.</div>
-              : <CoauthorCanvas graph={coauthorGraph} onNodeClick={n => setSelectedNodeId(n.id)} />}
+          {projectedNodes.length === 0
+            ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
+            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} />}
         </div>
 
         <aside className="detail-panel">
