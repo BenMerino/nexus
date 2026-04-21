@@ -117,18 +117,20 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
 }
 
 function BucketView({ b, onSelect }: { b: Bucket; onSelect: (id: string) => void }) {
-  const total = b.institutions.length + b.authors.length + b.journals.length + b.papers.length;
+  const total = b.authors.length + b.journals.length + b.papers.length;
+  if (total === 0 && b.institutions.length === 0) return null;
   return (
     <section className={`gc-community${b.emphasis ? ' emphasis' : ''}`} style={{ borderColor: b.color }}>
       <header className="gc-community-head">
         <span className="gc-swatch" style={{ background: b.color }} />
-        <h4>{b.label}</h4>
+        <button type="button" className="gc-community-title" onClick={() => b.institutions[0] && onSelect(b.institutions[0].id)}>
+          <h4>{b.label}</h4>
+        </button>
         <span className="mono muted gc-count">{total}</span>
       </header>
-      <NodeList label="Institutions" color={COLORS.institution} ns={b.institutions} onSelect={onSelect} />
-      <NodeList label="Authors"      color={COLORS.author}      ns={b.authors}      onSelect={onSelect} />
-      <NodeList label="Journals"     color={COLORS.journal}     ns={b.journals}     onSelect={onSelect} />
-      <NodeList label="Papers"       color="#888"               ns={b.papers}       onSelect={onSelect} />
+      <NodeList label="Authors"  color={COLORS.author}  ns={b.authors}  onSelect={onSelect} />
+      <NodeList label="Journals" color={COLORS.journal} ns={b.journals} onSelect={onSelect} />
+      <NodeList label="Papers"   color="#888"           ns={b.papers}   onSelect={onSelect} />
     </section>
   );
 }

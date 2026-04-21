@@ -15432,14 +15432,14 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
   ] });
 }
 function BucketView({ b, onSelect }) {
-  const total = b.institutions.length + b.authors.length + b.journals.length + b.papers.length;
+  const total = b.authors.length + b.journals.length + b.papers.length;
+  if (total === 0 && b.institutions.length === 0) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("header", { className: "gc-community-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("h4", { children: b.label }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("button", { type: "button", className: "gc-community-title", onClick: () => b.institutions[0] && onSelect(b.institutions[0].id), children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("h4", { children: b.label }) }),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "mono muted gc-count", children: total })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Institutions", color: COLORS.institution, ns: b.institutions, onSelect }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect })
