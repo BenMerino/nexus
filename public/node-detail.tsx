@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { AuthorView, InstitutionView, JournalView, PaperView, EmptyState, type Detail } from './node-detail-views';
+import { Ico } from './ui-primitives';
 
 interface NodeDetailProps {
   nodeId: string | null;
   onClose: () => void;
+  onBack?: () => void;
   empty?: React.ReactNode;
   accentColor?: string | null;
 }
@@ -26,7 +28,7 @@ function useNodeDetail(id: string | null) {
   return { data, loading, error };
 }
 
-export function NodeDetail({ nodeId, onClose, empty, accentColor }: NodeDetailProps) {
+export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }: NodeDetailProps) {
   const { data, loading, error } = useNodeDetail(nodeId);
   const fallback = empty ?? <EmptyState />;
   if (!nodeId) return <>{fallback}</>;
@@ -34,7 +36,16 @@ export function NodeDetail({ nodeId, onClose, empty, accentColor }: NodeDetailPr
   if (error) return <div className="detail-empty"><div className="status error">Error: {error}</div></div>;
   if (!data) return <>{fallback}</>;
   const style = accentColor ? ({ ['--detail-accent' as string]: accentColor } as React.CSSProperties) : undefined;
-  const wrap = (child: React.ReactNode) => <div className={accentColor ? 'detail-accented' : undefined} style={style}>{child}</div>;
+  const back = onBack ? (
+    <button type="button" className="detail-back" onClick={onBack} aria-label="Back">
+      {Ico.back}<span>Back</span>
+    </button>
+  ) : null;
+  const wrap = (child: React.ReactNode) => (
+    <div className={accentColor ? 'detail-accented' : undefined} style={style}>
+      {back}{child}
+    </div>
+  );
   if (data.type === 'author') return wrap(<AuthorView d={data} onClose={onClose} />);
   if (data.type === 'institution') return wrap(<InstitutionView d={data} onClose={onClose} />);
   if (data.type === 'journal') return wrap(<JournalView d={data} onClose={onClose} />);

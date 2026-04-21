@@ -24,7 +24,14 @@ function yearOf(n: { group: string; published?: string | null }): number {
 
 export function GraphExplorerBody() {
   const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectionStack, setSelectionStack] = useState<string[]>([]);
+  const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
+  const pushSelection = useCallback((id: string | null) => setSelectionStack(prev => {
+    if (id === null) return [];
+    if (prev.length && prev[prev.length - 1] === id) return prev;
+    return [...prev, id];
+  }), []);
+  const popSelection = useCallback(() => setSelectionStack(prev => prev.length ? prev.slice(0, -1) : prev), []);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const expand = useCallback((id: string) => setExpandedIds(prev => {
     if (prev.has(id)) return prev;
@@ -42,7 +49,7 @@ export function GraphExplorerBody() {
   useEffect(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
-    if (f && rawNodes.some(n => n.id === f)) setSelectedNodeId(f);
+    if (f && rawNodes.some(n => n.id === f)) pushSelection(f);
   }, [rawNodes, highlightedIds]);
 
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
@@ -96,7 +103,7 @@ export function GraphExplorerBody() {
         </div>
       </header>
 
-      <div style={{ marginBottom: 12 }}><GraphSearch nodes={projectedNodes} onSelect={id => setSelectedNodeId(id)} /></div>
+      <div style={{ marginBottom: 12 }}><GraphSearch nodes={projectedNodes} onSelect={id => pushSelection(id)} /></div>
 
       <div className="graph-layout">
         <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFloor={yearFloor || yearMin} onYearFloorChange={setYearFloor} nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} />
@@ -109,15 +116,16 @@ export function GraphExplorerBody() {
           </div>
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => setSelectedNodeId(n.id)} expandedIds={expandedIds} onExpand={expand} />}
+            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} />}
         </div>
 
         <aside className="detail-panel">
           <NodeDetail
             nodeId={selectedNodeId}
-            onClose={() => setSelectedNodeId(null)}
+            onClose={() => pushSelection(null)}
+            onBack={selectionStack.length > 1 ? popSelection : undefined}
             accentColor={explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId)}
-            empty={<GraphContents nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} onSelect={id => { setSelectedNodeId(id); expand(id); }} />}
+            empty={<GraphContents nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} onSelect={id => { pushSelection(id); expand(id); }} />}
           />
         </aside>
       </div>

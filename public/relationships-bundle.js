@@ -12913,6 +12913,10 @@ var Ico = {
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "4", y1: "12", x2: "20", y2: "12" }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "14,6 20,12 14,18" })
   ] }),
+  back: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, strokeWidth: 1.8, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "20", y1: "12", x2: "4", y2: "12" }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "10,6 4,12 10,18" })
+  ] }),
   check: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.5, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "4,12 10,18 20,6" }) }),
   ext: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M7 17 L17 7" }),
@@ -13117,7 +13121,7 @@ function useNodeDetail(id) {
   }, [id]);
   return { data, loading, error };
 }
-function NodeDetail({ nodeId, onClose, empty, accentColor }) {
+function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
   const { data, loading, error } = useNodeDetail(nodeId);
   const fallback = empty ?? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(EmptyState, {});
   if (!nodeId) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: fallback });
@@ -13128,7 +13132,14 @@ function NodeDetail({ nodeId, onClose, empty, accentColor }) {
   ] }) });
   if (!data) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: fallback });
   const style = accentColor ? { ["--detail-accent"]: accentColor } : void 0;
-  const wrap = (child) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: accentColor ? "detail-accented" : void 0, style, children: child });
+  const back = onBack ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("button", { type: "button", className: "detail-back", onClick: onBack, "aria-label": "Back", children: [
+    Ico.back,
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: "Back" })
+  ] }) : null;
+  const wrap = (child) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: accentColor ? "detail-accented" : void 0, style, children: [
+    back,
+    child
+  ] });
   if (data.type === "author") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuthorView, { d: data, onClose }));
   if (data.type === "institution") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InstitutionView, { d: data, onClose }));
   if (data.type === "journal") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(JournalView, { d: data, onClose }));
@@ -15418,7 +15429,14 @@ function yearOf2(n) {
 }
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
-  const [selectedNodeId, setSelectedNodeId] = (0, import_react16.useState)(null);
+  const [selectionStack, setSelectionStack] = (0, import_react16.useState)([]);
+  const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
+  const pushSelection = (0, import_react16.useCallback)((id) => setSelectionStack((prev) => {
+    if (id === null) return [];
+    if (prev.length && prev[prev.length - 1] === id) return prev;
+    return [...prev, id];
+  }), []);
+  const popSelection = (0, import_react16.useCallback)(() => setSelectionStack((prev) => prev.length ? prev.slice(0, -1) : prev), []);
   const [expandedIds, setExpandedIds] = (0, import_react16.useState)(/* @__PURE__ */ new Set());
   const expand = (0, import_react16.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
@@ -15437,7 +15455,7 @@ function GraphExplorerBody() {
   (0, import_react16.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
-    if (f && rawNodes.some((n) => n.id === f)) setSelectedNodeId(f);
+    if (f && rawNodes.some((n) => n.id === f)) pushSelection(f);
   }, [rawNodes, highlightedIds]);
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
   (0, import_react16.useEffect)(() => {
@@ -15495,7 +15513,7 @@ function GraphExplorerBody() {
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => setSelectedNodeId(id) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphSearch, { nodes: projectedNodes, onSelect: (id) => pushSelection(id) }) }),
     /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "graph-layout", children: [
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFloor: yearFloor || yearMin, onYearFloorChange: setYearFloor, nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "graph-canvas", children: [
@@ -15513,16 +15531,17 @@ function GraphExplorerBody() {
             yearFloor > yearMin ? `\u2265 ${yearFloor}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => setSelectedNodeId(n.id), expandedIds, onExpand: expand })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("aside", { className: "detail-panel", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         NodeDetail,
         {
           nodeId: selectedNodeId,
-          onClose: () => setSelectedNodeId(null),
+          onClose: () => pushSelection(null),
+          onBack: selectionStack.length > 1 ? popSelection : void 0,
           accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
           empty: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
-            setSelectedNodeId(id);
+            pushSelection(id);
             expand(id);
           } })
         }

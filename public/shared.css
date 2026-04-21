@@ -418,6 +418,16 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .detail-accented .detail-head .eyebrow { color: var(--detail-accent); }
 .close { background: transparent; border: 0; color: var(--fg-dim); cursor: pointer; padding: 6px; border-radius: 3px; transition: color 0.15s, background 0.15s; }
 .close:hover { color: var(--fg); background: rgba(255,255,255,0.06); }
+.detail-back {
+  background: transparent; border: 0; color: var(--fg-dim); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  font: inherit; font-family: var(--mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 4px 8px 4px 4px; margin-bottom: 12px; border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+.detail-back:hover { color: var(--fg); background: rgba(255,255,255,0.06); }
+.detail-accented .detail-back:hover { color: var(--detail-accent); }
 .detail-meta { display: flex; flex-direction: column; gap: 6px; }
 .detail-meta > div { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; }
 .detail-meta > div:last-child { border-bottom: 0; }

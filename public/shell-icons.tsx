@@ -14,6 +14,7 @@ export const Ico = {
   tag:    <svg {...S}><path d="M3 12 L12 3 L21 3 L21 12 L12 21 Z"/><circle cx="16" cy="8" r="1.4"/></svg>,
   close:  <svg {...S}><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>,
   arrow:  <svg {...S} strokeWidth={1.8}><line x1="4" y1="12" x2="20" y2="12"/><polyline points="14,6 20,12 14,18"/></svg>,
+  back:   <svg {...S} strokeWidth={1.8}><line x1="20" y1="12" x2="4" y2="12"/><polyline points="10,6 4,12 10,18"/></svg>,
   check:  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="4,12 10,18 20,6"/></svg>,
   ext:    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M7 17 L17 7"/><polyline points="9,7 17,7 17,15"/></svg>,
 };

@@ -12806,6 +12806,10 @@ var Ico = {
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "4", y1: "12", x2: "20", y2: "12" }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "14,6 20,12 14,18" })
   ] }),
+  back: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { ...S, strokeWidth: 1.8, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "20", y1: "12", x2: "4", y2: "12" }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "10,6 4,12 10,18" })
+  ] }),
   check: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.5, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "4,12 10,18 20,6" }) }),
   ext: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M7 17 L17 7" }),
