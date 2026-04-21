@@ -58,8 +58,10 @@ async function institutionDetail(scope, ext_id, label) {
 }
 
 async function journalDetail(scope, ext_id, label) {
-  const { rows: papers } = await papersByTag(scope, "journal", ext_id, label);
   const name = (await tagLabel("journal", ext_id)) || label;
+  // Query by name so ISSN siblings (print + online) all resolve to the same
+  // journal — a single canonical node in the graph must return all its papers.
+  const { rows: papers } = await papersByTag(scope, "journal", null, name);
   return { type: "journal", name, issn: ext_id, papersCount: papers.length, papers };
 }
 
