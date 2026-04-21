@@ -22,8 +22,6 @@ function useNodeDetail(id: string | null) {
     if (!id) return; // keep data as-is; wrapper will render the empty state anyway
     const cached = cacheRef.current.get(id);
     if (cached) { setData(cached); return; }
-    // Unknown id: clear so we don't briefly render the previous detail
-    // into the new wrapper while the fetch is in flight.
     setData(null);
     let cancelled = false;
     fetch(`/api/node-detail?id=${encodeURIComponent(id)}`)
@@ -35,7 +33,7 @@ function useNodeDetail(id: string | null) {
   return { data, error };
 }
 
-export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir = 'forward' }: NodeDetailProps) {
+export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }: NodeDetailProps) {
   const { data, error } = useNodeDetail(nodeId);
   const fallback = empty ?? <EmptyState />;
   const style = accentColor ? ({ ['--detail-accent' as string]: accentColor } as React.CSSProperties) : undefined;
@@ -44,64 +42,41 @@ export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir
       {Ico.back}<span>Back</span>
     </button>
   ) : null;
-  // Key identifies the current view so React remounts the wrapper on every
-  // state change — lets the CSS fade-in fire for each swap.
-  const contentFor = (): { key: string; content: React.ReactNode; accented: boolean } => {
-    // Treat "no selection" and "selection pending fetch" as the same view so
-    // the fallback doesn't remount (and re-fade) between them.
-    if (!nodeId || !data) {
-      if (error) return { key: 'error', content: <div className="detail-empty"><div className="status error">Error: {error}</div></div>, accented: false };
-      return { key: 'empty', content: fallback, accented: false };
-    }
+
+  const detailBody = (() => {
+    if (error) return <div className="detail-empty"><div className="status error">Error: {error}</div></div>;
+    if (!nodeId || !data) return null;
     const ch = data.type === 'author' ? <AuthorView d={data} onClose={onClose} />
       : data.type === 'institution' ? <InstitutionView d={data} onClose={onClose} />
       : data.type === 'journal' ? <JournalView d={data} onClose={onClose} />
       : data.type === 'paper' ? <PaperView d={data} onClose={onClose} />
       : null;
-    // Key off the data itself so we only remount when the fetched detail
-    // actually changes — not transiently while nodeId has advanced but
-    // data is still the previous view.
-    const dataId = (data as { doi?: string; orcid?: string; ror?: string; issn?: string }).doi
-      ?? (data as { orcid?: string }).orcid
-      ?? (data as { ror?: string }).ror
-      ?? (data as { issn?: string }).issn
-      ?? data.type;
-    return { key: `${data.type}:${dataId}`, content: <>{back}{ch}</>, accented: true };
-  };
-  const { key, content, accented } = contentFor();
-  // Sidebar (empty state) stays fully rendered and untouched; detail overlays
-  // on top when selected. Anything that happens in the detail panel — mount,
-  // unmount, animations — never touches the sidebar, so it can't flash.
-  const showingDetail = key !== 'empty';
-  // When the detail closes, keep the last view mounted long enough to play
-  // a slide-out animation before unmounting.
-  const [exiting, setExiting] = useState<{ key: string; content: React.ReactNode; accented: boolean; style?: React.CSSProperties } | null>(null);
-  const lastShown = useRef<{ key: string; content: React.ReactNode; accented: boolean; style?: React.CSSProperties } | null>(null);
+    return <>{back}{ch}</>;
+  })();
+
+  // Filmstrip: sidebar and detail sit side-by-side inside a track. The viewport
+  // shows exactly one panel; toggling the showing-detail class translates the
+  // track to slide adjacent panels in and out together.
+  const showingDetail = !!nodeId;
+  const accented = showingDetail && !!data && !error;
+
+  // Keep the detail panel mounted for one full transition after navigating
+  // back to the sidebar, so the exit animation has content to render.
+  const [detailInDom, setDetailInDom] = useState(showingDetail);
   useEffect(() => {
-    if (showingDetail) {
-      lastShown.current = { key, content, accented, style };
-      if (exiting) setExiting(null);
-    } else if (lastShown.current && !exiting) {
-      setExiting(lastShown.current);
-      const t = setTimeout(() => setExiting(null), 240);
-      return () => clearTimeout(t);
-    }
-  }, [showingDetail, key]);
-  const dirClass = navDir === 'back' ? 'slide-back' : 'slide-forward';
-  const exitClass = navDir === 'back' ? 'slide-out-right' : 'slide-out-left';
+    if (showingDetail) { setDetailInDom(true); return; }
+    const t = setTimeout(() => setDetailInDom(false), 260);
+    return () => clearTimeout(t);
+  }, [showingDetail]);
+
   return (
-    <>
-      <div className="node-detail-home">{fallback}</div>
-      {showingDetail && (
-        <div key={key} className={`node-detail-swap as-overlay ${dirClass}${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
-          {content}
+    <div className={`node-detail-viewport${showingDetail ? ' showing-detail' : ''}`}>
+      <div className="node-detail-track">
+        <div className="node-detail-pane node-detail-home">{fallback}</div>
+        <div className={`node-detail-pane node-detail-overlay${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
+          {detailInDom ? detailBody : null}
         </div>
-      )}
-      {!showingDetail && exiting && (
-        <div key={`exit-${exiting.key}`} className={`node-detail-swap as-overlay ${exitClass}${exiting.accented && accentColor ? ' detail-accented' : ''}`} style={exiting.style}>
-          {exiting.content}
-        </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }

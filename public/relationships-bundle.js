@@ -13145,7 +13145,7 @@ function useNodeDetail(id) {
   }, [id]);
   return { data, error };
 }
-function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir = "forward" }) {
+function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
   const { data, error } = useNodeDetail(nodeId);
   const fallback = empty ?? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(EmptyState, {});
   const style = accentColor ? { ["--detail-accent"]: accentColor } : void 0;
@@ -13153,42 +13153,33 @@ function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir = "for
     Ico.back,
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: "Back" })
   ] }) : null;
-  const contentFor = () => {
-    if (!nodeId || !data) {
-      if (error) return { key: "error", content: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "status error", children: [
-        "Error: ",
-        error
-      ] }) }), accented: false };
-      return { key: "empty", content: fallback, accented: false };
-    }
+  const detailBody = (() => {
+    if (error) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "status error", children: [
+      "Error: ",
+      error
+    ] }) });
+    if (!nodeId || !data) return null;
     const ch = data.type === "author" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuthorView, { d: data, onClose }) : data.type === "institution" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InstitutionView, { d: data, onClose }) : data.type === "journal" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(JournalView, { d: data, onClose }) : data.type === "paper" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperView, { d: data, onClose }) : null;
-    const dataId = data.doi ?? data.orcid ?? data.ror ?? data.issn ?? data.type;
-    return { key: `${data.type}:${dataId}`, content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
       back,
       ch
-    ] }), accented: true };
-  };
-  const { key, content, accented } = contentFor();
-  const showingDetail = key !== "empty";
-  const [exiting, setExiting] = (0, import_react.useState)(null);
-  const lastShown = (0, import_react.useRef)(null);
+    ] });
+  })();
+  const showingDetail = !!nodeId;
+  const accented = showingDetail && !!data && !error;
+  const [detailInDom, setDetailInDom] = (0, import_react.useState)(showingDetail);
   (0, import_react.useEffect)(() => {
     if (showingDetail) {
-      lastShown.current = { key, content, accented, style };
-      if (exiting) setExiting(null);
-    } else if (lastShown.current && !exiting) {
-      setExiting(lastShown.current);
-      const t = setTimeout(() => setExiting(null), 240);
-      return () => clearTimeout(t);
+      setDetailInDom(true);
+      return;
     }
-  }, [showingDetail, key]);
-  const dirClass = navDir === "back" ? "slide-back" : "slide-forward";
-  const exitClass = navDir === "back" ? "slide-out-right" : "slide-out-left";
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "node-detail-home", children: fallback }),
-    showingDetail && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: `node-detail-swap as-overlay ${dirClass}${accented && accentColor ? " detail-accented" : ""}`, style: accented ? style : void 0, children: content }, key),
-    !showingDetail && exiting && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: `node-detail-swap as-overlay ${exitClass}${exiting.accented && accentColor ? " detail-accented" : ""}`, style: exiting.style, children: exiting.content }, `exit-${exiting.key}`)
-  ] });
+    const t = setTimeout(() => setDetailInDom(false), 260);
+    return () => clearTimeout(t);
+  }, [showingDetail]);
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: `node-detail-viewport${showingDetail ? " showing-detail" : ""}`, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "node-detail-track", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "node-detail-pane node-detail-home", children: fallback }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: `node-detail-pane node-detail-overlay${accented && accentColor ? " detail-accented" : ""}`, style: accented ? style : void 0, children: detailInDom ? detailBody : null })
+  ] }) });
 }
 
 // public/explorer-canvas.tsx
@@ -15701,7 +15692,10 @@ function GraphExplorerBody() {
   }, [yearMin, yearFloor]);
   (0, import_react18.useEffect)(() => {
     const el = detailPanelRef.current;
-    if (el) el.scrollTop = 0;
+    if (!el) return;
+    el.querySelectorAll(".node-detail-pane").forEach((p) => {
+      p.scrollTop = 0;
+    });
   }, [selectedNodeId]);
   const filteredRaw = (0, import_react18.useMemo)(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };

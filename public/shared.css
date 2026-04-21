@@ -395,8 +395,9 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 /* ═══ DETAIL PANEL ═══ */
 .detail-panel {
   background: var(--bg-card); border: 1px solid var(--border-soft);
-  border-radius: var(--radius); overflow: hidden auto; padding: 24px;
+  border-radius: var(--radius); overflow: hidden; padding: 0;
 }
+.node-detail-pane { padding: 24px; }
 .detail-empty {
   height: 100%; display: flex; flex-direction: column;
   justify-content: center; text-align: center; gap: 12px;
@@ -412,40 +413,18 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border-soft); }
 .detail-head h3 { font-family: var(--display); font-weight: 400; font-size: 24px; margin: 4px 0; line-height: 1.15; letter-spacing: -0.01em; }
 .detail-id { color: var(--accent-dim); font-size: 12px; margin-top: 4px; }
-@keyframes node-detail-slide-in-right {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
-}
-@keyframes node-detail-slide-in-left {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(0); }
-}
-@keyframes node-detail-slide-out-right {
-  from { transform: translateX(0); }
-  to   { transform: translateX(100%); }
-}
-@keyframes node-detail-slide-out-left {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-100%); }
-}
-.node-detail-swap {
-  animation-duration: 240ms;
-  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
-  animation-fill-mode: both;
+/* Filmstrip: sidebar and detail sit side-by-side inside a track that's twice
+ * the viewport width. Translating the track by 50% slides the next pane into
+ * view and the current one out of view in lockstep — a true adjacent swap. */
+.node-detail-viewport { overflow: hidden; height: 100%; }
+.node-detail-track {
+  display: flex; width: 200%; height: 100%;
+  transform: translateX(0);
+  transition: transform 280ms cubic-bezier(0.2, 0, 0, 1);
   will-change: transform;
 }
-/* Sidebar stays fully painted behind the detail panel; the detail wrapper
- * overlays on top when a node is selected. Prevents any disappear/reappear
- * flash since nothing about the sidebar changes when navigating in or out. */
-.detail-panel { position: relative; }
-.node-detail-swap.as-overlay {
-  position: absolute; top: 24px; left: 24px; right: 24px; bottom: 24px;
-  overflow: auto; background: var(--bg-card);
-}
-.node-detail-swap.slide-forward    { animation-name: node-detail-slide-in-right; }
-.node-detail-swap.slide-back       { animation-name: node-detail-slide-in-left; }
-.node-detail-swap.slide-out-right  { animation-name: node-detail-slide-out-right; }
-.node-detail-swap.slide-out-left   { animation-name: node-detail-slide-out-left; }
+.node-detail-viewport.showing-detail .node-detail-track { transform: translateX(-50%); }
+.node-detail-pane { flex: 0 0 50%; min-width: 0; overflow: auto; }
 .detail-accented .detail-head { border-bottom-color: var(--detail-accent); }
 .detail-accented .detail-head h3 { color: var(--detail-accent); }
 .detail-accented .detail-head .eyebrow { color: var(--detail-accent); }

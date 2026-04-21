@@ -54,14 +54,12 @@ export function GraphExplorerBody() {
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
   useEffect(() => { if (yearMin && !yearFloor) setYearFloor(yearMin); }, [yearMin, yearFloor]);
 
-  // Scroll the detail panel to the top whenever the selection changes so
-  // the user lands on the header of the new detail view instead of wherever
-  // they had scrolled in the previous one. Instant, not smooth — the slide
-  // animation on the detail wrapper is the one the user should see; a
-  // simultaneous smooth scroll fights it and reads as a flash.
+  // Reset the scroll position of each pane on selection change so the user
+  // lands at the top of whatever pane slides into view.
   useEffect(() => {
     const el = detailPanelRef.current;
-    if (el) el.scrollTop = 0;
+    if (!el) return;
+    el.querySelectorAll<HTMLElement>('.node-detail-pane').forEach(p => { p.scrollTop = 0; });
   }, [selectedNodeId]);
 
   const filteredRaw = useMemo(() => {
