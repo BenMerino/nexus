@@ -14475,10 +14475,11 @@ function CommunityGraph({
     const ns = initialNodes(inNodes, adapter, width, height);
     const ls = initialLinks(inLinks, ns, adapter);
     return { nodes: ns, links: ls };
-  }, [inNodes, inLinks, adapter, width, height]);
+  }, [inNodes, inLinks, width, height]);
   const anchors = (0, import_react5.useMemo)(
     () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
-    [nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [nodes, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
   );
   (0, import_react5.useEffect)(() => {
     const sim = createSimulation({
@@ -14496,7 +14497,7 @@ function CommunityGraph({
     return () => {
       sim.stop();
     };
-  }, [nodes, links, anchors, adapter, primaryKey, width, height]);
+  }, [nodes, links, anchors, primaryKey, width, height]);
   const nodeColor = (n) => {
     let communityColor = null;
     if (adapter.isEgo(n)) {

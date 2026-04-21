@@ -54,11 +54,16 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
     const ns = initialNodes(inNodes, adapter, width, height);
     const ls = initialLinks(inLinks, ns, adapter);
     return { nodes: ns, links: ls };
-  }, [inNodes, inLinks, adapter, width, height]);
+    // Intentionally omit `adapter` from deps: only isEgo/getId are read here,
+    // and those are stable for a given node set. Re-running on every adapter
+    // identity change would reseed positions and cause visible jumps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inNodes, inLinks, width, height]);
 
   const anchors = useMemo(
     () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
-    [nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [nodes, primaryKey, width, height, config.minCommunitySize, config.orbitRadius],
   );
 
   useEffect(() => {
@@ -68,7 +73,8 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
     });
     simRef.current = sim;
     return () => { sim.stop(); };
-  }, [nodes, links, anchors, adapter, primaryKey, width, height]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, links, anchors, primaryKey, width, height]);
 
   const nodeColor = (n: SimN<N>): string => {
     let communityColor: string | null = null;
