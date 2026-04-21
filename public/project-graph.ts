@@ -30,6 +30,9 @@ export function projectGraph(
   const authors = rawNodes.filter(n => n.group === 'author');
   const journals = new Map(rawNodes.filter(n => n.group === 'journal').map(n => [n.id, n]));
 
+  const isInst = (id: string) => id.startsWith('institution:');
+  const isAuth = (id: string) => id.startsWith('author:');
+
   // Map papers to journals
   const journalPapers = new Map<string, PaperEntry[]>();
   for (const [doiId, tags] of doiToTags) {
@@ -38,6 +41,24 @@ export function projectGraph(
       const list = journalPapers.get(jTag) || [];
       list.push({ doi: doiId.replace('doi:', ''), title: doiLabels.get(doiId) || doiId });
       journalPapers.set(jTag, list);
+    }
+  }
+
+  // Real co-occurrence: institution ↔ author edges only when they share a
+  // DOI; author ↔ journal edges only when the author published there.
+  const instAuthorEdges = new Map<string, number>();
+  const authorJournalEdges = new Map<string, number>();
+  for (const [, tags] of doiToTags) {
+    const instTags = tags.filter(isInst);
+    const authTags = tags.filter(isAuth);
+    const jTag = tags.find(t => journals.has(t));
+    for (const i of instTags) for (const a of authTags) {
+      const k = `${i}→${a}`;
+      instAuthorEdges.set(k, (instAuthorEdges.get(k) || 0) + 1);
+    }
+    if (jTag) for (const a of authTags) {
+      const k = `${a}→${jTag}`;
+      authorJournalEdges.set(k, (authorJournalEdges.get(k) || 0) + 1);
     }
   }
 
@@ -53,15 +74,15 @@ export function projectGraph(
   }
 
   for (const inst of institutions) addNode(inst.id, inst.label, 'institution', 0, undefined, inst.id.replace(/^[^:]+:/, ''));
-  for (const auth of authors) {
-    addNode(auth.id, auth.label, 'author', 0, undefined, auth.id.replace(/^[^:]+:/, ''));
-    for (const inst of institutions) allEdges.push({ source: inst.id, target: auth.id, weight: 1, sharedDois: [] });
+  for (const auth of authors) addNode(auth.id, auth.label, 'author', 0, undefined, auth.id.replace(/^[^:]+:/, ''));
+  for (const [k, w] of instAuthorEdges) {
+    const [source, target] = k.split('→');
+    allEdges.push({ source, target, weight: w, sharedDois: [] });
   }
   for (const [jId, papers] of journalPapers) {
     if (expandedJournal && expandedJournal !== jId) continue;
     const j = journals.get(jId)!;
     addNode(j.id, j.label, 'journal', papers.length, papers, j.id.replace(/^[^:]+:/, ''));
-    for (const auth of authors) allEdges.push({ source: auth.id, target: j.id, weight: papers.length, sharedDois: [] });
     for (const p of papers) matchingDois.add(p.doi);
     if (expandedJournal === jId || includePapers) {
       for (const p of papers) {
@@ -69,6 +90,11 @@ export function projectGraph(
         allEdges.push({ source: jId, target: 'doi:' + p.doi, weight: 1, sharedDois: [] });
       }
     }
+  }
+  for (const [k, w] of authorJournalEdges) {
+    const [source, target] = k.split('→');
+    if (!added.has(target)) continue; // journal filtered out (e.g. expandedJournal restriction)
+    allEdges.push({ source, target, weight: w, sharedDois: [] });
   }
 
   const communityMap = new Map<string, number>();
