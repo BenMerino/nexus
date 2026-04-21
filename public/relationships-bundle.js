@@ -13397,7 +13397,7 @@ function smoothClosedPath(pts, tension) {
 var import_jsx_runtime6 = __toESM(require_jsx_runtime());
 var DEFAULT_LERP_ALPHA = 0.18;
 var DEFAULT_PAD = 32;
-var MIN_GROUP_SIZE = 2;
+var MIN_GROUP_SIZE = 1;
 function lerp(a2, b, t) {
   return a2 + (b - a2) * t;
 }
