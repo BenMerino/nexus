@@ -18,11 +18,13 @@ interface Result {
   effectiveHomeKey: string | null;
 }
 
+const bareRor = (r: string | null | undefined) => (r ? r.replace(/^https?:\/\/ror\.org\//, '') : null);
+
 export function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }: Args): Result {
   const homeInstitutionId = useMemo(() => {
-    const ror = me?.profile.ror;
+    const ror = bareRor(me?.profile.ror);
     if (!ror) return null;
-    const hit = rawNodes.find(n => n.group === 'institution' && n.ext_id === ror);
+    const hit = rawNodes.find(n => n.group === 'institution' && bareRor(n.ext_id) === ror);
     return hit?.id ?? null;
   }, [me, rawNodes]);
 

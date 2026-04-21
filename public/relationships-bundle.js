@@ -15257,11 +15257,12 @@ function buildExplorerAffiliations(rawNodes, rawEdges) {
 
 // public/use-explorer-ego.ts
 var import_react13 = __toESM(require_react());
+var bareRor = (r) => r ? r.replace(/^https?:\/\/ror\.org\//, "") : null;
 function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) {
   const homeInstitutionId = (0, import_react13.useMemo)(() => {
-    const ror = me?.profile.ror;
+    const ror = bareRor(me?.profile.ror);
     if (!ror) return null;
-    const hit = rawNodes.find((n) => n.group === "institution" && n.ext_id === ror);
+    const hit = rawNodes.find((n) => n.group === "institution" && bareRor(n.ext_id) === ror);
     return hit?.id ?? null;
   }, [me, rawNodes]);
   const egoAuthorId = (0, import_react13.useMemo)(() => {
