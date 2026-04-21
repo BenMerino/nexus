@@ -12750,7 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react16 = __toESM(require_react());
+var import_react17 = __toESM(require_react());
 
 // public/node-classify.ts
 function percentile(sorted, p) {
@@ -15397,7 +15397,7 @@ function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags
 }
 
 // public/graph-contents.tsx
-var import_react15 = __toESM(require_react());
+var import_react16 = __toESM(require_react());
 
 // public/graph-contents-buckets.ts
 function sortByWeightThenLabel(a2, b) {
@@ -15455,27 +15455,56 @@ function buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey = n
   return ordered;
 }
 
+// public/use-flip-reorder.ts
+var import_react15 = __toESM(require_react());
+function useFlipReorder(container, keys, durationMs = 260) {
+  const prevTops = (0, import_react15.useRef)(/* @__PURE__ */ new Map());
+  (0, import_react15.useLayoutEffect)(() => {
+    const el = container.current;
+    if (!el) return;
+    const children = Array.from(el.querySelectorAll("[data-flip-key]"));
+    const nextTops = /* @__PURE__ */ new Map();
+    for (const c2 of children) {
+      const k = c2.dataset.flipKey;
+      nextTops.set(k, c2.offsetTop);
+    }
+    for (const c2 of children) {
+      const k = c2.dataset.flipKey;
+      const prev = prevTops.current.get(k);
+      const next = nextTops.get(k);
+      if (prev === void 0 || prev === next) continue;
+      const delta = prev - next;
+      c2.style.transition = "none";
+      c2.style.transform = `translateY(${delta}px)`;
+      c2.offsetHeight;
+      c2.style.transition = `transform ${durationMs}ms cubic-bezier(0.2, 0, 0, 1)`;
+      c2.style.transform = "";
+    }
+    prevTops.current = nextTops;
+  }, [container, keys.join("|"), durationMs]);
+}
+
 // public/graph-contents.tsx
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
 function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId }) {
-  const journalByDoi = (0, import_react15.useMemo)(() => {
+  const journalByDoi = (0, import_react16.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
     const m2 = /* @__PURE__ */ new Map();
     for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m2.set(d, jId);
     return m2;
   }, [nodes, affiliations.doisByJournal]);
-  const labelById = (0, import_react15.useMemo)(() => {
+  const labelById = (0, import_react16.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [nodes]);
-  const hullTier = (0, import_react15.useMemo)(() => {
+  const hullTier = (0, import_react16.useMemo)(() => {
     if (nodes.some((n) => n.group === "institution")) return "institution";
     if (nodes.some((n) => n.group === "journal")) return "journal";
     return "none";
   }, [nodes]);
-  const adapter = (0, import_react15.useMemo)(() => ({
+  const adapter = (0, import_react16.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -15486,29 +15515,31 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: (key) => labelById.get(key) || key
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById, hullTier]);
-  const focusKey = (0, import_react15.useMemo)(() => {
+  const focusKey = (0, import_react16.useMemo)(() => {
     if (!hoveredId) return null;
     const hovered = nodes.find((n) => n.id === hoveredId);
     return hovered ? adapter.getCommunityKey(hovered) : null;
   }, [hoveredId, nodes, adapter]);
-  const buckets = (0, import_react15.useMemo)(
+  const buckets = (0, import_react16.useMemo)(
     () => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
     [nodes, adapter, homeInstitutionId, labelById, focusKey]
   );
+  const listRef = (0, import_react16.useRef)(null);
+  useFlipReorder(listRef, buckets.map((b) => b.key));
   if (!nodes.length) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "graph-contents", children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "graph-contents-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { className: "muted", children: "Everything visible on the canvas, grouped by community. Click a row to open its detail." })
     ] }),
-    buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BucketView, { b, onSelect, onHover }, b.key))
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BucketView, { b, onSelect, onHover }, b.key)) })
   ] });
 }
 function BucketView({ b, onSelect, onHover }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
   const headInstId = b.institutions[0]?.id;
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("header", { className: "gc-community-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
@@ -15593,40 +15624,40 @@ function yearOf2(n) {
 }
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
-  const [selectionStack, setSelectionStack] = (0, import_react16.useState)([]);
+  const [selectionStack, setSelectionStack] = (0, import_react17.useState)([]);
   const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
-  const pushSelection = (0, import_react16.useCallback)((id) => setSelectionStack((prev) => {
+  const pushSelection = (0, import_react17.useCallback)((id) => setSelectionStack((prev) => {
     if (id === null) return [];
     if (prev.length && prev[prev.length - 1] === id) return prev;
     return [...prev, id];
   }), []);
-  const popSelection = (0, import_react16.useCallback)(() => setSelectionStack((prev) => prev.length ? prev.slice(0, -1) : prev), []);
-  const [hoverId, setHoverId] = (0, import_react16.useState)(null);
-  const [expandedIds, setExpandedIds] = (0, import_react16.useState)(/* @__PURE__ */ new Set());
-  const expand = (0, import_react16.useCallback)((id) => setExpandedIds((prev) => {
+  const popSelection = (0, import_react17.useCallback)(() => setSelectionStack((prev) => prev.length ? prev.slice(0, -1) : prev), []);
+  const [hoverId, setHoverId] = (0, import_react17.useState)(null);
+  const [expandedIds, setExpandedIds] = (0, import_react17.useState)(/* @__PURE__ */ new Set());
+  const expand = (0, import_react17.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
     const n = new Set(prev);
     n.add(id);
     return n;
   }), []);
-  const [flags, setFlags] = (0, import_react16.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react16.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
-  const [yearFloor, setYearFloor] = (0, import_react16.useState)(0);
-  const highlightedIds = (0, import_react16.useMemo)(() => {
+  const [flags, setFlags] = (0, import_react17.useState)(DEFAULT_FLAGS);
+  const setFlag = (0, import_react17.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
+  const [yearFloor, setYearFloor] = (0, import_react17.useState)(0);
+  const highlightedIds = (0, import_react17.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  (0, import_react16.useEffect)(() => {
+  (0, import_react17.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) pushSelection(f);
   }, [rawNodes, highlightedIds]);
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  (0, import_react16.useEffect)(() => {
+  (0, import_react17.useEffect)(() => {
     if (yearMin && !yearFloor) setYearFloor(yearMin);
   }, [yearMin, yearFloor]);
-  const filteredRaw = (0, import_react16.useMemo)(() => {
+  const filteredRaw = (0, import_react17.useMemo)(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
     const nodes = rawNodes.filter((n) => {
@@ -15639,16 +15670,16 @@ function GraphExplorerBody() {
     const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
     return { nodes, edges };
   }, [rawNodes, rawEdges, yearFloor, yearMin]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react16.useMemo)(
+  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react17.useMemo)(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, flags.paper),
     [filteredRaw, flags.paper]
   );
   const { projectedNodes } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
-  const projectedEdges = (0, import_react16.useMemo)(() => {
+  const projectedEdges = (0, import_react17.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const affiliations = (0, import_react16.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
+  const affiliations = (0, import_react17.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
     rawNodes,

@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import type { EnrichedSimNode } from './relationship-types';
 import { COLORS } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
 import { explorerCommunityKey, type HullTier } from './explorer-community';
 import type { CommunityAdapter } from './community-graph';
 import { buildBuckets, type Bucket } from './graph-contents-buckets';
+import { useFlipReorder } from './use-flip-reorder';
 
 interface Props {
   nodes: EnrichedSimNode[];
@@ -58,6 +59,9 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
   const buckets = useMemo(() => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
     [nodes, adapter, homeInstitutionId, labelById, focusKey]);
 
+  const listRef = useRef<HTMLDivElement>(null);
+  useFlipReorder(listRef, buckets.map(b => b.key));
+
   if (!nodes.length) return null;
 
   return (
@@ -66,7 +70,9 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
         <div className="eyebrow">Graph contents</div>
         <p className="muted">Everything visible on the canvas, grouped by community. Click a row to open its detail.</p>
       </div>
-      {buckets.map(b => <BucketView key={b.key} b={b} onSelect={onSelect} onHover={onHover} />)}
+      <div ref={listRef} className="graph-contents-list">
+        {buckets.map(b => <BucketView key={b.key} b={b} onSelect={onSelect} onHover={onHover} />)}
+      </div>
     </div>
   );
 }
@@ -76,7 +82,7 @@ function BucketView({ b, onSelect, onHover }: { b: Bucket; onSelect: (id: string
   if (total === 0 && b.institutions.length === 0) return null;
   const headInstId = b.institutions[0]?.id;
   return (
-    <section className={`gc-community${b.emphasis ? ' emphasis' : ''}`} style={{ borderColor: b.color }}>
+    <section data-flip-key={b.key} className={`gc-community${b.emphasis ? ' emphasis' : ''}`} style={{ borderColor: b.color }}>
       <header className="gc-community-head">
         <span className="gc-swatch" style={{ background: b.color }} />
         <button type="button" className="gc-community-title"

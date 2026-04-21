@@ -443,6 +443,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 
 /* ═══ GRAPH CONTENTS (empty-state summary) ═══ */
 .graph-contents { display: flex; flex-direction: column; gap: 18px; font-size: 13px; line-height: 1.5; }
+.graph-contents-list { display: flex; flex-direction: column; gap: 18px; }
 .graph-contents-head { padding-bottom: 12px; border-bottom: 1px solid var(--border-soft); }
 .graph-contents-head p { margin: 6px 0 0; color: var(--fg-muted); font-size: 12px; }
 .gc-community {
