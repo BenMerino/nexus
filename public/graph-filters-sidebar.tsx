@@ -7,6 +7,7 @@ import { CommunityLegend, type CommunityAdapter } from './community-graph';
 export interface NodeTypeFlags {
   institution: boolean;
   author: boolean;
+  coauthor: boolean;
   journal: boolean;
   paper: boolean;
 }
@@ -63,6 +64,7 @@ export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloo
       <div className="filter-group">
         <div className="filter-label">Node types</div>
         <Check checked={flags.author}      onChange={v => setFlag('author', v)}      label="Authors"      color={COLORS.author} />
+        <Check checked={flags.coauthor}    onChange={v => setFlag('coauthor', v)}    label="Co-authors"   color={COLORS.author} />
         <Check checked={flags.institution} onChange={v => setFlag('institution', v)} label="Institutions" color={COLORS.institution} />
         <Check checked={flags.journal}     onChange={v => setFlag('journal', v)}     label="Journals"     color={COLORS.journal} />
         <Check checked={flags.paper}       onChange={v => setFlag('paper', v)}       label="Papers"       color={paperColor} />

@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import type { EnrichedSimNode } from './relationship-types';
-import { enrichWithMeta } from './enrich-meta';
 import { projectGraph } from './project-graph';
 import { NodeDetail } from './node-detail';
 import { StatsBar, FilteredCharts } from './filtered-charts';
@@ -13,8 +11,9 @@ import { Tag } from './ui-primitives';
 import { GraphFiltersSidebar, type NodeTypeFlags } from './graph-filters-sidebar';
 import { buildExplorerAffiliations } from './explorer-affiliations';
 import { useExplorerEgo } from './use-explorer-ego';
+import { useExplorerNodes } from './use-explorer-nodes';
 
-const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, journal: true, paper: false };
+const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 
 function yearOf(n: { group: string; published?: string | null }): number {
   if (n.group !== 'doi' || !n.published) return 0;
@@ -59,11 +58,7 @@ export function GraphExplorerBody() {
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, new Set(['institution', 'author', 'journal']), [], null, flags.paper),
     [filteredRaw, flags.paper]);
 
-  const projectedNodes = useMemo(() => {
-    const enriched = enrichWithMeta(projectedRaw, tagMeta);
-    const groupMatch = (g: string) => (g === 'institution' && flags.institution) || (g === 'author' && flags.author) || (g === 'journal' && flags.journal) || (g === 'doi' && flags.paper);
-    return enriched.filter(n => groupMatch(n.group)) as EnrichedSimNode[];
-  }, [projectedRaw, tagMeta, flags]);
+  const { projectedNodes } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
 
   const projectedEdges = useMemo(() => {
     const ids = new Set(projectedNodes.map(n => n.id));

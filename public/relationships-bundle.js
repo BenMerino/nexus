@@ -12750,20 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react20 = __toESM(require_react());
-
-// public/enrich-meta.ts
-function enrichWithMeta(nodes, tagMeta) {
-  if (!Object.keys(tagMeta).length) return nodes;
-  const citValues = nodes.map((n) => tagMeta[n.id]?.avgCitations || 0).sort((a2, b) => a2 - b);
-  const citP70 = citValues[Math.floor(citValues.length * 0.7)] || 0;
-  return nodes.map((n) => {
-    const meta = tagMeta[n.id];
-    if (!meta) return n;
-    const haloIntensity = meta.avgCitations > citP70 ? Math.min(1, (meta.avgCitations - citP70) / (citP70 || 1)) : 0;
-    return { ...n, haloIntensity, openAccess: meta.openAccessPct > 0.5, topKeywords: meta.topKeywords };
-  });
-}
+var import_react21 = __toESM(require_react());
 
 // public/node-classify.ts
 function percentile(sorted, p) {
@@ -15876,6 +15863,7 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFloor, onYe
     /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "filter-group", children: [
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "filter-label", children: "Node types" }),
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Check, { checked: flags.author, onChange: (v) => setFlag("author", v), label: "Authors", color: COLORS.author }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Check, { checked: flags.coauthor, onChange: (v) => setFlag("coauthor", v), label: "Co-authors", color: COLORS.author }),
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Check, { checked: flags.institution, onChange: (v) => setFlag("institution", v), label: "Institutions", color: COLORS.institution }),
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Check, { checked: flags.journal, onChange: (v) => setFlag("journal", v), label: "Journals", color: COLORS.journal }),
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Check, { checked: flags.paper, onChange: (v) => setFlag("paper", v), label: "Papers", color: paperColor })
@@ -15980,9 +15968,64 @@ function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) 
   return { egoAuthorId, effectiveHomeKey };
 }
 
+// public/use-explorer-nodes.ts
+var import_react20 = __toESM(require_react());
+
+// public/enrich-meta.ts
+function enrichWithMeta(nodes, tagMeta) {
+  if (!Object.keys(tagMeta).length) return nodes;
+  const citValues = nodes.map((n) => tagMeta[n.id]?.avgCitations || 0).sort((a2, b) => a2 - b);
+  const citP70 = citValues[Math.floor(citValues.length * 0.7)] || 0;
+  return nodes.map((n) => {
+    const meta = tagMeta[n.id];
+    if (!meta) return n;
+    const haloIntensity = meta.avgCitations > citP70 ? Math.min(1, (meta.avgCitations - citP70) / (citP70 || 1)) : 0;
+    return { ...n, haloIntensity, openAccess: meta.openAccessPct > 0.5, topKeywords: meta.topKeywords };
+  });
+}
+
+// public/explorer-coauthors.ts
+function buildCoauthorSet(rawEdges, egoAuthorId) {
+  const out = /* @__PURE__ */ new Set();
+  if (!egoAuthorId) return out;
+  const authorsByDoi = /* @__PURE__ */ new Map();
+  for (const e of rawEdges) {
+    if (!e.target.startsWith("author:")) continue;
+    const list = authorsByDoi.get(e.source);
+    if (list) list.push(e.target);
+    else authorsByDoi.set(e.source, [e.target]);
+  }
+  for (const authors of authorsByDoi.values()) {
+    if (!authors.includes(egoAuthorId)) continue;
+    for (const a2 of authors) if (a2 !== egoAuthorId) out.add(a2);
+  }
+  return out;
+}
+
+// public/use-explorer-nodes.ts
+function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags }) {
+  const rawEgoAuthorId = (0, import_react20.useMemo)(() => {
+    const orcid = me?.profile.orcid;
+    if (!orcid) return null;
+    const hit = rawNodes.find((n) => n.group === "author" && n.ext_id === orcid);
+    return hit?.id ?? null;
+  }, [me, rawNodes]);
+  const coauthorIds = (0, import_react20.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
+  const projectedNodes = (0, import_react20.useMemo)(() => {
+    const enriched = enrichWithMeta(projectedRaw, tagMeta);
+    const authorAllowed = (id) => {
+      if (id === rawEgoAuthorId) return flags.author || flags.coauthor;
+      return coauthorIds.has(id) ? flags.coauthor : flags.author;
+    };
+    const groupMatch = (n) => n.group === "institution" && flags.institution || n.group === "author" && authorAllowed(n.id) || n.group === "journal" && flags.journal || n.group === "doi" && flags.paper;
+    return enriched.filter((n) => groupMatch(n));
+  }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId]);
+  return { projectedNodes, coauthorIds, rawEgoAuthorId };
+}
+
 // public/graph-explorer-body.tsx
 var import_jsx_runtime26 = __toESM(require_jsx_runtime());
-var DEFAULT_FLAGS = { institution: true, author: true, journal: true, paper: false };
+var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 function yearOf2(n) {
   if (n.group !== "doi" || !n.published) return 0;
   const y3 = parseInt(n.published.substring(0, 4));
@@ -15990,25 +16033,25 @@ function yearOf2(n) {
 }
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, tagMeta, loading } = useGraphData();
-  const [selectedNodeId, setSelectedNodeId] = (0, import_react20.useState)(null);
-  const [flags, setFlags] = (0, import_react20.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react20.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
-  const [yearFloor, setYearFloor] = (0, import_react20.useState)(0);
-  const highlightedIds = (0, import_react20.useMemo)(() => {
+  const [selectedNodeId, setSelectedNodeId] = (0, import_react21.useState)(null);
+  const [flags, setFlags] = (0, import_react21.useState)(DEFAULT_FLAGS);
+  const setFlag = (0, import_react21.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
+  const [yearFloor, setYearFloor] = (0, import_react21.useState)(0);
+  const highlightedIds = (0, import_react21.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  (0, import_react20.useEffect)(() => {
+  (0, import_react21.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) setSelectedNodeId(f);
   }, [rawNodes, highlightedIds]);
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  (0, import_react20.useEffect)(() => {
+  (0, import_react21.useEffect)(() => {
     if (yearMin && !yearFloor) setYearFloor(yearMin);
   }, [yearMin, yearFloor]);
-  const filteredRaw = (0, import_react20.useMemo)(() => {
+  const filteredRaw = (0, import_react21.useMemo)(() => {
     if (!yearFloor || yearFloor <= yearMin) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
     const nodes = rawNodes.filter((n) => {
@@ -16021,28 +16064,24 @@ function GraphExplorerBody() {
     const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
     return { nodes, edges };
   }, [rawNodes, rawEdges, yearFloor, yearMin]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = (0, import_react20.useMemo)(
+  const { nodes: projectedRaw, edges: projectedEdgesAll, matchingDois } = (0, import_react21.useMemo)(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, flags.paper),
     [filteredRaw, flags.paper]
   );
-  const projectedNodes = (0, import_react20.useMemo)(() => {
-    const enriched = enrichWithMeta(projectedRaw, tagMeta);
-    const groupMatch = (g) => g === "institution" && flags.institution || g === "author" && flags.author || g === "journal" && flags.journal || g === "doi" && flags.paper;
-    return enriched.filter((n) => groupMatch(n.group));
-  }, [projectedRaw, tagMeta, flags]);
-  const projectedEdges = (0, import_react20.useMemo)(() => {
+  const { projectedNodes } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
+  const projectedEdges = (0, import_react21.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const doiCount = (0, import_react20.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
-  const affiliations = (0, import_react20.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
+  const doiCount = (0, import_react21.useMemo)(() => rawNodes.filter((n) => n.group === "doi").length, [rawNodes]);
+  const affiliations = (0, import_react21.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges), [rawNodes, rawEdges]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
     rawNodes,
     projectedNodes,
     institutionsByAuthor: affiliations.institutionsByAuthor
   });
-  const chartDois = (0, import_react20.useMemo)(() => {
+  const chartDois = (0, import_react21.useMemo)(() => {
     if (!selectedNodeId) return matchingDois;
     const nodeDois = /* @__PURE__ */ new Set();
     for (const e of rawEdges) if (e.target === selectedNodeId) {
