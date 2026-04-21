@@ -12,9 +12,11 @@ interface Props<N> {
   primaryKey: string | null;
   colors: Map<string, string>;
   minSize: number;
+  /** Hovered hull key: this hull gets emphasis, others fade. */
+  focusKey?: string | null;
 }
 
-export function CommunityHulls<N>({ nodes, adapter, primaryKey, colors, minSize }: Props<N>) {
+export function CommunityHulls<N>({ nodes, adapter, primaryKey, colors, minSize, focusKey }: Props<N>) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const groups = new Map<string, Point[]>();
   for (const n of nodes) {
@@ -26,11 +28,14 @@ export function CommunityHulls<N>({ nodes, adapter, primaryKey, colors, minSize 
   }
   const hullGroups: HullGroup[] = [];
   for (const [key, points] of groups) {
+    const isFocus = focusKey != null && key === focusKey;
+    const hasFocus = focusKey != null;
     hullGroups.push({
       key,
       color: colors.get(key) || '#888',
       points,
-      emphasis: key === primaryKey,
+      emphasis: isFocus || (!hasFocus && key === primaryKey),
+      deemphasis: hasFocus && !isFocus,
     });
   }
   return <SmoothedHulls groups={hullGroups} />;

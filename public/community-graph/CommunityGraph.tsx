@@ -111,6 +111,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   const ego = nodes.find(n => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find(n => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
+  const focusKey = hovered ? effectiveKey(hovered, adapter, major) : null;
 
   const handleMouseDown = (e: React.MouseEvent, node: SimN<N>) => {
     const isEgo = adapter.isEgo(node);
@@ -127,7 +128,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         svgRef={svgRef} width={width} height={height}
         nodes={nodes} links={links} adapter={adapter} primaryKey={primaryKey}
         communityColors={communityColors} minCommunitySize={config.minCommunitySize}
-        hoverId={hoverId} selectedId={selectedId ?? null} connected={connected}
+        focusKey={focusKey} hoverId={hoverId} selectedId={selectedId ?? null} connected={connected}
         nodeColor={nodeColor}
         onHoverStart={setInternalHoverId} onHoverEnd={() => setInternalHoverId(null)}
         onMouseDown={handleMouseDown} onNodeClick={onNodeClick}

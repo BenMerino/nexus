@@ -16,6 +16,7 @@ interface Props<N, L extends BaseLink & { weight?: number }> {
   primaryKey: string | null;
   communityColors: Map<string, string>;
   minCommunitySize: number;
+  focusKey: string | null;
   hoverId: string | null;
   selectedId: string | null;
   connected: Set<string> | null;
@@ -32,7 +33,7 @@ interface Props<N, L extends BaseLink & { weight?: number }> {
 
 export function GraphScene<N, L extends BaseLink & { weight?: number }>({
   svgRef, width, height, nodes, links, adapter, primaryKey, communityColors, minCommunitySize,
-  hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick,
+  focusKey, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick,
   transform, ego, hovered, showHover,
 }: Props<N, L>) {
   const t = transform
@@ -43,7 +44,7 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
       <GraphDefs />
       <g style={{ transform: t, transformOrigin: '0 0' }}>
         <GridBackdrop />
-        <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} />
+        <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} focusKey={focusKey} />
         <Links links={links} connected={connected} />
         <Nodes
           nodes={nodes} adapter={adapter}

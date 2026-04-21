@@ -13421,29 +13421,36 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
       key: g.key,
       d: radiiToPath(radii, scx, scy, pad),
       color: g.color,
-      emphasis: !!g.emphasis
+      emphasis: !!g.emphasis,
+      deemphasis: !!g.deemphasis
     });
   }
   for (const key of [...state.keys()]) {
     if (!seenKeys.has(key)) state.delete(key);
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { style: { pointerEvents: "none" }, children: paths.map((p) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-    "path",
-    {
-      d: p.d,
-      fill: p.color,
-      fillOpacity: p.emphasis ? 0.18 : 0.1,
-      stroke: p.color,
-      strokeOpacity: p.emphasis ? 0.55 : 0.35,
-      strokeWidth: p.emphasis ? 1.5 : 1
-    },
-    p.key
-  )) });
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { style: { pointerEvents: "none" }, children: paths.map((p) => {
+    const fill = p.deemphasis ? 0.03 : p.emphasis ? 0.22 : 0.1;
+    const stroke = p.deemphasis ? 0.1 : p.emphasis ? 0.7 : 0.35;
+    const width = p.emphasis ? 1.8 : 1;
+    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      "path",
+      {
+        d: p.d,
+        fill: p.color,
+        fillOpacity: fill,
+        stroke: p.color,
+        strokeOpacity: stroke,
+        strokeWidth: width,
+        style: { transition: "fill-opacity 150ms, stroke-opacity 150ms" }
+      },
+      p.key
+    );
+  }) });
 }
 
 // public/community-graph/hulls.tsx
 var import_jsx_runtime7 = __toESM(require_jsx_runtime());
-function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize }) {
+function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey }) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const groups = /* @__PURE__ */ new Map();
   for (const n of nodes) {
@@ -13455,11 +13462,14 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize }) {
   }
   const hullGroups = [];
   for (const [key, points] of groups) {
+    const isFocus = focusKey != null && key === focusKey;
+    const hasFocus = focusKey != null;
     hullGroups.push({
       key,
       color: colors.get(key) || "#888",
       points,
-      emphasis: key === primaryKey
+      emphasis: isFocus || !hasFocus && key === primaryKey,
+      deemphasis: hasFocus && !isFocus
     });
   }
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(SmoothedHulls, { groups: hullGroups });
@@ -13526,6 +13536,7 @@ function GraphScene({
   primaryKey,
   communityColors,
   minCommunitySize,
+  focusKey,
   hoverId,
   selectedId,
   connected,
@@ -13544,7 +13555,7 @@ function GraphScene({
     /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GraphDefs, {}),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GridBackdrop, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
         Nodes,
@@ -14697,6 +14708,7 @@ function CommunityGraph({
   const ego = nodes.find((n) => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
+  const focusKey = hovered ? effectiveKey(hovered, adapter, major) : null;
   const handleMouseDown = (e, node) => {
     const isEgo = adapter.isEgo(node);
     startDrag(e, node, svgRef.current, simRef.current, pinDraggedNodes || isEgo);
@@ -14722,6 +14734,7 @@ function CommunityGraph({
       primaryKey,
       communityColors,
       minCommunitySize: config.minCommunitySize,
+      focusKey,
       hoverId,
       selectedId: selectedId ?? null,
       connected,

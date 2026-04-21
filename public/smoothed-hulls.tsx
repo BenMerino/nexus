@@ -6,6 +6,7 @@ export interface HullGroup {
   color: string;
   points: Point[];
   emphasis?: boolean;
+  deemphasis?: boolean;
 }
 
 interface RingState { radii: number[]; cx: number; cy: number }
@@ -53,6 +54,7 @@ export function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_L
       d: radiiToPath(radii, scx, scy, pad),
       color: g.color,
       emphasis: !!g.emphasis,
+      deemphasis: !!g.deemphasis,
     });
   }
 
@@ -62,17 +64,18 @@ export function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_L
 
   return (
     <g style={{ pointerEvents: 'none' }}>
-      {paths.map(p => (
-        <path
-          key={p.key}
-          d={p.d}
-          fill={p.color}
-          fillOpacity={p.emphasis ? 0.18 : 0.1}
-          stroke={p.color}
-          strokeOpacity={p.emphasis ? 0.55 : 0.35}
-          strokeWidth={p.emphasis ? 1.5 : 1}
-        />
-      ))}
+      {paths.map(p => {
+        const fill = p.deemphasis ? 0.03 : p.emphasis ? 0.22 : 0.1;
+        const stroke = p.deemphasis ? 0.1 : p.emphasis ? 0.7 : 0.35;
+        const width = p.emphasis ? 1.8 : 1;
+        return (
+          <path key={p.key} d={p.d}
+            fill={p.color} fillOpacity={fill}
+            stroke={p.color} strokeOpacity={stroke} strokeWidth={width}
+            style={{ transition: 'fill-opacity 150ms, stroke-opacity 150ms' }}
+          />
+        );
+      })}
     </g>
   );
 }
