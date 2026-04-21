@@ -409,6 +409,11 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border-soft); }
 .detail-head h3 { font-family: var(--display); font-weight: 400; font-size: 24px; margin: 4px 0; line-height: 1.15; letter-spacing: -0.01em; }
 .detail-id { color: var(--accent-dim); font-size: 12px; margin-top: 4px; }
+@keyframes node-detail-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.node-detail-swap { animation: node-detail-in 200ms ease-out both; }
 .detail-accented .detail-head { border-bottom-color: var(--detail-accent); }
 .detail-accented .detail-head h3 { color: var(--detail-accent); }
 .detail-accented .detail-head .eyebrow { color: var(--detail-accent); }

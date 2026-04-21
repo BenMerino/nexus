@@ -13142,26 +13142,26 @@ function useNodeDetail(id) {
 function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
   const { data, error } = useNodeDetail(nodeId);
   const fallback = empty ?? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(EmptyState, {});
-  if (!nodeId) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: fallback });
-  if (error) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "status error", children: [
-    "Error: ",
-    error
-  ] }) });
-  if (!data) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: fallback });
   const style = accentColor ? { ["--detail-accent"]: accentColor } : void 0;
   const back = onBack ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("button", { type: "button", className: "detail-back", onClick: onBack, "aria-label": "Back", children: [
     Ico.back,
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: "Back" })
   ] }) : null;
-  const wrap = (child) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: accentColor ? "detail-accented" : void 0, style, children: [
-    back,
-    child
-  ] });
-  if (data.type === "author") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuthorView, { d: data, onClose }));
-  if (data.type === "institution") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InstitutionView, { d: data, onClose }));
-  if (data.type === "journal") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(JournalView, { d: data, onClose }));
-  if (data.type === "paper") return wrap(/* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperView, { d: data, onClose }));
-  return null;
+  const contentFor = () => {
+    if (!nodeId) return { key: "empty", content: fallback, accented: false };
+    if (error) return { key: "error", content: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "status error", children: [
+      "Error: ",
+      error
+    ] }) }), accented: false };
+    if (!data) return { key: "empty-pending", content: fallback, accented: false };
+    const ch = data.type === "author" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuthorView, { d: data, onClose }) : data.type === "institution" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InstitutionView, { d: data, onClose }) : data.type === "journal" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(JournalView, { d: data, onClose }) : data.type === "paper" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperView, { d: data, onClose }) : null;
+    return { key: `${data.type}:${nodeId}`, content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+      back,
+      ch
+    ] }), accented: true };
+  };
+  const { key, content, accented } = contentFor();
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: `node-detail-swap${accented && accentColor ? " detail-accented" : ""}`, style: accented ? style : void 0, children: content }, key);
 }
 
 // public/explorer-canvas.tsx

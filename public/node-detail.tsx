@@ -31,23 +31,29 @@ function useNodeDetail(id: string | null) {
 export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }: NodeDetailProps) {
   const { data, error } = useNodeDetail(nodeId);
   const fallback = empty ?? <EmptyState />;
-  if (!nodeId) return <>{fallback}</>;
-  if (error) return <div className="detail-empty"><div className="status error">Error: {error}</div></div>;
-  if (!data) return <>{fallback}</>;
   const style = accentColor ? ({ ['--detail-accent' as string]: accentColor } as React.CSSProperties) : undefined;
   const back = onBack ? (
     <button type="button" className="detail-back" onClick={onBack} aria-label="Back">
       {Ico.back}<span>Back</span>
     </button>
   ) : null;
-  const wrap = (child: React.ReactNode) => (
-    <div className={accentColor ? 'detail-accented' : undefined} style={style}>
-      {back}{child}
+  // Key identifies the current view so React remounts the wrapper on every
+  // state change — lets the CSS fade-in fire for each swap.
+  const contentFor = (): { key: string; content: React.ReactNode; accented: boolean } => {
+    if (!nodeId) return { key: 'empty', content: fallback, accented: false };
+    if (error) return { key: 'error', content: <div className="detail-empty"><div className="status error">Error: {error}</div></div>, accented: false };
+    if (!data) return { key: 'empty-pending', content: fallback, accented: false };
+    const ch = data.type === 'author' ? <AuthorView d={data} onClose={onClose} />
+      : data.type === 'institution' ? <InstitutionView d={data} onClose={onClose} />
+      : data.type === 'journal' ? <JournalView d={data} onClose={onClose} />
+      : data.type === 'paper' ? <PaperView d={data} onClose={onClose} />
+      : null;
+    return { key: `${data.type}:${nodeId}`, content: <>{back}{ch}</>, accented: true };
+  };
+  const { key, content, accented } = contentFor();
+  return (
+    <div key={key} className={`node-detail-swap${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
+      {content}
     </div>
   );
-  if (data.type === 'author') return wrap(<AuthorView d={data} onClose={onClose} />);
-  if (data.type === 'institution') return wrap(<InstitutionView d={data} onClose={onClose} />);
-  if (data.type === 'journal') return wrap(<JournalView d={data} onClose={onClose} />);
-  if (data.type === 'paper') return wrap(<PaperView d={data} onClose={onClose} />);
-  return null;
 }
