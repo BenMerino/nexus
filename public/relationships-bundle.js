@@ -15627,7 +15627,6 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "graph-contents", children: [
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "graph-contents-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { className: "muted", children: "Everything visible on the canvas, grouped by community. Click a row to open its detail." }),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "graph-contents-search", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(GraphSearch, { nodes, onSelect: (id) => (onSearchSelect || onSelect)(id) }) })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })

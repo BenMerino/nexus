@@ -82,7 +82,6 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
     <div className="graph-contents">
       <div className="graph-contents-head">
         <div className="eyebrow">Graph contents</div>
-        <p className="muted">Everything visible on the canvas, grouped by community. Click a row to open its detail.</p>
         <div className="graph-contents-search">
           <GraphSearch nodes={nodes} onSelect={id => (onSearchSelect || onSelect)(id)} />
         </div>
