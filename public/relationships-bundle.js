@@ -14432,10 +14432,10 @@ function GraphScene({
   hovered,
   showHover
 }) {
-  const t = transform ? `translate(${transform.tx} ${transform.ty}) scale(${transform.scale})` : void 0;
+  const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
   return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphDefs, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("g", { transform: t, style: { transition: animate ? "transform 400ms cubic-bezier(0.4, 0, 0.2, 1)" : "none" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("g", { style: { transform: t, transformOrigin: "0 0", transition: animate ? "transform 400ms cubic-bezier(0.4, 0, 0.2, 1)" : "none" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize }),
       /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Links, { links, connected }),
       /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(

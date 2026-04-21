@@ -36,11 +36,13 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
   hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick,
   transform, animate, ego, hovered, showHover,
 }: Props<N, L>) {
-  const t = transform ? `translate(${transform.tx} ${transform.ty}) scale(${transform.scale})` : undefined;
+  const t = transform
+    ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})`
+    : 'translate(0px, 0px) scale(1)';
   return (
     <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none' }}>
       <GraphDefs />
-      <g transform={t} style={{ transition: animate ? 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1)' : 'none' }}>
+      <g style={{ transform: t, transformOrigin: '0 0', transition: animate ? 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1)' : 'none' }}>
         <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} />
         <Links links={links} connected={connected} />
         <Nodes
