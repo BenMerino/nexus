@@ -15558,33 +15558,47 @@ var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 function radius(n) {
   return nodeRadius(n.weight || 1, n.role);
 }
-function communityKeyFor(n, institutionsByAuthor) {
+function communityKeyFor(n, institutionsByAuthor, journalByDoi) {
   if (n.group === "institution") return n.id;
   if (n.group === "author") {
     const insts = institutionsByAuthor.get(n.id);
     if (!insts || insts.size === 0) return null;
     return [...insts].sort()[0];
   }
+  if (journalByDoi) {
+    if (n.group === "journal") return n.id;
+    if (n.group === "doi") return journalByDoi.get(n.id) ?? null;
+  }
   return null;
 }
 function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null }) {
-  const institutionLabelById = (0, import_react12.useMemo)(() => {
+  const labelById = (0, import_react12.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
-    for (const n of nodes) if (n.group === "institution") m2.set(n.id, n.label);
+    for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [nodes]);
+  const journalByDoi = (0, import_react12.useMemo)(() => {
+    const hasPapers = nodes.some((n) => n.group === "doi");
+    if (!hasPapers) return null;
+    const m2 = /* @__PURE__ */ new Map();
+    for (const [journalId, dois] of affiliations.doisByJournal) {
+      for (const doi of dois) m2.set(doi, journalId);
+    }
+    return m2;
+  }, [nodes, affiliations.doisByJournal]);
   const adapter = (0, import_react12.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: radius,
     getCommunityKey: (n) => {
       if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
-      return communityKeyFor(n, affiliations.institutionsByAuthor);
+      return communityKeyFor(n, affiliations.institutionsByAuthor, journalByDoi);
     },
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
-    getCommunityLabel: (key) => institutionLabelById.get(key) || key,
+    getCommunityLabel: (key) => labelById.get(key) || key,
     getNodeColor: (n, communityColor) => {
       if (n.group === "institution" || n.group === "author") return communityColor;
+      if (n.group === "journal" && journalByDoi) return communityColor;
       return COLORS[n.group] || null;
     },
     getHoverSubtitle: (n) => {
@@ -15592,10 +15606,10 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       const insts = affiliations.institutionsByAuthor.get(n.id);
       if (!insts || insts.size === 0) return null;
       const firstId = [...insts].sort()[0];
-      return institutionLabelById.get(firstId) || null;
+      return labelById.get(firstId) || null;
     },
     getHoverFootnote: (n) => n.weight ? `${n.weight} ${n.weight === 1 ? "paper" : "papers"}` : null
-  }), [affiliations, institutionLabelById, egoAuthorId, homeInstitutionId]);
+  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId]);
   const forceConfig = (0, import_react12.useMemo)(() => {
     const area = Math.max(width * height, 1);
     const perNode = Math.sqrt(area / Math.max(nodes.length, 1));

@@ -23,24 +23,45 @@ function radius(n: EnrichedSimNode): number {
 }
 
 /** Pick the community key for an Explorer node. Authors inherit their first
- *  institution; institution nodes are their own community; journals, papers,
- *  and orphaned authors return null (land in "Other"). */
-function communityKeyFor(n: EnrichedSimNode, institutionsByAuthor: Map<string, Set<string>>): string | null {
+ *  institution; institution nodes are their own community. When papers are
+ *  visible, journals become their own community and papers inherit theirs —
+ *  so journal hulls gather their papers. Otherwise journals/papers return
+ *  null (land in "Other"). */
+function communityKeyFor(
+  n: EnrichedSimNode,
+  institutionsByAuthor: Map<string, Set<string>>,
+  journalByDoi: Map<string, string> | null,
+): string | null {
   if (n.group === 'institution') return n.id;
   if (n.group === 'author') {
     const insts = institutionsByAuthor.get(n.id);
     if (!insts || insts.size === 0) return null;
     return [...insts].sort()[0];
   }
+  if (journalByDoi) {
+    if (n.group === 'journal') return n.id;
+    if (n.group === 'doi') return journalByDoi.get(n.id) ?? null;
+  }
   return null;
 }
 
 export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null }: Props) {
-  const institutionLabelById = useMemo(() => {
+  const labelById = useMemo(() => {
     const m = new Map<string, string>();
-    for (const n of nodes) if (n.group === 'institution') m.set(n.id, n.label);
+    for (const n of nodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
     return m;
   }, [nodes]);
+
+  // Papers get grouped by journal only when papers are actually on screen.
+  const journalByDoi = useMemo(() => {
+    const hasPapers = nodes.some(n => n.group === 'doi');
+    if (!hasPapers) return null;
+    const m = new Map<string, string>();
+    for (const [journalId, dois] of affiliations.doisByJournal) {
+      for (const doi of dois) m.set(doi, journalId);
+    }
+    return m;
+  }, [nodes, affiliations.doisByJournal]);
 
   const adapter = useMemo<CommunityAdapter<EnrichedSimNode>>(() => ({
     getId: n => n.id,
@@ -48,14 +69,14 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     getRadius: radius,
     getCommunityKey: n => {
       if (egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
-      return communityKeyFor(n, affiliations.institutionsByAuthor);
+      return communityKeyFor(n, affiliations.institutionsByAuthor, journalByDoi);
     },
     isEgo: n => !!egoAuthorId && n.id === egoAuthorId,
-    getCommunityLabel: key => institutionLabelById.get(key) || key,
+    getCommunityLabel: key => labelById.get(key) || key,
     getNodeColor: (n, communityColor) => {
-      // Institutions and authors use community colors so hulls + nodes match.
       if (n.group === 'institution' || n.group === 'author') return communityColor;
-      // Journals and papers keep their static type color for clarity.
+      // Journals match their hull when papers are shown; otherwise stay static type color.
+      if (n.group === 'journal' && journalByDoi) return communityColor;
       return COLORS[n.group] || null;
     },
     getHoverSubtitle: n => {
@@ -63,10 +84,10 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       const insts = affiliations.institutionsByAuthor.get(n.id);
       if (!insts || insts.size === 0) return null;
       const firstId = [...insts].sort()[0];
-      return institutionLabelById.get(firstId) || null;
+      return labelById.get(firstId) || null;
     },
     getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
-  }), [affiliations, institutionLabelById, egoAuthorId, homeInstitutionId]);
+  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId]);
 
   const forceConfig = useMemo(() => {
     const area = Math.max(width * height, 1);
