@@ -69,9 +69,12 @@ export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor, navDir
     return { key: `${data.type}:${dataId}`, content: <>{back}{ch}</>, accented: true };
   };
   const { key, content, accented } = contentFor();
-  const dirClass = navDir === 'back' ? 'slide-back' : 'slide-forward';
+  // The "empty" state is the GraphContents sidebar — the home view, not a
+  // content swap. Skip the slide animation there so backing out of a detail
+  // doesn't flash the whole sidebar in every time.
+  const dirClass = key === 'empty' ? '' : navDir === 'back' ? 'slide-back' : 'slide-forward';
   return (
-    <div key={key} className={`node-detail-swap ${dirClass}${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
+    <div key={key} className={`node-detail-swap${dirClass ? ' ' + dirClass : ''}${accented && accentColor ? ' detail-accented' : ''}`} style={accented ? style : undefined}>
       {content}
     </div>
   );
