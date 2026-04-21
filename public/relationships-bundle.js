@@ -13119,7 +13119,6 @@ function EmptyState() {
 var import_jsx_runtime4 = __toESM(require_jsx_runtime());
 function useNodeDetail(id) {
   const [data, setData] = (0, import_react.useState)(null);
-  const [loading, setLoading] = (0, import_react.useState)(false);
   const [error, setError] = (0, import_react.useState)(null);
   (0, import_react.useEffect)(() => {
     if (!id) {
@@ -13128,26 +13127,22 @@ function useNodeDetail(id) {
       return;
     }
     let cancelled = false;
-    setLoading(true);
     setError(null);
     fetch(`/api/node-detail?id=${encodeURIComponent(id)}`).then(async (r) => r.ok ? r.json() : Promise.reject((await r.json()).error || r.statusText)).then((d) => {
       if (!cancelled) setData(d);
     }).catch((e) => {
       if (!cancelled) setError(String(e));
-    }).finally(() => {
-      if (!cancelled) setLoading(false);
     });
     return () => {
       cancelled = true;
     };
   }, [id]);
-  return { data, loading, error };
+  return { data, error };
 }
 function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
-  const { data, loading, error } = useNodeDetail(nodeId);
+  const { data, error } = useNodeDetail(nodeId);
   const fallback = empty ?? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(EmptyState, {});
   if (!nodeId) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: fallback });
-  if (loading && !data) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "eyebrow", children: "Loading\u2026" }) });
   if (error) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "status error", children: [
     "Error: ",
     error
