@@ -16533,7 +16533,7 @@ function useYearRangeFilter(rawNodes, rawEdges) {
 
 // public/use-layer-order.ts
 var import_react25 = __toESM(require_react());
-var STORAGE_KEY = "graph-layer-order";
+var STORAGE_KEY = "graph-layer-order-v2";
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
