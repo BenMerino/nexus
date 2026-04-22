@@ -1,7 +1,7 @@
 import React from 'react';
 import { GraphDefs, GridBackdrop, Links, Nodes } from './render';
 import { CommunityHulls } from './hulls';
-import { EgoLabel, HoverTooltip } from './labels';
+import { EgoLabel, HoverTooltip, PathLabels } from './labels';
 import type { CommunityAdapter } from './types';
 import type { SimN, SimL, BaseLink } from './forces';
 import type { ViewTransform } from './use-view-transform';
@@ -66,6 +66,12 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
           camera={camera}
         />
         {ego && <EgoLabel ego={ego} adapter={adapter} scale={transform?.scale ?? 1} camera={camera} />}
+        {connected && (
+          <PathLabels
+            nodes={nodes} adapter={adapter} scale={transform?.scale ?? 1} camera={camera}
+            ids={new Set([...connected].filter(id => id !== (ego && adapter.getId(ego)) && id !== hoverId))}
+          />
+        )}
         {showHover && hovered && <HoverTooltip node={hovered} adapter={adapter} scale={transform?.scale ?? 1} camera={camera} />}
       </g>
     </svg>

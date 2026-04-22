@@ -62,3 +62,33 @@ export function HoverTooltip<N>({ node, adapter, scale, camera }: HoverProps<N>)
     </g>
   );
 }
+
+interface PathLabelsProps<N> {
+  nodes: Positioned<N>[];
+  adapter: CommunityAdapter<N>;
+  scale: number;
+  camera: Camera;
+  /** Ids that should render a label — typically the intermediate nodes on
+   *  the current highlight path, which would otherwise be unlabeled. */
+  ids: Set<string>;
+}
+
+/** Lightweight name labels for every node on the highlight path. Matches the
+ *  ego label's styling so the chain reads consistently from start to end. */
+export function PathLabels<N>({ nodes, adapter, scale, camera, ids }: PathLabelsProps<N>) {
+  return (
+    <g style={{ pointerEvents: 'none' }}>
+      {nodes.map(n => {
+        const id = adapter.getId(n);
+        if (!ids.has(id)) return null;
+        const r = adapter.getRadius(n);
+        const p = project({ x: n.x, y: n.y, z: n.z ?? 0 }, camera);
+        return (
+          <text key={id} x={p.x} y={p.y + r + 14 / scale} textAnchor="middle"
+            style={{ fontSize: 11 / scale, fill: 'rgba(255,255,255,0.85)', paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.6)', strokeWidth: 3 / scale, strokeLinejoin: 'round' }}
+          >{adapter.getLabel(n)}</text>
+        );
+      })}
+    </g>
+  );
+}

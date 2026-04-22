@@ -13754,6 +13754,25 @@ function HoverTooltip({ node, adapter, scale, camera }) {
     i
   )) });
 }
+function PathLabels({ nodes, adapter, scale, camera, ids }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("g", { style: { pointerEvents: "none" }, children: nodes.map((n) => {
+    const id = adapter.getId(n);
+    if (!ids.has(id)) return null;
+    const r = adapter.getRadius(n);
+    const p = project({ x: n.x, y: n.y, z: n.z ?? 0 }, camera);
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+      "text",
+      {
+        x: p.x,
+        y: p.y + r + 14 / scale,
+        textAnchor: "middle",
+        style: { fontSize: 11 / scale, fill: "rgba(255,255,255,0.85)", paintOrder: "stroke", stroke: "rgba(0,0,0,0.6)", strokeWidth: 3 / scale, strokeLinejoin: "round" },
+        children: adapter.getLabel(n)
+      },
+      id
+    );
+  }) });
+}
 
 // public/community-graph/scene.tsx
 var import_jsx_runtime11 = __toESM(require_jsx_runtime());
@@ -13821,6 +13840,16 @@ function GraphScene({
         }
       ),
       ego && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, camera }),
+      connected && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+        PathLabels,
+        {
+          nodes,
+          adapter,
+          scale: transform?.scale ?? 1,
+          camera,
+          ids: new Set([...connected].filter((id) => id !== (ego && adapter.getId(ego)) && id !== hoverId))
+        }
+      ),
       showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1, camera })
     ] })
   ] });
