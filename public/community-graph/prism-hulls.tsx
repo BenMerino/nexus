@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import type { Point } from '../convex-hull';
 import type { Camera } from './projection';
-import { tickRing, projectRing, ringPath, wallsPath, type RingState } from './prism-geometry';
+import { tickRing, projectRing, ringPath, wallsPath, spokesPath, type RingState } from './prism-geometry';
 
 export interface PrismGroup {
   key: string;
@@ -28,7 +28,10 @@ const DEFAULT_PAD = 32;
 const DEFAULT_LERP_ALPHA = 0.18;
 /** Even a single-layer community gets a prism this tall so the walls read
  *  as a visible 3D body rather than two overlapping rings. */
-const MIN_PRISM_HEIGHT = 40;
+const MIN_PRISM_HEIGHT = 120;
+/** Every Nth ring sample becomes a vertical spoke from floor to ceiling,
+ *  reinforcing the 3D body. 72 samples / 12 = spoke every 30°. */
+const SPOKE_STRIDE = 6;
 
 interface Rendered { key: string; color: string; floor: Point[]; ceiling: Point[]; emphasis: boolean; deemphasis: boolean }
 
@@ -72,10 +75,10 @@ export function PrismHulls({ groups, camera, pad = DEFAULT_PAD, lerpAlpha = DEFA
   return (
     <g>
       {rendered.map(p => {
-        const floorFill = p.deemphasis ? 0.05 : p.emphasis ? 0.28 : 0.16;
-        const wallFill = p.deemphasis ? 0.04 : p.emphasis ? 0.22 : 0.13;
-        const ceilingFill = p.deemphasis ? 0.04 : p.emphasis ? 0.16 : 0.09;
-        const stroke = p.deemphasis ? 0.2 : p.emphasis ? 0.9 : 0.55;
+        const floorFill = p.deemphasis ? 0.08 : p.emphasis ? 0.35 : 0.22;
+        const wallFill = p.deemphasis ? 0.06 : p.emphasis ? 0.28 : 0.18;
+        const ceilingFill = p.deemphasis ? 0.04 : p.emphasis ? 0.18 : 0.10;
+        const stroke = p.deemphasis ? 0.2 : p.emphasis ? 0.9 : 0.6;
         const width = p.emphasis ? 1.8 : 1.2;
         return (
           <g key={p.key}
@@ -84,7 +87,8 @@ export function PrismHulls({ groups, camera, pad = DEFAULT_PAD, lerpAlpha = DEFA
             style={{ cursor: onHoverKey ? 'pointer' : 'default' }}
           >
             <path d={ringPath(p.floor)} fill={p.color} fillOpacity={floorFill} stroke={p.color} strokeOpacity={stroke * 0.6} strokeWidth={width} style={{ pointerEvents: 'fill' }} />
-            <path d={wallsPath(p.floor, p.ceiling)} fill={p.color} fillOpacity={wallFill} stroke={p.color} strokeOpacity={stroke * 0.45} strokeWidth={width * 0.8} style={{ pointerEvents: 'none' }} />
+            <path d={wallsPath(p.floor, p.ceiling)} fill={p.color} fillOpacity={wallFill} stroke="none" style={{ pointerEvents: 'none' }} />
+            <path d={spokesPath(p.floor, p.ceiling, SPOKE_STRIDE)} fill="none" stroke={p.color} strokeOpacity={stroke * 0.55} strokeWidth={width * 0.7} style={{ pointerEvents: 'none' }} />
             <path d={ringPath(p.ceiling)} fill={p.color} fillOpacity={ceilingFill} stroke={p.color} strokeOpacity={stroke} strokeWidth={width} style={{ pointerEvents: 'none' }} />
           </g>
         );

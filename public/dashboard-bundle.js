@@ -13451,12 +13451,20 @@ function wallsPath(floor, ceiling) {
   for (let i = n - 1; i >= 0; i--) d += ` L ${ceiling[i].x} ${ceiling[i].y}`;
   return d + " Z";
 }
+function spokesPath(floor, ceiling, stride) {
+  let d = "";
+  for (let i = 0; i < floor.length; i += stride) {
+    d += `M ${floor[i].x} ${floor[i].y} L ${ceiling[i].x} ${ceiling[i].y} `;
+  }
+  return d;
+}
 
 // public/community-graph/prism-hulls.tsx
 var import_jsx_runtime7 = __toESM(require_jsx_runtime());
 var DEFAULT_PAD2 = 32;
 var DEFAULT_LERP_ALPHA2 = 0.18;
-var MIN_PRISM_HEIGHT = 40;
+var MIN_PRISM_HEIGHT = 120;
+var SPOKE_STRIDE = 6;
 function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LERP_ALPHA2, onHoverKey }) {
   const stateRef = (0, import_react4.useRef)(/* @__PURE__ */ new Map());
   const state = stateRef.current;
@@ -13484,10 +13492,10 @@ function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LE
     return ay - by;
   });
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: rendered.map((p) => {
-    const floorFill = p.deemphasis ? 0.05 : p.emphasis ? 0.28 : 0.16;
-    const wallFill = p.deemphasis ? 0.04 : p.emphasis ? 0.22 : 0.13;
-    const ceilingFill = p.deemphasis ? 0.04 : p.emphasis ? 0.16 : 0.09;
-    const stroke = p.deemphasis ? 0.2 : p.emphasis ? 0.9 : 0.55;
+    const floorFill = p.deemphasis ? 0.08 : p.emphasis ? 0.35 : 0.22;
+    const wallFill = p.deemphasis ? 0.06 : p.emphasis ? 0.28 : 0.18;
+    const ceilingFill = p.deemphasis ? 0.04 : p.emphasis ? 0.18 : 0.1;
+    const stroke = p.deemphasis ? 0.2 : p.emphasis ? 0.9 : 0.6;
     const width = p.emphasis ? 1.8 : 1.2;
     return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
       "g",
@@ -13497,7 +13505,8 @@ function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LE
         style: { cursor: onHoverKey ? "pointer" : "default" },
         children: [
           /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: ringPath(p.floor), fill: p.color, fillOpacity: floorFill, stroke: p.color, strokeOpacity: stroke * 0.6, strokeWidth: width, style: { pointerEvents: "fill" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: wallsPath(p.floor, p.ceiling), fill: p.color, fillOpacity: wallFill, stroke: p.color, strokeOpacity: stroke * 0.45, strokeWidth: width * 0.8, style: { pointerEvents: "none" } }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: wallsPath(p.floor, p.ceiling), fill: p.color, fillOpacity: wallFill, stroke: "none", style: { pointerEvents: "none" } }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: spokesPath(p.floor, p.ceiling, SPOKE_STRIDE), fill: "none", stroke: p.color, strokeOpacity: stroke * 0.55, strokeWidth: width * 0.7, style: { pointerEvents: "none" } }),
           /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: ringPath(p.ceiling), fill: p.color, fillOpacity: ceilingFill, stroke: p.color, strokeOpacity: stroke, strokeWidth: width, style: { pointerEvents: "none" } })
         ]
       },

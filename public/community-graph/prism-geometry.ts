@@ -71,3 +71,14 @@ export function wallsPath(floor: Point[], ceiling: Point[]): string {
   for (let i = n - 1; i >= 0; i--) d += ` L ${ceiling[i].x} ${ceiling[i].y}`;
   return d + ' Z';
 }
+
+/** Vertical spokes every `stride` samples — little struts from floor to
+ *  ceiling around the perimeter. They make the 3D body unambiguous even
+ *  when the wall-band fill is subtle. */
+export function spokesPath(floor: Point[], ceiling: Point[], stride: number): string {
+  let d = '';
+  for (let i = 0; i < floor.length; i += stride) {
+    d += `M ${floor[i].x} ${floor[i].y} L ${ceiling[i].x} ${ceiling[i].y} `;
+  }
+  return d;
+}
