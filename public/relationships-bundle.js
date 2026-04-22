@@ -16324,7 +16324,7 @@ function BucketView({ b, onSelect, onHover }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
   const headInstId = b.institutions[0]?.id;
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("header", { className: "gc-community-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
       /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(

@@ -625,7 +625,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   to   { opacity: 1; }
 }
 .gc-community {
-  border: 1px solid var(--border-soft); border-left-width: 3px;
+  border: 1px solid var(--border-soft);
   border-radius: var(--radius); padding: 12px 14px;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015)),
@@ -633,7 +633,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   backdrop-filter: blur(8px);
   display: flex; flex-direction: column; gap: 10px;
   animation: gc-fade 220ms ease-out both;
-  transition: background 200ms, border-color 200ms, padding 200ms;
+  transition: background 200ms, padding 200ms;
 }
 .gc-community.emphasis {
   background:

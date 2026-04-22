@@ -44,7 +44,7 @@ export function BucketView({ b, onSelect, onHover }: BucketProps) {
   if (total === 0 && b.institutions.length === 0) return null;
   const headInstId = b.institutions[0]?.id;
   return (
-    <section data-flip-key={b.key} className={`gc-community${b.emphasis ? ' emphasis' : ''}`} style={{ borderColor: b.color }}>
+    <section data-flip-key={b.key} className={`gc-community${b.emphasis ? ' emphasis' : ''}`}>
       <header className="gc-community-head">
         <span className="gc-swatch" style={{ background: b.color }} />
         <button type="button" className="gc-community-title"
