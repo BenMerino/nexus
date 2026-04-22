@@ -17,9 +17,10 @@ interface Props {
   onHoverChange?: (id: string | null) => void;
   onHullHoverChange?: (key: string | null) => void;
   minHeight?: number;
+  tilt?: number;
 }
 
-export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480 }: Props) {
+export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
 
@@ -54,6 +55,7 @@ export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, 
           externalHoverId={hoverId ?? null}
           onHoverChange={onHoverChange}
           onHullHoverChange={onHullHoverChange}
+          tilt={tilt}
         />
       )}
     </div>

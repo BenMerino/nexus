@@ -41,6 +41,16 @@ export function GraphExplorerBody() {
   }), []);
   const [flags, setFlags] = useState<NodeTypeFlags>(DEFAULT_FLAGS);
   const setFlag = useCallback((k: keyof NodeTypeFlags, v: boolean) => setFlags(f => ({ ...f, [k]: v })), []);
+  const [tilted, setTilted] = useState<boolean>(() => {
+    try { return localStorage.getItem('graph-tilted') === '1'; } catch { return false; }
+  });
+  const toggleTilt = useCallback(() => {
+    setTilted(v => {
+      const next = !v;
+      try { localStorage.setItem('graph-tilted', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  }, []);
   const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
   const highlightedIds = useMemo(() => {
     const o = new URLSearchParams(window.location.search).get('highlight');
@@ -107,9 +117,15 @@ export function GraphExplorerBody() {
             <div>role · <em>{me?.role || '—'}</em></div>
             <div>scope · {(yearFrom > yearMin || yearTo < yearMax) ? `${yearFrom}–${yearTo}` : 'all years'}</div>
           </div>
+          <div className="canvas-corner-tr">
+            <button className="tilt-toggle" data-on={tilted ? '1' : '0'} onClick={toggleTilt} title={tilted ? 'Switch to top-down view' : 'Tilt into 3D layered view'}>
+              <span className="tilt-glyph" />
+              {tilted ? '3D' : '2D'}
+            </button>
+          </div>
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} />}
+            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={tilted ? 1 : 0} />}
         </div>
 
         <aside className="detail-panel" ref={detailPanelRef}>

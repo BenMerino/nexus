@@ -16,6 +16,16 @@ const PLACEHOLDER_RADIUS = 3;
 const PLACEHOLDER_COLOR = 'rgba(255,255,255,0.22)';
 const ZOOM_SCALE = 2.1;
 
+/** Layer elevations by node group. Higher Z floats up when the camera tilts.
+ *  Reads top-to-bottom: institutions crown the scene, authors beneath them,
+ *  journals on the floor, papers sunk just below as a carpet. */
+const LAYER_Z: Record<string, number> = {
+  institution: 140,
+  author: 70,
+  journal: 0,
+  doi: -40,
+};
+
 interface Props {
   nodes: EnrichedSimNode[];
   links: ProjectedEdge[];
@@ -31,13 +41,14 @@ interface Props {
   externalHoverId?: string | null;
   onHoverChange?: (id: string | null) => void;
   onHullHoverChange?: (key: string | null) => void;
+  tilt?: number;
 }
 
 function baseRadius(n: EnrichedSimNode): number {
   return nodeRadius(n.weight || 1, n.role);
 }
 
-export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange }: Props) {
+export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0 }: Props) {
   const labelById = useMemo(() => {
     const m = new Map<string, string>();
     for (const n of nodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
@@ -85,6 +96,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       return labelById.get(firstId) || null;
     },
     getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
+    getLayerZ: n => LAYER_Z[n.group] ?? 0,
   }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier]);
 
   const forceConfig = useMemo(() => {
@@ -127,6 +139,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       externalHoverId={externalHoverId ?? null}
       onHoverChange={onHoverChange}
       onHullHoverChange={onHullHoverChange}
+      tilt={tilt}
     />
   );
 }

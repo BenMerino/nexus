@@ -1,6 +1,11 @@
 import type { Simulation } from 'd3-force';
 
-export type DragNode = { x: number; y: number; fx?: number | null; fy?: number | null };
+export type DragNode = { x: number; y: number; z?: number; fx?: number | null; fy?: number | null };
+
+/** Matches projection.ts — kept local so drag can un-project cursor coords
+ *  back to the logical (x, y) plane where d3-force operates. */
+const DX = 0.35;
+const DY = 0.75;
 
 export function startDrag<N extends DragNode, L>(
   e: React.MouseEvent,
@@ -8,6 +13,7 @@ export function startDrag<N extends DragNode, L>(
   svg: SVGSVGElement,
   sim: Simulation<N, L> | null,
   pinAfterDrag: boolean,
+  getTilt: () => number = () => 0,
 ) {
   e.preventDefault();
   e.stopPropagation();
@@ -20,8 +26,10 @@ export function startDrag<N extends DragNode, L>(
     pt.x = ev.clientX;
     pt.y = ev.clientY;
     const p = pt.matrixTransform(svg.getScreenCTM()!.inverse());
-    node.fx = p.x;
-    node.fy = p.y;
+    const tilt = getTilt();
+    const z = node.z ?? 0;
+    node.fx = p.x - z * DX * tilt;
+    node.fy = p.y + z * DY * tilt;
   };
   const onUp = () => {
     window.removeEventListener('mousemove', onMove);

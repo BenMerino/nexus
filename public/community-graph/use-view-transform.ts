@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CommunityAdapter } from './types';
 import type { SimN } from './forces';
+import { project } from './projection';
 
 export interface ViewTransform { tx: number; ty: number; scale: number }
 
@@ -12,6 +13,7 @@ interface Args<N> {
   adapter: CommunityAdapter<N>;
   width: number;
   height: number;
+  tilt: number;
 }
 
 const EASE_MS = 400;
@@ -20,18 +22,19 @@ const IDENTITY: ViewTransform = { tx: 0, ty: 0, scale: 1 };
 function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 
-function targetFor<N>(zoomToId: string | null | undefined, nodes: SimN<N>[], adapter: CommunityAdapter<N>, zoomScale: number, width: number, height: number): ViewTransform | null {
+function targetFor<N>(zoomToId: string | null | undefined, nodes: SimN<N>[], adapter: CommunityAdapter<N>, zoomScale: number, width: number, height: number, tilt: number): ViewTransform | null {
   if (!zoomToId) return IDENTITY;
   const target = nodes.find(n => adapter.getId(n) === zoomToId);
   if (!target) return null;
-  return { tx: width / 2 - target.x * zoomScale, ty: height / 2 - target.y * zoomScale, scale: zoomScale };
+  const p = project(target, tilt);
+  return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
 }
 
 /** Drive the view transform per requestAnimationFrame instead of via a CSS
  *  transition. Each frame updates the computed style, so the browser's
  *  hit-test is always synced to the visible position — users can click
  *  a node even while a previous zoom is still easing toward another one. */
-export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adapter, width, height }: Args<N>): { t: ViewTransform | null } {
+export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adapter, width, height, tilt }: Args<N>): { t: ViewTransform | null } {
   const [, bump] = useState(0);
   const startRef = useRef<ViewTransform>(IDENTITY);
   const endRef = useRef<ViewTransform | null>(IDENTITY);
@@ -41,14 +44,14 @@ export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adap
 
   // Keep these fresh each render so the rAF loop sees the latest, without
   // restarting on every adapter / nodes-array identity change.
-  const liveRef = useRef({ zoomToId, zoomScale, nodes, adapter, width, height });
-  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height };
+  const liveRef = useRef({ zoomToId, zoomScale, nodes, adapter, width, height, tilt });
+  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height, tilt };
 
   // Retarget on zoom change — runs in render to be ready before the next frame.
   if (lastZoomIdRef.current !== zoomToId) {
     lastZoomIdRef.current = zoomToId;
     startRef.current = { ...currentRef.current };
-    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height);
+    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height, tilt);
     startTimeRef.current = typeof performance !== 'undefined' ? performance.now() : 0;
   }
 
@@ -70,7 +73,7 @@ export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adap
       // After the ease lands, keep the view locked on the live target position.
       if (p >= 1) {
         const l = liveRef.current;
-        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height);
+        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.tilt);
         if (live) { endRef.current = live; currentRef.current = live; }
       }
       bump(v => (v + 1) % 1e9);

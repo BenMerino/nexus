@@ -12747,7 +12747,7 @@ var require_jsx_runtime = __commonJS({
 });
 
 // public/dashboard-charts.tsx
-var import_react11 = __toESM(require_react());
+var import_react12 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
 // public/shell-helpers.ts
@@ -13054,13 +13054,13 @@ function ClaimPaperPanel({ onClaimed }) {
 }
 
 // public/coauthor-graph-preview.tsx
-var import_react8 = __toESM(require_react());
+var import_react9 = __toESM(require_react());
 
 // public/coauthor-graph-sim.tsx
-var import_react7 = __toESM(require_react());
+var import_react8 = __toESM(require_react());
 
 // public/community-graph/CommunityGraph.tsx
-var import_react5 = __toESM(require_react());
+var import_react6 = __toESM(require_react());
 
 // public/community-graph/communities.ts
 var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1"];
@@ -13105,7 +13105,9 @@ function buildCommunityColors(nodes, adapter, primaryKey, minSize) {
 }
 
 // public/community-graph/drag.ts
-function startDrag(e, node, svg, sim, pinAfterDrag) {
+var DX = 0.35;
+var DY = 0.75;
+function startDrag(e, node, svg, sim, pinAfterDrag, getTilt = () => 0) {
   e.preventDefault();
   e.stopPropagation();
   const pt = svg.createSVGPoint();
@@ -13116,8 +13118,10 @@ function startDrag(e, node, svg, sim, pinAfterDrag) {
     pt.x = ev.clientX;
     pt.y = ev.clientY;
     const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-    node.fx = p.x;
-    node.fy = p.y;
+    const tilt = getTilt();
+    const z = node.z ?? 0;
+    node.fx = p.x - z * DX * tilt;
+    node.fy = p.y + z * DY * tilt;
   };
   const onUp = () => {
     window.removeEventListener("mousemove", onMove);
@@ -13133,14 +13137,17 @@ function startDrag(e, node, svg, sim, pinAfterDrag) {
 }
 
 // public/community-graph/projection.ts
-var DX = 0.35;
-var DY = 0.75;
+var DX2 = 0.35;
+var DY2 = 0.75;
 function projectXY(x3, y3, z, tilt) {
   if (tilt <= 0) return { x: x3, y: y3 };
-  return { x: x3 + z * DX * tilt, y: y3 - z * DY * tilt };
+  return { x: x3 + z * DX2 * tilt, y: y3 - z * DY2 * tilt };
 }
 function project(n, tilt) {
   return projectXY(n.x, n.y, n.z, tilt);
+}
+function floorShadow(x3, y3, tilt) {
+  return projectXY(x3, y3, 0, tilt);
 }
 
 // public/community-graph/render.tsx
@@ -13186,42 +13193,68 @@ function Links({ links, connected, tilt }) {
     );
   }) });
 }
-function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { children: nodes.map((n) => {
-    const id = adapter.getId(n);
-    const r = adapter.getRadius(n);
-    const isHov = id === hoverId;
-    const isSel = id === selectedId;
-    const dim = connected && !connected.has(id);
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-      "g",
-      {
-        transform: `translate(${n.x}, ${n.y})`,
-        onMouseEnter: () => onHoverStart(id),
-        onMouseLeave: onHoverEnd,
-        onMouseDown: (e) => onMouseDown(e, n),
-        onClick: (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          onClick(n);
+function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, tilt }) {
+  const zSorted = [...nodes].sort((a2, b) => a2.z - b.z);
+  const showShadows = tilt > 0.02;
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
+    showShadows && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { style: { pointerEvents: "none" }, children: zSorted.map((n) => {
+      if (n.z <= 0) return null;
+      const id = adapter.getId(n);
+      const r = adapter.getRadius(n);
+      const dim = connected && !connected.has(id);
+      const p = floorShadow(n.x, n.y, tilt);
+      const lift = n.z * tilt;
+      const spread = Math.min(1.4, 1 + lift / 180);
+      return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "ellipse",
+        {
+          cx: p.x,
+          cy: p.y + 2,
+          rx: r * spread,
+          ry: r * 0.45 * spread,
+          fill: "url(#graph-node-shadow)",
+          opacity: dim ? 0.1 : 0.35 * tilt
         },
-        style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
-        children: [
-          (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-            "circle",
-            {
-              r,
-              fill: nodeColor(n),
-              stroke: isHov || isSel ? "#fff" : "rgba(255,255,255,0.2)",
-              strokeWidth: isHov || isSel ? 2 : 1
-            }
-          )
-        ]
-      },
-      id
-    );
-  }) });
+        `sh-${id}`
+      );
+    }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { children: zSorted.map((n) => {
+      const id = adapter.getId(n);
+      const r = adapter.getRadius(n);
+      const isHov = id === hoverId;
+      const isSel = id === selectedId;
+      const dim = connected && !connected.has(id);
+      const p = project(n, tilt);
+      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+        "g",
+        {
+          transform: `translate(${p.x}, ${p.y})`,
+          onMouseEnter: () => onHoverStart(id),
+          onMouseLeave: onHoverEnd,
+          onMouseDown: (e) => onMouseDown(e, n),
+          onClick: (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onClick(n);
+          },
+          style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
+          children: [
+            (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+              "circle",
+              {
+                r,
+                fill: nodeColor(n),
+                stroke: isHov || isSel ? "#fff" : "rgba(255,255,255,0.2)",
+                strokeWidth: isHov || isSel ? 2 : 1
+              }
+            )
+          ]
+        },
+        id
+      );
+    }) })
+  ] });
 }
 
 // public/smoothed-hulls.tsx
@@ -13346,15 +13379,16 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
 
 // public/community-graph/hulls.tsx
 var import_jsx_runtime7 = __toESM(require_jsx_runtime());
-function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey, onHoverKey }) {
+function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey, onHoverKey, tilt }) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const groups = /* @__PURE__ */ new Map();
   for (const n of nodes) {
     const key = effectiveKey(n, adapter, major);
     if (!key) continue;
+    const p = project({ x: n.x, y: n.y, z: n.z ?? 0 }, tilt);
     const points = groups.get(key);
-    if (points) points.push({ x: n.x, y: n.y });
-    else groups.set(key, [{ x: n.x, y: n.y }]);
+    if (points) points.push({ x: p.x, y: p.y });
+    else groups.set(key, [{ x: p.x, y: p.y }]);
   }
   const hullGroups = [];
   for (const [key, points] of groups) {
@@ -13373,10 +13407,11 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey,
 
 // public/community-graph/labels.tsx
 var import_jsx_runtime8 = __toESM(require_jsx_runtime());
-function EgoLabel({ ego, adapter, scale }) {
+function EgoLabel({ ego, adapter, scale, tilt }) {
   const r = adapter.getRadius(ego);
-  const x3 = ego.x;
-  const y3 = ego.y;
+  const p = project({ x: ego.x, y: ego.y, z: ego.z ?? 0 }, tilt);
+  const x3 = p.x;
+  const y3 = p.y;
   return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
     "text",
     {
@@ -13388,12 +13423,13 @@ function EgoLabel({ ego, adapter, scale }) {
     }
   );
 }
-function HoverTooltip({ node, adapter, scale }) {
+function HoverTooltip({ node, adapter, scale, tilt }) {
   const r = adapter.getRadius(node);
   const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
   const footnote = adapter.getHoverFootnote?.(node) ?? null;
-  const x3 = node.x;
-  const y3 = node.y;
+  const p = project({ x: node.x, y: node.y, z: node.z ?? 0 }, tilt);
+  const x3 = p.x;
+  const y3 = p.y;
   const lines = [adapter.getLabel(node)];
   if (subtitle) lines.push(subtitle);
   if (footnote) lines.push(footnote);
@@ -13445,15 +13481,16 @@ function GraphScene({
   ego,
   hovered,
   showHover,
-  onHullHover
+  onHullHover,
+  tilt
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GraphDefs, {}),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GridBackdrop, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, tilt }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected, tilt }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
         Nodes,
         {
@@ -13466,11 +13503,12 @@ function GraphScene({
           onHoverStart,
           onHoverEnd,
           onMouseDown,
-          onClick: (n) => onNodeClick?.(n)
+          onClick: (n) => onNodeClick?.(n),
+          tilt
         }
       ),
-      ego && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1 }),
-      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1 })
+      ego && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, tilt }),
+      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1, tilt })
     ] })
   ] });
 }
@@ -14475,25 +14513,26 @@ function easeOutCubic(t) {
 function lerp2(a2, b, t) {
   return a2 + (b - a2) * t;
 }
-function targetFor(zoomToId, nodes, adapter, zoomScale, width, height) {
+function targetFor(zoomToId, nodes, adapter, zoomScale, width, height, tilt) {
   if (!zoomToId) return IDENTITY;
   const target = nodes.find((n) => adapter.getId(n) === zoomToId);
   if (!target) return null;
-  return { tx: width / 2 - target.x * zoomScale, ty: height / 2 - target.y * zoomScale, scale: zoomScale };
+  const p = project(target, tilt);
+  return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
 }
-function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height }) {
+function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height, tilt }) {
   const [, bump] = (0, import_react4.useState)(0);
   const startRef = (0, import_react4.useRef)(IDENTITY);
   const endRef = (0, import_react4.useRef)(IDENTITY);
   const startTimeRef = (0, import_react4.useRef)(0);
   const currentRef = (0, import_react4.useRef)(IDENTITY);
   const lastZoomIdRef = (0, import_react4.useRef)(null);
-  const liveRef = (0, import_react4.useRef)({ zoomToId, zoomScale, nodes, adapter, width, height });
-  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height };
+  const liveRef = (0, import_react4.useRef)({ zoomToId, zoomScale, nodes, adapter, width, height, tilt });
+  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height, tilt };
   if (lastZoomIdRef.current !== zoomToId) {
     lastZoomIdRef.current = zoomToId;
     startRef.current = { ...currentRef.current };
-    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height);
+    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height, tilt);
     startTimeRef.current = typeof performance !== "undefined" ? performance.now() : 0;
   }
   (0, import_react4.useEffect)(() => {
@@ -14513,7 +14552,7 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
       };
       if (p >= 1) {
         const l = liveRef.current;
-        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height);
+        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.tilt);
         if (live) {
           endRef.current = live;
           currentRef.current = live;
@@ -14530,6 +14569,46 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
   }, []);
   if (override) return { t: override };
   return { t: currentRef.current };
+}
+
+// public/community-graph/use-tilt-anim.ts
+var import_react5 = __toESM(require_react());
+function useTiltAnim(target) {
+  const [tilt, setTilt] = (0, import_react5.useState)(target);
+  const tiltRef = (0, import_react5.useRef)(target);
+  (0, import_react5.useEffect)(() => {
+    let raf = 0;
+    const step = () => {
+      const cur = tiltRef.current;
+      const next = cur + (target - cur) * 0.15;
+      if (Math.abs(next - target) < 1e-3) {
+        tiltRef.current = target;
+        setTilt(target);
+        return;
+      }
+      tiltRef.current = next;
+      setTilt(next);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target]);
+  return { tilt, tiltRef };
+}
+
+// public/community-graph/node-color.ts
+function resolveNodeColor(n, adapter, communityColors, major) {
+  let communityColor = null;
+  if (adapter.isEgo(n)) {
+    communityColor = "var(--accent)";
+  } else {
+    const key = effectiveKey(n, adapter, major);
+    if (key === OTHER_KEY) communityColor = communityColors.get(OTHER_KEY) || "#b0b0b0";
+    else if (key) communityColor = communityColors.get(key) || null;
+  }
+  const override = adapter.getNodeColor?.(n, communityColor);
+  if (override) return override;
+  return communityColor || "var(--fg-muted)";
 }
 
 // public/community-graph/CommunityGraph.tsx
@@ -14550,34 +14629,35 @@ function CommunityGraph({
   zoomScale = 2,
   externalHoverId,
   onHoverChange,
-  onHullHoverChange
+  onHullHoverChange,
+  tilt: tiltTarget = 0
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
-  const svgRef = (0, import_react5.useRef)(null);
-  const simRef = (0, import_react5.useRef)(null);
-  const [, tick] = (0, import_react5.useState)(0);
-  const [internalHoverId, setInternalHoverId] = (0, import_react5.useState)(null);
-  const [hullHoverKey, setHullHoverKey] = (0, import_react5.useState)(null);
+  const svgRef = (0, import_react6.useRef)(null);
+  const simRef = (0, import_react6.useRef)(null);
+  const [, tick] = (0, import_react6.useState)(0);
+  const [internalHoverId, setInternalHoverId] = (0, import_react6.useState)(null);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react6.useState)(null);
   const hoverId = externalHoverId ?? internalHoverId;
-  const communityColors = (0, import_react5.useMemo)(
+  const communityColors = (0, import_react6.useMemo)(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const major = (0, import_react5.useMemo)(
+  const major = (0, import_react6.useMemo)(
     () => majorCommunities(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const { nodes, links } = (0, import_react5.useMemo)(() => {
+  const { nodes, links } = (0, import_react6.useMemo)(() => {
     const ns = initialNodes(inNodes, adapter, width, height);
     const ls = initialLinks(inLinks, ns, adapter);
     return { nodes: ns, links: ls };
   }, [inNodes, inLinks, width, height]);
-  const anchors = (0, import_react5.useMemo)(
+  const anchors = (0, import_react6.useMemo)(
     () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [nodes, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
   );
-  (0, import_react5.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const sim = createSimulation({
       nodes,
       links,
@@ -14594,20 +14674,8 @@ function CommunityGraph({
       sim.stop();
     };
   }, [nodes, links, anchors, primaryKey, width, height]);
-  const nodeColor = (n) => {
-    let communityColor = null;
-    if (adapter.isEgo(n)) {
-      communityColor = "var(--accent)";
-    } else {
-      const key = effectiveKey(n, adapter, major);
-      if (key === OTHER_KEY) communityColor = communityColors.get(OTHER_KEY) || "#b0b0b0";
-      else if (key) communityColor = communityColors.get(key) || null;
-    }
-    const override = adapter.getNodeColor?.(n, communityColor);
-    if (override) return override;
-    return communityColor || "var(--fg-muted)";
-  };
-  const connected = (0, import_react5.useMemo)(() => {
+  const nodeColor = (n) => resolveNodeColor(n, adapter, communityColors, major);
+  const connected = (0, import_react6.useMemo)(() => {
     const focusId = hoverId || selectedId || null;
     if (!focusId) return null;
     const set2 = /* @__PURE__ */ new Set([focusId]);
@@ -14623,9 +14691,10 @@ function CommunityGraph({
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
   const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
+  const { tilt: tiltAnim, tiltRef } = useTiltAnim(tiltTarget);
   const handleMouseDown = (e, node) => {
     const isEgo = adapter.isEgo(node);
-    startDrag(e, node, svgRef.current, simRef.current, pinDraggedNodes || isEgo);
+    startDrag(e, node, svgRef.current, simRef.current, pinDraggedNodes || isEgo, () => tiltRef.current);
   };
   const { t: effectiveTransform } = useViewTransform({
     override: viewTransform,
@@ -14634,7 +14703,8 @@ function CommunityGraph({
     nodes,
     adapter,
     width,
-    height
+    height,
+    tilt: tiltAnim
   });
   return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { position: "relative", width, height }, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
     GraphScene,
@@ -14670,18 +14740,19 @@ function CommunityGraph({
       onHullHover: (k) => {
         setHullHoverKey(k);
         onHullHoverChange?.(k);
-      }
+      },
+      tilt: tiltAnim
     }
   ) });
 }
 
 // public/community-graph/legend.tsx
-var import_react6 = __toESM(require_react());
+var import_react7 = __toESM(require_react());
 var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
-  const colors = (0, import_react6.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const major = (0, import_react6.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const items = (0, import_react6.useMemo)(() => {
+  const colors = (0, import_react7.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const major = (0, import_react7.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const items = (0, import_react7.useMemo)(() => {
     const byKey = /* @__PURE__ */ new Map();
     for (const n of nodes) {
       const key = effectiveKey(n, adapter, major);
@@ -14716,7 +14787,7 @@ function radius(n) {
 }
 function CoAuthorSim({ graph, width, height, onNodeClick }) {
   const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
-  const adapter = (0, import_react7.useMemo)(() => ({
+  const adapter = (0, import_react8.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: radius,
@@ -14745,9 +14816,9 @@ function CoAuthorSim({ graph, width, height, onNodeClick }) {
 // public/coauthor-graph-preview.tsx
 var import_jsx_runtime13 = __toESM(require_jsx_runtime());
 function CoAuthorGraphPanel({ graph }) {
-  const ref = (0, import_react8.useRef)(null);
-  const [size, setSize] = (0, import_react8.useState)(null);
-  (0, import_react8.useEffect)(() => {
+  const ref = (0, import_react9.useRef)(null);
+  const [size, setSize] = (0, import_react9.useState)(null);
+  (0, import_react9.useEffect)(() => {
     if (!ref.current) return;
     const el = ref.current;
     const measure = () => {
@@ -14761,7 +14832,7 @@ function CoAuthorGraphPanel({ graph }) {
   }, []);
   const nodes = graph?.nodes ?? [];
   const myRor = graph?.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
-  const legendAdapter = (0, import_react8.useMemo)(() => ({
+  const legendAdapter = (0, import_react9.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -14804,15 +14875,15 @@ function CoAuthorGraphPanelSkeleton() {
 }
 
 // public/portfolio-velocity.tsx
-var import_react9 = __toESM(require_react());
+var import_react10 = __toESM(require_react());
 var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 var TREND_SYMBOL = { rising: "\u25B2", flat: "\u2192", falling: "\u25BC" };
 var TREND_COLOR = { rising: "var(--ok)", flat: "var(--fg-dim)", falling: "var(--err)" };
 function VelocityPanel({ velocity }) {
   const { series, forecast = [], score, trend } = velocity;
-  const wrapRef = (0, import_react9.useRef)(null);
-  const [w, setW] = (0, import_react9.useState)(460);
-  (0, import_react9.useLayoutEffect)(() => {
+  const wrapRef = (0, import_react10.useRef)(null);
+  const [w, setW] = (0, import_react10.useState)(460);
+  (0, import_react10.useLayoutEffect)(() => {
     const el = wrapRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries2) => {
@@ -14892,7 +14963,7 @@ function VelocityPanelSkeleton() {
 }
 
 // public/portfolio-cadence.tsx
-var import_react10 = __toESM(require_react());
+var import_react11 = __toESM(require_react());
 
 // public/type-metals.ts
 var TYPE_METAL = {
@@ -14918,9 +14989,9 @@ var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 var typeLabel = (t) => TYPE_DISPLAY_LABELS[t] || (t === "unknown" ? "Unknown" : t);
 function CadencePanel({ cadence }) {
   const { series, types, meanPerYear } = cadence;
-  const wrapRef = (0, import_react10.useRef)(null);
-  const [w, setW] = (0, import_react10.useState)(460);
-  (0, import_react10.useLayoutEffect)(() => {
+  const wrapRef = (0, import_react11.useRef)(null);
+  const [w, setW] = (0, import_react11.useState)(460);
+  (0, import_react11.useLayoutEffect)(() => {
     const el = wrapRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries2) => {
@@ -15382,9 +15453,9 @@ function DashboardContent({ data }) {
   ] });
 }
 function App() {
-  const [data, setData] = (0, import_react11.useState)(null);
-  const [err, setErr] = (0, import_react11.useState)(null);
-  (0, import_react11.useEffect)(() => {
+  const [data, setData] = (0, import_react12.useState)(null);
+  const [err, setErr] = (0, import_react12.useState)(null);
+  (0, import_react12.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
   return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [

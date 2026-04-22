@@ -424,6 +424,34 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   letter-spacing: 0.04em; pointer-events: none; font-family: var(--mono);
 }
 .canvas-corner-tl em { color: var(--accent); }
+.canvas-corner-tr {
+  position: absolute; top: 14px; right: 14px;
+  display: flex; gap: 6px; z-index: 2;
+}
+.tilt-toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45); border: 1px solid var(--border-soft);
+  color: var(--fg-muted); font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+  transition: color 150ms, border-color 150ms, background 150ms;
+  backdrop-filter: blur(6px);
+}
+.tilt-toggle:hover { color: var(--fg); border-color: var(--border); }
+.tilt-toggle[data-on="1"] { color: var(--accent); border-color: var(--accent); }
+.tilt-toggle .tilt-glyph {
+  display: inline-block; width: 14px; height: 10px; position: relative;
+}
+.tilt-toggle .tilt-glyph::before,
+.tilt-toggle .tilt-glyph::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 1.5px;
+  background: currentColor; border-radius: 1px;
+  transition: transform 220ms ease;
+}
+.tilt-toggle .tilt-glyph::before { top: 2px; }
+.tilt-toggle .tilt-glyph::after { bottom: 2px; }
+.tilt-toggle[data-on="1"] .tilt-glyph::before { transform: skewX(-22deg) translateX(-2px); }
+.tilt-toggle[data-on="1"] .tilt-glyph::after { transform: skewX(-22deg) translateX(2px); }
 
 /* ═══ DETAIL PANEL ═══ */
 .detail-panel {

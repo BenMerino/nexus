@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Simulation } from 'd3-force';
-import { buildCommunityColors, majorCommunities, effectiveKey, OTHER_KEY } from './communities';
+import { buildCommunityColors, majorCommunities, effectiveKey } from './communities';
 import { startDrag } from './drag';
 import { GraphScene } from './scene';
 import {
@@ -10,6 +10,8 @@ import {
 import type { CommunityAdapter, ForceConfig } from './types';
 import { DEFAULT_FORCE_CONFIG } from './types';
 import { useViewTransform } from './use-view-transform';
+import { useTiltAnim } from './use-tilt-anim';
+import { resolveNodeColor } from './node-color';
 
 export interface CommunityGraphProps<N, L extends BaseLink> {
   nodes: N[];
@@ -36,12 +38,15 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
   onHoverChange?: (id: string | null) => void;
   /** Fires when the pointer enters/leaves a community hull. */
   onHullHoverChange?: (key: string | null) => void;
+  /** Camera tilt ∈ [0, 1]. 0 = top-down (Z invisible), 1 = full isometric rake.
+   *  Internally eased toward this target via rAF for smooth transitions. */
+  tilt?: number;
 }
 
 export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   nodes: inNodes, links: inLinks, adapter, primaryKey = null, width, height, selectedId,
   forceConfig, onNodeClick, pinDraggedNodes = false, viewTransform, zoomToId, zoomScale = 2,
-  externalHoverId, onHoverChange, onHullHoverChange,
+  externalHoverId, onHoverChange, onHullHoverChange, tilt: tiltTarget = 0,
 }: CommunityGraphProps<N, L>) {
   const config: ForceConfig = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -86,19 +91,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, links, anchors, primaryKey, width, height]);
 
-  const nodeColor = (n: SimN<N>): string => {
-    let communityColor: string | null = null;
-    if (adapter.isEgo(n)) {
-      communityColor = 'var(--accent)';
-    } else {
-      const key = effectiveKey(n, adapter, major);
-      if (key === OTHER_KEY) communityColor = communityColors.get(OTHER_KEY) || '#b0b0b0';
-      else if (key) communityColor = communityColors.get(key) || null;
-    }
-    const override = adapter.getNodeColor?.(n, communityColor);
-    if (override) return override;
-    return communityColor || 'var(--fg-muted)';
-  };
+  const nodeColor = (n: SimN<N>) => resolveNodeColor(n, adapter, communityColors, major);
 
   const connected = useMemo(() => {
     const focusId = hoverId || selectedId || null;
@@ -118,13 +111,15 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   const showHover = hovered && !adapter.isEgo(hovered);
   const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
 
+  const { tilt: tiltAnim, tiltRef } = useTiltAnim(tiltTarget);
+
   const handleMouseDown = (e: React.MouseEvent, node: SimN<N>) => {
     const isEgo = adapter.isEgo(node);
-    startDrag(e, node, svgRef.current!, simRef.current, pinDraggedNodes || isEgo);
+    startDrag(e, node, svgRef.current!, simRef.current, pinDraggedNodes || isEgo, () => tiltRef.current);
   };
 
   const { t: effectiveTransform } = useViewTransform({
-    override: viewTransform, zoomToId, zoomScale, nodes, adapter, width, height,
+    override: viewTransform, zoomToId, zoomScale, nodes, adapter, width, height, tilt: tiltAnim,
   });
 
   return (
@@ -141,6 +136,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         transform={effectiveTransform}
         ego={ego} hovered={hovered ?? null} showHover={!!showHover}
         onHullHover={k => { setHullHoverKey(k); onHullHoverChange?.(k); }}
+        tilt={tiltAnim}
       />
     </div>
   );

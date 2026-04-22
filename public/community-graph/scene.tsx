@@ -30,12 +30,13 @@ interface Props<N, L extends BaseLink & { weight?: number }> {
   hovered: SimN<N> | null;
   showHover: boolean;
   onHullHover?: (key: string | null) => void;
+  tilt: number;
 }
 
 export function GraphScene<N, L extends BaseLink & { weight?: number }>({
   svgRef, width, height, nodes, links, adapter, primaryKey, communityColors, minCommunitySize,
   focusKey, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick,
-  transform, ego, hovered, showHover, onHullHover,
+  transform, ego, hovered, showHover, onHullHover, tilt,
 }: Props<N, L>) {
   const t = transform
     ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})`
@@ -45,16 +46,17 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
       <GraphDefs />
       <g style={{ transform: t, transformOrigin: '0 0' }}>
         <GridBackdrop />
-        <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} focusKey={focusKey} onHoverKey={onHullHover} />
-        <Links links={links} connected={connected} />
+        <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} focusKey={focusKey} onHoverKey={onHullHover} tilt={tilt} />
+        <Links links={links} connected={connected} tilt={tilt} />
         <Nodes
           nodes={nodes} adapter={adapter}
           hoverId={hoverId} selectedId={selectedId} connected={connected} nodeColor={nodeColor}
           onHoverStart={onHoverStart} onHoverEnd={onHoverEnd} onMouseDown={onMouseDown}
           onClick={n => onNodeClick?.(n)}
+          tilt={tilt}
         />
-        {ego && <EgoLabel ego={ego} adapter={adapter} scale={transform?.scale ?? 1} />}
-        {showHover && hovered && <HoverTooltip node={hovered} adapter={adapter} scale={transform?.scale ?? 1} />}
+        {ego && <EgoLabel ego={ego} adapter={adapter} scale={transform?.scale ?? 1} tilt={tilt} />}
+        {showHover && hovered && <HoverTooltip node={hovered} adapter={adapter} scale={transform?.scale ?? 1} tilt={tilt} />}
       </g>
     </svg>
   );
