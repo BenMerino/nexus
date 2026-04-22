@@ -17,6 +17,9 @@ export interface CommunityAdapter<N> {
   /** Optional — the Z elevation for this node. Nodes on different layers
    *  stratify vertically when the camera is tilted. Defaults to 0. */
   getLayerZ?(n: N): number;
+  /** Optional — short all-caps type tag rendered above the node label
+   *  (AUTHOR, JOURNAL, INSTITUTION, PAPER). Returning null hides the tag. */
+  getTypeTag?(n: N): string | null;
 }
 
 export interface ForceConfig {

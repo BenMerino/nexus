@@ -13596,26 +13596,43 @@ function tspanStyle(r) {
 
 // public/community-graph/labels.tsx
 var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+var TAG_STYLE = (scale) => ({
+  pointerEvents: "none",
+  fontSize: 9 / scale,
+  letterSpacing: 0.8 / scale,
+  fontFamily: "var(--mono)",
+  fill: "rgba(255,255,255,0.45)",
+  paintOrder: "stroke",
+  stroke: "rgba(0,0,0,0.6)",
+  strokeWidth: 3 / scale,
+  strokeLinejoin: "round"
+});
+var NAME_STYLE = (scale, weight = 400) => ({
+  pointerEvents: "none",
+  fontSize: 11 / scale,
+  fontWeight: weight,
+  fill: "rgba(255,255,255,0.85)",
+  paintOrder: "stroke",
+  stroke: "rgba(0,0,0,0.6)",
+  strokeWidth: 3 / scale,
+  strokeLinejoin: "round"
+});
 function EgoLabel({ ego, adapter, scale, camera }) {
   const r = adapter.getRadius(ego);
   const p = project({ x: ego.x, y: ego.y, z: ego.z ?? 0 }, camera);
-  const x3 = p.x;
-  const y3 = p.y;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-    "text",
-    {
-      x: x3,
-      y: y3 + r + 14 / scale,
-      textAnchor: "middle",
-      style: { pointerEvents: "none", fontSize: 11 / scale, fill: "rgba(255,255,255,0.85)", paintOrder: "stroke", stroke: "rgba(0,0,0,0.6)", strokeWidth: 3 / scale, strokeLinejoin: "round" },
-      children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(RichText, { raw: adapter.getLabel(ego) })
-    }
-  );
+  const tag = adapter.getTypeTag?.(ego) ?? null;
+  const nameY = p.y + r + (tag ? 24 : 14) / scale;
+  const tagY = p.y + r + 12 / scale;
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { style: { pointerEvents: "none" }, children: [
+    tag && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: p.x, y: tagY, textAnchor: "middle", style: TAG_STYLE(scale), children: tag }),
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: p.x, y: nameY, textAnchor: "middle", style: NAME_STYLE(scale), children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(RichText, { raw: adapter.getLabel(ego) }) })
+  ] });
 }
 function HoverTooltip({ node, adapter, scale, camera }) {
   const r = adapter.getRadius(node);
   const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
   const footnote = adapter.getHoverFootnote?.(node) ?? null;
+  const tag = adapter.getTypeTag?.(node) ?? null;
   const p = project({ x: node.x, y: node.y, z: node.z ?? 0 }, camera);
   const x3 = p.x;
   const y3 = p.y;
@@ -13623,26 +13640,30 @@ function HoverTooltip({ node, adapter, scale, camera }) {
   if (subtitle) lines.push(subtitle);
   if (footnote) lines.push(footnote);
   const line = 14 / scale;
-  const topY = y3 - r - 10 / scale - (lines.length - 1) * line;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("g", { style: { pointerEvents: "none" }, children: lines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-    "text",
-    {
-      x: x3,
-      y: topY + i * line,
-      textAnchor: "middle",
-      style: {
-        fontSize: (i === 0 ? 12 : 11) / scale,
-        fill: i === 0 ? "var(--fg)" : "var(--fg-muted)",
-        fontWeight: i === 0 ? 500 : 400,
-        paintOrder: "stroke",
-        stroke: "rgba(0,0,0,0.7)",
-        strokeWidth: 3 / scale,
-        strokeLinejoin: "round"
+  const extraTop = tag ? 12 / scale : 0;
+  const topY = y3 - r - 10 / scale - (lines.length - 1) * line - extraTop;
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { style: { pointerEvents: "none" }, children: [
+    tag && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: x3, y: topY - 4 / scale, textAnchor: "middle", style: TAG_STYLE(scale), children: tag }),
+    lines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+      "text",
+      {
+        x: x3,
+        y: topY + i * line,
+        textAnchor: "middle",
+        style: {
+          fontSize: (i === 0 ? 12 : 11) / scale,
+          fill: i === 0 ? "var(--fg)" : "var(--fg-muted)",
+          fontWeight: i === 0 ? 500 : 400,
+          paintOrder: "stroke",
+          stroke: "rgba(0,0,0,0.7)",
+          strokeWidth: 3 / scale,
+          strokeLinejoin: "round"
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(RichText, { raw: l })
       },
-      children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(RichText, { raw: l })
-    },
-    i
-  )) });
+      i
+    ))
+  ] });
 }
 function PathLabels({ nodes, adapter, scale, camera, ids }) {
   return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("g", { style: { pointerEvents: "none" }, children: nodes.map((n) => {
@@ -13650,17 +13671,13 @@ function PathLabels({ nodes, adapter, scale, camera, ids }) {
     if (!ids.has(id)) return null;
     const r = adapter.getRadius(n);
     const p = project({ x: n.x, y: n.y, z: n.z ?? 0 }, camera);
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-      "text",
-      {
-        x: p.x,
-        y: p.y + r + 14 / scale,
-        textAnchor: "middle",
-        style: { fontSize: 11 / scale, fill: "rgba(255,255,255,0.85)", paintOrder: "stroke", stroke: "rgba(0,0,0,0.6)", strokeWidth: 3 / scale, strokeLinejoin: "round" },
-        children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(RichText, { raw: adapter.getLabel(n) })
-      },
-      id
-    );
+    const tag = adapter.getTypeTag?.(n) ?? null;
+    const nameY = p.y + r + (tag ? 24 : 14) / scale;
+    const tagY = p.y + r + 12 / scale;
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { children: [
+      tag && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: p.x, y: tagY, textAnchor: "middle", style: TAG_STYLE(scale), children: tag }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("text", { x: p.x, y: nameY, textAnchor: "middle", style: NAME_STYLE(scale), children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(RichText, { raw: adapter.getLabel(n) }) })
+    ] }, id);
   }) });
 }
 

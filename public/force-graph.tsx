@@ -93,6 +93,14 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     },
     getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
     getLayerZ: n => explorerLayerZ({ n, layerOrder, coauthorIds, homeInstitutionId, egoAuthorId }),
+    getTypeTag: n => {
+      if (n.id === egoAuthorId) return 'EGO';
+      if (n.group === 'institution') return 'INSTITUTION';
+      if (n.group === 'journal') return 'JOURNAL';
+      if (n.group === 'doi') return 'PAPER';
+      if (n.group === 'author') return coauthorIds.has(n.id) ? 'CO-AUTHOR' : 'AUTHOR';
+      return null;
+    },
   }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier, layerOrder, coauthorIds]);
 
   const forceConfig = useMemo(() => {
