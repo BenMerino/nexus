@@ -4,7 +4,7 @@
 
 export type LayerType = 'institution' | 'author' | 'coauthor' | 'journal' | 'paper';
 
-export const DEFAULT_LAYER_ORDER: LayerType[] = ['institution', 'author', 'coauthor', 'journal', 'paper'];
+export const DEFAULT_LAYER_ORDER: LayerType[] = ['author', 'institution', 'journal', 'paper', 'coauthor'];
 
 /** Maps a sim node to its layer bucket. `doi` is papers; authors split into
  *  two buckets by ego-proximity — the ego (and the tenant's own authors)

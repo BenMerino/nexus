@@ -15489,7 +15489,7 @@ function computeVisibility(nodes, edges, affiliations, egoAuthorId, homeInstitut
 }
 
 // public/explorer-layers.ts
-var DEFAULT_LAYER_ORDER = ["institution", "author", "coauthor", "journal", "paper"];
+var DEFAULT_LAYER_ORDER = ["author", "institution", "journal", "paper", "coauthor"];
 function layerTypeForNode(n, coauthorIds) {
   if (n.group === "institution") return "institution";
   if (n.group === "journal") return "journal";
