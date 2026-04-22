@@ -112,7 +112,7 @@ export function GraphExplorerBody() {
       </header>
 
       <div className="graph-layout">
-        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFrom={yearFrom} yearTo={yearTo} onYearRangeChange={(f, t) => setRange([f, t])} nodes={projectedNodes} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled={tilted} />
+        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFrom={yearFrom} yearTo={yearTo} onYearRangeChange={(f, t) => setRange([f, t])} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled={tilted} />
 
         <div className="graph-canvas">
           <GraphCanvasCorners tenant={me?.tenant ?? null} role={me?.role ?? null} yearFrom={yearFrom} yearTo={yearTo} yearMin={yearMin} yearMax={yearMax} tilted={tilted} onToggleTilt={toggleTilt} />

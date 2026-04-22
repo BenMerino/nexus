@@ -15252,36 +15252,6 @@ function CommunityGraph({
 // public/community-graph/legend.tsx
 var import_react9 = __toESM(require_react());
 var import_jsx_runtime13 = __toESM(require_jsx_runtime());
-function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
-  const colors = (0, import_react9.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const major = (0, import_react9.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const items = (0, import_react9.useMemo)(() => {
-    const byKey = /* @__PURE__ */ new Map();
-    for (const n of nodes) {
-      const key = effectiveKey(n, adapter, major);
-      if (!key) continue;
-      const name = key === OTHER_KEY ? OTHER_LABEL : adapter.getCommunityLabel?.(key, n) ?? key;
-      const e = byKey.get(key) || { name, count: 0 };
-      e.count += 1;
-      byKey.set(key, e);
-    }
-    return [...byKey.entries()].sort((a2, b) => {
-      if (a2[0] === primaryKey) return -1;
-      if (b[0] === primaryKey) return 1;
-      if (a2[0] === OTHER_KEY) return 1;
-      if (b[0] === OTHER_KEY) return -1;
-      return b[1].count - a2[1].count;
-    });
-  }, [nodes, adapter, major, primaryKey]);
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: info.name }),
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
-      "\xB7",
-      info.count
-    ] })
-  ] }, key)) });
-}
 
 // public/explorer-community.ts
 function pickMaxKey(counts, homeKey) {
@@ -15758,37 +15728,7 @@ function buildLayerRows(flags, setFlag) {
 
 // public/graph-filters-sidebar.tsx
 var import_jsx_runtime18 = __toESM(require_jsx_runtime());
-function prettyFallback(key) {
-  const bare = key.replace(/^[a-z]+:/, "");
-  const m2 = bare.match(/\/([^/]+)\/?$/);
-  return m2 ? m2[1] : bare;
-}
-function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange, nodes, allNodes, affiliations, homeInstitutionId, layerOrder, onReorderLayer, layersEnabled }) {
-  const labelById = (0, import_react16.useMemo)(() => {
-    const m2 = /* @__PURE__ */ new Map();
-    for (const n of allNodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
-    return m2;
-  }, [allNodes]);
-  const journalByDoi = (0, import_react16.useMemo)(() => {
-    const hasPapers = nodes.some((n) => n.group === "doi");
-    if (!hasPapers) return null;
-    const m2 = /* @__PURE__ */ new Map();
-    for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m2.set(d, jId);
-    return m2;
-  }, [nodes, affiliations.doisByJournal]);
-  const hullTier = (0, import_react16.useMemo)(() => {
-    if (nodes.some((n) => n.group === "institution")) return "institution";
-    if (nodes.some((n) => n.group === "journal")) return "journal";
-    return "none";
-  }, [nodes]);
-  const legendAdapter = (0, import_react16.useMemo)(() => ({
-    getId: (n) => n.id,
-    getLabel: (n) => n.label,
-    getRadius: () => 0,
-    getCommunityKey: (n) => explorerCommunityKey(n, affiliations.institutionCountsByAuthor, affiliations.journalCountsByAuthor, homeInstitutionId, journalByDoi, hullTier),
-    isEgo: () => false,
-    getCommunityLabel: (key) => labelById.get(key) || prettyFallback(key)
-  }), [affiliations, labelById, homeInstitutionId, journalByDoi, hullTier]);
+function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange, layerOrder, onReorderLayer, layersEnabled }) {
   const layerRows = (0, import_react16.useMemo)(() => buildLayerRows(flags, setFlag), [flags, setFlag]);
   return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("aside", { className: "graph-filters", children: [
     /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-group", children: [
@@ -15801,10 +15741,6 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearT
     yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-group", children: [
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "filter-label", children: "Year range" }),
       /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: onYearRangeChange })
-    ] }),
-    nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-group legend", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "filter-label", children: "Communities" }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId, minSize: 1 })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
   ] });
@@ -16514,7 +16450,7 @@ function GraphExplorerBody() {
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-layout", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), nodes: projectedNodes, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
       /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-canvas", children: [
         /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
         projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds })
