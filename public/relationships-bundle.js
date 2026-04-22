@@ -15657,6 +15657,11 @@ function BucketView({ b, onSelect, onHover }) {
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
   ] });
 }
+var ORCID_RE = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
+function displayLabel(n) {
+  if (n.group === "author" && (!n.label || ORCID_RE.test(n.label))) return "Unknown author";
+  return n.label;
+}
 function NodeList({ label, color, ns, onSelect, onHover }) {
   if (ns.length === 0) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "gc-list", children: [
@@ -15674,7 +15679,7 @@ function NodeList({ label, color, ns, onSelect, onHover }) {
         onClick: () => onSelect(n.id),
         onMouseEnter: () => onHover?.(n.id),
         onMouseLeave: () => onHover?.(null),
-        children: n.label
+        children: displayLabel(n)
       }
     ) }, n.id)) })
   ] });

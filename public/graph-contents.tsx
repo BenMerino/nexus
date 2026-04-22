@@ -116,6 +116,12 @@ function BucketView({ b, onSelect, onHover }: { b: Bucket; onSelect: (id: string
   );
 }
 
+const ORCID_RE = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
+function displayLabel(n: EnrichedSimNode): string {
+  if (n.group === 'author' && (!n.label || ORCID_RE.test(n.label))) return 'Unknown author';
+  return n.label;
+}
+
 function NodeList({ label, color, ns, onSelect, onHover }: { label: string; color: string; ns: EnrichedSimNode[]; onSelect: (id: string) => void; onHover?: (id: string | null) => void }) {
   if (ns.length === 0) return null;
   return (
@@ -127,7 +133,7 @@ function NodeList({ label, color, ns, onSelect, onHover }: { label: string; colo
             <button type="button"
               onClick={() => onSelect(n.id)}
               onMouseEnter={() => onHover?.(n.id)}
-              onMouseLeave={() => onHover?.(null)}>{n.label}</button>
+              onMouseLeave={() => onHover?.(null)}>{displayLabel(n)}</button>
           </li>
         ))}
       </ul>

@@ -50,7 +50,14 @@ async function authorDetail(scope, ext_id, label) {
     const r = await sql`SELECT full_name, faculty, position FROM users WHERE orcid = ${ext_id} AND tenant_id = ${scope.tenantId} LIMIT 1`;
     u = r.rows[0] || null;
   }
-  return { type: "author", name: u?.full_name || label, orcid: ext_id, faculty: u?.faculty, role: u?.position, papersCount: papers.length, citations, papers };
+  // External authors aren't in `users`; pull their name from the author tag
+  // (where the ingestion pipeline stores the human name under `value`).
+  // When label is itself just the ORCID (no better name anywhere upstream),
+  // don't echo the ORCID into `name` — the ORCID already shows on its own line.
+  const tagName = u?.full_name ? null : await tagLabel("author", ext_id);
+  const labelLooksLikeOrcid = label && /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(label);
+  const name = u?.full_name || tagName || (labelLooksLikeOrcid ? "Unknown author" : label);
+  return { type: "author", name, orcid: ext_id, faculty: u?.faculty, role: u?.position, papersCount: papers.length, citations, papers };
 }
 
 async function tagLabel(category, ext_id) {
