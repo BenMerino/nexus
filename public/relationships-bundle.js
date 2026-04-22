@@ -14964,14 +14964,37 @@ function resolveNodeColor(n, adapter, communityColors, major) {
 }
 
 // public/community-graph/connected-set.ts
-function connectedSet(focusId, links) {
+function idOf(endpoint) {
+  return typeof endpoint === "object" ? endpoint.id : endpoint;
+}
+function connectedSet(focusId, links, maxHops = 1) {
   if (!focusId) return null;
-  const set2 = /* @__PURE__ */ new Set([focusId]);
+  if (maxHops <= 0) return /* @__PURE__ */ new Set([focusId]);
+  const adjacency = /* @__PURE__ */ new Map();
   for (const l of links) {
-    const s = typeof l.source === "object" ? l.source.id : l.source;
-    const t = typeof l.target === "object" ? l.target.id : l.target;
-    if (s === focusId) set2.add(t);
-    if (t === focusId) set2.add(s);
+    const s = idOf(l.source);
+    const t = idOf(l.target);
+    const sn = adjacency.get(s) ?? [];
+    sn.push(t);
+    adjacency.set(s, sn);
+    const tn = adjacency.get(t) ?? [];
+    tn.push(s);
+    adjacency.set(t, tn);
+  }
+  const set2 = /* @__PURE__ */ new Set([focusId]);
+  let frontier = [focusId];
+  for (let hop = 0; hop < maxHops; hop++) {
+    const next = [];
+    for (const id of frontier) {
+      for (const nb of adjacency.get(id) ?? []) {
+        if (!set2.has(nb)) {
+          set2.add(nb);
+          next.push(nb);
+        }
+      }
+    }
+    if (next.length === 0) break;
+    frontier = next;
   }
   return set2;
 }
@@ -15041,7 +15064,11 @@ function CommunityGraph({
   }, [nodes, links, anchors, primaryKey, width, height]);
   useLayerIntegration(nodes, adapter, config.layerStrength, () => tick((v) => v + 1));
   const nodeColor = (n) => resolveNodeColor(n, adapter, communityColors, major);
-  const connected = (0, import_react7.useMemo)(() => connectedSet(hoverId || selectedId, links), [hoverId, selectedId, links]);
+  const connected = (0, import_react7.useMemo)(() => {
+    if (hoverId) return connectedSet(hoverId, links, 1);
+    if (selectedId) return connectedSet(selectedId, links, 3);
+    return null;
+  }, [hoverId, selectedId, links]);
   const ego = nodes.find((n) => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);

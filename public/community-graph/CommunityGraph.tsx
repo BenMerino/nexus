@@ -99,7 +99,14 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
 
   const nodeColor = (n: SimN<N>) => resolveNodeColor(n, adapter, communityColors, major);
 
-  const connected = useMemo(() => connectedSet(hoverId || selectedId, links), [hoverId, selectedId, links]);
+  // Hover highlights just the immediate neighborhood; selection walks the
+  // full reachable subgraph (capped at 3 hops) so paths *through* the
+  // selected node stay visible instead of dimming.
+  const connected = useMemo(() => {
+    if (hoverId) return connectedSet(hoverId, links, 1);
+    if (selectedId) return connectedSet(selectedId, links, 3);
+    return null;
+  }, [hoverId, selectedId, links]);
 
   const ego = nodes.find(n => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find(n => adapter.getId(n) === hoverId) : null;
