@@ -13249,7 +13249,7 @@ function GraphDefs() {
 function GridBackdrop() {
   return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
-function Links({ links, connected, camera, nodes, overlayEdges, nodeId }) {
+function Links({ links, connected, camera, nodes, overlayEdges, nodeId, egoId }) {
   const posById = /* @__PURE__ */ new Map();
   if (nodes && nodeId) {
     for (const n of nodes) posById.set(nodeId(n), { x: n.x, y: n.y, z: n.z ?? 0 });
@@ -13259,6 +13259,8 @@ function Links({ links, connected, camera, nodes, overlayEdges, nodeId }) {
       const s = typeof l.source === "object" ? l.source : null;
       const t = typeof l.target === "object" ? l.target : null;
       if (!s || !t) return null;
+      const touchesEgo = !!egoId && (s.id === egoId || t.id === egoId);
+      if (!connected && egoId && !touchesEgo) return null;
       const dim = connected && !(connected.has(s.id) && connected.has(t.id));
       const w = l.weight || 1;
       const sz = s.z ?? 0;
@@ -13550,7 +13552,7 @@ function GraphScene({
     /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Links, { links, connected, camera, nodes, overlayEdges, nodeId: adapter.getId }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Links, { links, connected, camera, nodes, overlayEdges, nodeId: adapter.getId, egoId: ego ? adapter.getId(ego) : null }),
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
         Nodes,
         {

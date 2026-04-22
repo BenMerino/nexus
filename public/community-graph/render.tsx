@@ -35,12 +35,17 @@ interface LinksProps<N, L extends BaseLink & { weight?: number }> {
   nodes?: SimN<N>[];
   overlayEdges?: { source: string; target: string }[];
   nodeId?: (n: N) => string;
+  /** With no hover/selection, only edges touching this id render. The scene
+   *  reads as a star around the ego — indirect relationships appear only
+   *  when the user focuses a node to see its neighborhood. */
+  egoId?: string | null;
 }
 
-/** Base edges are always drawn, dimmed when a focus is active and the edge
- *  doesn't touch it. Overlay edges (the "full triangle" around a focused
- *  node) are rendered as dashed accent lines when present. */
-export function Links<N, L extends BaseLink & { weight?: number }>({ links, connected, camera, nodes, overlayEdges, nodeId }: LinksProps<N, L>) {
+/** Default view is a star: only edges touching `egoId` render. On hover or
+ *  select, the focused node's 1-hop neighborhood lights up and the rest dim.
+ *  Overlay edges (the "full triangle" around the focused node) draw as
+ *  dashed accent lines when present. */
+export function Links<N, L extends BaseLink & { weight?: number }>({ links, connected, camera, nodes, overlayEdges, nodeId, egoId }: LinksProps<N, L>) {
   const posById = new Map<string, { x: number; y: number; z: number }>();
   if (nodes && nodeId) {
     for (const n of nodes) posById.set(nodeId(n), { x: n.x, y: n.y, z: (n as unknown as { z?: number }).z ?? 0 });
@@ -51,6 +56,11 @@ export function Links<N, L extends BaseLink & { weight?: number }>({ links, conn
         const s = typeof l.source === 'object' ? l.source : null;
         const t = typeof l.target === 'object' ? l.target : null;
         if (!s || !t) return null;
+        // No focus: hide every edge that doesn't touch the ego — the scene
+        // becomes a star around the user. Focus active: dim instead of hide
+        // so the neighborhood stands out against the rest of the graph.
+        const touchesEgo = !!egoId && (s.id === egoId || t.id === egoId);
+        if (!connected && egoId && !touchesEgo) return null;
         const dim = connected && !(connected.has(s.id) && connected.has(t.id));
         const w = l.weight || 1;
         const sz = (s as unknown as { z?: number }).z ?? 0;
