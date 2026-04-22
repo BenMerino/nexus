@@ -60,16 +60,14 @@ export function ringPath(pts: Point[]): string {
   return d + ' Z';
 }
 
-/** One quad per ring segment, connecting floor→ceiling as sub-paths. */
+/** Silhouette of the prism walls as one closed polygon: forward along the
+ *  floor ring, backward along the ceiling ring. Single fill region — no
+ *  overlapping sub-paths to produce rule-based holes. */
 export function wallsPath(floor: Point[], ceiling: Point[]): string {
-  let d = '';
   const n = floor.length;
-  for (let i = 0; i < n; i++) {
-    const f1 = floor[i];
-    const f2 = floor[(i + 1) % n];
-    const c2 = ceiling[(i + 1) % n];
-    const c1 = ceiling[i];
-    d += `M ${f1.x} ${f1.y} L ${f2.x} ${f2.y} L ${c2.x} ${c2.y} L ${c1.x} ${c1.y} Z `;
-  }
-  return d;
+  if (n === 0) return '';
+  let d = `M ${floor[0].x} ${floor[0].y}`;
+  for (let i = 1; i < n; i++) d += ` L ${floor[i].x} ${floor[i].y}`;
+  for (let i = n - 1; i >= 0; i--) d += ` L ${ceiling[i].x} ${ceiling[i].y}`;
+  return d + ' Z';
 }

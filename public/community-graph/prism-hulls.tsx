@@ -56,18 +56,20 @@ export function PrismHulls({ groups, camera, pad = DEFAULT_PAD, lerpAlpha = DEFA
   return (
     <g>
       {rendered.map(p => {
-        const fill = p.deemphasis ? 0.03 : p.emphasis ? 0.18 : 0.09;
-        const stroke = p.deemphasis ? 0.1 : p.emphasis ? 0.65 : 0.32;
-        const width = p.emphasis ? 1.6 : 1;
+        const floorFill = p.deemphasis ? 0.05 : p.emphasis ? 0.28 : 0.16;
+        const wallFill = p.deemphasis ? 0.04 : p.emphasis ? 0.22 : 0.13;
+        const ceilingFill = p.deemphasis ? 0.04 : p.emphasis ? 0.16 : 0.09;
+        const stroke = p.deemphasis ? 0.2 : p.emphasis ? 0.9 : 0.55;
+        const width = p.emphasis ? 1.8 : 1.2;
         return (
           <g key={p.key}
             onMouseEnter={onHoverKey ? () => onHoverKey(p.key) : undefined}
             onMouseLeave={onHoverKey ? () => onHoverKey(null) : undefined}
             style={{ cursor: onHoverKey ? 'pointer' : 'default' }}
           >
-            <path d={ringPath(p.floor)} fill={p.color} fillOpacity={fill} stroke={p.color} strokeOpacity={stroke * 0.55} strokeWidth={width} style={{ pointerEvents: 'fill' }} />
-            <path d={wallsPath(p.floor, p.ceiling)} fill={p.color} fillOpacity={fill * 0.55} stroke="none" style={{ pointerEvents: 'none' }} />
-            <path d={ringPath(p.ceiling)} fill={p.color} fillOpacity={fill * 0.7} stroke={p.color} strokeOpacity={stroke} strokeWidth={width} style={{ pointerEvents: 'none' }} />
+            <path d={ringPath(p.floor)} fill={p.color} fillOpacity={floorFill} stroke={p.color} strokeOpacity={stroke * 0.6} strokeWidth={width} style={{ pointerEvents: 'fill' }} />
+            <path d={wallsPath(p.floor, p.ceiling)} fill={p.color} fillOpacity={wallFill} stroke={p.color} strokeOpacity={stroke * 0.45} strokeWidth={width * 0.8} style={{ pointerEvents: 'none' }} />
+            <path d={ringPath(p.ceiling)} fill={p.color} fillOpacity={ceilingFill} stroke={p.color} strokeOpacity={stroke} strokeWidth={width} style={{ pointerEvents: 'none' }} />
           </g>
         );
       })}

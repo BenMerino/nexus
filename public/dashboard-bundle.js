@@ -13444,16 +13444,12 @@ function ringPath(pts) {
   return d + " Z";
 }
 function wallsPath(floor, ceiling) {
-  let d = "";
   const n = floor.length;
-  for (let i = 0; i < n; i++) {
-    const f1 = floor[i];
-    const f2 = floor[(i + 1) % n];
-    const c2 = ceiling[(i + 1) % n];
-    const c1 = ceiling[i];
-    d += `M ${f1.x} ${f1.y} L ${f2.x} ${f2.y} L ${c2.x} ${c2.y} L ${c1.x} ${c1.y} Z `;
-  }
-  return d;
+  if (n === 0) return "";
+  let d = `M ${floor[0].x} ${floor[0].y}`;
+  for (let i = 1; i < n; i++) d += ` L ${floor[i].x} ${floor[i].y}`;
+  for (let i = n - 1; i >= 0; i--) d += ` L ${ceiling[i].x} ${ceiling[i].y}`;
+  return d + " Z";
 }
 
 // public/community-graph/prism-hulls.tsx
@@ -13479,9 +13475,11 @@ function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LE
     return ay - by;
   });
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: rendered.map((p) => {
-    const fill = p.deemphasis ? 0.03 : p.emphasis ? 0.18 : 0.09;
-    const stroke = p.deemphasis ? 0.1 : p.emphasis ? 0.65 : 0.32;
-    const width = p.emphasis ? 1.6 : 1;
+    const floorFill = p.deemphasis ? 0.05 : p.emphasis ? 0.28 : 0.16;
+    const wallFill = p.deemphasis ? 0.04 : p.emphasis ? 0.22 : 0.13;
+    const ceilingFill = p.deemphasis ? 0.04 : p.emphasis ? 0.16 : 0.09;
+    const stroke = p.deemphasis ? 0.2 : p.emphasis ? 0.9 : 0.55;
+    const width = p.emphasis ? 1.8 : 1.2;
     return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
       "g",
       {
@@ -13489,9 +13487,9 @@ function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LE
         onMouseLeave: onHoverKey ? () => onHoverKey(null) : void 0,
         style: { cursor: onHoverKey ? "pointer" : "default" },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: ringPath(p.floor), fill: p.color, fillOpacity: fill, stroke: p.color, strokeOpacity: stroke * 0.55, strokeWidth: width, style: { pointerEvents: "fill" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: wallsPath(p.floor, p.ceiling), fill: p.color, fillOpacity: fill * 0.55, stroke: "none", style: { pointerEvents: "none" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: ringPath(p.ceiling), fill: p.color, fillOpacity: fill * 0.7, stroke: p.color, strokeOpacity: stroke, strokeWidth: width, style: { pointerEvents: "none" } })
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: ringPath(p.floor), fill: p.color, fillOpacity: floorFill, stroke: p.color, strokeOpacity: stroke * 0.6, strokeWidth: width, style: { pointerEvents: "fill" } }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: wallsPath(p.floor, p.ceiling), fill: p.color, fillOpacity: wallFill, stroke: p.color, strokeOpacity: stroke * 0.45, strokeWidth: width * 0.8, style: { pointerEvents: "none" } }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: ringPath(p.ceiling), fill: p.color, fillOpacity: ceilingFill, stroke: p.color, strokeOpacity: stroke, strokeWidth: width, style: { pointerEvents: "none" } })
         ]
       },
       p.key
