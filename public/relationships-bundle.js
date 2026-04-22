@@ -13903,15 +13903,15 @@ function HoverTooltip({ node, adapter, scale, camera }) {
   if (subtitle) lines.push(subtitle);
   if (footnote) lines.push(footnote);
   const line = 14 / scale;
-  const extraTop = tag ? 12 / scale : 0;
-  const topY = y3 - r - 10 / scale - (lines.length - 1) * line - extraTop;
+  const tagY = y3 + r + 12 / scale;
+  const firstLineY = y3 + r + (tag ? 24 : 14) / scale;
   return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("g", { style: { pointerEvents: "none" }, children: [
-    tag && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("text", { x: x3, y: topY - 4 / scale, textAnchor: "middle", style: TAG_STYLE(scale), children: tag }),
+    tag && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("text", { x: x3, y: tagY, textAnchor: "middle", style: TAG_STYLE(scale), children: tag }),
     lines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
       "text",
       {
         x: x3,
-        y: topY + i * line,
+        y: firstLineY + i * line,
         textAnchor: "middle",
         style: {
           fontSize: (i === 0 ? 12 : 11) / scale,

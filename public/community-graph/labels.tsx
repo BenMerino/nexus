@@ -70,13 +70,15 @@ export function HoverTooltip<N>({ node, adapter, scale, camera }: HoverProps<N>)
   if (subtitle) lines.push(subtitle);
   if (footnote) lines.push(footnote);
   const line = 14 / scale;
-  const extraTop = tag ? 12 / scale : 0;
-  const topY = y - r - 10 / scale - (lines.length - 1) * line - extraTop;
+  // Below the node: tag first, then title, then subtitle/footnote — matches
+  // EgoLabel / PathLabels so every label in the scene reads the same way.
+  const tagY = y + r + 12 / scale;
+  const firstLineY = y + r + (tag ? 24 : 14) / scale;
   return (
     <g style={{ pointerEvents: 'none' }}>
-      {tag && <text x={x} y={topY - 4 / scale} textAnchor="middle" style={TAG_STYLE(scale)}>{tag}</text>}
+      {tag && <text x={x} y={tagY} textAnchor="middle" style={TAG_STYLE(scale)}>{tag}</text>}
       {lines.map((l, i) => (
-        <text key={i} x={x} y={topY + i * line} textAnchor="middle"
+        <text key={i} x={x} y={firstLineY + i * line} textAnchor="middle"
           style={{
             fontSize: (i === 0 ? 12 : 11) / scale,
             fill: i === 0 ? 'var(--fg)' : 'var(--fg-muted)',
