@@ -36,6 +36,7 @@ interface Props {
   tilt?: number;
   layerOrder?: LayerType[];
   coauthorIds?: Set<string>;
+  coTags?: Map<string, Set<string>>;
 }
 
 function baseRadius(n: EnrichedSimNode): number {
@@ -44,7 +45,7 @@ function baseRadius(n: EnrichedSimNode): number {
 
 const EMPTY_IDS: Set<string> = new Set();
 
-export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS }: Props) {
+export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, coTags }: Props) {
   const labelById = useMemo(() => {
     const m = new Map<string, string>();
     for (const n of nodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
@@ -136,6 +137,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       onHoverChange={onHoverChange}
       onHullHoverChange={onHullHoverChange}
       tilt={tilt}
+      coTags={coTags}
     />
   );
 }

@@ -13416,49 +13416,8 @@ function startDrag(e, node, svg, sim, pinAfterDrag, getCamera = () => FLAT) {
   window.addEventListener("mouseup", onUp);
 }
 
-// public/community-graph/render.tsx
+// public/community-graph/render-nodes.tsx
 var import_jsx_runtime6 = __toESM(require_jsx_runtime());
-function GraphDefs() {
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("defs", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("radialGradient", { id: "community-glow", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("radialGradient", { id: "graph-node-shadow", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("stop", { offset: "0%", stopColor: "rgba(0,0,0,0.55)" }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("stop", { offset: "100%", stopColor: "rgba(0,0,0,0)" })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("pattern", { id: "graph-grid", x: "0", y: "0", width: "40", height: "40", patternUnits: "userSpaceOnUse", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M 40 0 L 0 0 0 40", fill: "none", stroke: "var(--border-soft)", strokeWidth: "1" }) })
-  ] });
-}
-function GridBackdrop() {
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
-}
-function Links({ links, connected, camera }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { style: { pointerEvents: "none" }, children: links.map((l, i) => {
-    const s = typeof l.source === "object" ? l.source : null;
-    const t = typeof l.target === "object" ? l.target : null;
-    if (!s || !t) return null;
-    const dim = connected && !(connected.has(s.id) && connected.has(t.id));
-    const w = l.weight || 1;
-    const sz = s.z ?? 0;
-    const tz = t.z ?? 0;
-    const ps = project({ x: s.x, y: s.y, z: sz }, camera);
-    const pt = project({ x: t.x, y: t.y, z: tz }, camera);
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-      "line",
-      {
-        x1: ps.x,
-        y1: ps.y,
-        x2: pt.x,
-        y2: pt.y,
-        stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
-        strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
-      },
-      i
-    );
-  }) });
-}
 function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, camera }) {
   const zSorted = [...nodes].sort((a2, b) => a2.z - b.z);
   const lift = pitchLift(camera);
@@ -13524,6 +13483,77 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
   ] });
 }
 
+// public/community-graph/render.tsx
+var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+function GraphDefs() {
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("defs", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("radialGradient", { id: "community-glow", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("radialGradient", { id: "graph-node-shadow", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "0%", stopColor: "rgba(0,0,0,0.55)" }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "100%", stopColor: "rgba(0,0,0,0)" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("pattern", { id: "graph-grid", x: "0", y: "0", width: "40", height: "40", patternUnits: "userSpaceOnUse", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "M 40 0 L 0 0 0 40", fill: "none", stroke: "var(--border-soft)", strokeWidth: "1" }) })
+  ] });
+}
+function GridBackdrop() {
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
+}
+function Links({ links, connected, camera, nodes, overlayEdges, nodeId }) {
+  const posById = /* @__PURE__ */ new Map();
+  if (nodes && nodeId) {
+    for (const n of nodes) posById.set(nodeId(n), { x: n.x, y: n.y, z: n.z ?? 0 });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("g", { style: { pointerEvents: "none" }, children: [
+    links.map((l, i) => {
+      const s = typeof l.source === "object" ? l.source : null;
+      const t = typeof l.target === "object" ? l.target : null;
+      if (!s || !t) return null;
+      const dim = connected && !(connected.has(s.id) && connected.has(t.id));
+      const w = l.weight || 1;
+      const sz = s.z ?? 0;
+      const tz = t.z ?? 0;
+      const ps = project({ x: s.x, y: s.y, z: sz }, camera);
+      const pt = project({ x: t.x, y: t.y, z: tz }, camera);
+      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "line",
+        {
+          x1: ps.x,
+          y1: ps.y,
+          x2: pt.x,
+          y2: pt.y,
+          stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
+          strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
+        },
+        i
+      );
+    }),
+    overlayEdges && overlayEdges.map((e, i) => {
+      const s = posById.get(e.source);
+      const t = posById.get(e.target);
+      if (!s || !t) return null;
+      const ps = project(s, camera);
+      const pt = project(t, camera);
+      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "line",
+        {
+          x1: ps.x,
+          y1: ps.y,
+          x2: pt.x,
+          y2: pt.y,
+          stroke: "var(--accent)",
+          strokeOpacity: 0.55,
+          strokeWidth: 1.2,
+          strokeDasharray: "4 4"
+        },
+        `ov-${i}`
+      );
+    })
+  ] });
+}
+
 // public/smoothed-hulls.tsx
 var import_react2 = __toESM(require_react());
 
@@ -13584,7 +13614,7 @@ function smoothClosedPath(pts, tension) {
 }
 
 // public/smoothed-hulls.tsx
-var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+var import_jsx_runtime8 = __toESM(require_jsx_runtime());
 var DEFAULT_LERP_ALPHA = 0.18;
 var DEFAULT_PAD = 32;
 var MIN_GROUP_SIZE = 1;
@@ -13618,11 +13648,11 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
   for (const key of [...state.keys()]) {
     if (!seenKeys.has(key)) state.delete(key);
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: paths.map((p) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("g", { children: paths.map((p) => {
     const fill = p.deemphasis ? 0.03 : p.emphasis ? 0.22 : 0.1;
     const stroke = p.deemphasis ? 0.1 : p.emphasis ? 0.7 : 0.35;
     const width = p.emphasis ? 1.8 : 1;
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
       "path",
       {
         d: p.d,
@@ -13645,7 +13675,7 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
 }
 
 // public/community-graph/hulls.tsx
-var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+var import_jsx_runtime9 = __toESM(require_jsx_runtime());
 function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey, onHoverKey, camera }) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const groups = /* @__PURE__ */ new Map();
@@ -13669,17 +13699,17 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey,
       deemphasis: hasFocus && !isFocus
     });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(SmoothedHulls, { groups: hullGroups, onHoverKey });
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(SmoothedHulls, { groups: hullGroups, onHoverKey });
 }
 
 // public/community-graph/labels.tsx
-var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+var import_jsx_runtime10 = __toESM(require_jsx_runtime());
 function EgoLabel({ ego, adapter, scale, camera }) {
   const r = adapter.getRadius(ego);
   const p = project({ x: ego.x, y: ego.y, z: ego.z ?? 0 }, camera);
   const x3 = p.x;
   const y3 = p.y;
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
     "text",
     {
       x: x3,
@@ -13702,7 +13732,7 @@ function HoverTooltip({ node, adapter, scale, camera }) {
   if (footnote) lines.push(footnote);
   const line = 14 / scale;
   const topY = y3 - r - 10 / scale - (lines.length - 1) * line;
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("g", { style: { pointerEvents: "none" }, children: lines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("g", { style: { pointerEvents: "none" }, children: lines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
     "text",
     {
       x: x3,
@@ -13724,7 +13754,7 @@ function HoverTooltip({ node, adapter, scale, camera }) {
 }
 
 // public/community-graph/scene.tsx
-var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function GraphScene({
   svgRef,
   width,
@@ -13751,12 +13781,13 @@ function GraphScene({
   onHullHover,
   camera,
   onBackgroundMouseDown,
-  rotatable
+  rotatable,
+  overlayEdges
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(GraphDefs, {}),
-    rotatable && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GraphDefs, {}),
+    rotatable && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
       "rect",
       {
         x: 0,
@@ -13768,11 +13799,11 @@ function GraphScene({
         style: { cursor: "grab" }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(GridBackdrop, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Links, { links, connected, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridBackdrop, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera, nodes, overlayEdges, nodeId: adapter.getId }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         Nodes,
         {
           nodes,
@@ -13788,8 +13819,8 @@ function GraphScene({
           camera
         }
       ),
-      ego && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, camera }),
-      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1, camera })
+      ego && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, camera }),
+      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1, camera })
     ] })
   ] });
 }
@@ -14977,8 +15008,34 @@ function connectedSet(focusId, links) {
   return set2;
 }
 
+// public/community-graph/triangle-overlay.ts
+function buildOverlay(focusId, connected, coTags, visibleIds, baseEdges) {
+  if (!focusId || !connected || !coTags) return [];
+  const basePairs = /* @__PURE__ */ new Set();
+  for (const e of baseEdges) {
+    const s = typeof e.source === "object" ? e.source.id : e.source;
+    const t = typeof e.target === "object" ? e.target.id : e.target;
+    basePairs.add(s < t ? `${s}|${t}` : `${t}|${s}`);
+  }
+  const neighbors = [...connected].filter((id) => id !== focusId && visibleIds.has(id));
+  const out = [];
+  for (let i = 0; i < neighbors.length; i++) {
+    const a2 = neighbors[i];
+    const sa = coTags.get(a2);
+    if (!sa) continue;
+    for (let j = i + 1; j < neighbors.length; j++) {
+      const b = neighbors[j];
+      if (!sa.has(b)) continue;
+      const key = a2 < b ? `${a2}|${b}` : `${b}|${a2}`;
+      if (basePairs.has(key)) continue;
+      out.push({ source: a2, target: b });
+    }
+  }
+  return out;
+}
+
 // public/community-graph/CommunityGraph.tsx
-var import_jsx_runtime11 = __toESM(require_jsx_runtime());
+var import_jsx_runtime12 = __toESM(require_jsx_runtime());
 function CommunityGraph({
   nodes: inNodes,
   links: inLinks,
@@ -14996,7 +15053,8 @@ function CommunityGraph({
   externalHoverId,
   onHoverChange,
   onHullHoverChange,
-  tilt: tiltTarget = 0
+  tilt: tiltTarget = 0,
+  coTags
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react7.useRef)(null);
@@ -15043,6 +15101,7 @@ function CommunityGraph({
   useLayerIntegration(nodes, adapter, config.layerStrength, () => tick((v) => v + 1));
   const nodeColor = (n) => resolveNodeColor(n, adapter, communityColors, major);
   const connected = (0, import_react7.useMemo)(() => connectedSet(hoverId || selectedId, links), [hoverId, selectedId, links]);
+  const overlayEdges = buildOverlay(hoverId || selectedId, connected, coTags, new Set(nodes.map((n) => adapter.getId(n))), links);
   const ego = nodes.find((n) => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
@@ -15065,7 +15124,7 @@ function CommunityGraph({
     height,
     camera
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { position: "relative", width, height }, children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { position: "relative", width, height }, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
     GraphScene,
     {
       svgRef,
@@ -15102,14 +15161,15 @@ function CommunityGraph({
       },
       camera,
       rotatable: tiltTarget > 0,
-      onBackgroundMouseDown: startOrbitDrag
+      onBackgroundMouseDown: startOrbitDrag,
+      overlayEdges
     }
   ) });
 }
 
 // public/community-graph/legend.tsx
 var import_react8 = __toESM(require_react());
-var import_jsx_runtime12 = __toESM(require_jsx_runtime());
+var import_jsx_runtime13 = __toESM(require_jsx_runtime());
 
 // public/explorer-community.ts
 function pickMaxKey(counts, homeKey) {
@@ -15237,7 +15297,7 @@ function explorerLayerZ({ n, layerOrder, coauthorIds, homeInstitutionId, egoAuth
 }
 
 // public/force-graph.tsx
-var import_jsx_runtime13 = __toESM(require_jsx_runtime());
+var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 function hullTierFor(nodes) {
   if (nodes.some((n) => n.group === "institution")) return "institution";
   if (nodes.some((n) => n.group === "journal")) return "journal";
@@ -15250,7 +15310,7 @@ function baseRadius(n) {
   return nodeRadius(n.weight || 1, n.role);
 }
 var EMPTY_IDS = /* @__PURE__ */ new Set();
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS }) {
+function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, coTags }) {
   const labelById = (0, import_react9.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
@@ -15317,7 +15377,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     onExpand(n.id);
     onNodeClick?.(n);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
     CommunityGraph,
     {
       nodes,
@@ -15334,14 +15394,15 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       externalHoverId: externalHoverId ?? null,
       onHoverChange,
       onHullHoverChange,
-      tilt
+      tilt,
+      coTags
     }
   );
 }
 
 // public/explorer-canvas.tsx
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
-function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds }) {
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds, coTags }) {
   const ref = (0, import_react10.useRef)(null);
   const [size, setSize] = (0, import_react10.useState)(null);
   (0, import_react10.useEffect)(() => {
@@ -15356,7 +15417,7 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight, overflow: "hidden" }, children: size && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight, overflow: "hidden" }, children: size && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
     ForceGraph,
     {
       nodes,
@@ -15375,7 +15436,8 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
       onHullHoverChange,
       tilt,
       layerOrder,
-      coauthorIds
+      coauthorIds,
+      coTags
     }
   ) });
 }
@@ -15448,7 +15510,7 @@ var import_react15 = __toESM(require_react());
 
 // public/year-range-slider.tsx
 var import_react13 = __toESM(require_react());
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
 function YearRangeSlider({ min, max, from, to, onChange }) {
   const span = max - min || 1;
   const leftPct = (from - min) / span * 100;
@@ -15465,10 +15527,10 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
     left: `${leftPct}%`,
     width: `${Math.max(rightPct - leftPct, 0)}%`
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "year-range", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "year-range-track", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "year-range-fill", style: fillStyle }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-range", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-range-track", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "year-range-fill", style: fillStyle }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
         "input",
         {
           type: "range",
@@ -15480,7 +15542,7 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
           style: from >= to ? { zIndex: 4 } : void 0
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
         "input",
         {
           type: "range",
@@ -15492,17 +15554,17 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "year-range-readout mono", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { children: from }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "muted", children: "\u2013" }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { children: to })
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-range-readout mono", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { children: from }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "muted", children: "\u2013" }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { children: to })
     ] })
   ] });
 }
 
 // public/layer-stack.tsx
 var import_react14 = __toESM(require_react());
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
 function LayerStack({ rows, order, onReorder, enabled }) {
   const [dragIdx, setDragIdx] = (0, import_react14.useState)(null);
   const [overIdx, setOverIdx] = (0, import_react14.useState)(null);
@@ -15544,7 +15606,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
   (0, import_react14.useEffect)(() => {
     rowRefs.current = rowRefs.current.slice(0, entries.length);
   }, [entries.length]);
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, row }, i) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, row }, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
     "div",
     {
       ref: (el) => {
@@ -15554,7 +15616,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
       "data-dragging": dragIdx === i ? "1" : "0",
       "data-over": overIdx === i && dragIdx !== null && dragIdx !== i ? "1" : "0",
       children: [
-        enabled && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+        enabled && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
           "span",
           {
             className: "layer-stack-handle",
@@ -15563,7 +15625,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
             children: "\u283F"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "layer-stack-checks", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "layer-stack-checks", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
       ]
     },
     layer
@@ -15581,22 +15643,22 @@ function buildLayerRows(flags, setFlag) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange, layerOrder, onReorderLayer, layersEnabled }) {
   const layerRows = (0, import_react15.useMemo)(() => buildLayerRows(flags, setFlag), [flags, setFlag]);
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("aside", { className: "graph-filters", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "filter-label", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("aside", { className: "graph-filters", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-label", children: [
         "Node types",
-        layersEnabled && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "filter-hint-inline", children: "\xB7 drag to reorder layers" })
+        layersEnabled && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "filter-hint-inline", children: "\xB7 drag to reorder layers" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(LayerStack, { rows: layerRows, order: layerOrder, onReorder: onReorderLayer, enabled: layersEnabled })
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(LayerStack, { rows: layerRows, order: layerOrder, onReorder: onReorderLayer, enabled: layersEnabled })
     ] }),
-    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "filter-label", children: "Year range" }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: onYearRangeChange })
+    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "filter-label", children: "Year range" }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: onYearRangeChange })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
   ] });
 }
 
@@ -15825,7 +15887,7 @@ function useFlipReorder(container, keys, durationMs = 260) {
 
 // public/graph-search.tsx
 var import_react19 = __toESM(require_react());
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 function GraphSearch({ nodes, onSelect }) {
   const [query, setQuery] = (0, import_react19.useState)("");
   const [open, setOpen] = (0, import_react19.useState)(false);
@@ -15834,7 +15896,7 @@ function GraphSearch({ nodes, onSelect }) {
     const q = query.toLowerCase();
     return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
   }, [query, nodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
     "div",
     {
       style: { position: "relative", display: "inline-block" },
@@ -15842,7 +15904,7 @@ function GraphSearch({ nodes, onSelect }) {
         if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
           "input",
           {
             value: query,
@@ -15855,7 +15917,7 @@ function GraphSearch({ nodes, onSelect }) {
             style: { fontFamily: "var(--mono)", fontSize: 12, padding: "6px 10px", width: 180 }
           }
         ),
-        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: {
+        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: {
           position: "absolute",
           top: "100%",
           left: 0,
@@ -15868,7 +15930,7 @@ function GraphSearch({ nodes, onSelect }) {
           overflow: "auto",
           width: 280,
           marginTop: 4
-        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
           "div",
           {
             tabIndex: 0,
@@ -15892,9 +15954,9 @@ function GraphSearch({ nodes, onSelect }) {
             onMouseOver: (e) => e.currentTarget.style.background = "var(--bg-elev)",
             onMouseOut: (e) => e.currentTarget.style.background = "transparent",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
+              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
+              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
             ]
           },
           n.id
@@ -15905,7 +15967,7 @@ function GraphSearch({ nodes, onSelect }) {
 }
 
 // public/graph-contents.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }) {
   const journalByDoi = (0, import_react20.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
@@ -15958,22 +16020,22 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, [onHover]);
   if (!nodes.length) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "graph-contents", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "graph-contents-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "graph-contents-search", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphSearch, { nodes, onSelect: (id) => (onSearchSelect || onSelect)(id) }) })
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "graph-contents", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "graph-contents-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "graph-contents-search", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(GraphSearch, { nodes, onSelect: (id) => (onSearchSelect || onSelect)(id) }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
   ] });
 }
 function BucketView({ b, onSelect, onHover }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
   const headInstId = b.institutions[0]?.id;
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("header", { className: "gc-community-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("header", { className: "gc-community-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
         "button",
         {
           type: "button",
@@ -15981,14 +16043,14 @@ function BucketView({ b, onSelect, onHover }) {
           onClick: () => headInstId && onSelect(headInstId),
           onMouseEnter: () => headInstId && onHover?.(headInstId),
           onMouseLeave: () => onHover?.(null),
-          children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h4", { children: b.label })
+          children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("h4", { children: b.label })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "mono muted gc-count", children: total })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "mono muted gc-count", children: total })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
   ] });
 }
 var ORCID_RE = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
@@ -15998,15 +16060,15 @@ function displayLabel(n) {
 }
 function NodeList({ label, color, ns, onSelect, onHover }) {
   if (ns.length === 0) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "gc-list", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "gc-list-label", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "dot", style: { background: color } }),
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "gc-list", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "gc-list-label", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "dot", style: { background: color } }),
       " ",
       label,
       " ",
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "mono muted", children: ns.length })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "mono muted", children: ns.length })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
       "button",
       {
         type: "button",
@@ -16078,7 +16140,7 @@ var import_react23 = __toESM(require_react());
 
 // public/time-slider.tsx
 var import_react22 = __toESM(require_react());
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
+var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
   const y3 = parseInt(n.published.substring(0, 4));
@@ -16162,25 +16224,25 @@ function useLayerOrder() {
 }
 
 // public/graph-canvas-corners.tsx
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
+var import_jsx_runtime22 = __toESM(require_jsx_runtime());
 function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt }) {
   const scope = yearFrom > yearMin || yearTo < yearMax ? `${yearFrom}\u2013${yearTo}` : "all years";
-  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "canvas-corner-tl", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "canvas-corner-tl", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
         "tenant \xB7 ",
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: tenant || "\u2014" })
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("em", { children: tenant || "\u2014" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
         "role \xB7 ",
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: role || "\u2014" })
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("em", { children: role || "\u2014" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
         "scope \xB7 ",
         scope
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "canvas-corner-tr", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "canvas-corner-tr", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
       "button",
       {
         className: "tilt-toggle",
@@ -16188,7 +16250,7 @@ function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, 
         onClick: onToggleTilt,
         title: tilted ? "Switch to top-down view" : "Tilt into 3D layered view",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: "tilt-glyph" }),
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "tilt-glyph" }),
           tilted ? "3D" : "2D"
         ]
       }
@@ -16196,8 +16258,39 @@ function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, 
   ] });
 }
 
+// public/explorer-cotags.ts
+function buildCoTagMap(rawEdges) {
+  const tagsByDoi = /* @__PURE__ */ new Map();
+  for (const e of rawEdges) {
+    const list = tagsByDoi.get(e.source);
+    if (list) list.push(e.target);
+    else tagsByDoi.set(e.source, [e.target]);
+  }
+  const coTags = /* @__PURE__ */ new Map();
+  for (const tags of tagsByDoi.values()) {
+    for (let i = 0; i < tags.length; i++) {
+      for (let j = i + 1; j < tags.length; j++) {
+        const a2 = tags[i], b = tags[j];
+        let sa = coTags.get(a2);
+        if (!sa) {
+          sa = /* @__PURE__ */ new Set();
+          coTags.set(a2, sa);
+        }
+        sa.add(b);
+        let sb = coTags.get(b);
+        if (!sb) {
+          sb = /* @__PURE__ */ new Set();
+          coTags.set(b, sb);
+        }
+        sb.add(a2);
+      }
+    }
+  }
+  return coTags;
+}
+
 // public/graph-explorer-body.tsx
-var import_jsx_runtime22 = __toESM(require_jsx_runtime());
+var import_jsx_runtime23 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
@@ -16274,42 +16367,43 @@ function GraphExplorerBody() {
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
   const affiliations = (0, import_react25.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
+  const coTags = (0, import_react25.useMemo)(() => buildCoTagMap(rawEdges), [rawEdges]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
     rawNodes,
     projectedNodes,
     institutionsByAuthor: affiliations.institutionsByAuthor
   });
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
-  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "view graph-view", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("header", { className: "view-head compact", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("h1", { className: "view-title tight", children: [
+  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
+  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: "No data." }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "view graph-view", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("header", { className: "view-head compact", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("h1", { className: "view-title tight", children: [
           "The institution as a ",
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("em", { children: "network" }),
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("em", { children: "network" }),
           "."
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(Tag, { mono: true, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(Tag, { mono: true, children: [
           projectedNodes.length,
           " NODES"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(Tag, { mono: true, tone: "muted", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(Tag, { mono: true, tone: "muted", children: [
           projectedEdges.length,
           " EDGES"
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "graph-layout", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "graph-canvas", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds })
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-layout", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-canvas", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds, coTags })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         NodeDetail,
         {
           nodeId: selectedNodeId,
@@ -16317,7 +16411,7 @@ function GraphExplorerBody() {
           onBack: selectionStack.length >= 1 ? popSelection : void 0,
           accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
           navDir,
-          empty: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
+          empty: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);
             expand(id);
           }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })
@@ -16328,14 +16422,14 @@ function GraphExplorerBody() {
 }
 
 // public/relationships.tsx
-var import_jsx_runtime23 = __toESM(require_jsx_runtime());
+var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 var root = null;
 function mount() {
   const el = document.getElementById("relationships-root");
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphExplorerBody, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime24.jsx)(GraphExplorerBody, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/relationships-bundle.js"] = mount;

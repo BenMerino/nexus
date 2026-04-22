@@ -34,12 +34,13 @@ interface Props<N, L extends BaseLink & { weight?: number }> {
   camera: Camera;
   onBackgroundMouseDown?: (e: React.MouseEvent) => void;
   rotatable?: boolean;
+  overlayEdges?: { source: string; target: string }[];
 }
 
 export function GraphScene<N, L extends BaseLink & { weight?: number }>({
   svgRef, width, height, nodes, links, adapter, primaryKey, communityColors, minCommunitySize,
   focusKey, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick,
-  transform, ego, hovered, showHover, onHullHover, camera, onBackgroundMouseDown, rotatable,
+  transform, ego, hovered, showHover, onHullHover, camera, onBackgroundMouseDown, rotatable, overlayEdges,
 }: Props<N, L>) {
   const t = transform
     ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})`
@@ -57,7 +58,7 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
       <g style={{ transform: t, transformOrigin: '0 0' }}>
         <GridBackdrop />
         <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} focusKey={focusKey} onHoverKey={onHullHover} camera={camera} />
-        <Links links={links} connected={connected} camera={camera} />
+        <Links links={links} connected={connected} camera={camera} nodes={nodes} overlayEdges={overlayEdges} nodeId={adapter.getId} />
         <Nodes
           nodes={nodes} adapter={adapter}
           hoverId={hoverId} selectedId={selectedId} connected={connected} nodeColor={nodeColor}

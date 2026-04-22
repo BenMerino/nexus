@@ -1,7 +1,8 @@
 import React from 'react';
-import type { CommunityAdapter } from './types';
-import type { SimN, SimL, BaseLink } from './forces';
-import { project, floorShadow, pitchLift, type Camera } from './projection';
+import type { SimL, SimN, BaseLink } from './forces';
+import { project, type Camera } from './projection';
+
+export { Nodes } from './render-nodes';
 
 export function GraphDefs() {
   return (
@@ -21,9 +22,8 @@ export function GraphDefs() {
   );
 }
 
-/** A very large rect filled with the grid pattern. Sits behind the
- *  graph content inside the transform group so it pans + scales with
- *  the rest of the scene — the canvas reads as a larger plane. */
+/** A very large rect filled with the grid pattern. Sits behind the graph
+ *  content inside the transform group so it pans + scales with the scene. */
 export function GridBackdrop() {
   return <rect x={-5000} y={-5000} width={10000} height={10000} fill="url(#graph-grid)" style={{ pointerEvents: 'none' }} />;
 }
@@ -32,9 +32,19 @@ interface LinksProps<N, L extends BaseLink & { weight?: number }> {
   links: SimL<L>[];
   connected: Set<string> | null;
   camera: Camera;
+  nodes?: SimN<N>[];
+  overlayEdges?: { source: string; target: string }[];
+  nodeId?: (n: N) => string;
 }
 
-export function Links<N, L extends BaseLink & { weight?: number }>({ links, connected, camera }: LinksProps<N, L>) {
+/** Base edges are always drawn, dimmed when a focus is active and the edge
+ *  doesn't touch it. Overlay edges (the "full triangle" around a focused
+ *  node) are rendered as dashed accent lines when present. */
+export function Links<N, L extends BaseLink & { weight?: number }>({ links, connected, camera, nodes, overlayEdges, nodeId }: LinksProps<N, L>) {
+  const posById = new Map<string, { x: number; y: number; z: number }>();
+  if (nodes && nodeId) {
+    for (const n of nodes) posById.set(nodeId(n), { x: n.x, y: n.y, z: (n as unknown as { z?: number }).z ?? 0 });
+  }
   return (
     <g style={{ pointerEvents: 'none' }}>
       {links.map((l, i) => {
@@ -48,92 +58,27 @@ export function Links<N, L extends BaseLink & { weight?: number }>({ links, conn
         const ps = project({ x: s.x, y: s.y, z: sz }, camera);
         const pt = project({ x: t.x, y: t.y, z: tz }, camera);
         return (
-          <line
-            key={i}
+          <line key={i}
             x1={ps.x} y1={ps.y} x2={pt.x} y2={pt.y}
             stroke={dim ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.14)'}
             strokeWidth={Math.min(2.5, 0.5 + w * 0.3)}
           />
         );
       })}
+      {overlayEdges && overlayEdges.map((e, i) => {
+        const s = posById.get(e.source);
+        const t = posById.get(e.target);
+        if (!s || !t) return null;
+        const ps = project(s, camera);
+        const pt = project(t, camera);
+        return (
+          <line key={`ov-${i}`}
+            x1={ps.x} y1={ps.y} x2={pt.x} y2={pt.y}
+            stroke="var(--accent)" strokeOpacity={0.55} strokeWidth={1.2}
+            strokeDasharray="4 4"
+          />
+        );
+      })}
     </g>
-  );
-}
-
-interface NodesProps<N> {
-  nodes: SimN<N>[];
-  adapter: CommunityAdapter<N>;
-  hoverId: string | null;
-  selectedId: string | null;
-  connected: Set<string> | null;
-  nodeColor: (n: SimN<N>) => string;
-  onHoverStart: (id: string) => void;
-  onHoverEnd: () => void;
-  onMouseDown: (e: React.MouseEvent, n: SimN<N>) => void;
-  onClick: (n: SimN<N>) => void;
-  camera: Camera;
-}
-
-export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, camera }: NodesProps<N>) {
-  // Painter's algorithm: lower Z renders first so raised layers stack on top
-  // when tilted. When flat (tilt ≈ 0) the order still puts larger-Z nodes on
-  // top, which matches the "institutions float over papers" intuition.
-  const zSorted = [...nodes].sort((a, b) => a.z - b.z);
-  const lift = pitchLift(camera);
-  const showShadows = lift > 0.02;
-  return (
-    <>
-      {showShadows && (
-        <g style={{ pointerEvents: 'none' }}>
-          {zSorted.map(n => {
-            if (n.z <= 0) return null;
-            const id = adapter.getId(n);
-            const r = adapter.getRadius(n);
-            const dim = connected && !connected.has(id);
-            const p = floorShadow(n.x, n.y, camera);
-            const nodeLift = n.z * lift;
-            const spread = Math.min(1.4, 1 + nodeLift / 180);
-            return (
-              <ellipse
-                key={`sh-${id}`}
-                cx={p.x} cy={p.y + 2}
-                rx={r * spread} ry={r * 0.45 * spread}
-                fill="url(#graph-node-shadow)"
-                opacity={dim ? 0.1 : 0.35 * lift}
-              />
-            );
-          })}
-        </g>
-      )}
-      <g>
-        {zSorted.map(n => {
-          const id = adapter.getId(n);
-          const r = adapter.getRadius(n);
-          const isHov = id === hoverId;
-          const isSel = id === selectedId;
-          const dim = connected && !connected.has(id);
-          const p = project(n, camera);
-          return (
-            <g
-              key={id}
-              transform={`translate(${p.x}, ${p.y})`}
-              onMouseEnter={() => onHoverStart(id)}
-              onMouseLeave={onHoverEnd}
-              onMouseDown={e => onMouseDown(e, n)}
-              onClick={e => { e.stopPropagation(); e.preventDefault(); onClick(n); }}
-              style={{ cursor: 'pointer', opacity: dim ? 0.25 : 1, transition: 'opacity 0.2s' }}
-            >
-              {(isHov || isSel) && <circle r={r + 10} fill="url(#community-glow)" />}
-              <circle
-                r={r}
-                fill={nodeColor(n)}
-                stroke={isHov || isSel ? '#fff' : 'rgba(255,255,255,0.2)'}
-                strokeWidth={isHov || isSel ? 2 : 1}
-              />
-            </g>
-          );
-        })}
-      </g>
-    </>
   );
 }
