@@ -7,7 +7,10 @@ function PaperRow({ p }: { p: Paper }) {
   return (
     <div className="detail-item">
       <div>{p.title || '(untitled)'}</div>
-      <div className="mono muted">{p.doi}{year ? ` · ${year}` : ''}</div>
+      <div className="detail-item-sub">
+        <span className="mono muted">{p.doi}</span>
+        <span className="mono muted detail-item-year">{year || ''}</span>
+      </div>
     </div>
   );
 }

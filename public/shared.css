@@ -547,6 +547,9 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .detail-item { padding: 10px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; }
 .detail-item:last-child { border-bottom: 0; }
 .detail-item > div:last-child { font-size: 11px; margin-top: 3px; }
+.detail-item-sub { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.detail-item-sub > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-item-year { flex: 0 0 auto; }
 
 /* Skeleton placeholders shown while a detail fetch is in flight. A single
  * shimmering gradient drifts across every sk-bar so the pane reads as

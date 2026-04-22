@@ -12965,9 +12965,9 @@ function PaperRow({ p }) {
   const year = p.published?.slice(0, 4);
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-item", children: [
     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { children: p.title || "(untitled)" }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "mono muted", children: [
-      p.doi,
-      year ? ` \xB7 ${year}` : ""
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-item-sub", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono muted", children: p.doi }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono muted detail-item-year", children: year || "" })
     ] })
   ] });
 }
