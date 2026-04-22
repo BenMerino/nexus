@@ -13654,7 +13654,7 @@ function GraphScene({
   rotatable
 }) {
   const t2 = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none", position: "relative", zIndex: 1 }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GraphDefs, {}),
     rotatable && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       "rect",
@@ -70663,13 +70663,14 @@ function CloudMetaball({ community }) {
 // public/community-graph/community-clouds.tsx
 var import_jsx_runtime13 = __toESM(require_jsx_runtime());
 function CommunityClouds({ communities, camera, width, height }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { position: "absolute", inset: 0, width, height, pointerEvents: "none", zIndex: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { position: "absolute", inset: 0, width, height, pointerEvents: "none", zIndex: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
     Canvas,
     {
       orthographic: true,
       dpr: [1, 2],
       camera: { near: -4e3, far: 4e3, zoom: 1 },
       gl: { alpha: true, antialias: true },
+      style: { pointerEvents: "none", width: "100%", height: "100%" },
       children: [
         /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(CameraRig, { camera, width, height }),
         /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("ambientLight", { intensity: 0.9 }),

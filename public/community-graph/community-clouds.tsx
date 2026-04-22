@@ -23,12 +23,13 @@ interface Props {
  *  at pointerEvents: none so SVG nodes still catch clicks. */
 export function CommunityClouds({ communities, camera, width, height }: Props) {
   return (
-    <div style={{ position: 'absolute', inset: 0, width, height, pointerEvents: 'none', zIndex: 1 }}>
+    <div style={{ position: 'absolute', inset: 0, width, height, pointerEvents: 'none', zIndex: 0 }}>
       <Canvas
         orthographic
         dpr={[1, 2]}
         camera={{ near: -4000, far: 4000, zoom: 1 }}
         gl={{ alpha: true, antialias: true }}
+        style={{ pointerEvents: 'none', width: '100%', height: '100%' }}
       >
         <CameraRig camera={camera} width={width} height={height} />
         <ambientLight intensity={0.9} />
