@@ -4,7 +4,7 @@ import { Ico } from './ui-primitives';
 export interface Paper { doi: string; title: string | null; published: string | null; citation_count: number | null; journal?: string | null }
 
 export interface AuthorD   { type: 'author';      name: string; orcid: string | null; faculty?: string | null; role?: string | null; papersCount: number; citations: number; hIndex?: number; journalsCount?: number; papers: Paper[] }
-export interface InstD     { type: 'institution'; name: string; ror: string | null; papersCount: number; papers: Paper[] }
+export interface InstD     { type: 'institution'; name: string; ror: string | null; papersCount: number; citations?: number; journalsCount?: number; papers: Paper[] }
 export interface JournalD  { type: 'journal';     name: string; issn: string | null; papersCount: number; papers: Paper[] }
 export interface PaperD    { type: 'paper';       doi: string; title: string | null; published: string | null; citations: number | null; journal: string | null; authors: { name?: string; orcid?: string }[] }
 export type Detail = AuthorD | InstD | JournalD | PaperD;
@@ -14,7 +14,10 @@ function PaperRow({ p }: { p: Paper }) {
   return (
     <div className="detail-item">
       <div>{p.title || '(untitled)'}</div>
-      <div className="mono muted">{p.doi}{year ? ` · ${year}` : ''}</div>
+      <div className="detail-item-sub">
+        <span className="mono muted">{p.doi}</span>
+        <span className="mono muted detail-item-year">{year || ''}</span>
+      </div>
     </div>
   );
 }
@@ -31,9 +34,13 @@ export function InstitutionView({ d, onClose }: { d: InstD; onClose: () => void 
         <div><div className="eyebrow">Institution</div><h3>{d.name}</h3>{d.ror && <div className="mono detail-id">ROR {d.ror}</div>}</div>
         <CloseBtn onClose={onClose} />
       </div>
-      <div className="detail-meta"><div><span className="muted">Shared papers</span><span>{d.papersCount}</span></div></div>
+      <div className="detail-stats">
+        <div><span className="mono">{d.papersCount}</span><label>papers</label></div>
+        {d.citations != null && <div><span className="mono">{d.citations}</span><label>citations</label></div>}
+        {d.journalsCount != null && <div><span className="mono">{d.journalsCount}</span><label>journals</label></div>}
+      </div>
       <div className="detail-section">
-        <div className="detail-section-label">Joint publications</div>
+        <div className="detail-section-label">Recent publications</div>
         {d.papers.map(p => <PaperRow key={p.doi} p={p} />)}
       </div>
     </div>

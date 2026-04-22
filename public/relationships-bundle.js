@@ -13048,9 +13048,9 @@ function PaperRow2({ p }) {
   const year = p.published?.slice(0, 4);
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-item", children: [
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { children: p.title || "(untitled)" }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "mono muted", children: [
-      p.doi,
-      year ? ` \xB7 ${year}` : ""
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-item-sub", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono muted", children: p.doi }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono muted detail-item-year", children: year || "" })
     ] })
   ] });
 }
@@ -13068,12 +13068,22 @@ function InstitutionView({ d, onClose }) {
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CloseBtn, { onClose })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-meta", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "muted", children: "Shared papers" }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: d.papersCount })
-    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-stats", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: d.papersCount }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "papers" })
+      ] }),
+      d.citations != null && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: d.citations }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "citations" })
+      ] }),
+      d.journalsCount != null && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: d.journalsCount }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "journals" })
+      ] })
+    ] }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-section-label", children: "Joint publications" }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-section-label", children: "Recent publications" }),
       d.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperRow2, { p }, p.doi))
     ] })
   ] });
