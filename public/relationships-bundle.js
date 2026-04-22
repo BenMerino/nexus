@@ -15228,15 +15228,11 @@ function layerZ(layer, order) {
 }
 
 // public/explorer-layer-z.ts
-var HOME_INSTITUTION_LIFT = 30;
-var EGO_CLEARANCE = 55;
+var INTRA_LAYER_BUMP = 12;
 function explorerLayerZ({ n, layerOrder, coauthorIds, homeInstitutionId, egoAuthorId }) {
   const base = layerZ(layerTypeForNode(n, coauthorIds), layerOrder);
-  if (n.id === homeInstitutionId) return base + HOME_INSTITUTION_LIFT;
-  if (egoAuthorId && n.id === egoAuthorId) {
-    const institutionZ = layerZ("institution", layerOrder) + HOME_INSTITUTION_LIFT;
-    return Math.max(base, institutionZ) + EGO_CLEARANCE;
-  }
+  if (n.id === homeInstitutionId) return base + INTRA_LAYER_BUMP;
+  if (egoAuthorId && n.id === egoAuthorId) return base + INTRA_LAYER_BUMP;
   return base;
 }
 
