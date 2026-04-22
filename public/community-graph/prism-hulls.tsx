@@ -8,7 +8,9 @@ export interface PrismGroup {
   color: string;
   /** Logical (x, y) positions of the community's nodes, used to shape the hull. */
   points: Point[];
-  /** Max Z among the community's nodes — the prism ceiling height. */
+  /** Lowest Z in the community — the prism floor. */
+  bottomZ: number;
+  /** Highest Z in the community — the prism ceiling. */
   topZ: number;
   emphasis?: boolean;
   deemphasis?: boolean;
@@ -24,6 +26,9 @@ interface Props {
 
 const DEFAULT_PAD = 32;
 const DEFAULT_LERP_ALPHA = 0.18;
+/** Even a single-layer community gets a prism this tall so the walls read
+ *  as a visible 3D body rather than two overlapping rings. */
+const MIN_PRISM_HEIGHT = 40;
 
 interface Rendered { key: string; color: string; floor: Point[]; ceiling: Point[]; emphasis: boolean; deemphasis: boolean }
 
@@ -40,7 +45,18 @@ export function PrismHulls({ groups, camera, pad = DEFAULT_PAD, lerpAlpha = DEFA
     const ring = tickRing(state, g.key, g.points, lerpAlpha);
     if (!ring) continue;
     seen.add(g.key);
-    const { floor, ceiling } = projectRing(ring, pad, g.topZ, camera);
+    // Ensure the prism is visibly tall even when every node shares one layer.
+    // Sink the floor, lift the ceiling equally, so the community stays
+    // vertically centered around its nodes.
+    let bottomZ = g.bottomZ;
+    let topZ = g.topZ;
+    const span = topZ - bottomZ;
+    if (span < MIN_PRISM_HEIGHT) {
+      const need = (MIN_PRISM_HEIGHT - span) / 2;
+      bottomZ -= need;
+      topZ += need;
+    }
+    const { floor, ceiling } = projectRing(ring, pad, bottomZ, topZ, camera);
     rendered.push({ key: g.key, color: g.color, floor, ceiling, emphasis: !!g.emphasis, deemphasis: !!g.deemphasis });
   }
   for (const key of [...state.keys()]) if (!seen.has(key)) state.delete(key);

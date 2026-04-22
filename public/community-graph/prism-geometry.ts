@@ -24,9 +24,9 @@ export function tickRing(state: Map<string, RingState>, key: string, points: Poi
   return { radii, cx: scx, cy: scy };
 }
 
-/** Sample the ring at z=0 (floor) and z=topZ (ceiling), projected through
+/** Sample the ring at bottomZ (floor) and topZ (ceiling), projected through
  *  the camera — so when pitch=0 floor and ceiling overlap exactly. */
-export function projectRing(ring: RingState, pad: number, topZ: number, camera: Camera): RingXY {
+export function projectRing(ring: RingState, pad: number, bottomZ: number, topZ: number, camera: Camera): RingXY {
   const floor: Point[] = [];
   const ceiling: Point[] = [];
   for (let i = 0; i < RING_SAMPLES; i++) {
@@ -34,7 +34,7 @@ export function projectRing(ring: RingState, pad: number, topZ: number, camera: 
     const r = ring.radii[i] + pad;
     const x = ring.cx + Math.cos(angle) * r;
     const y = ring.cy + Math.sin(angle) * r;
-    floor.push(project({ x, y, z: 0 }, camera));
+    floor.push(project({ x, y, z: bottomZ }, camera));
     ceiling.push(project({ x, y, z: topZ }, camera));
   }
   return { floor, ceiling };

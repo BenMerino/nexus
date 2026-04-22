@@ -13664,7 +13664,7 @@ function tickRing(state, key, points, alpha) {
   state.set(key, { radii, cx: scx, cy: scy });
   return { radii, cx: scx, cy: scy };
 }
-function projectRing(ring, pad, topZ, camera) {
+function projectRing(ring, pad, bottomZ, topZ, camera) {
   const floor = [];
   const ceiling = [];
   for (let i = 0; i < RING_SAMPLES; i++) {
@@ -13672,7 +13672,7 @@ function projectRing(ring, pad, topZ, camera) {
     const r = ring.radii[i] + pad;
     const x3 = ring.cx + Math.cos(angle) * r;
     const y3 = ring.cy + Math.sin(angle) * r;
-    floor.push(project({ x: x3, y: y3, z: 0 }, camera));
+    floor.push(project({ x: x3, y: y3, z: bottomZ }, camera));
     ceiling.push(project({ x: x3, y: y3, z: topZ }, camera));
   }
   return { floor, ceiling };
@@ -13708,6 +13708,7 @@ function wallsPath(floor, ceiling) {
 var import_jsx_runtime8 = __toESM(require_jsx_runtime());
 var DEFAULT_PAD2 = 32;
 var DEFAULT_LERP_ALPHA2 = 0.18;
+var MIN_PRISM_HEIGHT = 40;
 function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LERP_ALPHA2, onHoverKey }) {
   const stateRef = (0, import_react3.useRef)(/* @__PURE__ */ new Map());
   const state = stateRef.current;
@@ -13717,7 +13718,15 @@ function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LE
     const ring = tickRing(state, g.key, g.points, lerpAlpha);
     if (!ring) continue;
     seen.add(g.key);
-    const { floor, ceiling } = projectRing(ring, pad, g.topZ, camera);
+    let bottomZ = g.bottomZ;
+    let topZ = g.topZ;
+    const span = topZ - bottomZ;
+    if (span < MIN_PRISM_HEIGHT) {
+      const need = (MIN_PRISM_HEIGHT - span) / 2;
+      bottomZ -= need;
+      topZ += need;
+    }
+    const { floor, ceiling } = projectRing(ring, pad, bottomZ, topZ, camera);
     rendered.push({ key: g.key, color: g.color, floor, ceiling, emphasis: !!g.emphasis, deemphasis: !!g.deemphasis });
   }
   for (const key of [...state.keys()]) if (!seen.has(key)) state.delete(key);
@@ -13764,16 +13773,20 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey,
       if (entry) {
         entry.points.push({ x: n.x, y: n.y });
         if (z > entry.topZ) entry.topZ = z;
-      } else prismByKey.set(key, { points: [{ x: n.x, y: n.y }], topZ: Math.max(0, z) });
+        if (z < entry.bottomZ) entry.bottomZ = z;
+      } else {
+        prismByKey.set(key, { points: [{ x: n.x, y: n.y }], bottomZ: z, topZ: z });
+      }
     }
     const prismGroups = [];
-    for (const [key, { points, topZ }] of prismByKey) {
+    for (const [key, { points, bottomZ, topZ }] of prismByKey) {
       const isFocus = focusKey != null && key === focusKey;
       const hasFocus = focusKey != null;
       prismGroups.push({
         key,
         color: colors.get(key) || "#888",
         points,
+        bottomZ,
         topZ,
         emphasis: isFocus || !hasFocus && key === primaryKey,
         deemphasis: hasFocus && !isFocus

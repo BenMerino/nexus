@@ -32,21 +32,26 @@ export function CommunityHulls<N>({ nodes, adapter, primaryKey, colors, minSize,
   // fall back to the existing 2D smoothed-hull renderer — it's cheaper and
   // visually identical at pitch=0.
   if (camera.pitch > PRISM_PITCH_THRESHOLD) {
-    const prismByKey = new Map<string, { points: Point[]; topZ: number }>();
+    const prismByKey = new Map<string, { points: Point[]; bottomZ: number; topZ: number }>();
     for (const n of nodes) {
       const key = effectiveKey(n, adapter, major);
       if (!key) continue;
       const z = n.z ?? 0;
       const entry = prismByKey.get(key);
-      if (entry) { entry.points.push({ x: n.x, y: n.y }); if (z > entry.topZ) entry.topZ = z; }
-      else prismByKey.set(key, { points: [{ x: n.x, y: n.y }], topZ: Math.max(0, z) });
+      if (entry) {
+        entry.points.push({ x: n.x, y: n.y });
+        if (z > entry.topZ) entry.topZ = z;
+        if (z < entry.bottomZ) entry.bottomZ = z;
+      } else {
+        prismByKey.set(key, { points: [{ x: n.x, y: n.y }], bottomZ: z, topZ: z });
+      }
     }
     const prismGroups: PrismGroup[] = [];
-    for (const [key, { points, topZ }] of prismByKey) {
+    for (const [key, { points, bottomZ, topZ }] of prismByKey) {
       const isFocus = focusKey != null && key === focusKey;
       const hasFocus = focusKey != null;
       prismGroups.push({
-        key, color: colors.get(key) || '#888', points, topZ,
+        key, color: colors.get(key) || '#888', points, bottomZ, topZ,
         emphasis: isFocus || (!hasFocus && key === primaryKey),
         deemphasis: hasFocus && !isFocus,
       });
