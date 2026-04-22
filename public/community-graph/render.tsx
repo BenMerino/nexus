@@ -32,29 +32,46 @@ interface LinksProps<L extends BaseLink & { weight?: number }> {
   links: SimL<L>[];
   connected: Set<string> | null;
   camera: Camera;
+  /** True when the focus was a selection (multi-hop walk); edges in the
+   *  `connected` set render as dashed accent lines to trace the path. On
+   *  hover (false), edges in the connected set stay solid. */
+  pathMode?: boolean;
 }
 
-/** Render every edge in the projected graph. On focus, edges not touching
- *  the focused node dim instead of disappear — the whole structure stays
- *  visible so you can still see how the graph is wired. */
-export function Links<L extends BaseLink & { weight?: number }>({ links, connected, camera }: LinksProps<L>) {
+/** Render every edge. Edges in the `connected` subgraph render highlighted
+ *  (accent color, optionally dashed to trace a selection path); edges
+ *  outside dim; edges with no focus render in base style. */
+export function Links<L extends BaseLink & { weight?: number }>({ links, connected, camera, pathMode }: LinksProps<L>) {
   return (
     <g style={{ pointerEvents: 'none' }}>
       {links.map((l, i) => {
         const s = typeof l.source === 'object' ? l.source : null;
         const t = typeof l.target === 'object' ? l.target : null;
         if (!s || !t) return null;
-        const dim = connected && !(connected.has(s.id) && connected.has(t.id));
+        const inFocus = !!connected && connected.has(s.id) && connected.has(t.id);
+        const dim = !!connected && !inFocus;
         const w = l.weight || 1;
         const sz = (s as unknown as { z?: number }).z ?? 0;
         const tz = (t as unknown as { z?: number }).z ?? 0;
         const ps = project({ x: s.x, y: s.y, z: sz }, camera);
         const pt = project({ x: t.x, y: t.y, z: tz }, camera);
+        const baseWidth = Math.min(2.5, 0.5 + w * 0.3);
+        if (inFocus) {
+          return (
+            <line key={i}
+              x1={ps.x} y1={ps.y} x2={pt.x} y2={pt.y}
+              stroke="var(--accent)" strokeOpacity={0.85}
+              strokeWidth={baseWidth + 0.6}
+              strokeDasharray={pathMode ? '5 4' : undefined}
+              strokeLinecap="round"
+            />
+          );
+        }
         return (
           <line key={i}
             x1={ps.x} y1={ps.y} x2={pt.x} y2={pt.y}
             stroke={dim ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.14)'}
-            strokeWidth={Math.min(2.5, 0.5 + w * 0.3)}
+            strokeWidth={baseWidth}
           />
         );
       })}

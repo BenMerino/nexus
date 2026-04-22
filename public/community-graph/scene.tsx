@@ -57,7 +57,7 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
       <g style={{ transform: t, transformOrigin: '0 0' }}>
         <GridBackdrop />
         <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} focusKey={focusKey} onHoverKey={onHullHover} camera={camera} />
-        <Links links={links} connected={connected} camera={camera} />
+        <Links links={links} connected={connected} camera={camera} pathMode={!hoverId && !!selectedId} />
         <Nodes
           nodes={nodes} adapter={adapter}
           hoverId={hoverId} selectedId={selectedId} connected={connected} nodeColor={nodeColor}

@@ -13497,17 +13497,36 @@ function GraphDefs() {
 function GridBackdrop() {
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
-function Links({ links, connected, camera }) {
+function Links({ links, connected, camera, pathMode }) {
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { style: { pointerEvents: "none" }, children: links.map((l, i) => {
     const s = typeof l.source === "object" ? l.source : null;
     const t = typeof l.target === "object" ? l.target : null;
     if (!s || !t) return null;
-    const dim = connected && !(connected.has(s.id) && connected.has(t.id));
+    const inFocus = !!connected && connected.has(s.id) && connected.has(t.id);
+    const dim = !!connected && !inFocus;
     const w = l.weight || 1;
     const sz = s.z ?? 0;
     const tz = t.z ?? 0;
     const ps = project({ x: s.x, y: s.y, z: sz }, camera);
     const pt = project({ x: t.x, y: t.y, z: tz }, camera);
+    const baseWidth = Math.min(2.5, 0.5 + w * 0.3);
+    if (inFocus) {
+      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "line",
+        {
+          x1: ps.x,
+          y1: ps.y,
+          x2: pt.x,
+          y2: pt.y,
+          stroke: "var(--accent)",
+          strokeOpacity: 0.85,
+          strokeWidth: baseWidth + 0.6,
+          strokeDasharray: pathMode ? "5 4" : void 0,
+          strokeLinecap: "round"
+        },
+        i
+      );
+    }
     return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
       "line",
       {
@@ -13516,7 +13535,7 @@ function Links({ links, connected, camera }) {
         x2: pt.x,
         y2: pt.y,
         stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
-        strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
+        strokeWidth: baseWidth
       },
       i
     );
@@ -13770,7 +13789,7 @@ function GraphScene({
     /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera, pathMode: !hoverId && !!selectedId }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         Nodes,
         {
