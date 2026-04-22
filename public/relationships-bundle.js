@@ -15489,12 +15489,22 @@ function computeVisibility(nodes, edges, affiliations, egoAuthorId, homeInstitut
 }
 
 // public/explorer-layers.ts
-var DEFAULT_LAYER_ORDER = ["author", "institution", "journal", "paper", "coauthor"];
-function layerTypeForNode(n, coauthorIds) {
+var DEFAULT_LAYER_ORDER = [
+  "ego",
+  "coauthor",
+  "paper",
+  "home",
+  "institution",
+  "journal",
+  "author"
+];
+function layerTypeForNode(n, ctx) {
+  if (ctx.egoAuthorId && n.id === ctx.egoAuthorId) return "ego";
+  if (ctx.homeInstitutionId && n.id === ctx.homeInstitutionId) return "home";
   if (n.group === "institution") return "institution";
   if (n.group === "journal") return "journal";
   if (n.group === "doi") return "paper";
-  if (n.group === "author") return coauthorIds.has(n.id) ? "coauthor" : "author";
+  if (n.group === "author") return ctx.coauthorIds.has(n.id) ? "coauthor" : "author";
   return null;
 }
 function layerZ(layer, order) {
@@ -15503,18 +15513,14 @@ function layerZ(layer, order) {
   if (idx < 0) return 0;
   const span = order.length - 1;
   if (span <= 0) return 0;
-  const TOP = 160;
-  const BOTTOM = -60;
+  const TOP = 200;
+  const BOTTOM = -80;
   return TOP - idx / span * (TOP - BOTTOM);
 }
 
 // public/explorer-layer-z.ts
-var INTRA_LAYER_BUMP = 12;
 function explorerLayerZ({ n, layerOrder, coauthorIds, homeInstitutionId, egoAuthorId }) {
-  const base = layerZ(layerTypeForNode(n, coauthorIds), layerOrder);
-  if (n.id === homeInstitutionId) return base + INTRA_LAYER_BUMP;
-  if (egoAuthorId && n.id === egoAuthorId) return base + INTRA_LAYER_BUMP;
-  return base;
+  return layerZ(layerTypeForNode(n, { coauthorIds, egoAuthorId, homeInstitutionId }), layerOrder);
 }
 
 // public/force-graph.tsx
@@ -15852,7 +15858,10 @@ function LayerStack({ rows, order, onReorder, enabled }) {
             children: "\u283F"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "layer-stack-checks", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "layer-stack-checks", children: row.fixed ? /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { className: "layer-stack-fixed", style: { color: row.color }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "layer-stack-fixed-dot", style: { background: row.color } }),
+          row.label
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
       ]
     },
     layer
@@ -15860,12 +15869,16 @@ function LayerStack({ rows, order, onReorder, enabled }) {
 }
 function buildLayerRows(flags, setFlag) {
   const paperColor = "#888";
+  const noop2 = () => {
+  };
   return [
-    { layer: "institution", flagKey: "institution", label: "Institutions", color: COLORS.institution, checked: flags.institution, onToggle: (v) => setFlag("institution", v) },
-    { layer: "author", flagKey: "author", label: "Authors", color: COLORS.author, checked: flags.author, onToggle: (v) => setFlag("author", v) },
+    { layer: "ego", flagKey: "ego", label: "You", color: "var(--accent)", checked: true, onToggle: noop2, fixed: true },
     { layer: "coauthor", flagKey: "coauthor", label: "Co-authors", color: COLORS.author, checked: flags.coauthor, onToggle: (v) => setFlag("coauthor", v) },
+    { layer: "paper", flagKey: "paper", label: "Papers", color: paperColor, checked: flags.paper, onToggle: (v) => setFlag("paper", v) },
+    { layer: "home", flagKey: "home", label: "Your institution", color: COLORS.institution, checked: true, onToggle: noop2, fixed: true },
+    { layer: "institution", flagKey: "institution", label: "Other institutions", color: COLORS.institution, checked: flags.institution, onToggle: (v) => setFlag("institution", v) },
     { layer: "journal", flagKey: "journal", label: "Journals", color: COLORS.journal, checked: flags.journal, onToggle: (v) => setFlag("journal", v) },
-    { layer: "paper", flagKey: "paper", label: "Papers", color: paperColor, checked: flags.paper, onToggle: (v) => setFlag("paper", v) }
+    { layer: "author", flagKey: "author", label: "Other authors", color: COLORS.author, checked: flags.author, onToggle: (v) => setFlag("author", v) }
   ];
 }
 
@@ -16533,7 +16546,7 @@ function useYearRangeFilter(rawNodes, rawEdges) {
 
 // public/use-layer-order.ts
 var import_react25 = __toESM(require_react());
-var STORAGE_KEY = "graph-layer-order-v2";
+var STORAGE_KEY = "graph-layer-order-v3";
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);

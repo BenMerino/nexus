@@ -474,6 +474,8 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .layer-stack-handle:active { cursor: grabbing; }
 .layer-stack-handle:hover { color: var(--fg-muted); }
 .layer-stack-checks { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.layer-stack-fixed { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; padding: 2px 0; }
+.layer-stack-fixed-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 
 /* ═══ DETAIL PANEL ═══ */
 .detail-panel {

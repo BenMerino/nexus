@@ -10,6 +10,9 @@ interface Row {
   color: string;
   checked: boolean;
   onToggle: (v: boolean) => void;
+  /** Informational row — no checkbox; renders just the colored label.
+   *  Used for ego / home institution, which can't be toggled off. */
+  fixed?: boolean;
 }
 
 interface Props {
@@ -91,7 +94,12 @@ export function LayerStack({ rows, order, onReorder, enabled }: Props) {
             >⠿</span>
           )}
           <div className="layer-stack-checks">
-            <Check checked={row.checked} onChange={row.onToggle} label={row.label} color={row.color} />
+            {row.fixed
+              ? <span className="layer-stack-fixed" style={{ color: row.color }}>
+                  <span className="layer-stack-fixed-dot" style={{ background: row.color }} />
+                  {row.label}
+                </span>
+              : <Check checked={row.checked} onChange={row.onToggle} label={row.label} color={row.color} />}
           </div>
         </div>
       ))}
@@ -104,11 +112,17 @@ export function buildLayerRows(
   setFlag: (k: 'institution' | 'author' | 'coauthor' | 'journal' | 'paper', v: boolean) => void,
 ): Row[] {
   const paperColor = '#888';
+  // Ego / home are implicit rows — they always show (you can't hide yourself
+  // or your home institution) but they still occupy a draggable position so
+  // the user can reorder the full stack. `checked: true, onToggle: noop`.
+  const noop = () => {};
   return [
-    { layer: 'institution', flagKey: 'institution', label: 'Institutions', color: COLORS.institution, checked: flags.institution, onToggle: v => setFlag('institution', v) },
-    { layer: 'author',      flagKey: 'author',      label: 'Authors',      color: COLORS.author,      checked: flags.author,      onToggle: v => setFlag('author', v) },
-    { layer: 'coauthor',    flagKey: 'coauthor',    label: 'Co-authors',   color: COLORS.author,      checked: flags.coauthor,    onToggle: v => setFlag('coauthor', v) },
-    { layer: 'journal',     flagKey: 'journal',     label: 'Journals',     color: COLORS.journal,     checked: flags.journal,     onToggle: v => setFlag('journal', v) },
-    { layer: 'paper',       flagKey: 'paper',       label: 'Papers',       color: paperColor,         checked: flags.paper,       onToggle: v => setFlag('paper', v) },
+    { layer: 'ego',         flagKey: 'ego',         label: 'You',               color: 'var(--accent)',     checked: true,              onToggle: noop, fixed: true },
+    { layer: 'coauthor',    flagKey: 'coauthor',    label: 'Co-authors',        color: COLORS.author,       checked: flags.coauthor,    onToggle: v => setFlag('coauthor', v) },
+    { layer: 'paper',       flagKey: 'paper',       label: 'Papers',            color: paperColor,          checked: flags.paper,       onToggle: v => setFlag('paper', v) },
+    { layer: 'home',        flagKey: 'home',        label: 'Your institution',  color: COLORS.institution,  checked: true,              onToggle: noop, fixed: true },
+    { layer: 'institution', flagKey: 'institution', label: 'Other institutions',color: COLORS.institution,  checked: flags.institution, onToggle: v => setFlag('institution', v) },
+    { layer: 'journal',     flagKey: 'journal',     label: 'Journals',          color: COLORS.journal,      checked: flags.journal,     onToggle: v => setFlag('journal', v) },
+    { layer: 'author',      flagKey: 'author',      label: 'Other authors',     color: COLORS.author,       checked: flags.author,      onToggle: v => setFlag('author', v) },
   ];
 }
