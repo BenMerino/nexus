@@ -12,13 +12,16 @@ const MIN_PITCH = 0;
 export function useOrbitDrag(
   active: boolean,
   defaultPitch: number,
+  onOrbitStart?: () => void,
 ): {
   pitch: number;
   yaw: number;
+  isOrbiting: boolean;
   startOrbitDrag: (e: React.MouseEvent) => void;
 } {
   const [pitch, setPitch] = useState(defaultPitch);
   const [yaw, setYaw] = useState(0);
+  const [isOrbiting, setIsOrbiting] = useState(false);
 
   useEffect(() => {
     if (!active) { setPitch(0); setYaw(0); return; }
@@ -33,6 +36,8 @@ export function useOrbitDrag(
     const startY = e.clientY;
     const startYaw = yaw;
     const startPitch = pitch;
+    setIsOrbiting(true);
+    onOrbitStart?.();
     const onMove = (ev: MouseEvent) => {
       const dYaw = (ev.clientX - startX) * 0.006;
       const dPitch = -(ev.clientY - startY) * 0.006;
@@ -42,10 +47,11 @@ export function useOrbitDrag(
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
+      setIsOrbiting(false);
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
   };
 
-  return { pitch, yaw, startOrbitDrag };
+  return { pitch, yaw, isOrbiting, startOrbitDrag };
 }

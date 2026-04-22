@@ -107,7 +107,11 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
 
   const defaultPitch = tiltTarget * 0.75; // ~43° at full tilt
-  const { pitch, yaw, startOrbitDrag } = useOrbitDrag(tiltTarget > 0, defaultPitch);
+  const clearHover = () => {
+    setInternalHoverId(null); setHullHoverKey(null);
+    onHoverChange?.(null); onHullHoverChange?.(null);
+  };
+  const { pitch, yaw, isOrbiting, startOrbitDrag } = useOrbitDrag(tiltTarget > 0, defaultPitch, clearHover);
   const target: Camera = { pitch, yaw, cx: width / 2, cy: height / 2 };
   const { camera, cameraRef } = useCameraAnim(target);
 
@@ -128,12 +132,12 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         communityColors={communityColors} minCommunitySize={config.minCommunitySize}
         focusKey={focusKey} hoverId={hoverId} selectedId={selectedId ?? null} connected={connected}
         nodeColor={nodeColor}
-        onHoverStart={id => { setInternalHoverId(id); onHoverChange?.(id); }}
-        onHoverEnd={() => { setInternalHoverId(null); onHoverChange?.(null); }}
+        onHoverStart={id => { if (isOrbiting) return; setInternalHoverId(id); onHoverChange?.(id); }}
+        onHoverEnd={() => { if (isOrbiting) return; setInternalHoverId(null); onHoverChange?.(null); }}
         onMouseDown={handleMouseDown} onNodeClick={onNodeClick}
         transform={effectiveTransform}
         ego={ego} hovered={hovered ?? null} showHover={!!showHover}
-        onHullHover={k => { setHullHoverKey(k); onHullHoverChange?.(k); }}
+        onHullHover={k => { if (isOrbiting) return; setHullHoverKey(k); onHullHoverChange?.(k); }}
         camera={camera}
         rotatable={tiltTarget > 0}
         onBackgroundMouseDown={startOrbitDrag}

@@ -14886,9 +14886,10 @@ function useCameraAnim(target) {
 var import_react5 = __toESM(require_react());
 var MAX_PITCH = Math.PI / 2 - 0.15;
 var MIN_PITCH = 0;
-function useOrbitDrag(active, defaultPitch) {
+function useOrbitDrag(active, defaultPitch, onOrbitStart) {
   const [pitch, setPitch] = (0, import_react5.useState)(defaultPitch);
   const [yaw, setYaw] = (0, import_react5.useState)(0);
+  const [isOrbiting, setIsOrbiting] = (0, import_react5.useState)(false);
   (0, import_react5.useEffect)(() => {
     if (!active) {
       setPitch(0);
@@ -14905,6 +14906,8 @@ function useOrbitDrag(active, defaultPitch) {
     const startY = e.clientY;
     const startYaw = yaw;
     const startPitch = pitch;
+    setIsOrbiting(true);
+    onOrbitStart?.();
     const onMove = (ev) => {
       const dYaw = (ev.clientX - startX) * 6e-3;
       const dPitch = -(ev.clientY - startY) * 6e-3;
@@ -14914,11 +14917,12 @@ function useOrbitDrag(active, defaultPitch) {
     const onUp = () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
+      setIsOrbiting(false);
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   };
-  return { pitch, yaw, startOrbitDrag };
+  return { pitch, yaw, isOrbiting, startOrbitDrag };
 }
 
 // public/community-graph/use-layer-integration.ts
@@ -15044,7 +15048,13 @@ function CommunityGraph({
   const showHover = hovered && !adapter.isEgo(hovered);
   const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
   const defaultPitch = tiltTarget * 0.75;
-  const { pitch, yaw, startOrbitDrag } = useOrbitDrag(tiltTarget > 0, defaultPitch);
+  const clearHover = () => {
+    setInternalHoverId(null);
+    setHullHoverKey(null);
+    onHoverChange?.(null);
+    onHullHoverChange?.(null);
+  };
+  const { pitch, yaw, isOrbiting, startOrbitDrag } = useOrbitDrag(tiltTarget > 0, defaultPitch, clearHover);
   const target = { pitch, yaw, cx: width / 2, cy: height / 2 };
   const { camera, cameraRef } = useCameraAnim(target);
   const handleMouseDown = (e, node) => {
@@ -15079,10 +15089,12 @@ function CommunityGraph({
       connected,
       nodeColor,
       onHoverStart: (id) => {
+        if (isOrbiting) return;
         setInternalHoverId(id);
         onHoverChange?.(id);
       },
       onHoverEnd: () => {
+        if (isOrbiting) return;
         setInternalHoverId(null);
         onHoverChange?.(null);
       },
@@ -15093,6 +15105,7 @@ function CommunityGraph({
       hovered: hovered ?? null,
       showHover: !!showHover,
       onHullHover: (k) => {
+        if (isOrbiting) return;
         setHullHoverKey(k);
         onHullHoverChange?.(k);
       },
