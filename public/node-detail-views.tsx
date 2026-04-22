@@ -3,7 +3,7 @@ import { Ico } from './ui-primitives';
 
 export interface Paper { doi: string; title: string | null; published: string | null; citation_count: number | null; journal?: string | null }
 
-export interface AuthorD   { type: 'author';      name: string; orcid: string | null; faculty?: string | null; role?: string | null; papersCount: number; citations: number; hIndex?: number; papers: Paper[] }
+export interface AuthorD   { type: 'author';      name: string; orcid: string | null; faculty?: string | null; role?: string | null; papersCount: number; citations: number; hIndex?: number; journalsCount?: number; papers: Paper[] }
 export interface InstD     { type: 'institution'; name: string; ror: string | null; papersCount: number; papers: Paper[] }
 export interface JournalD  { type: 'journal';     name: string; issn: string | null; papersCount: number; papers: Paper[] }
 export interface PaperD    { type: 'paper';       doi: string; title: string | null; published: string | null; citations: number | null; journal: string | null; authors: { name?: string; orcid?: string }[] }
@@ -22,35 +22,7 @@ function PaperRow({ p }: { p: Paper }) {
 const CloseBtn = ({ onClose }: { onClose: () => void }) =>
   <button className="close" onClick={onClose} aria-label="Close">{Ico.close}</button>;
 
-export function AuthorView({ d, onClose }: { d: AuthorD; onClose: () => void }) {
-  return (
-    <div className="detail">
-      <div className="detail-head">
-        <div>
-          <div className="eyebrow">Author</div>
-          <h3>{d.name}</h3>
-          {d.hIndex != null && <div className="detail-hindex"><span className="mono">h-index</span> {d.hIndex}</div>}
-          {d.orcid && <div className="mono detail-id">ORCID {d.orcid}</div>}
-        </div>
-        <CloseBtn onClose={onClose} />
-      </div>
-      {(d.faculty || d.role) && (
-        <div className="detail-meta">
-          {d.faculty && <div><span className="muted">Faculty</span><span>{d.faculty}</span></div>}
-          {d.role && <div><span className="muted">Role</span><span>{d.role}</span></div>}
-        </div>
-      )}
-      <div className="detail-stats">
-        <div><span className="mono">{d.papersCount}</span><label>papers</label></div>
-        <div><span className="mono">{d.citations}</span><label>citations</label></div>
-      </div>
-      <div className="detail-section">
-        <div className="detail-section-label">Recent papers</div>
-        {d.papers.slice(0, 6).map(p => <PaperRow key={p.doi} p={p} />)}
-      </div>
-    </div>
-  );
-}
+export { AuthorView } from './node-author-view';
 
 export function InstitutionView({ d, onClose }: { d: InstD; onClose: () => void }) {
   return (
