@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Camera } from './projection';
@@ -19,8 +19,8 @@ interface Props {
   height: number;
 }
 
-/** One metaball cloud per community. WebGL canvas positioned over the SVG
- *  at pointerEvents: none so SVG nodes still catch clicks. */
+/** WebGL metaball clouds for each community. The canvas sits below the SVG
+ *  (zIndex 0) and ignores pointer events so the SVG drag rect stays on top. */
 export function CommunityClouds({ communities, camera, width, height }: Props) {
   return (
     <div style={{ position: 'absolute', inset: 0, width, height, pointerEvents: 'none', zIndex: 0 }}>
@@ -31,40 +31,62 @@ export function CommunityClouds({ communities, camera, width, height }: Props) {
         gl={{ alpha: true, antialias: true }}
         style={{ pointerEvents: 'none', width: '100%', height: '100%' }}
       >
-        <CameraRig camera={camera} width={width} height={height} />
-        <ambientLight intensity={0.9} />
-        {communities.map(c => (
-          <CloudMetaball key={c.key} community={c} />
-        ))}
+        <CameraSync width={width} height={height} />
+        <ambientLight intensity={1} />
+        <SceneTransform camera={camera}>
+          {communities.map(c => (
+            <CloudMetaball key={c.key} community={c} />
+          ))}
+        </SceneTransform>
       </Canvas>
     </div>
   );
 }
 
-/** Sync the orthographic Three camera to the graph's (cx, cy, yaw, pitch)
- *  so WebGL content lines up pixel-perfect with the SVG underneath. */
-function CameraRig({ camera, width, height }: { camera: Camera; width: number; height: number }) {
-  const { camera: three } = useThree();
+/** Orthographic camera covering the pixel box (0..width, 0..height) with
+ *  the Y axis flipped by the ortho bounds (top > bottom) so world Y grows
+ *  downward exactly like the SVG. Keeps Three's default up=(0,1,0) so the
+ *  camera's local X axis agrees with world X (no left/right mirror). */
+function CameraSync({ width, height }: { width: number; height: number }) {
+  const { camera } = useThree();
   useEffect(() => {
-    const cam = three as THREE.OrthographicCamera;
-    cam.left = -width / 2;
-    cam.right = width / 2;
-    cam.top = -height / 2;
-    cam.bottom = height / 2;
+    const cam = camera as THREE.OrthographicCamera;
+    cam.left = 0;
+    cam.right = width;
+    cam.top = 0;
+    cam.bottom = height;
+    cam.position.set(0, 0, 1000);
+    cam.up.set(0, 1, 0);
+    cam.lookAt(0, 0, 0);
     cam.updateProjectionMatrix();
-  }, [three, width, height]);
+  }, [camera, width, height]);
+  return null;
+}
+
+interface SceneTransformProps { camera: Camera; children: React.ReactNode }
+
+/** Match the SVG projection: translate to (cx, cy, 0), rotate by yaw around
+ *  Z then by pitch around X, translate back. Everything Three renders inside
+ *  this group lands on the same pixels as the SVG's project(). */
+function SceneTransform({ camera, children }: SceneTransformProps) {
+  const yawPivot = useRef<THREE.Group>(null);
+  const pitchPivot = useRef<THREE.Group>(null);
 
   useFrame(() => {
-    const cam = three as THREE.OrthographicCamera;
-    const r = 1000;
-    cam.position.set(
-      camera.cx + r * Math.sin(camera.yaw) * Math.cos(camera.pitch),
-      camera.cy - r * Math.sin(camera.pitch),
-      r * Math.cos(camera.yaw) * Math.cos(camera.pitch),
-    );
-    cam.up.set(0, -1, 0);
-    cam.lookAt(camera.cx, camera.cy, 0);
+    // Match the SVG project(): yaw around Z, pitch around X, applied
+    // pitch-outer-yaw-inner so rotating yaw always spins around the
+    // scene's vertical axis regardless of tilt.
+    if (yawPivot.current) yawPivot.current.rotation.z = camera.yaw;
+    if (pitchPivot.current) pitchPivot.current.rotation.x = camera.pitch;
   });
 
-  return null;
+  return (
+    <group position={[camera.cx, camera.cy, 0]}>
+      <group ref={pitchPivot}>
+        <group ref={yawPivot}>
+          <group position={[-camera.cx, -camera.cy, 0]}>{children}</group>
+        </group>
+      </group>
+    </group>
+  );
 }

@@ -12826,12 +12826,12 @@ var require_with_selector_production = __commonJS({
     }
     var objectIs = "function" === typeof Object.is ? Object.is : is2;
     var useSyncExternalStore = shim.useSyncExternalStore;
-    var useRef15 = React19.useRef;
+    var useRef16 = React19.useRef;
     var useEffect17 = React19.useEffect;
     var useMemo16 = React19.useMemo;
     var useDebugValue = React19.useDebugValue;
     exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
-      var instRef = useRef15(null);
+      var instRef = useRef16(null);
       if (null === instRef.current) {
         var inst = { hasValue: false, value: null };
         instRef.current = inst;
@@ -70857,8 +70857,8 @@ var triTable = new Int32Array([
 
 // public/community-graph/cloud-metaball.tsx
 var import_jsx_runtime13 = __toESM(require_jsx_runtime());
-var RESOLUTION = 28;
-var BALL_MAX_COUNT = 3e4;
+var RESOLUTION = 56;
+var BALL_MAX_COUNT = 12e4;
 var ISOLATION = 80;
 function CloudMetaball({ community }) {
   const material = (0, import_react10.useMemo)(() => new MeshStandardMaterial({
@@ -70924,35 +70924,36 @@ function CommunityClouds({ communities, camera, width, height }) {
       gl: { alpha: true, antialias: true },
       style: { pointerEvents: "none", width: "100%", height: "100%" },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(CameraRig, { camera, width, height }),
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("ambientLight", { intensity: 0.9 }),
-        communities.map((c3) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(CloudMetaball, { community: c3 }, c3.key))
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(CameraSync, { width, height }),
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("ambientLight", { intensity: 1 }),
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(SceneTransform, { camera, children: communities.map((c3) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(CloudMetaball, { community: c3 }, c3.key)) })
       ]
     }
   ) });
 }
-function CameraRig({ camera, width, height }) {
-  const { camera: three } = useThree();
+function CameraSync({ width, height }) {
+  const { camera } = useThree();
   (0, import_react11.useEffect)(() => {
-    const cam = three;
-    cam.left = -width / 2;
-    cam.right = width / 2;
-    cam.top = -height / 2;
-    cam.bottom = height / 2;
+    const cam = camera;
+    cam.left = 0;
+    cam.right = width;
+    cam.top = 0;
+    cam.bottom = height;
+    cam.position.set(0, 0, 1e3);
+    cam.up.set(0, 1, 0);
+    cam.lookAt(0, 0, 0);
     cam.updateProjectionMatrix();
-  }, [three, width, height]);
-  useFrame(() => {
-    const cam = three;
-    const r2 = 1e3;
-    cam.position.set(
-      camera.cx + r2 * Math.sin(camera.yaw) * Math.cos(camera.pitch),
-      camera.cy - r2 * Math.sin(camera.pitch),
-      r2 * Math.cos(camera.yaw) * Math.cos(camera.pitch)
-    );
-    cam.up.set(0, -1, 0);
-    cam.lookAt(camera.cx, camera.cy, 0);
-  });
+  }, [camera, width, height]);
   return null;
+}
+function SceneTransform({ camera, children }) {
+  const yawPivot = (0, import_react11.useRef)(null);
+  const pitchPivot = (0, import_react11.useRef)(null);
+  useFrame(() => {
+    if (yawPivot.current) yawPivot.current.rotation.z = camera.yaw;
+    if (pitchPivot.current) pitchPivot.current.rotation.x = camera.pitch;
+  });
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("group", { position: [camera.cx, camera.cy, 0], children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("group", { ref: pitchPivot, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("group", { ref: yawPivot, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("group", { position: [-camera.cx, -camera.cy, 0], children }) }) }) });
 }
 
 // public/community-graph/clouds-bridge.tsx

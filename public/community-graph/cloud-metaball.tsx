@@ -4,8 +4,8 @@ import * as THREE from 'three';
 import { MarchingCubes } from 'three-stdlib';
 import type { CloudCommunity } from './community-clouds';
 
-const RESOLUTION = 28;
-const BALL_MAX_COUNT = 30000;
+const RESOLUTION = 56;
+const BALL_MAX_COUNT = 120000;
 const ISOLATION = 80;
 
 /** A single community's metaball blob. Each node contributes a 3D Gaussian
