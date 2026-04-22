@@ -5,7 +5,7 @@ import type { ExplorerAffiliations } from './explorer-affiliations';
 import { CommunityGraph, type CommunityAdapter } from './community-graph';
 import { explorerCommunityKey, type HullTier } from './explorer-community';
 import { computeVisibility } from './explorer-visibility';
-import { DEFAULT_LAYER_ORDER, layerTypeForGroup, layerZ, type LayerType } from './explorer-layers';
+import { DEFAULT_LAYER_ORDER, layerTypeForNode, layerZ, type LayerType } from './explorer-layers';
 
 function hullTierFor(nodes: EnrichedSimNode[]): HullTier {
   if (nodes.some(n => n.group === 'institution')) return 'institution';
@@ -34,13 +34,16 @@ interface Props {
   onHullHoverChange?: (key: string | null) => void;
   tilt?: number;
   layerOrder?: LayerType[];
+  coauthorIds?: Set<string>;
 }
 
 function baseRadius(n: EnrichedSimNode): number {
   return nodeRadius(n.weight || 1, n.role);
 }
 
-export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER }: Props) {
+const EMPTY_IDS: Set<string> = new Set();
+
+export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS }: Props) {
   const labelById = useMemo(() => {
     const m = new Map<string, string>();
     for (const n of nodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
@@ -88,8 +91,8 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       return labelById.get(firstId) || null;
     },
     getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
-    getLayerZ: n => layerZ(layerTypeForGroup(n.group), layerOrder),
-  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier, layerOrder]);
+    getLayerZ: n => layerZ(layerTypeForNode(n, coauthorIds), layerOrder),
+  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier, layerOrder, coauthorIds]);
 
   const forceConfig = useMemo(() => {
     const area = Math.max(width * height, 1);

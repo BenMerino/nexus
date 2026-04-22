@@ -15224,12 +15224,12 @@ function computeVisibility(nodes, edges, affiliations, egoAuthorId, homeInstitut
 }
 
 // public/explorer-layers.ts
-var DEFAULT_LAYER_ORDER = ["institution", "author", "journal", "paper"];
-function layerTypeForGroup(group) {
-  if (group === "institution") return "institution";
-  if (group === "author") return "author";
-  if (group === "journal") return "journal";
-  if (group === "doi") return "paper";
+var DEFAULT_LAYER_ORDER = ["institution", "author", "coauthor", "journal", "paper"];
+function layerTypeForNode(n, coauthorIds) {
+  if (n.group === "institution") return "institution";
+  if (n.group === "journal") return "journal";
+  if (n.group === "doi") return "paper";
+  if (n.group === "author") return coauthorIds.has(n.id) ? "coauthor" : "author";
   return null;
 }
 function layerZ(layer, order) {
@@ -15238,8 +15238,8 @@ function layerZ(layer, order) {
   if (idx < 0) return 0;
   const span = order.length - 1;
   if (span <= 0) return 0;
-  const TOP = 140;
-  const BOTTOM = -40;
+  const TOP = 160;
+  const BOTTOM = -60;
   return TOP - idx / span * (TOP - BOTTOM);
 }
 
@@ -15256,7 +15256,8 @@ var ZOOM_SCALE = 2.1;
 function baseRadius(n) {
   return nodeRadius(n.weight || 1, n.role);
 }
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER }) {
+var EMPTY_IDS = /* @__PURE__ */ new Set();
+function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS }) {
   const labelById = (0, import_react9.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
@@ -15299,8 +15300,8 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       return labelById.get(firstId) || null;
     },
     getHoverFootnote: (n) => n.weight ? `${n.weight} ${n.weight === 1 ? "paper" : "papers"}` : null,
-    getLayerZ: (n) => layerZ(layerTypeForGroup(n.group), layerOrder)
-  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier, layerOrder]);
+    getLayerZ: (n) => layerZ(layerTypeForNode(n, coauthorIds), layerOrder)
+  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier, layerOrder, coauthorIds]);
   const forceConfig = (0, import_react9.useMemo)(() => {
     const area = Math.max(width * height, 1);
     const perNode = Math.sqrt(area / Math.max(nodes.length, 1));
@@ -15347,7 +15348,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
 
 // public/explorer-canvas.tsx
 var import_jsx_runtime14 = __toESM(require_jsx_runtime());
-function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder }) {
+function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds }) {
   const ref = (0, import_react10.useRef)(null);
   const [size, setSize] = (0, import_react10.useState)(null);
   (0, import_react10.useEffect)(() => {
@@ -15380,7 +15381,8 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
       onHoverChange,
       onHullHoverChange,
       tilt,
-      layerOrder
+      layerOrder,
+      coauthorIds
     }
   ) });
 }
@@ -15513,7 +15515,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
   const [overIdx, setOverIdx] = (0, import_react14.useState)(null);
   const rowRefs = (0, import_react14.useRef)([]);
   const dragStateRef = (0, import_react14.useRef)(null);
-  const entries = order.map((layer) => ({ layer, rows: rows.filter((r) => r.layer === layer) }));
+  const entries = order.map((layer) => ({ layer, row: rows.find((r) => r.layer === layer) })).filter((e) => !!e.row);
   const pickRow = (0, import_react14.useCallback)((clientY) => {
     const rects = rowRefs.current.map((el) => el?.getBoundingClientRect());
     for (let i = 0; i < rects.length; i++) {
@@ -15549,7 +15551,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
   (0, import_react14.useEffect)(() => {
     rowRefs.current = rowRefs.current.slice(0, entries.length);
   }, [entries.length]);
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, rows: layerRows }, i) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, row }, i) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
     "div",
     {
       ref: (el) => {
@@ -15568,7 +15570,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
             children: "\u283F"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "layer-stack-checks", children: layerRows.map((r) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Check, { checked: r.checked, onChange: r.onToggle, label: r.label, color: r.color }, r.flagKey)) })
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "layer-stack-checks", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
       ]
     },
     layer
@@ -15579,7 +15581,7 @@ function buildLayerRows(flags, setFlag) {
   return [
     { layer: "institution", flagKey: "institution", label: "Institutions", color: COLORS.institution, checked: flags.institution, onToggle: (v) => setFlag("institution", v) },
     { layer: "author", flagKey: "author", label: "Authors", color: COLORS.author, checked: flags.author, onToggle: (v) => setFlag("author", v) },
-    { layer: "author", flagKey: "coauthor", label: "Co-authors", color: COLORS.author, checked: flags.coauthor, onToggle: (v) => setFlag("coauthor", v) },
+    { layer: "coauthor", flagKey: "coauthor", label: "Co-authors", color: COLORS.author, checked: flags.coauthor, onToggle: (v) => setFlag("coauthor", v) },
     { layer: "journal", flagKey: "journal", label: "Journals", color: COLORS.journal, checked: flags.journal, onToggle: (v) => setFlag("journal", v) },
     { layer: "paper", flagKey: "paper", label: "Papers", color: paperColor, checked: flags.paper, onToggle: (v) => setFlag("paper", v) }
   ];
@@ -16307,7 +16309,7 @@ function GraphExplorerBody() {
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, flags.paper),
     [filteredRaw, flags.paper]
   );
-  const { projectedNodes } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
+  const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
   const projectedEdges = (0, import_react25.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
@@ -16346,7 +16348,7 @@ function GraphExplorerBody() {
       /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), nodes: projectedNodes, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
       /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "graph-canvas", children: [
         /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
         NodeDetail,

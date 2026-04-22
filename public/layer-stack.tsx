@@ -28,7 +28,9 @@ export function LayerStack({ rows, order, onReorder, enabled }: Props) {
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const dragStateRef = useRef<{ from: number; to: number } | null>(null);
 
-  const entries = order.map(layer => ({ layer, rows: rows.filter(r => r.layer === layer) }));
+  const entries = order
+    .map(layer => ({ layer, row: rows.find(r => r.layer === layer) }))
+    .filter((e): e is { layer: LayerType; row: Row } => !!e.row);
 
   // Pointer-based drag: pick the row whose bounding rect vertically contains
   // the cursor. Simpler + more robust than HTML5 DnD on a tiny handle span.
@@ -73,7 +75,7 @@ export function LayerStack({ rows, order, onReorder, enabled }: Props) {
 
   return (
     <div className="layer-stack" data-enabled={enabled ? '1' : '0'}>
-      {entries.map(({ layer, rows: layerRows }, i) => (
+      {entries.map(({ layer, row }, i) => (
         <div
           key={layer}
           ref={el => { rowRefs.current[i] = el; }}
@@ -89,9 +91,7 @@ export function LayerStack({ rows, order, onReorder, enabled }: Props) {
             >⠿</span>
           )}
           <div className="layer-stack-checks">
-            {layerRows.map(r => (
-              <Check key={r.flagKey} checked={r.checked} onChange={r.onToggle} label={r.label} color={r.color} />
-            ))}
+            <Check checked={row.checked} onChange={row.onToggle} label={row.label} color={row.color} />
           </div>
         </div>
       ))}
@@ -107,7 +107,7 @@ export function buildLayerRows(
   return [
     { layer: 'institution', flagKey: 'institution', label: 'Institutions', color: COLORS.institution, checked: flags.institution, onToggle: v => setFlag('institution', v) },
     { layer: 'author',      flagKey: 'author',      label: 'Authors',      color: COLORS.author,      checked: flags.author,      onToggle: v => setFlag('author', v) },
-    { layer: 'author',      flagKey: 'coauthor',    label: 'Co-authors',   color: COLORS.author,      checked: flags.coauthor,    onToggle: v => setFlag('coauthor', v) },
+    { layer: 'coauthor',    flagKey: 'coauthor',    label: 'Co-authors',   color: COLORS.author,      checked: flags.coauthor,    onToggle: v => setFlag('coauthor', v) },
     { layer: 'journal',     flagKey: 'journal',     label: 'Journals',     color: COLORS.journal,     checked: flags.journal,     onToggle: v => setFlag('journal', v) },
     { layer: 'paper',       flagKey: 'paper',       label: 'Papers',       color: paperColor,         checked: flags.paper,       onToggle: v => setFlag('paper', v) },
   ];

@@ -20,9 +20,10 @@ interface Props {
   minHeight?: number;
   tilt?: number;
   layerOrder?: LayerType[];
+  coauthorIds?: Set<string>;
 }
 
-export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder }: Props) {
+export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
 
@@ -59,6 +60,7 @@ export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, 
           onHullHoverChange={onHullHoverChange}
           tilt={tilt}
           layerOrder={layerOrder}
+          coauthorIds={coauthorIds}
         />
       )}
     </div>
