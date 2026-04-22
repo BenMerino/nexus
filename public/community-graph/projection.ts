@@ -28,6 +28,28 @@ export function project(n: { x: number; y: number; z: number }, cam: Camera): Pr
   return { x: cam.cx + rx, y: cam.cy + ry * cp - n.z * sp };
 }
 
+/** Full camera transform preserving the axis into the screen. Screen x/y
+ *  match project(); `depth` is camera-forward distance (larger = further
+ *  from the camera). Enables back-face culling and painter's ordering
+ *  across faces from different prisms. */
+export function projectWithDepth(n: { x: number; y: number; z: number }, cam: Camera): { x: number; y: number; depth: number } {
+  const dx = n.x - cam.cx;
+  const dy = n.y - cam.cy;
+  const cyaw = Math.cos(cam.yaw);
+  const syaw = Math.sin(cam.yaw);
+  const rx = dx * cyaw - dy * syaw;
+  const ry = dx * syaw + dy * cyaw;
+  const cp = Math.cos(cam.pitch);
+  const sp = Math.sin(cam.pitch);
+  // Rotate (ry, z) around X by pitch. The screen-up axis gets ry*cos - z*sin;
+  // the into-screen axis gets ry*sin + z*cos. Larger depth = farther away.
+  return {
+    x: cam.cx + rx,
+    y: cam.cy + ry * cp - n.z * sp,
+    depth: ry * sp + n.z * cp,
+  };
+}
+
 /** Inverse: recover logical (x, y) from a projected screen point P, given
  *  the node's Z. Used while a node is being dragged. */
 export function unproject(p: Projected, z: number, cam: Camera): Projected {

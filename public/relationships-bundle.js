@@ -13370,6 +13370,21 @@ function project(n, cam) {
   const sp = Math.sin(cam.pitch);
   return { x: cam.cx + rx, y: cam.cy + ry * cp - n.z * sp };
 }
+function projectWithDepth(n, cam) {
+  const dx = n.x - cam.cx;
+  const dy = n.y - cam.cy;
+  const cyaw = Math.cos(cam.yaw);
+  const syaw = Math.sin(cam.yaw);
+  const rx = dx * cyaw - dy * syaw;
+  const ry = dx * syaw + dy * cyaw;
+  const cp = Math.cos(cam.pitch);
+  const sp = Math.sin(cam.pitch);
+  return {
+    x: cam.cx + rx,
+    y: cam.cy + ry * cp - n.z * sp,
+    depth: ry * sp + n.z * cp
+  };
+}
 function unproject(p, z, cam) {
   if (cam.pitch === 0 && cam.yaw === 0) return { x: p.x, y: p.y };
   const cp = Math.cos(cam.pitch);
@@ -13664,51 +13679,77 @@ function tickRing(state, key, points, alpha) {
   state.set(key, { radii, cx: scx, cy: scy });
   return { radii, cx: scx, cy: scy };
 }
-function projectRing(ring, pad, bottomZ, topZ, camera) {
-  const floor = [];
-  const ceiling = [];
+
+// public/community-graph/prism-faces.ts
+function screenSignedArea(pts) {
+  let a2 = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % pts.length];
+    a2 += (p2.x - p1.x) * (p2.y + p1.y);
+  }
+  return a2;
+}
+function centroidDepth(verts) {
+  let s = 0;
+  for (const v of verts) s += v.depth;
+  return s / verts.length;
+}
+function prismFaces(input, cam, darkerStroke) {
+  const { ring, bottomZ, topZ, color, key } = input;
+  const n = ring.length;
+  if (n === 0) return [];
+  const bottom = ring.map((p) => projectWithDepth({ x: p.x, y: p.y, z: bottomZ }, cam));
+  const top = ring.map((p) => projectWithDepth({ x: p.x, y: p.y, z: topZ }, cam));
+  const faces = [];
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    const verts = [bottom[i], bottom[j], top[j], top[i]];
+    if (screenSignedArea(verts) <= 0) continue;
+    faces.push({
+      points: verts.map((v) => ({ x: v.x, y: v.y })),
+      depth: centroidDepth(verts),
+      color,
+      stroke: darkerStroke,
+      strokeWidth: 0.5,
+      role: "side",
+      key: `${key}:side:${i}`
+    });
+  }
+  const topVerts = top;
+  if (screenSignedArea(topVerts) > 0) {
+    faces.push({
+      points: topVerts.map((v) => ({ x: v.x, y: v.y })),
+      depth: centroidDepth(topVerts),
+      color,
+      stroke: darkerStroke,
+      strokeWidth: 0.8,
+      role: "top",
+      key: `${key}:top`
+    });
+  }
+  const bottomVerts = [...bottom].reverse();
+  if (screenSignedArea(bottomVerts) > 0) {
+    faces.push({
+      points: bottomVerts.map((v) => ({ x: v.x, y: v.y })),
+      depth: centroidDepth(bottomVerts),
+      color,
+      stroke: darkerStroke,
+      strokeWidth: 0.8,
+      role: "bottom",
+      key: `${key}:bottom`
+    });
+  }
+  return faces;
+}
+function ringToWorld(ring, pad) {
+  const out = [];
   for (let i = 0; i < RING_SAMPLES; i++) {
     const angle = i / RING_SAMPLES * Math.PI * 2;
     const r = ring.radii[i] + pad;
-    const x3 = ring.cx + Math.cos(angle) * r;
-    const y3 = ring.cy + Math.sin(angle) * r;
-    floor.push(project({ x: x3, y: y3, z: bottomZ }, camera));
-    ceiling.push(project({ x: x3, y: y3, z: topZ }, camera));
+    out.push({ x: ring.cx + Math.cos(angle) * r, y: ring.cy + Math.sin(angle) * r });
   }
-  return { floor, ceiling };
-}
-function ringPath(pts) {
-  const n = pts.length;
-  if (n < 2) return "";
-  const k = 0.5 / 6;
-  let d = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 0; i < n; i++) {
-    const p0 = pts[(i - 1 + n) % n];
-    const p1 = pts[i];
-    const p2 = pts[(i + 1) % n];
-    const p3 = pts[(i + 2) % n];
-    const c1x = p1.x + (p2.x - p0.x) * k;
-    const c1y = p1.y + (p2.y - p0.y) * k;
-    const c2x = p2.x - (p3.x - p1.x) * k;
-    const c2y = p2.y - (p3.y - p1.y) * k;
-    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
-  }
-  return d + " Z";
-}
-function wallsPath(floor, ceiling) {
-  const n = floor.length;
-  if (n === 0) return "";
-  let d = `M ${floor[0].x} ${floor[0].y}`;
-  for (let i = 1; i < n; i++) d += ` L ${floor[i].x} ${floor[i].y}`;
-  for (let i = n - 1; i >= 0; i--) d += ` L ${ceiling[i].x} ${ceiling[i].y}`;
-  return d + " Z";
-}
-function spokesPath(floor, ceiling, stride) {
-  let d = "";
-  for (let i = 0; i < floor.length; i += stride) {
-    d += `M ${floor[i].x} ${floor[i].y} L ${ceiling[i].x} ${ceiling[i].y} `;
-  }
-  return d;
+  return out;
 }
 
 // public/community-graph/prism-hulls.tsx
@@ -13716,12 +13757,28 @@ var import_jsx_runtime8 = __toESM(require_jsx_runtime());
 var DEFAULT_PAD2 = 32;
 var DEFAULT_LERP_ALPHA2 = 0.18;
 var MIN_PRISM_HEIGHT = 120;
-var SPOKE_STRIDE = 6;
+function polyPath(pts) {
+  if (pts.length === 0) return "";
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x} ${pts[i].y}`;
+  return d + " Z";
+}
+function darken(color, amount) {
+  if (!color.startsWith("#")) return color;
+  const hex = color.length === 4 ? color.slice(1).split("").map((c2) => c2 + c2).join("") : color.slice(1);
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const t = Math.max(0, Math.min(1, amount));
+  const mix = (c2) => Math.round(c2 * (1 - t)).toString(16).padStart(2, "0");
+  return `#${mix(r)}${mix(g)}${mix(b)}`;
+}
 function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LERP_ALPHA2, onHoverKey }) {
   const stateRef = (0, import_react3.useRef)(/* @__PURE__ */ new Map());
   const state = stateRef.current;
   const seen = /* @__PURE__ */ new Set();
-  const rendered = [];
+  const allFaces = [];
+  const emphasisByKey = /* @__PURE__ */ new Map();
   for (const g of groups) {
     const ring = tickRing(state, g.key, g.points, lerpAlpha);
     if (!ring) continue;
@@ -13734,35 +13791,31 @@ function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LE
       bottomZ -= need;
       topZ += need;
     }
-    const { floor, ceiling } = projectRing(ring, pad, bottomZ, topZ, camera);
-    rendered.push({ key: g.key, color: g.color, floor, ceiling, emphasis: !!g.emphasis, deemphasis: !!g.deemphasis });
+    const worldRing = ringToWorld(ring, pad);
+    const stroke = darken(g.color, 0.5);
+    allFaces.push(...prismFaces({ key: g.key, color: g.color, ring: worldRing, bottomZ, topZ }, camera, stroke));
+    emphasisByKey.set(g.key, { fill: g.deemphasis ? 0.18 : g.emphasis ? 0.7 : 0.48 });
   }
   for (const key of [...state.keys()]) if (!seen.has(key)) state.delete(key);
-  rendered.sort((a2, b) => {
-    const ay = a2.ceiling.reduce((s, p) => s + p.y, 0) / a2.ceiling.length;
-    const by = b.ceiling.reduce((s, p) => s + p.y, 0) / b.ceiling.length;
-    return ay - by;
-  });
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("g", { children: rendered.map((p) => {
-    const floorFill = p.deemphasis ? 0.08 : p.emphasis ? 0.35 : 0.22;
-    const wallFill = p.deemphasis ? 0.06 : p.emphasis ? 0.28 : 0.18;
-    const ceilingFill = p.deemphasis ? 0.04 : p.emphasis ? 0.18 : 0.1;
-    const stroke = p.deemphasis ? 0.2 : p.emphasis ? 0.9 : 0.6;
-    const width = p.emphasis ? 1.8 : 1.2;
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
-      "g",
+  allFaces.sort((a2, b) => b.depth - a2.depth);
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("g", { children: allFaces.map((f) => {
+    const communityKey = f.key.split(":")[0];
+    const fill = emphasisByKey.get(communityKey)?.fill ?? 0.4;
+    const hoverable = f.role === "top" && onHoverKey;
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+      "path",
       {
-        onMouseEnter: onHoverKey ? () => onHoverKey(p.key) : void 0,
-        onMouseLeave: onHoverKey ? () => onHoverKey(null) : void 0,
-        style: { cursor: onHoverKey ? "pointer" : "default" },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: ringPath(p.floor), fill: p.color, fillOpacity: floorFill, stroke: p.color, strokeOpacity: stroke * 0.6, strokeWidth: width, style: { pointerEvents: "fill" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: wallsPath(p.floor, p.ceiling), fill: p.color, fillOpacity: wallFill, stroke: "none", style: { pointerEvents: "none" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: spokesPath(p.floor, p.ceiling, SPOKE_STRIDE), fill: "none", stroke: p.color, strokeOpacity: stroke * 0.55, strokeWidth: width * 0.7, style: { pointerEvents: "none" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: ringPath(p.ceiling), fill: p.color, fillOpacity: ceilingFill, stroke: p.color, strokeOpacity: stroke, strokeWidth: width, style: { pointerEvents: "none" } })
-        ]
+        d: polyPath(f.points),
+        fill: f.color,
+        fillOpacity: fill,
+        stroke: f.stroke,
+        strokeWidth: f.strokeWidth,
+        strokeLinejoin: "round",
+        onMouseEnter: hoverable ? () => onHoverKey(communityKey) : void 0,
+        onMouseLeave: hoverable ? () => onHoverKey(null) : void 0,
+        style: { cursor: hoverable ? "pointer" : "default", pointerEvents: hoverable ? "fill" : "none" }
       },
-      p.key
+      f.key
     );
   }) });
 }

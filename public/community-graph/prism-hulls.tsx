@@ -1,16 +1,14 @@
 import React, { useRef } from 'react';
 import type { Point } from '../convex-hull';
 import type { Camera } from './projection';
-import { tickRing, projectRing, ringPath, wallsPath, spokesPath, type RingState } from './prism-geometry';
+import { tickRing, type RingState } from './prism-geometry';
+import { prismFaces, ringToWorld, type Face } from './prism-faces';
 
 export interface PrismGroup {
   key: string;
   color: string;
-  /** Logical (x, y) positions of the community's nodes, used to shape the hull. */
   points: Point[];
-  /** Lowest Z in the community — the prism floor. */
   bottomZ: number;
-  /** Highest Z in the community — the prism ceiling. */
   topZ: number;
   emphasis?: boolean;
   deemphasis?: boolean;
@@ -26,31 +24,49 @@ interface Props {
 
 const DEFAULT_PAD = 32;
 const DEFAULT_LERP_ALPHA = 0.18;
-/** Even a single-layer community gets a prism this tall so the walls read
- *  as a visible 3D body rather than two overlapping rings. */
+/** Each community gets a prism at least this tall so same-layer groups
+ *  still render as a real volume rather than a flat disc. */
 const MIN_PRISM_HEIGHT = 120;
-/** Every Nth ring sample becomes a vertical spoke from floor to ceiling,
- *  reinforcing the 3D body. 72 samples / 12 = spoke every 30°. */
-const SPOKE_STRIDE = 6;
 
-interface Rendered { key: string; color: string; floor: Point[]; ceiling: Point[]; emphasis: boolean; deemphasis: boolean }
+function polyPath(pts: { x: number; y: number }[]): string {
+  if (pts.length === 0) return '';
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x} ${pts[i].y}`;
+  return d + ' Z';
+}
 
-/** Volumetric community hulls: each community renders as a translucent prism
- *  — floor polygon at z=0, vertical walls, ceiling polygon at the tallest
- *  node's Z. Collapses to a flat ring when the camera is top-down. */
+/** Darkened version of a color by mixing toward black — used for face
+ *  strokes so seams read slightly darker than the fill. */
+function darken(color: string, amount: number): string {
+  // Supports #rgb, #rrggbb, and leaves CSS functions / vars alone.
+  if (!color.startsWith('#')) return color;
+  const hex = color.length === 4
+    ? color.slice(1).split('').map(c => c + c).join('')
+    : color.slice(1);
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const t = Math.max(0, Math.min(1, amount));
+  const mix = (c: number) => Math.round(c * (1 - t)).toString(16).padStart(2, '0');
+  return `#${mix(r)}${mix(g)}${mix(b)}`;
+}
+
+/** Volumetric community hulls: each community renders as a real 3D prism.
+ *  Triangulated into side quads + top/bottom caps, back-face culled, then
+ *  all faces across all prisms painter-sorted by camera depth so closer
+ *  faces correctly occlude farther ones. Flat colors, no shading. */
 export function PrismHulls({ groups, camera, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALPHA, onHoverKey }: Props) {
   const stateRef = useRef<Map<string, RingState>>(new Map());
   const state = stateRef.current;
   const seen = new Set<string>();
-  const rendered: Rendered[] = [];
+  const allFaces: Face[] = [];
+  const emphasisByKey = new Map<string, { fill: number }>();
 
   for (const g of groups) {
     const ring = tickRing(state, g.key, g.points, lerpAlpha);
     if (!ring) continue;
     seen.add(g.key);
-    // Ensure the prism is visibly tall even when every node shares one layer.
-    // Sink the floor, lift the ceiling equally, so the community stays
-    // vertically centered around its nodes.
+
     let bottomZ = g.bottomZ;
     let topZ = g.topZ;
     const span = topZ - bottomZ;
@@ -59,38 +75,35 @@ export function PrismHulls({ groups, camera, pad = DEFAULT_PAD, lerpAlpha = DEFA
       bottomZ -= need;
       topZ += need;
     }
-    const { floor, ceiling } = projectRing(ring, pad, bottomZ, topZ, camera);
-    rendered.push({ key: g.key, color: g.color, floor, ceiling, emphasis: !!g.emphasis, deemphasis: !!g.deemphasis });
+    const worldRing = ringToWorld(ring, pad);
+    const stroke = darken(g.color, 0.5);
+    allFaces.push(...prismFaces({ key: g.key, color: g.color, ring: worldRing, bottomZ, topZ }, camera, stroke));
+    emphasisByKey.set(g.key, { fill: g.deemphasis ? 0.18 : g.emphasis ? 0.7 : 0.48 });
   }
   for (const key of [...state.keys()]) if (!seen.has(key)) state.delete(key);
 
-  // Painter's order by ceiling centroid Y — prisms closer to the camera
-  // (higher screen Y after projection) paint last so they overlap correctly.
-  rendered.sort((a, b) => {
-    const ay = a.ceiling.reduce((s, p) => s + p.y, 0) / a.ceiling.length;
-    const by = b.ceiling.reduce((s, p) => s + p.y, 0) / b.ceiling.length;
-    return ay - by;
-  });
+  // Painter's algorithm: farther faces first, nearer faces last.
+  allFaces.sort((a, b) => b.depth - a.depth);
 
   return (
     <g>
-      {rendered.map(p => {
-        const floorFill = p.deemphasis ? 0.08 : p.emphasis ? 0.35 : 0.22;
-        const wallFill = p.deemphasis ? 0.06 : p.emphasis ? 0.28 : 0.18;
-        const ceilingFill = p.deemphasis ? 0.04 : p.emphasis ? 0.18 : 0.10;
-        const stroke = p.deemphasis ? 0.2 : p.emphasis ? 0.9 : 0.6;
-        const width = p.emphasis ? 1.8 : 1.2;
+      {allFaces.map(f => {
+        const communityKey = f.key.split(':')[0];
+        const fill = emphasisByKey.get(communityKey)?.fill ?? 0.4;
+        const hoverable = f.role === 'top' && onHoverKey;
         return (
-          <g key={p.key}
-            onMouseEnter={onHoverKey ? () => onHoverKey(p.key) : undefined}
-            onMouseLeave={onHoverKey ? () => onHoverKey(null) : undefined}
-            style={{ cursor: onHoverKey ? 'pointer' : 'default' }}
-          >
-            <path d={ringPath(p.floor)} fill={p.color} fillOpacity={floorFill} stroke={p.color} strokeOpacity={stroke * 0.6} strokeWidth={width} style={{ pointerEvents: 'fill' }} />
-            <path d={wallsPath(p.floor, p.ceiling)} fill={p.color} fillOpacity={wallFill} stroke="none" style={{ pointerEvents: 'none' }} />
-            <path d={spokesPath(p.floor, p.ceiling, SPOKE_STRIDE)} fill="none" stroke={p.color} strokeOpacity={stroke * 0.55} strokeWidth={width * 0.7} style={{ pointerEvents: 'none' }} />
-            <path d={ringPath(p.ceiling)} fill={p.color} fillOpacity={ceilingFill} stroke={p.color} strokeOpacity={stroke} strokeWidth={width} style={{ pointerEvents: 'none' }} />
-          </g>
+          <path
+            key={f.key}
+            d={polyPath(f.points)}
+            fill={f.color}
+            fillOpacity={fill}
+            stroke={f.stroke}
+            strokeWidth={f.strokeWidth}
+            strokeLinejoin="round"
+            onMouseEnter={hoverable ? () => onHoverKey(communityKey) : undefined}
+            onMouseLeave={hoverable ? () => onHoverKey(null) : undefined}
+            style={{ cursor: hoverable ? 'pointer' : 'default', pointerEvents: hoverable ? 'fill' : 'none' }}
+          />
         );
       })}
     </g>
