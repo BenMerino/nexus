@@ -13400,7 +13400,7 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey,
   for (const n of nodes) {
     const key = effectiveKey(n, adapter, major);
     if (!key) continue;
-    const p = project({ x: n.x, y: n.y, z: n.z ?? 0 }, camera);
+    const p = project({ x: n.x, y: n.y, z: 0 }, camera);
     const points = groups.get(key);
     if (points) points.push({ x: p.x, y: p.y });
     else groups.set(key, [{ x: p.x, y: p.y }]);
