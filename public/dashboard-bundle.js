@@ -14957,13 +14957,24 @@ function shortestPath(fromId, toId, links) {
 }
 
 // public/community-graph/focus-set.ts
+function idOf2(endpoint) {
+  return typeof endpoint === "object" ? endpoint.id : endpoint;
+}
 function buildFocusSet(hoverId, selectedId, egoId, links) {
   const focusId = hoverId || selectedId;
   if (!focusId) return null;
-  if (!egoId || focusId === egoId) return /* @__PURE__ */ new Set([focusId]);
-  const path = shortestPath(focusId, egoId, links);
-  if (!path) return /* @__PURE__ */ new Set([focusId]);
-  return new Set(path);
+  const set2 = /* @__PURE__ */ new Set([focusId]);
+  for (const l of links) {
+    const s = idOf2(l.source);
+    const t = idOf2(l.target);
+    if (s === focusId) set2.add(t);
+    if (t === focusId) set2.add(s);
+  }
+  if (egoId && egoId !== focusId) {
+    const path = shortestPath(focusId, egoId, links);
+    if (path) for (const id of path) set2.add(id);
+  }
+  return set2;
 }
 
 // public/community-graph/CommunityGraph.tsx

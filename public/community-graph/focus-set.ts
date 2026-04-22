@@ -2,10 +2,14 @@ import { shortestPath } from './connected-set';
 
 type Link = { source: string | { id: string }; target: string | { id: string } };
 
-/** One rule for hover and click alike: highlight the shortest path from the
- *  focused node back to the ego. Every relationship runs through or ends at
- *  the ego, so that chain is the relationship worth seeing. Returns null
- *  when nothing is focused. */
+function idOf(endpoint: string | { id: string }): string {
+  return typeof endpoint === 'object' ? endpoint.id : endpoint;
+}
+
+/** Same rule for hover and click: light up every relationship the focused
+ *  node has — all its 1-hop neighbors — *and* the shortest path back to
+ *  the ego so the anchor to the user stays visible. Returns null when
+ *  nothing is focused. */
 export function buildFocusSet(
   hoverId: string | null | undefined,
   selectedId: string | null | undefined,
@@ -14,8 +18,16 @@ export function buildFocusSet(
 ): Set<string> | null {
   const focusId = hoverId || selectedId;
   if (!focusId) return null;
-  if (!egoId || focusId === egoId) return new Set([focusId]);
-  const path = shortestPath(focusId, egoId, links);
-  if (!path) return new Set([focusId]);
-  return new Set(path);
+  const set = new Set<string>([focusId]);
+  for (const l of links) {
+    const s = idOf(l.source);
+    const t = idOf(l.target);
+    if (s === focusId) set.add(t);
+    if (t === focusId) set.add(s);
+  }
+  if (egoId && egoId !== focusId) {
+    const path = shortestPath(focusId, egoId, links);
+    if (path) for (const id of path) set.add(id);
+  }
+  return set;
 }
