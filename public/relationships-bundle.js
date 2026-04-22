@@ -13330,6 +13330,17 @@ function startDrag(e, node, svg, sim, pinAfterDrag) {
   window.addEventListener("mouseup", onUp);
 }
 
+// public/community-graph/projection.ts
+var DX = 0.35;
+var DY = 0.75;
+function projectXY(x3, y3, z, tilt) {
+  if (tilt <= 0) return { x: x3, y: y3 };
+  return { x: x3 + z * DX * tilt, y: y3 - z * DY * tilt };
+}
+function project(n, tilt) {
+  return projectXY(n.x, n.y, n.z, tilt);
+}
+
 // public/community-graph/render.tsx
 var import_jsx_runtime5 = __toESM(require_jsx_runtime());
 function GraphDefs() {
@@ -13338,26 +13349,34 @@ function GraphDefs() {
       /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
       /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
     ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("radialGradient", { id: "graph-node-shadow", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "0%", stopColor: "rgba(0,0,0,0.55)" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("stop", { offset: "100%", stopColor: "rgba(0,0,0,0)" })
+    ] }),
     /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("pattern", { id: "graph-grid", x: "0", y: "0", width: "40", height: "40", patternUnits: "userSpaceOnUse", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M 40 0 L 0 0 0 40", fill: "none", stroke: "var(--border-soft)", strokeWidth: "1" }) })
   ] });
 }
 function GridBackdrop() {
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
-function Links({ links, connected }) {
+function Links({ links, connected, tilt }) {
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { style: { pointerEvents: "none" }, children: links.map((l, i) => {
     const s = typeof l.source === "object" ? l.source : null;
     const t = typeof l.target === "object" ? l.target : null;
     if (!s || !t) return null;
     const dim = connected && !(connected.has(s.id) && connected.has(t.id));
     const w = l.weight || 1;
+    const sz = s.z ?? 0;
+    const tz = t.z ?? 0;
+    const ps = project({ x: s.x, y: s.y, z: sz }, tilt);
+    const pt = project({ x: t.x, y: t.y, z: tz }, tilt);
     return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
       "line",
       {
-        x1: s.x,
-        y1: s.y,
-        x2: t.x,
-        y2: t.y,
+        x1: ps.x,
+        y1: ps.y,
+        x2: pt.x,
+        y2: pt.y,
         stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
         strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
       },
@@ -14551,10 +14570,13 @@ function y_default2(y3) {
 function initialNodes(nodes, adapter, width, height) {
   return nodes.map((n) => {
     const ego = adapter.isEgo(n);
+    const targetZ = adapter.getLayerZ?.(n) ?? 0;
     return {
       ...n,
       x: width / 2 + (Math.random() - 0.5) * width * 0.5,
       y: height / 2 + (Math.random() - 0.5) * height * 0.5,
+      z: targetZ,
+      vz: 0,
       fx: ego ? width / 2 : null,
       fy: ego ? height / 2 : null
     };
@@ -14604,9 +14626,19 @@ function createSimulation({
   };
   const chargeFn = typeof config.charge === "function" ? config.charge : () => config.charge;
   return simulation_default(nodes).force("link", link_default(links).id((d) => adapter.getId(d)).distance(config.linkDistance).strength(config.linkStrength)).force("charge", manyBody_default().strength((d) => chargeFn(d.group))).force("clusterX", x_default2((d) => anchorFor(d)?.x ?? width / 2).strength(config.clusterStrengthX)).force("clusterY", y_default2((d) => anchorFor(d)?.y ?? height / 2).strength(config.clusterStrengthY)).force("collide", collide_default().radius((d) => adapter.getRadius(d) + config.collidePad)).alpha(1).alphaDecay(0.025).on("tick", () => {
+    integrateZ(nodes, adapter, config.layerStrength);
     clampToViewport(nodes, adapter, width, height);
     onTick();
   });
+}
+function integrateZ(nodes, adapter, strength) {
+  if (!adapter.getLayerZ) return;
+  const damping = 0.82;
+  for (const n of nodes) {
+    const target = adapter.getLayerZ(n);
+    n.vz = (n.vz + (target - n.z) * strength) * damping;
+    n.z += n.vz;
+  }
 }
 var VIEWPORT_PAD = 40;
 function clampToViewport(nodes, adapter, width, height) {
@@ -14627,7 +14659,8 @@ var DEFAULT_FORCE_CONFIG = {
   clusterStrengthY: 0.45,
   collidePad: 3,
   minCommunitySize: 3,
-  orbitRadius: 0.38
+  orbitRadius: 0.38,
+  layerStrength: 0.12
 };
 
 // public/community-graph/use-view-transform.ts
@@ -14714,7 +14747,8 @@ function CommunityGraph({
   zoomToId,
   zoomScale = 2,
   externalHoverId,
-  onHoverChange
+  onHoverChange,
+  onHullHoverChange
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react4.useRef)(null);
@@ -14831,7 +14865,10 @@ function CommunityGraph({
       ego,
       hovered: hovered ?? null,
       showHover: !!showHover,
-      onHullHover: setHullHoverKey
+      onHullHover: (k) => {
+        setHullHoverKey(k);
+        onHullHoverChange?.(k);
+      }
     }
   ) });
 }
@@ -14979,7 +15016,7 @@ var ZOOM_SCALE = 2.1;
 function baseRadius(n) {
   return nodeRadius(n.weight || 1, n.role);
 }
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange }) {
+function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange }) {
   const labelById = (0, import_react6.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
@@ -15060,14 +15097,15 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       zoomToId: selectedId ?? null,
       zoomScale: ZOOM_SCALE,
       externalHoverId: externalHoverId ?? null,
-      onHoverChange
+      onHoverChange,
+      onHullHoverChange
     }
   );
 }
 
 // public/explorer-canvas.tsx
 var import_jsx_runtime13 = __toESM(require_jsx_runtime());
-function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, minHeight = 480 }) {
+function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480 }) {
   const ref = (0, import_react7.useRef)(null);
   const [size, setSize] = (0, import_react7.useState)(null);
   (0, import_react7.useEffect)(() => {
@@ -15097,7 +15135,8 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
       expandedIds,
       onExpand,
       externalHoverId: hoverId ?? null,
-      onHoverChange
+      onHoverChange,
+      onHullHoverChange
     }
   ) });
 }
@@ -15583,7 +15622,7 @@ function GraphSearch({ nodes, onSelect }) {
 
 // public/graph-contents.tsx
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId, onSearchSelect }) {
+function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }) {
   const journalByDoi = (0, import_react16.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
@@ -15613,10 +15652,12 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
     getCommunityLabel: (key) => labelById.get(key) || key
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById, hullTier]);
   const focusKey = (0, import_react16.useMemo)(() => {
-    if (!hoveredId) return null;
-    const hovered = nodes.find((n) => n.id === hoveredId);
-    return hovered ? adapter.getCommunityKey(hovered) : null;
-  }, [hoveredId, nodes, adapter]);
+    if (hoveredId) {
+      const hovered = nodes.find((n) => n.id === hoveredId);
+      if (hovered) return adapter.getCommunityKey(hovered);
+    }
+    return hoveredHullKey ?? null;
+  }, [hoveredId, hoveredHullKey, nodes, adapter]);
   const buckets = (0, import_react16.useMemo)(
     () => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
     [nodes, adapter, homeInstitutionId, labelById, focusKey]
@@ -15826,6 +15867,7 @@ function GraphExplorerBody() {
     schedulePrefetch(id);
   }, [schedulePrefetch]);
   const hoverFromSidebar = (0, import_react20.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react20.useState)(null);
   const [expandedIds, setExpandedIds] = (0, import_react20.useState)(/* @__PURE__ */ new Set());
   const expand = (0, import_react20.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
@@ -15909,7 +15951,7 @@ function GraphExplorerBody() {
             yearFrom > yearMin || yearTo < yearMax ? `${yearFrom}\u2013${yearTo}` : "all years"
           ] })
         ] }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         NodeDetail,
@@ -15922,7 +15964,7 @@ function GraphExplorerBody() {
           empty: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);
             expand(id);
-          }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, onSearchSelect: (id) => pushSelection(id) })
+          }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })
         }
       ) })
     ] })

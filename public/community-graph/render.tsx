@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CommunityAdapter } from './types';
 import type { SimN, SimL, BaseLink } from './forces';
+import { project, floorShadow } from './projection';
 
 export function GraphDefs() {
   return (
@@ -8,6 +9,10 @@ export function GraphDefs() {
       <radialGradient id="community-glow">
         <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.5" />
         <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id="graph-node-shadow">
+        <stop offset="0%" stopColor="rgba(0,0,0,0.55)" />
+        <stop offset="100%" stopColor="rgba(0,0,0,0)" />
       </radialGradient>
       <pattern id="graph-grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
         <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--border-soft)" strokeWidth="1" />
@@ -26,9 +31,10 @@ export function GridBackdrop() {
 interface LinksProps<N, L extends BaseLink & { weight?: number }> {
   links: SimL<L>[];
   connected: Set<string> | null;
+  tilt: number;
 }
 
-export function Links<N, L extends BaseLink & { weight?: number }>({ links, connected }: LinksProps<N, L>) {
+export function Links<N, L extends BaseLink & { weight?: number }>({ links, connected, tilt }: LinksProps<N, L>) {
   return (
     <g style={{ pointerEvents: 'none' }}>
       {links.map((l, i) => {
@@ -37,10 +43,14 @@ export function Links<N, L extends BaseLink & { weight?: number }>({ links, conn
         if (!s || !t) return null;
         const dim = connected && !(connected.has(s.id) && connected.has(t.id));
         const w = l.weight || 1;
+        const sz = (s as unknown as { z?: number }).z ?? 0;
+        const tz = (t as unknown as { z?: number }).z ?? 0;
+        const ps = project({ x: s.x, y: s.y, z: sz }, tilt);
+        const pt = project({ x: t.x, y: t.y, z: tz }, tilt);
         return (
           <line
             key={i}
-            x1={s.x} y1={s.y} x2={t.x} y2={t.y}
+            x1={ps.x} y1={ps.y} x2={pt.x} y2={pt.y}
             stroke={dim ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.14)'}
             strokeWidth={Math.min(2.5, 0.5 + w * 0.3)}
           />

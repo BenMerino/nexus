@@ -17,10 +17,11 @@ interface Props {
   onSelect: (id: string) => void;
   onHover?: (id: string | null) => void;
   hoveredId?: string | null;
+  hoveredHullKey?: string | null;
   onSearchSelect?: (id: string) => void;
 }
 
-export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId, onSearchSelect }: Props) {
+export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }: Props) {
   const journalByDoi = useMemo(() => {
     const hasPapers = nodes.some(n => n.group === 'doi');
     if (!hasPapers) return null;
@@ -54,10 +55,12 @@ export function GraphContents({ nodes, affiliations, homeInstitutionId, egoAutho
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById, hullTier]);
 
   const focusKey = useMemo(() => {
-    if (!hoveredId) return null;
-    const hovered = nodes.find(n => n.id === hoveredId);
-    return hovered ? adapter.getCommunityKey(hovered) : null;
-  }, [hoveredId, nodes, adapter]);
+    if (hoveredId) {
+      const hovered = nodes.find(n => n.id === hoveredId);
+      if (hovered) return adapter.getCommunityKey(hovered);
+    }
+    return hoveredHullKey ?? null;
+  }, [hoveredId, hoveredHullKey, nodes, adapter]);
 
   const buckets = useMemo(() => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
     [nodes, adapter, homeInstitutionId, labelById, focusKey]);

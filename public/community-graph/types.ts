@@ -14,6 +14,9 @@ export interface CommunityAdapter<N> {
   getHoverFootnote?(n: N): string | null;
   /** Optional — human label for a community key (for the legend). */
   getCommunityLabel?(key: string, sampleNode: N): string;
+  /** Optional — the Z elevation for this node. Nodes on different layers
+   *  stratify vertically when the camera is tilted. Defaults to 0. */
+  getLayerZ?(n: N): number;
 }
 
 export interface ForceConfig {
@@ -27,6 +30,8 @@ export interface ForceConfig {
   minCommunitySize: number;
   /** Fraction of min(width, height) used as the community-anchor orbit radius. */
   orbitRadius: number;
+  /** Per-node target Z pull strength toward adapter.getLayerZ(n). */
+  layerStrength: number;
 }
 
 export const DEFAULT_FORCE_CONFIG: ForceConfig = {
@@ -38,4 +43,5 @@ export const DEFAULT_FORCE_CONFIG: ForceConfig = {
   collidePad: 3,
   minCommunitySize: 3,
   orbitRadius: 0.38,
+  layerStrength: 0.12,
 };

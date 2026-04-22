@@ -34,12 +34,14 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
   externalHoverId?: string | null;
   /** Fires when the internal pointer hover changes so parents can mirror it. */
   onHoverChange?: (id: string | null) => void;
+  /** Fires when the pointer enters/leaves a community hull. */
+  onHullHoverChange?: (key: string | null) => void;
 }
 
 export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   nodes: inNodes, links: inLinks, adapter, primaryKey = null, width, height, selectedId,
   forceConfig, onNodeClick, pinDraggedNodes = false, viewTransform, zoomToId, zoomScale = 2,
-  externalHoverId, onHoverChange,
+  externalHoverId, onHoverChange, onHullHoverChange,
 }: CommunityGraphProps<N, L>) {
   const config: ForceConfig = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -138,7 +140,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         onMouseDown={handleMouseDown} onNodeClick={onNodeClick}
         transform={effectiveTransform}
         ego={ego} hovered={hovered ?? null} showHover={!!showHover}
-        onHullHover={setHullHoverKey}
+        onHullHover={k => { setHullHoverKey(k); onHullHoverChange?.(k); }}
       />
     </div>
   );

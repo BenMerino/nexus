@@ -33,6 +33,7 @@ export function GraphExplorerBody() {
     schedulePrefetch(id);
   }, [schedulePrefetch]);
   const hoverFromSidebar = useCallback((id: string | null) => setHover({ id, source: 'sidebar' }), []);
+  const [hullHoverKey, setHullHoverKey] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const expand = useCallback((id: string) => setExpandedIds(prev => {
     if (prev.has(id)) return prev;
@@ -108,7 +109,7 @@ export function GraphExplorerBody() {
           </div>
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} />}
+            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} />}
         </div>
 
         <aside className="detail-panel" ref={detailPanelRef}>
@@ -118,7 +119,7 @@ export function GraphExplorerBody() {
             onBack={selectionStack.length >= 1 ? popSelection : undefined}
             accentColor={explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId)}
             navDir={navDir}
-            empty={<GraphContents nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} onSelect={id => { pushSelection(id); expand(id); }} onHover={hoverFromSidebar} hoveredId={hover.source === 'canvas' ? hoverId : null} onSearchSelect={id => pushSelection(id)} />}
+            empty={<GraphContents nodes={projectedNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} onSelect={id => { pushSelection(id); expand(id); }} onHover={hoverFromSidebar} hoveredId={hover.source === 'canvas' ? hoverId : null} hoveredHullKey={hullHoverKey} onSearchSelect={id => pushSelection(id)} />}
           />
         </aside>
       </div>

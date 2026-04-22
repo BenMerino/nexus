@@ -5,7 +5,7 @@ import {
 import { majorCommunities, effectiveKey, OTHER_KEY } from './communities';
 import type { CommunityAdapter, ForceConfig } from './types';
 
-export type SimN<N> = N & { x: number; y: number; fx?: number | null; fy?: number | null };
+export type SimN<N> = N & { x: number; y: number; z: number; vz: number; fx?: number | null; fy?: number | null };
 /** d3-force mutates source/target from string id → resolved node object. */
 export interface ResolvedEndpoint { id: string; x: number; y: number }
 export type SimL<L> = Omit<L, 'source' | 'target'> & { source: string | ResolvedEndpoint; target: string | ResolvedEndpoint };
@@ -15,10 +15,13 @@ export interface BaseLink { source: string; target: string }
 export function initialNodes<N>(nodes: N[], adapter: CommunityAdapter<N>, width: number, height: number): SimN<N>[] {
   return nodes.map(n => {
     const ego = adapter.isEgo(n);
+    const targetZ = adapter.getLayerZ?.(n) ?? 0;
     return {
       ...n,
       x: width / 2 + (Math.random() - 0.5) * width * 0.5,
       y: height / 2 + (Math.random() - 0.5) * height * 0.5,
+      z: targetZ,
+      vz: 0,
       fx: ego ? width / 2 : null,
       fy: ego ? height / 2 : null,
     };
@@ -101,9 +104,23 @@ export function createSimulation<N, L extends BaseLink>({
     .alpha(1)
     .alphaDecay(0.025)
     .on('tick', () => {
+      integrateZ(nodes, adapter, config.layerStrength);
       clampToViewport(nodes, adapter, width, height);
       onTick();
     });
+}
+
+/** Simple damped spring toward each node's target Z. d3-force operates in 2D,
+ *  so we integrate Z ourselves on every tick. Keeps things cheap and keeps the
+ *  collide / link / cluster forces untouched. */
+function integrateZ<N>(nodes: SimN<N>[], adapter: CommunityAdapter<N>, strength: number) {
+  if (!adapter.getLayerZ) return;
+  const damping = 0.82;
+  for (const n of nodes) {
+    const target = adapter.getLayerZ(n);
+    n.vz = (n.vz + (target - n.z) * strength) * damping;
+    n.z += n.vz;
+  }
 }
 
 const VIEWPORT_PAD = 40;
