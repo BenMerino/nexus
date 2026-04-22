@@ -38,40 +38,50 @@ interface LinksProps<L extends BaseLink & { weight?: number }> {
   pathMode?: boolean;
 }
 
-/** Render every edge. Edges in the `connected` subgraph render highlighted
- *  (accent color, optionally dashed to trace a selection path); edges
- *  outside dim; edges with no focus render in base style. */
+/** Two passes: every base edge renders as a solid line (faintly dimmed
+ *  when a focus is active so the accent overlay stands out). Edges in the
+ *  focused subgraph get a dashed accent line drawn on top — the "path"
+ *  highlight. Non-focused edges keep only their solid pass. */
 export function Links<L extends BaseLink & { weight?: number }>({ links, connected, camera, pathMode }: LinksProps<L>) {
+  const hasFocus = !!connected;
+  interface Edge { key: number; x1: number; y1: number; x2: number; y2: number; w: number; inFocus: boolean }
+  const edges: Edge[] = [];
+  links.forEach((l, i) => {
+    const s = typeof l.source === 'object' ? l.source : null;
+    const t = typeof l.target === 'object' ? l.target : null;
+    if (!s || !t) return;
+    const sz = (s as unknown as { z?: number }).z ?? 0;
+    const tz = (t as unknown as { z?: number }).z ?? 0;
+    const ps = project({ x: s.x, y: s.y, z: sz }, camera);
+    const pt = project({ x: t.x, y: t.y, z: tz }, camera);
+    edges.push({
+      key: i, x1: ps.x, y1: ps.y, x2: pt.x, y2: pt.y,
+      w: l.weight || 1,
+      inFocus: !!connected && connected.has(s.id) && connected.has(t.id),
+    });
+  });
   return (
     <g style={{ pointerEvents: 'none' }}>
-      {links.map((l, i) => {
-        const s = typeof l.source === 'object' ? l.source : null;
-        const t = typeof l.target === 'object' ? l.target : null;
-        if (!s || !t) return null;
-        const inFocus = !!connected && connected.has(s.id) && connected.has(t.id);
-        const dim = !!connected && !inFocus;
-        const w = l.weight || 1;
-        const sz = (s as unknown as { z?: number }).z ?? 0;
-        const tz = (t as unknown as { z?: number }).z ?? 0;
-        const ps = project({ x: s.x, y: s.y, z: sz }, camera);
-        const pt = project({ x: t.x, y: t.y, z: tz }, camera);
-        const baseWidth = Math.min(2.5, 0.5 + w * 0.3);
-        if (inFocus) {
-          return (
-            <line key={i}
-              x1={ps.x} y1={ps.y} x2={pt.x} y2={pt.y}
-              stroke="var(--accent)" strokeOpacity={0.85}
-              strokeWidth={baseWidth + 0.6}
-              strokeDasharray={pathMode ? '5 4' : undefined}
-              strokeLinecap="round"
-            />
-          );
-        }
+      {edges.map(e => {
+        const baseWidth = Math.min(2.5, 0.5 + e.w * 0.3);
+        const solidOpacity = hasFocus ? (e.inFocus ? 0.25 : 0.05) : 0.14;
         return (
-          <line key={i}
-            x1={ps.x} y1={ps.y} x2={pt.x} y2={pt.y}
-            stroke={dim ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.14)'}
+          <line key={`s-${e.key}`}
+            x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+            stroke={`rgba(255,255,255,${solidOpacity})`}
             strokeWidth={baseWidth}
+          />
+        );
+      })}
+      {hasFocus && edges.filter(e => e.inFocus).map(e => {
+        const baseWidth = Math.min(2.5, 0.5 + e.w * 0.3);
+        return (
+          <line key={`o-${e.key}`}
+            x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+            stroke="var(--accent)" strokeOpacity={0.9}
+            strokeWidth={baseWidth + 0.4}
+            strokeDasharray={pathMode ? '5 4' : undefined}
+            strokeLinecap="round"
           />
         );
       })}

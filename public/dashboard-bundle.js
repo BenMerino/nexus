@@ -13250,48 +13250,62 @@ function GridBackdrop() {
   return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
 function Links({ links, connected, camera, pathMode }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { style: { pointerEvents: "none" }, children: links.map((l, i) => {
+  const hasFocus = !!connected;
+  const edges = [];
+  links.forEach((l, i) => {
     const s = typeof l.source === "object" ? l.source : null;
     const t = typeof l.target === "object" ? l.target : null;
-    if (!s || !t) return null;
-    const inFocus = !!connected && connected.has(s.id) && connected.has(t.id);
-    const dim = !!connected && !inFocus;
-    const w = l.weight || 1;
+    if (!s || !t) return;
     const sz = s.z ?? 0;
     const tz = t.z ?? 0;
     const ps = project({ x: s.x, y: s.y, z: sz }, camera);
     const pt = project({ x: t.x, y: t.y, z: tz }, camera);
-    const baseWidth = Math.min(2.5, 0.5 + w * 0.3);
-    if (inFocus) {
+    edges.push({
+      key: i,
+      x1: ps.x,
+      y1: ps.y,
+      x2: pt.x,
+      y2: pt.y,
+      w: l.weight || 1,
+      inFocus: !!connected && connected.has(s.id) && connected.has(t.id)
+    });
+  });
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("g", { style: { pointerEvents: "none" }, children: [
+    edges.map((e) => {
+      const baseWidth = Math.min(2.5, 0.5 + e.w * 0.3);
+      const solidOpacity = hasFocus ? e.inFocus ? 0.25 : 0.05 : 0.14;
       return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
         "line",
         {
-          x1: ps.x,
-          y1: ps.y,
-          x2: pt.x,
-          y2: pt.y,
+          x1: e.x1,
+          y1: e.y1,
+          x2: e.x2,
+          y2: e.y2,
+          stroke: `rgba(255,255,255,${solidOpacity})`,
+          strokeWidth: baseWidth
+        },
+        `s-${e.key}`
+      );
+    }),
+    hasFocus && edges.filter((e) => e.inFocus).map((e) => {
+      const baseWidth = Math.min(2.5, 0.5 + e.w * 0.3);
+      return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+        "line",
+        {
+          x1: e.x1,
+          y1: e.y1,
+          x2: e.x2,
+          y2: e.y2,
           stroke: "var(--accent)",
-          strokeOpacity: 0.85,
-          strokeWidth: baseWidth + 0.6,
+          strokeOpacity: 0.9,
+          strokeWidth: baseWidth + 0.4,
           strokeDasharray: pathMode ? "5 4" : void 0,
           strokeLinecap: "round"
         },
-        i
+        `o-${e.key}`
       );
-    }
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-      "line",
-      {
-        x1: ps.x,
-        y1: ps.y,
-        x2: pt.x,
-        y2: pt.y,
-        stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
-        strokeWidth: baseWidth
-      },
-      i
-    );
-  }) });
+    })
+  ] });
 }
 
 // public/smoothed-hulls.tsx
