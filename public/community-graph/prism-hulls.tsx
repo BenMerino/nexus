@@ -35,22 +35,6 @@ function polyPath(pts: { x: number; y: number }[]): string {
   return d + ' Z';
 }
 
-/** Darkened version of a color by mixing toward black — used for face
- *  strokes so seams read slightly darker than the fill. */
-function darken(color: string, amount: number): string {
-  // Supports #rgb, #rrggbb, and leaves CSS functions / vars alone.
-  if (!color.startsWith('#')) return color;
-  const hex = color.length === 4
-    ? color.slice(1).split('').map(c => c + c).join('')
-    : color.slice(1);
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  const t = Math.max(0, Math.min(1, amount));
-  const mix = (c: number) => Math.round(c * (1 - t)).toString(16).padStart(2, '0');
-  return `#${mix(r)}${mix(g)}${mix(b)}`;
-}
-
 /** Volumetric community hulls: each community renders as a real 3D prism.
  *  Triangulated into side quads + top/bottom caps, back-face culled, then
  *  all faces across all prisms painter-sorted by camera depth so closer
@@ -76,9 +60,8 @@ export function PrismHulls({ groups, camera, pad = DEFAULT_PAD, lerpAlpha = DEFA
       topZ += need;
     }
     const worldRing = ringToWorld(ring, pad);
-    const stroke = darken(g.color, 0.5);
-    allFaces.push(...prismFaces({ key: g.key, color: g.color, ring: worldRing, bottomZ, topZ }, camera, stroke));
-    emphasisByKey.set(g.key, { fill: g.deemphasis ? 0.18 : g.emphasis ? 0.7 : 0.48 });
+    allFaces.push(...prismFaces({ key: g.key, color: g.color, ring: worldRing, bottomZ, topZ }, camera, 'none'));
+    emphasisByKey.set(g.key, { fill: g.deemphasis ? 0.55 : g.emphasis ? 0.95 : 0.85 });
   }
   for (const key of [...state.keys()]) if (!seen.has(key)) state.delete(key);
 
@@ -97,9 +80,8 @@ export function PrismHulls({ groups, camera, pad = DEFAULT_PAD, lerpAlpha = DEFA
             d={polyPath(f.points)}
             fill={f.color}
             fillOpacity={fill}
-            stroke={f.stroke}
-            strokeWidth={f.strokeWidth}
-            strokeLinejoin="round"
+            stroke="none"
+            shapeRendering="crispEdges"
             onMouseEnter={hoverable ? () => onHoverKey(communityKey) : undefined}
             onMouseLeave={hoverable ? () => onHoverKey(null) : undefined}
             style={{ cursor: hoverable ? 'pointer' : 'default', pointerEvents: hoverable ? 'fill' : 'none' }}

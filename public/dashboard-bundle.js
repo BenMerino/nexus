@@ -13511,16 +13511,6 @@ function polyPath(pts) {
   for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x} ${pts[i].y}`;
   return d + " Z";
 }
-function darken(color, amount) {
-  if (!color.startsWith("#")) return color;
-  const hex = color.length === 4 ? color.slice(1).split("").map((c2) => c2 + c2).join("") : color.slice(1);
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  const t = Math.max(0, Math.min(1, amount));
-  const mix = (c2) => Math.round(c2 * (1 - t)).toString(16).padStart(2, "0");
-  return `#${mix(r)}${mix(g)}${mix(b)}`;
-}
 function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LERP_ALPHA2, onHoverKey }) {
   const stateRef = (0, import_react4.useRef)(/* @__PURE__ */ new Map());
   const state = stateRef.current;
@@ -13540,9 +13530,8 @@ function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LE
       topZ += need;
     }
     const worldRing = ringToWorld(ring, pad);
-    const stroke = darken(g.color, 0.5);
-    allFaces.push(...prismFaces({ key: g.key, color: g.color, ring: worldRing, bottomZ, topZ }, camera, stroke));
-    emphasisByKey.set(g.key, { fill: g.deemphasis ? 0.18 : g.emphasis ? 0.7 : 0.48 });
+    allFaces.push(...prismFaces({ key: g.key, color: g.color, ring: worldRing, bottomZ, topZ }, camera, "none"));
+    emphasisByKey.set(g.key, { fill: g.deemphasis ? 0.55 : g.emphasis ? 0.95 : 0.85 });
   }
   for (const key of [...state.keys()]) if (!seen.has(key)) state.delete(key);
   allFaces.sort((a2, b) => b.depth - a2.depth);
@@ -13556,9 +13545,8 @@ function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LE
         d: polyPath(f.points),
         fill: f.color,
         fillOpacity: fill,
-        stroke: f.stroke,
-        strokeWidth: f.strokeWidth,
-        strokeLinejoin: "round",
+        stroke: "none",
+        shapeRendering: "crispEdges",
         onMouseEnter: hoverable ? () => onHoverKey(communityKey) : void 0,
         onMouseLeave: hoverable ? () => onHoverKey(null) : void 0,
         style: { cursor: hoverable ? "pointer" : "default", pointerEvents: hoverable ? "fill" : "none" }
