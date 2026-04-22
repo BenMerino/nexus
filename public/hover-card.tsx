@@ -1,123 +1,124 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
-import { COLORS, BG_COLORS, communityColor, communityBg } from './relationship-types';
+import { RichHtml } from './rich-text';
+import { shortestPath } from './community-graph/connected-set';
 
-function NodeHoverCard({ node, edges }: { node: EnrichedSimNode; edges: ProjectedEdge[] }) {
-  const topConns = edges
-    .map(e => ({ id: e.source === node.id ? e.target : e.source, weight: e.weight }))
-    .sort((a, b) => b.weight - a.weight)
-    .slice(0, 3);
+interface Props {
+  node: EnrichedSimNode;
+  nodes: EnrichedSimNode[];
+  edges: ProjectedEdge[];
+  egoAuthorId: string | null;
+  homeInstitutionId: string | null;
+  coauthorIds: Set<string>;
+}
+
+/** Glass panel pinned to the top of the sidebar while a node is hovered.
+ *  Shows what the node is, the relationships it carries, and how it ties
+ *  back to the ego. Click flow is unchanged — this is a hover preview
+ *  that dismisses on mouse-leave. */
+export function HoverCard({ node, nodes, edges, egoAuthorId, homeInstitutionId, coauthorIds }: Props) {
+  const nodesById = useMemo(() => new Map(nodes.map(n => [n.id, n])), [nodes]);
+  const typeTag = useMemo(() => tagFor(node, coauthorIds, egoAuthorId, homeInstitutionId), [node, coauthorIds, egoAuthorId, homeInstitutionId]);
+  const subtitle = useMemo(() => subtitleFor(node, edges, nodesById), [node, edges, nodesById]);
+  const neighborCounts = useMemo(() => countNeighborsByType(node.id, edges, nodesById), [node.id, edges, nodesById]);
+  const path = useMemo(() => buildPath(node.id, egoAuthorId, edges, nodesById), [node.id, egoAuthorId, edges, nodesById]);
 
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-      border: `1px solid rgba(255,255,255,0.6)`, borderRadius: 8,
-      padding: '8px 12px', fontFamily: 'monospace', fontSize: 11, minWidth: 160,
-      boxShadow: '0 4px 16px rgba(0,0,0,0.08)', pointerEvents: 'none',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-        <span style={{
-          fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5,
-          color: COLORS[node.group], background: BG_COLORS[node.group],
-          padding: '1px 6px', borderRadius: 3,
-        }}>{node.group}</span>
-        <span style={{
-          fontSize: 9, letterSpacing: 0.5,
-          color: communityColor(node.community), background: communityBg(node.community),
-          padding: '1px 6px', borderRadius: 3,
-        }}>C{node.community + 1}</span>
-        <strong style={{ fontSize: 12 }}>{node.label}</strong>
-      </div>
-      {node.ext_id && (
-        <div style={{ color: '#555', fontSize: 10, marginBottom: 4 }}>
-          {node.group === 'journal' ? 'ISSN-L' : node.group === 'author' ? 'ORCID' : 'ROR'}: {node.ext_id}
-        </div>
-      )}
-      <div style={{ color: '#777', fontSize: 10, marginBottom: 4 }}>
-        {node.doiCount} paper{node.doiCount !== 1 ? 's' : ''} · {node.degree} connections
-      </div>
-      {node.topKeywords && node.topKeywords.length > 0 && (
-        <div style={{ color: '#555', fontSize: 10, marginBottom: 4, fontStyle: 'italic' }}>
-          {node.topKeywords.join(', ')}
-        </div>
-      )}
-      {topConns.length > 0 && (
-        <div style={{ borderTop: '1px solid #eee', paddingTop: 4, fontSize: 10 }}>
-          {topConns.map(c => (
-            <div key={c.id} style={{ color: '#555' }}>
-              {c.id.replace(/^[^:]+:/, '')} <span style={{ color: '#aaa' }}>({c.weight})</span>
+    <div className="hover-card">
+      <div className="hover-card-tag">{typeTag}</div>
+      <div className="hover-card-name"><RichHtml raw={node.label} /></div>
+      {subtitle && <div className="hover-card-sub">{subtitle}</div>}
+      {neighborCounts.length > 0 && (
+        <div className="hover-card-counts">
+          {neighborCounts.map(c => (
+            <div key={c.label} className="hover-card-count">
+              <span className="hover-card-count-num">{c.count}</span>
+              <span className="hover-card-count-label">{c.label}</span>
             </div>
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function EdgeHoverCard({ edge, nodeMap }: { edge: ProjectedEdge; nodeMap: Map<string, EnrichedSimNode> }) {
-  const s = nodeMap.get(edge.source);
-  const t = nodeMap.get(edge.target);
-  return (
-    <div style={{
-      background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-      border: '1px solid rgba(255,255,255,0.6)', borderRadius: 8,
-      padding: '8px 12px', fontFamily: 'monospace', fontSize: 11, minWidth: 180,
-      boxShadow: '0 4px 16px rgba(0,0,0,0.08)', pointerEvents: 'none',
-    }}>
-      <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 11 }}>
-        {s?.label || edge.source} ↔ {t?.label || edge.target}
-      </div>
-      <div style={{ color: '#777', fontSize: 10, marginBottom: 4 }}>
-        {edge.weight} shared paper{edge.weight !== 1 ? 's' : ''}
-      </div>
-      {edge.sharedDois.slice(0, 5).map((d, i) => (
-        <div key={i} style={{ fontSize: 10, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
-          {d}
+      {path && path.length > 1 && (
+        <div className="hover-card-path">
+          <div className="hover-card-path-head">Path to you</div>
+          <ol>
+            {path.map((id, i) => {
+              const n = nodesById.get(id);
+              if (!n) return null;
+              const step = tagFor(n, coauthorIds, egoAuthorId, homeInstitutionId).toLowerCase();
+              return (
+                <li key={id}>
+                  <span className="hover-card-path-step">{step}</span>
+                  <span className="hover-card-path-label"><RichHtml raw={n.label} /></span>
+                  {i < path.length - 1 && <span className="hover-card-path-arrow">↓</span>}
+                </li>
+              );
+            })}
+          </ol>
         </div>
-      ))}
-      {edge.sharedDois.length > 5 && (
-        <div style={{ fontSize: 10, color: '#999' }}>+{edge.sharedDois.length - 5} more</div>
       )}
     </div>
   );
 }
 
-export function HoverCard({ hoveredNode, hoveredEdge, nodeMap, projectedEdges, dims, mousePos }: {
-  hoveredNode: EnrichedSimNode | null | undefined;
-  hoveredEdge: ProjectedEdge | null;
-  nodeMap: Map<string, EnrichedSimNode>;
-  projectedEdges: ProjectedEdge[];
-  dims: { width: number; height: number };
-  mousePos?: { x: number; y: number };
-}) {
-  if (!hoveredNode && !hoveredEdge) return null;
+function tagFor(n: EnrichedSimNode, coauthorIds: Set<string>, egoAuthorId: string | null, homeInstitutionId: string | null): string {
+  if (n.id === egoAuthorId) return 'YOU';
+  if (n.id === homeInstitutionId) return 'YOUR INSTITUTION';
+  if (n.group === 'institution') return 'INSTITUTION';
+  if (n.group === 'journal') return 'JOURNAL';
+  if (n.group === 'doi') return 'PAPER';
+  if (n.group === 'author') return coauthorIds.has(n.id) ? 'CO-AUTHOR' : 'AUTHOR';
+  return 'NODE';
+}
 
-  let x = mousePos ? mousePos.x + 16 : 0;
-  let y = mousePos ? mousePos.y - 10 : 0;
-
-  if (!mousePos) {
-    if (hoveredNode) { x = hoveredNode.x + 20; y = hoveredNode.y - 10; }
-    else if (hoveredEdge) {
-      const s = nodeMap.get(hoveredEdge.source);
-      const t = nodeMap.get(hoveredEdge.target);
-      if (s && t) { x = (s.x + t.x) / 2 + 10; y = (s.y + t.y) / 2 - 10; }
+function subtitleFor(n: EnrichedSimNode, edges: ProjectedEdge[], nodesById: Map<string, EnrichedSimNode>): string | null {
+  if (n.group === 'author') {
+    for (const e of edges) {
+      const other = e.source === n.id ? e.target : e.target === n.id ? e.source : null;
+      if (!other) continue;
+      const inst = nodesById.get(other);
+      if (inst && inst.group === 'institution') return `at ${inst.label}`;
     }
+    return null;
   }
+  if (n.group === 'doi') {
+    for (const e of edges) {
+      const other = e.source === n.id ? e.target : e.target === n.id ? e.source : null;
+      if (!other) continue;
+      const j = nodesById.get(other);
+      if (j && j.group === 'journal') return `in ${j.label}`;
+    }
+    return null;
+  }
+  return null;
+}
 
-  // Clamp to viewport
-  x = Math.min(x, dims.width - 220);
-  y = Math.max(10, Math.min(y, dims.height - 120));
+interface NeighborCount { label: string; count: number }
 
-  const nodeEdges = hoveredNode
-    ? projectedEdges.filter(e => e.source === hoveredNode.id || e.target === hoveredNode.id)
-    : [];
+function countNeighborsByType(id: string, edges: ProjectedEdge[], nodesById: Map<string, EnrichedSimNode>): NeighborCount[] {
+  const counts = new Map<string, Set<string>>();
+  for (const e of edges) {
+    const other = e.source === id ? e.target : e.target === id ? e.source : null;
+    if (!other) continue;
+    const n = nodesById.get(other);
+    if (!n) continue;
+    const bucket = n.group === 'doi' ? 'papers'
+      : n.group === 'institution' ? 'institutions'
+      : n.group === 'journal' ? 'journals'
+      : n.group === 'author' ? 'people'
+      : null;
+    if (!bucket) continue;
+    let set = counts.get(bucket);
+    if (!set) { set = new Set(); counts.set(bucket, set); }
+    set.add(other);
+  }
+  const order = ['papers', 'people', 'journals', 'institutions'];
+  return order.filter(k => counts.has(k)).map(k => ({ label: k, count: counts.get(k)!.size }));
+}
 
-  return (
-    <foreignObject x={x} y={y} width={260} height={200} style={{ overflow: 'visible', pointerEvents: 'none', transition: 'x 120ms ease-out, y 120ms ease-out' }}>
-      <div xmlns="http://www.w3.org/1999/xhtml">
-        {hoveredNode && <NodeHoverCard node={hoveredNode} edges={nodeEdges} />}
-        {hoveredEdge && !hoveredNode && <EdgeHoverCard edge={hoveredEdge} nodeMap={nodeMap} />}
-      </div>
-    </foreignObject>
-  );
+function buildPath(fromId: string, egoId: string | null, edges: ProjectedEdge[], nodesById: Map<string, EnrichedSimNode>): string[] | null {
+  if (!egoId || fromId === egoId) return null;
+  const path = shortestPath(fromId, egoId, edges);
+  if (!path) return null;
+  return path.filter(id => nodesById.has(id));
 }

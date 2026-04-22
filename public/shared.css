@@ -573,6 +573,49 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 /* ═══ GRAPH CONTENTS (empty-state summary) ═══ */
 .graph-contents { display: flex; flex-direction: column; gap: 18px; font-size: 13px; line-height: 1.5; }
 .graph-contents-list { display: flex; flex-direction: column; gap: 18px; }
+
+/* ═══ HOVER CARD ═══ */
+.hover-card {
+  position: relative; padding: 16px 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+  animation: gc-fade 120ms ease-out both;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.hover-card-tag {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.14em; color: var(--accent);
+  text-transform: uppercase;
+}
+.hover-card-name {
+  font-family: var(--display); font-size: 18px;
+  line-height: 1.25; color: var(--fg);
+  letter-spacing: -0.005em;
+}
+.hover-card-sub {
+  font-size: 12px; color: var(--fg-muted);
+  font-family: var(--mono); letter-spacing: 0.02em;
+  margin-top: -4px;
+}
+.hover-card-counts {
+  display: flex; gap: 16px; padding: 8px 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+.hover-card-count { display: flex; flex-direction: column; gap: 2px; }
+.hover-card-count-num { font-family: var(--mono); font-size: 18px; color: var(--fg); line-height: 1; }
+.hover-card-count-label { font-family: var(--mono); font-size: 10px; color: var(--fg-dim); letter-spacing: 0.1em; text-transform: uppercase; }
+.hover-card-path-head {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--fg-dim); margin-bottom: 6px;
+}
+.hover-card-path ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.hover-card-path li { display: flex; flex-direction: column; gap: 1px; position: relative; padding: 4px 0; }
+.hover-card-path-step { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); }
+.hover-card-path-label { font-size: 13px; color: var(--fg); line-height: 1.25; }
+.hover-card-path-arrow { position: absolute; right: 6px; top: 4px; color: var(--fg-dim); font-size: 11px; opacity: 0.5; }
 .graph-contents-head { padding-bottom: 12px; border-bottom: 1px solid var(--border-soft); }
 .graph-contents-head p { margin: 6px 0 0; color: var(--fg-muted); font-size: 12px; }
 .graph-contents-search { margin-top: 10px; }
