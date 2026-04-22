@@ -75,11 +75,15 @@ export function GraphExplorerBody() {
     el.querySelectorAll<HTMLElement>('.node-detail-pane').forEach(p => { p.scrollTop = 0; });
   }, [selectedNodeId]);
 
+  // Always include paper edges in the projection; useExplorerNodes decides
+  // which paper nodes to keep based on flags.paper + any focused node's
+  // bridge papers.
   const { nodes: projectedRaw, edges: projectedEdgesAll } = useMemo(
-    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, new Set(['institution', 'author', 'journal']), [], null, flags.paper),
-    [filteredRaw, flags.paper]);
+    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, new Set(['institution', 'author', 'journal']), [], null, true),
+    [filteredRaw]);
 
-  const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
+  const focusedId = hoverId || selectedNodeId;
+  const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, projectedEdges: projectedEdgesAll, tagMeta, rawNodes, rawEdges, me, flags, focusedId });
 
   const projectedEdges = useMemo(() => {
     const ids = new Set(projectedNodes.map(n => n.id));

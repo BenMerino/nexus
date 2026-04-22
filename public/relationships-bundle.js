@@ -15741,7 +15741,7 @@ function buildCoauthorSet(rawEdges, egoAuthorId) {
 }
 
 // public/use-explorer-nodes.ts
-function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags }) {
+function useExplorerNodes({ projectedRaw, projectedEdges, tagMeta, rawNodes, rawEdges, me, flags, focusedId }) {
   const rawEgoAuthorId = (0, import_react17.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
@@ -15749,15 +15749,25 @@ function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags
     return hit?.id ?? null;
   }, [me, rawNodes]);
   const coauthorIds = (0, import_react17.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
+  const bridgePaperIds = (0, import_react17.useMemo)(() => {
+    if (!focusedId || flags.paper) return null;
+    const set2 = /* @__PURE__ */ new Set();
+    for (const e of projectedEdges) {
+      if (e.source === focusedId && e.target.startsWith("doi:")) set2.add(e.target);
+      if (e.target === focusedId && e.source.startsWith("doi:")) set2.add(e.source);
+    }
+    return set2;
+  }, [focusedId, flags.paper, projectedEdges]);
   const projectedNodes = (0, import_react17.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     const authorAllowed = (id) => {
       if (id === rawEgoAuthorId) return flags.author || flags.coauthor;
       return coauthorIds.has(id) ? flags.coauthor : flags.author;
     };
-    const groupMatch = (n) => n.group === "institution" && flags.institution || n.group === "author" && authorAllowed(n.id) || n.group === "journal" && flags.journal || n.group === "doi" && flags.paper;
+    const paperAllowed = (id) => flags.paper || (bridgePaperIds?.has(id) ?? false);
+    const groupMatch = (n) => n.group === "institution" && flags.institution || n.group === "author" && authorAllowed(n.id) || n.group === "journal" && flags.journal || n.group === "doi" && paperAllowed(n.id);
     return enriched.filter((n) => groupMatch(n));
-  }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId]);
+  }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId, bridgePaperIds]);
   return { projectedNodes, coauthorIds, rawEgoAuthorId };
 }
 
@@ -16291,10 +16301,11 @@ function GraphExplorerBody() {
     });
   }, [selectedNodeId]);
   const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react25.useMemo)(
-    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, flags.paper),
-    [filteredRaw, flags.paper]
+    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, true),
+    [filteredRaw]
   );
-  const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
+  const focusedId = hoverId || selectedNodeId;
+  const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, projectedEdges: projectedEdgesAll, tagMeta, rawNodes, rawEdges, me, flags, focusedId });
   const projectedEdges = (0, import_react25.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));

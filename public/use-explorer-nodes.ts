@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { RawNode, RawEdge, EnrichedSimNode, EnrichedTagNode } from './relationship-types';
+import type { RawNode, RawEdge, EnrichedSimNode, EnrichedTagNode, ProjectedEdge } from './relationship-types';
 import type { NodeTypeFlags } from './graph-filters-sidebar';
 import type { CurrentUser } from './shell-helpers';
 import { enrichWithMeta, type TagMetaMap } from './enrich-meta';
@@ -7,11 +7,15 @@ import { buildCoauthorSet } from './explorer-coauthors';
 
 interface Args {
   projectedRaw: EnrichedTagNode[];
+  projectedEdges: ProjectedEdge[];
   tagMeta: TagMetaMap;
   rawNodes: RawNode[];
   rawEdges: RawEdge[];
   me: CurrentUser | null;
   flags: NodeTypeFlags;
+  /** When set, papers adjacent to this node are kept visible even if
+   *  flags.paper is off — revealing the focused node's path structure. */
+  focusedId?: string | null;
 }
 
 interface Result {
@@ -20,7 +24,7 @@ interface Result {
   rawEgoAuthorId: string | null;
 }
 
-export function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags }: Args): Result {
+export function useExplorerNodes({ projectedRaw, projectedEdges, tagMeta, rawNodes, rawEdges, me, flags, focusedId }: Args): Result {
   const rawEgoAuthorId = useMemo(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
@@ -30,19 +34,33 @@ export function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me
 
   const coauthorIds = useMemo(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
 
+  // Papers adjacent to the focused node stay visible even when flags.paper
+  // is off — selecting a node reveals the paper bridges that connect it to
+  // its neighbors without forcing the user to toggle all papers on.
+  const bridgePaperIds = useMemo(() => {
+    if (!focusedId || flags.paper) return null;
+    const set = new Set<string>();
+    for (const e of projectedEdges) {
+      if (e.source === focusedId && e.target.startsWith('doi:')) set.add(e.target);
+      if (e.target === focusedId && e.source.startsWith('doi:')) set.add(e.source);
+    }
+    return set;
+  }, [focusedId, flags.paper, projectedEdges]);
+
   const projectedNodes = useMemo(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     const authorAllowed = (id: string) => {
       if (id === rawEgoAuthorId) return flags.author || flags.coauthor;
       return coauthorIds.has(id) ? flags.coauthor : flags.author;
     };
+    const paperAllowed = (id: string) => flags.paper || (bridgePaperIds?.has(id) ?? false);
     const groupMatch = (n: { id: string; group: string }) =>
       (n.group === 'institution' && flags.institution) ||
       (n.group === 'author' && authorAllowed(n.id)) ||
       (n.group === 'journal' && flags.journal) ||
-      (n.group === 'doi' && flags.paper);
+      (n.group === 'doi' && paperAllowed(n.id));
     return enriched.filter(n => groupMatch(n)) as EnrichedSimNode[];
-  }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId]);
+  }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId, bridgePaperIds]);
 
   return { projectedNodes, coauthorIds, rawEgoAuthorId };
 }
