@@ -15,7 +15,6 @@ import { useOrbitDrag } from './use-orbit-drag';
 import { useLayerIntegration } from './use-layer-integration';
 import { resolveNodeColor } from './node-color';
 import { connectedSet } from './connected-set';
-import { buildOverlay, type OverlayEdge } from './triangle-overlay';
 import type { Camera } from './projection';
 
 export interface CommunityGraphProps<N, L extends BaseLink> {
@@ -46,15 +45,12 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
   /** Tilt ∈ [0, 1] — 0 is flat top-down, 1 is the default 3D orbit pose.
    *  Drag then lets the user freely spin/tumble. */
   tilt?: number;
-  /** For each node id, the set of other node ids that co-occur with it in
-   *  the raw data. Enables the "full triangle" overlay edges on focus. */
-  coTags?: Map<string, Set<string>>;
 }
 
 export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   nodes: inNodes, links: inLinks, adapter, primaryKey = null, width, height, selectedId,
   forceConfig, onNodeClick, pinDraggedNodes = false, viewTransform, zoomToId, zoomScale = 2,
-  externalHoverId, onHoverChange, onHullHoverChange, tilt: tiltTarget = 0, coTags,
+  externalHoverId, onHoverChange, onHullHoverChange, tilt: tiltTarget = 0,
 }: CommunityGraphProps<N, L>) {
   const config: ForceConfig = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -105,8 +101,6 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
 
   const connected = useMemo(() => connectedSet(hoverId || selectedId, links), [hoverId, selectedId, links]);
 
-  const overlayEdges: OverlayEdge[] = buildOverlay(hoverId || selectedId, connected, coTags, new Set(nodes.map(n => adapter.getId(n))), links);
-
   const ego = nodes.find(n => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find(n => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
@@ -143,7 +137,6 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         camera={camera}
         rotatable={tiltTarget > 0}
         onBackgroundMouseDown={startOrbitDrag}
-        overlayEdges={overlayEdges}
       />
     </div>
   );

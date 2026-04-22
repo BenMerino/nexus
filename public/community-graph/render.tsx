@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SimL, SimN, BaseLink } from './forces';
+import type { SimL, BaseLink } from './forces';
 import { project, type Camera } from './projection';
 
 export { Nodes } from './render-nodes';
@@ -28,39 +28,22 @@ export function GridBackdrop() {
   return <rect x={-5000} y={-5000} width={10000} height={10000} fill="url(#graph-grid)" style={{ pointerEvents: 'none' }} />;
 }
 
-interface LinksProps<N, L extends BaseLink & { weight?: number }> {
+interface LinksProps<L extends BaseLink & { weight?: number }> {
   links: SimL<L>[];
   connected: Set<string> | null;
   camera: Camera;
-  nodes?: SimN<N>[];
-  overlayEdges?: { source: string; target: string }[];
-  nodeId?: (n: N) => string;
-  /** With no hover/selection, only edges touching this id render. The scene
-   *  reads as a star around the ego — indirect relationships appear only
-   *  when the user focuses a node to see its neighborhood. */
-  egoId?: string | null;
 }
 
-/** Default view is a star: only edges touching `egoId` render. On hover or
- *  select, the focused node's 1-hop neighborhood lights up and the rest dim.
- *  Overlay edges (the "full triangle" around the focused node) draw as
- *  dashed accent lines when present. */
-export function Links<N, L extends BaseLink & { weight?: number }>({ links, connected, camera, nodes, overlayEdges, nodeId, egoId }: LinksProps<N, L>) {
-  const posById = new Map<string, { x: number; y: number; z: number }>();
-  if (nodes && nodeId) {
-    for (const n of nodes) posById.set(nodeId(n), { x: n.x, y: n.y, z: (n as unknown as { z?: number }).z ?? 0 });
-  }
+/** Render every edge in the projected graph. On focus, edges not touching
+ *  the focused node dim instead of disappear — the whole structure stays
+ *  visible so you can still see how the graph is wired. */
+export function Links<L extends BaseLink & { weight?: number }>({ links, connected, camera }: LinksProps<L>) {
   return (
     <g style={{ pointerEvents: 'none' }}>
       {links.map((l, i) => {
         const s = typeof l.source === 'object' ? l.source : null;
         const t = typeof l.target === 'object' ? l.target : null;
         if (!s || !t) return null;
-        // No focus: hide every edge that doesn't touch the ego — the scene
-        // becomes a star around the user. Focus active: dim instead of hide
-        // so the neighborhood stands out against the rest of the graph.
-        const touchesEgo = !!egoId && (s.id === egoId || t.id === egoId);
-        if (!connected && egoId && !touchesEgo) return null;
         const dim = connected && !(connected.has(s.id) && connected.has(t.id));
         const w = l.weight || 1;
         const sz = (s as unknown as { z?: number }).z ?? 0;
@@ -72,20 +55,6 @@ export function Links<N, L extends BaseLink & { weight?: number }>({ links, conn
             x1={ps.x} y1={ps.y} x2={pt.x} y2={pt.y}
             stroke={dim ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.14)'}
             strokeWidth={Math.min(2.5, 0.5 + w * 0.3)}
-          />
-        );
-      })}
-      {overlayEdges && overlayEdges.map((e, i) => {
-        const s = posById.get(e.source);
-        const t = posById.get(e.target);
-        if (!s || !t) return null;
-        const ps = project(s, camera);
-        const pt = project(t, camera);
-        return (
-          <line key={`ov-${i}`}
-            x1={ps.x} y1={ps.y} x2={pt.x} y2={pt.y}
-            stroke="var(--accent)" strokeOpacity={0.55} strokeWidth={1.2}
-            strokeDasharray="4 4"
           />
         );
       })}

@@ -12821,21 +12821,6 @@ function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags, expanded
       journalPapers.set(jTag, list);
     }
   }
-  const instAuthorEdges = /* @__PURE__ */ new Map();
-  const authorJournalEdges = /* @__PURE__ */ new Map();
-  for (const [, tags] of doiToTags) {
-    const instTags = tags.filter(isInst);
-    const authTags = tags.filter(isAuth);
-    const jTag = tags.find((t) => journals.has(t));
-    for (const i of instTags) for (const a2 of authTags) {
-      const k = `${i}\u2192${a2}`;
-      instAuthorEdges.set(k, (instAuthorEdges.get(k) || 0) + 1);
-    }
-    if (jTag) for (const a2 of authTags) {
-      const k = `${a2}\u2192${jTag}`;
-      authorJournalEdges.set(k, (authorJournalEdges.get(k) || 0) + 1);
-    }
-  }
   const allNodes = [];
   const allEdges = [];
   const matchingDois = /* @__PURE__ */ new Set();
@@ -12847,26 +12832,37 @@ function projectGraph(rawNodes, rawEdges, activeCategories, pinnedTags, expanded
   }
   for (const inst of institutions) addNode(inst.id, inst.label, "institution", 0, void 0, inst.id.replace(/^[^:]+:/, ""));
   for (const auth of authors) addNode(auth.id, auth.label, "author", 0, void 0, auth.id.replace(/^[^:]+:/, ""));
-  for (const [k, w] of instAuthorEdges) {
-    const [source, target] = k.split("\u2192");
-    allEdges.push({ source, target, weight: w, sharedDois: [] });
-  }
   for (const [jId, papers] of journalPapers) {
     if (expandedJournal && expandedJournal !== jId) continue;
     const j = journals.get(jId);
     addNode(j.id, j.label, "journal", papers.length, papers, j.id.replace(/^[^:]+:/, ""));
     for (const p of papers) matchingDois.add(p.doi);
-    if (expandedJournal === jId || includePapers) {
-      for (const p of papers) {
-        addNode("doi:" + p.doi, p.title, "doi", 0);
-        allEdges.push({ source: jId, target: "doi:" + p.doi, weight: 1, sharedDois: [] });
+  }
+  for (const [doiId, tags] of doiToTags) {
+    const jTag = tags.find((t) => journals.has(t));
+    if (expandedJournal && expandedJournal !== jTag) continue;
+    const instTags = tags.filter(isInst);
+    const authTags = tags.filter(isAuth);
+    if (instTags.length === 0 && authTags.length === 0 && !jTag) continue;
+    const title = doiLabels.get(doiId) || doiId;
+    addNode(doiId, title, "doi", 0);
+    for (const i of instTags) allEdges.push({ source: doiId, target: i, weight: 1, sharedDois: [doiId] });
+    for (const a2 of authTags) allEdges.push({ source: doiId, target: a2, weight: 1, sharedDois: [doiId] });
+    if (jTag && added.has(jTag)) allEdges.push({ source: doiId, target: jTag, weight: 1, sharedDois: [doiId] });
+  }
+  if (!includePapers && !expandedJournal) {
+    const paperIds = /* @__PURE__ */ new Set();
+    for (let i = allNodes.length - 1; i >= 0; i--) {
+      if (allNodes[i].group === "doi") {
+        paperIds.add(allNodes[i].id);
+        allNodes.splice(i, 1);
       }
     }
-  }
-  for (const [k, w] of authorJournalEdges) {
-    const [source, target] = k.split("\u2192");
-    if (!added.has(target)) continue;
-    allEdges.push({ source, target, weight: w, sharedDois: [] });
+    for (let i = allEdges.length - 1; i >= 0; i--) {
+      if (paperIds.has(allEdges[i].source) || paperIds.has(allEdges[i].target)) {
+        allEdges.splice(i, 1);
+      }
+    }
   }
   const communityMap = /* @__PURE__ */ new Map();
   allNodes.forEach((n) => {
@@ -13501,59 +13497,30 @@ function GraphDefs() {
 function GridBackdrop() {
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
-function Links({ links, connected, camera, nodes, overlayEdges, nodeId, egoId }) {
-  const posById = /* @__PURE__ */ new Map();
-  if (nodes && nodeId) {
-    for (const n of nodes) posById.set(nodeId(n), { x: n.x, y: n.y, z: n.z ?? 0 });
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("g", { style: { pointerEvents: "none" }, children: [
-    links.map((l, i) => {
-      const s = typeof l.source === "object" ? l.source : null;
-      const t = typeof l.target === "object" ? l.target : null;
-      if (!s || !t) return null;
-      const touchesEgo = !!egoId && (s.id === egoId || t.id === egoId);
-      if (!connected && egoId && !touchesEgo) return null;
-      const dim = connected && !(connected.has(s.id) && connected.has(t.id));
-      const w = l.weight || 1;
-      const sz = s.z ?? 0;
-      const tz = t.z ?? 0;
-      const ps = project({ x: s.x, y: s.y, z: sz }, camera);
-      const pt = project({ x: t.x, y: t.y, z: tz }, camera);
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
-        "line",
-        {
-          x1: ps.x,
-          y1: ps.y,
-          x2: pt.x,
-          y2: pt.y,
-          stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
-          strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
-        },
-        i
-      );
-    }),
-    overlayEdges && overlayEdges.map((e, i) => {
-      const s = posById.get(e.source);
-      const t = posById.get(e.target);
-      if (!s || !t) return null;
-      const ps = project(s, camera);
-      const pt = project(t, camera);
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
-        "line",
-        {
-          x1: ps.x,
-          y1: ps.y,
-          x2: pt.x,
-          y2: pt.y,
-          stroke: "var(--accent)",
-          strokeOpacity: 0.55,
-          strokeWidth: 1.2,
-          strokeDasharray: "4 4"
-        },
-        `ov-${i}`
-      );
-    })
-  ] });
+function Links({ links, connected, camera }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { style: { pointerEvents: "none" }, children: links.map((l, i) => {
+    const s = typeof l.source === "object" ? l.source : null;
+    const t = typeof l.target === "object" ? l.target : null;
+    if (!s || !t) return null;
+    const dim = connected && !(connected.has(s.id) && connected.has(t.id));
+    const w = l.weight || 1;
+    const sz = s.z ?? 0;
+    const tz = t.z ?? 0;
+    const ps = project({ x: s.x, y: s.y, z: sz }, camera);
+    const pt = project({ x: t.x, y: t.y, z: tz }, camera);
+    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      "line",
+      {
+        x1: ps.x,
+        y1: ps.y,
+        x2: pt.x,
+        y2: pt.y,
+        stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
+        strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
+      },
+      i
+    );
+  }) });
 }
 
 // public/smoothed-hulls.tsx
@@ -13783,8 +13750,7 @@ function GraphScene({
   onHullHover,
   camera,
   onBackgroundMouseDown,
-  rotatable,
-  overlayEdges
+  rotatable
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
@@ -13804,7 +13770,7 @@ function GraphScene({
     /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera, nodes, overlayEdges, nodeId: adapter.getId, egoId: ego ? adapter.getId(ego) : null }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         Nodes,
         {
@@ -15010,32 +14976,6 @@ function connectedSet(focusId, links) {
   return set2;
 }
 
-// public/community-graph/triangle-overlay.ts
-function buildOverlay(focusId, connected, coTags, visibleIds, baseEdges) {
-  if (!focusId || !connected || !coTags) return [];
-  const basePairs = /* @__PURE__ */ new Set();
-  for (const e of baseEdges) {
-    const s = typeof e.source === "object" ? e.source.id : e.source;
-    const t = typeof e.target === "object" ? e.target.id : e.target;
-    basePairs.add(s < t ? `${s}|${t}` : `${t}|${s}`);
-  }
-  const neighbors = [...connected].filter((id) => id !== focusId && visibleIds.has(id));
-  const out = [];
-  for (let i = 0; i < neighbors.length; i++) {
-    const a2 = neighbors[i];
-    const sa = coTags.get(a2);
-    if (!sa) continue;
-    for (let j = i + 1; j < neighbors.length; j++) {
-      const b = neighbors[j];
-      if (!sa.has(b)) continue;
-      const key = a2 < b ? `${a2}|${b}` : `${b}|${a2}`;
-      if (basePairs.has(key)) continue;
-      out.push({ source: a2, target: b });
-    }
-  }
-  return out;
-}
-
 // public/community-graph/CommunityGraph.tsx
 var import_jsx_runtime12 = __toESM(require_jsx_runtime());
 function CommunityGraph({
@@ -15055,8 +14995,7 @@ function CommunityGraph({
   externalHoverId,
   onHoverChange,
   onHullHoverChange,
-  tilt: tiltTarget = 0,
-  coTags
+  tilt: tiltTarget = 0
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react7.useRef)(null);
@@ -15103,7 +15042,6 @@ function CommunityGraph({
   useLayerIntegration(nodes, adapter, config.layerStrength, () => tick((v) => v + 1));
   const nodeColor = (n) => resolveNodeColor(n, adapter, communityColors, major);
   const connected = (0, import_react7.useMemo)(() => connectedSet(hoverId || selectedId, links), [hoverId, selectedId, links]);
-  const overlayEdges = buildOverlay(hoverId || selectedId, connected, coTags, new Set(nodes.map((n) => adapter.getId(n))), links);
   const ego = nodes.find((n) => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
@@ -15163,8 +15101,7 @@ function CommunityGraph({
       },
       camera,
       rotatable: tiltTarget > 0,
-      onBackgroundMouseDown: startOrbitDrag,
-      overlayEdges
+      onBackgroundMouseDown: startOrbitDrag
     }
   ) });
 }
@@ -15312,7 +15249,7 @@ function baseRadius(n) {
   return nodeRadius(n.weight || 1, n.role);
 }
 var EMPTY_IDS = /* @__PURE__ */ new Set();
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, coTags }) {
+function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS }) {
   const labelById = (0, import_react9.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
@@ -15396,15 +15333,14 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       externalHoverId: externalHoverId ?? null,
       onHoverChange,
       onHullHoverChange,
-      tilt,
-      coTags
+      tilt
     }
   );
 }
 
 // public/explorer-canvas.tsx
 var import_jsx_runtime15 = __toESM(require_jsx_runtime());
-function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds, coTags }) {
+function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds }) {
   const ref = (0, import_react10.useRef)(null);
   const [size, setSize] = (0, import_react10.useState)(null);
   (0, import_react10.useEffect)(() => {
@@ -15438,8 +15374,7 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
       onHullHoverChange,
       tilt,
       layerOrder,
-      coauthorIds,
-      coTags
+      coauthorIds
     }
   ) });
 }
@@ -16260,37 +16195,6 @@ function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, 
   ] });
 }
 
-// public/explorer-cotags.ts
-function buildCoTagMap(rawEdges) {
-  const tagsByDoi = /* @__PURE__ */ new Map();
-  for (const e of rawEdges) {
-    const list = tagsByDoi.get(e.source);
-    if (list) list.push(e.target);
-    else tagsByDoi.set(e.source, [e.target]);
-  }
-  const coTags = /* @__PURE__ */ new Map();
-  for (const tags of tagsByDoi.values()) {
-    for (let i = 0; i < tags.length; i++) {
-      for (let j = i + 1; j < tags.length; j++) {
-        const a2 = tags[i], b = tags[j];
-        let sa = coTags.get(a2);
-        if (!sa) {
-          sa = /* @__PURE__ */ new Set();
-          coTags.set(a2, sa);
-        }
-        sa.add(b);
-        let sb = coTags.get(b);
-        if (!sb) {
-          sb = /* @__PURE__ */ new Set();
-          coTags.set(b, sb);
-        }
-        sb.add(a2);
-      }
-    }
-  }
-  return coTags;
-}
-
 // public/graph-explorer-body.tsx
 var import_jsx_runtime23 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
@@ -16369,7 +16273,6 @@ function GraphExplorerBody() {
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
   const affiliations = (0, import_react25.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
-  const coTags = (0, import_react25.useMemo)(() => buildCoTagMap(rawEdges), [rawEdges]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
     rawNodes,
@@ -16403,7 +16306,7 @@ function GraphExplorerBody() {
       /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
       /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-canvas", children: [
         /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds, coTags })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         NodeDetail,

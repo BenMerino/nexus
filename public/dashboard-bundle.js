@@ -13249,59 +13249,30 @@ function GraphDefs() {
 function GridBackdrop() {
   return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
-function Links({ links, connected, camera, nodes, overlayEdges, nodeId, egoId }) {
-  const posById = /* @__PURE__ */ new Map();
-  if (nodes && nodeId) {
-    for (const n of nodes) posById.set(nodeId(n), { x: n.x, y: n.y, z: n.z ?? 0 });
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("g", { style: { pointerEvents: "none" }, children: [
-    links.map((l, i) => {
-      const s = typeof l.source === "object" ? l.source : null;
-      const t = typeof l.target === "object" ? l.target : null;
-      if (!s || !t) return null;
-      const touchesEgo = !!egoId && (s.id === egoId || t.id === egoId);
-      if (!connected && egoId && !touchesEgo) return null;
-      const dim = connected && !(connected.has(s.id) && connected.has(t.id));
-      const w = l.weight || 1;
-      const sz = s.z ?? 0;
-      const tz = t.z ?? 0;
-      const ps = project({ x: s.x, y: s.y, z: sz }, camera);
-      const pt = project({ x: t.x, y: t.y, z: tz }, camera);
-      return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-        "line",
-        {
-          x1: ps.x,
-          y1: ps.y,
-          x2: pt.x,
-          y2: pt.y,
-          stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
-          strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
-        },
-        i
-      );
-    }),
-    overlayEdges && overlayEdges.map((e, i) => {
-      const s = posById.get(e.source);
-      const t = posById.get(e.target);
-      if (!s || !t) return null;
-      const ps = project(s, camera);
-      const pt = project(t, camera);
-      return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-        "line",
-        {
-          x1: ps.x,
-          y1: ps.y,
-          x2: pt.x,
-          y2: pt.y,
-          stroke: "var(--accent)",
-          strokeOpacity: 0.55,
-          strokeWidth: 1.2,
-          strokeDasharray: "4 4"
-        },
-        `ov-${i}`
-      );
-    })
-  ] });
+function Links({ links, connected, camera }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { style: { pointerEvents: "none" }, children: links.map((l, i) => {
+    const s = typeof l.source === "object" ? l.source : null;
+    const t = typeof l.target === "object" ? l.target : null;
+    if (!s || !t) return null;
+    const dim = connected && !(connected.has(s.id) && connected.has(t.id));
+    const w = l.weight || 1;
+    const sz = s.z ?? 0;
+    const tz = t.z ?? 0;
+    const ps = project({ x: s.x, y: s.y, z: sz }, camera);
+    const pt = project({ x: t.x, y: t.y, z: tz }, camera);
+    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      "line",
+      {
+        x1: ps.x,
+        y1: ps.y,
+        x2: pt.x,
+        y2: pt.y,
+        stroke: dim ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)",
+        strokeWidth: Math.min(2.5, 0.5 + w * 0.3)
+      },
+      i
+    );
+  }) });
 }
 
 // public/smoothed-hulls.tsx
@@ -13531,8 +13502,7 @@ function GraphScene({
   onHullHover,
   camera,
   onBackgroundMouseDown,
-  rotatable,
-  overlayEdges
+  rotatable
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
   return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
@@ -13552,7 +13522,7 @@ function GraphScene({
     /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Links, { links, connected, camera, nodes, overlayEdges, nodeId: adapter.getId, egoId: ego ? adapter.getId(ego) : null }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Links, { links, connected, camera }),
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
         Nodes,
         {
@@ -14758,32 +14728,6 @@ function connectedSet(focusId, links) {
   return set2;
 }
 
-// public/community-graph/triangle-overlay.ts
-function buildOverlay(focusId, connected, coTags, visibleIds, baseEdges) {
-  if (!focusId || !connected || !coTags) return [];
-  const basePairs = /* @__PURE__ */ new Set();
-  for (const e of baseEdges) {
-    const s = typeof e.source === "object" ? e.source.id : e.source;
-    const t = typeof e.target === "object" ? e.target.id : e.target;
-    basePairs.add(s < t ? `${s}|${t}` : `${t}|${s}`);
-  }
-  const neighbors = [...connected].filter((id) => id !== focusId && visibleIds.has(id));
-  const out = [];
-  for (let i = 0; i < neighbors.length; i++) {
-    const a2 = neighbors[i];
-    const sa = coTags.get(a2);
-    if (!sa) continue;
-    for (let j = i + 1; j < neighbors.length; j++) {
-      const b = neighbors[j];
-      if (!sa.has(b)) continue;
-      const key = a2 < b ? `${a2}|${b}` : `${b}|${a2}`;
-      if (basePairs.has(key)) continue;
-      out.push({ source: a2, target: b });
-    }
-  }
-  return out;
-}
-
 // public/community-graph/CommunityGraph.tsx
 var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function CommunityGraph({
@@ -14803,8 +14747,7 @@ function CommunityGraph({
   externalHoverId,
   onHoverChange,
   onHullHoverChange,
-  tilt: tiltTarget = 0,
-  coTags
+  tilt: tiltTarget = 0
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react8.useRef)(null);
@@ -14851,7 +14794,6 @@ function CommunityGraph({
   useLayerIntegration(nodes, adapter, config.layerStrength, () => tick((v) => v + 1));
   const nodeColor = (n) => resolveNodeColor(n, adapter, communityColors, major);
   const connected = (0, import_react8.useMemo)(() => connectedSet(hoverId || selectedId, links), [hoverId, selectedId, links]);
-  const overlayEdges = buildOverlay(hoverId || selectedId, connected, coTags, new Set(nodes.map((n) => adapter.getId(n))), links);
   const ego = nodes.find((n) => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
@@ -14911,8 +14853,7 @@ function CommunityGraph({
       },
       camera,
       rotatable: tiltTarget > 0,
-      onBackgroundMouseDown: startOrbitDrag,
-      overlayEdges
+      onBackgroundMouseDown: startOrbitDrag
     }
   ) });
 }
