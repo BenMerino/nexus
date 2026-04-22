@@ -1,27 +1,21 @@
-import { connectedSet, shortestPath } from './connected-set';
+import { shortestPath } from './connected-set';
 
 type Link = { source: string | { id: string }; target: string | { id: string } };
 
-/** Build the highlight set for a hover or selection:
- *  - Hover: the hovered node's immediate neighbors, plus the shortest path
- *    back to the ego so the tie that anchors it to the user stays lit.
- *  - Select: the full 3-hop reachable subgraph so paths *through* the
- *    selected node remain visible.
- *  Returns null when neither hover nor select is active. */
+/** One rule for hover and click alike: highlight the shortest path from the
+ *  focused node back to the ego. Every relationship runs through or ends at
+ *  the ego, so that chain is the relationship worth seeing. Returns null
+ *  when nothing is focused. */
 export function buildFocusSet(
   hoverId: string | null | undefined,
   selectedId: string | null | undefined,
   egoId: string | null,
   links: Link[],
 ): Set<string> | null {
-  if (hoverId) {
-    const set = connectedSet(hoverId, links, 1) ?? new Set([hoverId]);
-    if (egoId && egoId !== hoverId) {
-      const path = shortestPath(hoverId, egoId, links);
-      if (path) for (const id of path) set.add(id);
-    }
-    return set;
-  }
-  if (selectedId) return connectedSet(selectedId, links, 3);
-  return null;
+  const focusId = hoverId || selectedId;
+  if (!focusId) return null;
+  if (!egoId || focusId === egoId) return new Set([focusId]);
+  const path = shortestPath(focusId, egoId, links);
+  if (!path) return new Set([focusId]);
+  return new Set(path);
 }

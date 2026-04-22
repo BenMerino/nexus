@@ -13803,7 +13803,7 @@ function GraphScene({
     /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera, pathMode: !hoverId && !!selectedId }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera, pathMode: true }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         Nodes,
         {
@@ -15000,37 +15000,6 @@ function resolveNodeColor(n, adapter, communityColors, major) {
 function idOf(endpoint) {
   return typeof endpoint === "object" ? endpoint.id : endpoint;
 }
-function connectedSet(focusId, links, maxHops = 1) {
-  if (!focusId) return null;
-  if (maxHops <= 0) return /* @__PURE__ */ new Set([focusId]);
-  const adjacency = /* @__PURE__ */ new Map();
-  for (const l of links) {
-    const s = idOf(l.source);
-    const t = idOf(l.target);
-    const sn = adjacency.get(s) ?? [];
-    sn.push(t);
-    adjacency.set(s, sn);
-    const tn = adjacency.get(t) ?? [];
-    tn.push(s);
-    adjacency.set(t, tn);
-  }
-  const set2 = /* @__PURE__ */ new Set([focusId]);
-  let frontier = [focusId];
-  for (let hop = 0; hop < maxHops; hop++) {
-    const next = [];
-    for (const id of frontier) {
-      for (const nb of adjacency.get(id) ?? []) {
-        if (!set2.has(nb)) {
-          set2.add(nb);
-          next.push(nb);
-        }
-      }
-    }
-    if (next.length === 0) break;
-    frontier = next;
-  }
-  return set2;
-}
 function shortestPath(fromId, toId, links) {
   if (fromId === toId) return [fromId];
   const adjacency = /* @__PURE__ */ new Map();
@@ -15070,16 +15039,12 @@ function shortestPath(fromId, toId, links) {
 
 // public/community-graph/focus-set.ts
 function buildFocusSet(hoverId, selectedId, egoId, links) {
-  if (hoverId) {
-    const set2 = connectedSet(hoverId, links, 1) ?? /* @__PURE__ */ new Set([hoverId]);
-    if (egoId && egoId !== hoverId) {
-      const path = shortestPath(hoverId, egoId, links);
-      if (path) for (const id of path) set2.add(id);
-    }
-    return set2;
-  }
-  if (selectedId) return connectedSet(selectedId, links, 3);
-  return null;
+  const focusId = hoverId || selectedId;
+  if (!focusId) return null;
+  if (!egoId || focusId === egoId) return /* @__PURE__ */ new Set([focusId]);
+  const path = shortestPath(focusId, egoId, links);
+  if (!path) return /* @__PURE__ */ new Set([focusId]);
+  return new Set(path);
 }
 
 // public/community-graph/CommunityGraph.tsx
