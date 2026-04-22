@@ -4,7 +4,7 @@ import { buildCommunityColors, majorCommunities, effectiveKey } from './communit
 import { startDrag } from './drag';
 import { GraphScene } from './scene';
 import {
-  initialNodes, initialLinks, buildAnchors, createSimulation,
+  initialNodes, initialLinks, buildAnchors, createSimulation, integrateZ,
   type SimN, type SimL, type BaseLink,
 } from './forces';
 import type { CommunityAdapter, ForceConfig } from './types';
@@ -12,7 +12,9 @@ import { DEFAULT_FORCE_CONFIG } from './types';
 import { useViewTransform } from './use-view-transform';
 import { useCameraAnim } from './use-camera-anim';
 import { useOrbitDrag } from './use-orbit-drag';
+import { useLayerIntegration } from './use-layer-integration';
 import { resolveNodeColor } from './node-color';
+import { connectedSet } from './connected-set';
 import type { Camera } from './projection';
 
 export interface CommunityGraphProps<N, L extends BaseLink> {
@@ -93,20 +95,11 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, links, anchors, primaryKey, width, height]);
 
+  useLayerIntegration(nodes, adapter, config.layerStrength, () => tick(v => v + 1));
+
   const nodeColor = (n: SimN<N>) => resolveNodeColor(n, adapter, communityColors, major);
 
-  const connected = useMemo(() => {
-    const focusId = hoverId || selectedId || null;
-    if (!focusId) return null;
-    const set = new Set<string>([focusId]);
-    for (const l of links) {
-      const s = typeof l.source === 'object' ? l.source.id : l.source;
-      const t = typeof l.target === 'object' ? l.target.id : l.target;
-      if (s === focusId) set.add(t as string);
-      if (t === focusId) set.add(s as string);
-    }
-    return set;
-  }, [hoverId, selectedId, links]);
+  const connected = useMemo(() => connectedSet(hoverId || selectedId, links), [hoverId, selectedId, links]);
 
   const ego = nodes.find(n => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find(n => adapter.getId(n) === hoverId) : null;

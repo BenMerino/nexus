@@ -104,16 +104,16 @@ export function createSimulation<N, L extends BaseLink>({
     .alpha(1)
     .alphaDecay(0.025)
     .on('tick', () => {
-      integrateZ(nodes, adapter, config.layerStrength);
       clampToViewport(nodes, adapter, width, height);
       onTick();
     });
 }
 
 /** Simple damped spring toward each node's target Z. d3-force operates in 2D,
- *  so we integrate Z ourselves on every tick. Keeps things cheap and keeps the
- *  collide / link / cluster forces untouched. */
-function integrateZ<N>(nodes: SimN<N>[], adapter: CommunityAdapter<N>, strength: number) {
+ *  so we integrate Z independently — called from the consumer's rAF loop so
+ *  Z keeps converging even after the 2D sim settles, and so layer-order
+ *  changes take effect without reseating the whole sim. */
+export function integrateZ<N>(nodes: SimN<N>[], adapter: CommunityAdapter<N>, strength: number) {
   if (!adapter.getLayerZ) return;
   const damping = 0.82;
   for (const n of nodes) {

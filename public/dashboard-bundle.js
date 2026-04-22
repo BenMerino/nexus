@@ -12747,7 +12747,7 @@ var require_jsx_runtime = __commonJS({
 });
 
 // public/dashboard-charts.tsx
-var import_react13 = __toESM(require_react());
+var import_react14 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
 // public/shell-helpers.ts
@@ -13054,13 +13054,13 @@ function ClaimPaperPanel({ onClaimed }) {
 }
 
 // public/coauthor-graph-preview.tsx
-var import_react10 = __toESM(require_react());
+var import_react11 = __toESM(require_react());
 
 // public/coauthor-graph-sim.tsx
-var import_react9 = __toESM(require_react());
+var import_react10 = __toESM(require_react());
 
 // public/community-graph/CommunityGraph.tsx
-var import_react7 = __toESM(require_react());
+var import_react8 = __toESM(require_react());
 
 // public/community-graph/communities.ts
 var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1"];
@@ -14495,7 +14495,6 @@ function createSimulation({
   };
   const chargeFn = typeof config.charge === "function" ? config.charge : () => config.charge;
   return simulation_default(nodes).force("link", link_default(links).id((d) => adapter.getId(d)).distance(config.linkDistance).strength(config.linkStrength)).force("charge", manyBody_default().strength((d) => chargeFn(d.group))).force("clusterX", x_default2((d) => anchorFor(d)?.x ?? width / 2).strength(config.clusterStrengthX)).force("clusterY", y_default2((d) => anchorFor(d)?.y ?? height / 2).strength(config.clusterStrengthY)).force("collide", collide_default().radius((d) => adapter.getRadius(d) + config.collidePad)).alpha(1).alphaDecay(0.025).on("tick", () => {
-    integrateZ(nodes, adapter, config.layerStrength);
     clampToViewport(nodes, adapter, width, height);
     onTick();
   });
@@ -14670,6 +14669,30 @@ function useOrbitDrag(active, defaultPitch) {
   return { pitch, yaw, startOrbitDrag };
 }
 
+// public/community-graph/use-layer-integration.ts
+var import_react7 = __toESM(require_react());
+var EPS = 0.05;
+function useLayerIntegration(nodes, adapter, strength, onTick) {
+  const adapterRef = (0, import_react7.useRef)(adapter);
+  adapterRef.current = adapter;
+  (0, import_react7.useEffect)(() => {
+    if (!adapter.getLayerZ) return;
+    let raf = 0;
+    const step = () => {
+      integrateZ(nodes, adapterRef.current, strength);
+      onTick();
+      const settled = nodes.every((n) => {
+        const target = adapterRef.current.getLayerZ(n);
+        return Math.abs(n.z - target) < EPS && Math.abs(n.vz) < EPS;
+      });
+      if (settled) return;
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [nodes, adapter, strength, onTick]);
+}
+
 // public/community-graph/node-color.ts
 function resolveNodeColor(n, adapter, communityColors, major) {
   let communityColor = null;
@@ -14683,6 +14706,19 @@ function resolveNodeColor(n, adapter, communityColors, major) {
   const override = adapter.getNodeColor?.(n, communityColor);
   if (override) return override;
   return communityColor || "var(--fg-muted)";
+}
+
+// public/community-graph/connected-set.ts
+function connectedSet(focusId, links) {
+  if (!focusId) return null;
+  const set2 = /* @__PURE__ */ new Set([focusId]);
+  for (const l of links) {
+    const s = typeof l.source === "object" ? l.source.id : l.source;
+    const t = typeof l.target === "object" ? l.target.id : l.target;
+    if (s === focusId) set2.add(t);
+    if (t === focusId) set2.add(s);
+  }
+  return set2;
 }
 
 // public/community-graph/CommunityGraph.tsx
@@ -14707,31 +14743,31 @@ function CommunityGraph({
   tilt: tiltTarget = 0
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
-  const svgRef = (0, import_react7.useRef)(null);
-  const simRef = (0, import_react7.useRef)(null);
-  const [, tick] = (0, import_react7.useState)(0);
-  const [internalHoverId, setInternalHoverId] = (0, import_react7.useState)(null);
-  const [hullHoverKey, setHullHoverKey] = (0, import_react7.useState)(null);
+  const svgRef = (0, import_react8.useRef)(null);
+  const simRef = (0, import_react8.useRef)(null);
+  const [, tick] = (0, import_react8.useState)(0);
+  const [internalHoverId, setInternalHoverId] = (0, import_react8.useState)(null);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react8.useState)(null);
   const hoverId = externalHoverId ?? internalHoverId;
-  const communityColors = (0, import_react7.useMemo)(
+  const communityColors = (0, import_react8.useMemo)(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const major = (0, import_react7.useMemo)(
+  const major = (0, import_react8.useMemo)(
     () => majorCommunities(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const { nodes, links } = (0, import_react7.useMemo)(() => {
+  const { nodes, links } = (0, import_react8.useMemo)(() => {
     const ns = initialNodes(inNodes, adapter, width, height);
     const ls = initialLinks(inLinks, ns, adapter);
     return { nodes: ns, links: ls };
   }, [inNodes, inLinks, width, height]);
-  const anchors = (0, import_react7.useMemo)(
+  const anchors = (0, import_react8.useMemo)(
     () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [nodes, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
   );
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     const sim = createSimulation({
       nodes,
       links,
@@ -14748,19 +14784,9 @@ function CommunityGraph({
       sim.stop();
     };
   }, [nodes, links, anchors, primaryKey, width, height]);
+  useLayerIntegration(nodes, adapter, config.layerStrength, () => tick((v) => v + 1));
   const nodeColor = (n) => resolveNodeColor(n, adapter, communityColors, major);
-  const connected = (0, import_react7.useMemo)(() => {
-    const focusId = hoverId || selectedId || null;
-    if (!focusId) return null;
-    const set2 = /* @__PURE__ */ new Set([focusId]);
-    for (const l of links) {
-      const s = typeof l.source === "object" ? l.source.id : l.source;
-      const t = typeof l.target === "object" ? l.target.id : l.target;
-      if (s === focusId) set2.add(t);
-      if (t === focusId) set2.add(s);
-    }
-    return set2;
-  }, [hoverId, selectedId, links]);
+  const connected = (0, import_react8.useMemo)(() => connectedSet(hoverId || selectedId, links), [hoverId, selectedId, links]);
   const ego = nodes.find((n) => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
@@ -14826,12 +14852,12 @@ function CommunityGraph({
 }
 
 // public/community-graph/legend.tsx
-var import_react8 = __toESM(require_react());
+var import_react9 = __toESM(require_react());
 var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
-  const colors = (0, import_react8.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const major = (0, import_react8.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const items = (0, import_react8.useMemo)(() => {
+  const colors = (0, import_react9.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const major = (0, import_react9.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const items = (0, import_react9.useMemo)(() => {
     const byKey = /* @__PURE__ */ new Map();
     for (const n of nodes) {
       const key = effectiveKey(n, adapter, major);
@@ -14866,7 +14892,7 @@ function radius(n) {
 }
 function CoAuthorSim({ graph, width, height, onNodeClick }) {
   const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
-  const adapter = (0, import_react9.useMemo)(() => ({
+  const adapter = (0, import_react10.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: radius,
@@ -14895,9 +14921,9 @@ function CoAuthorSim({ graph, width, height, onNodeClick }) {
 // public/coauthor-graph-preview.tsx
 var import_jsx_runtime13 = __toESM(require_jsx_runtime());
 function CoAuthorGraphPanel({ graph }) {
-  const ref = (0, import_react10.useRef)(null);
-  const [size, setSize] = (0, import_react10.useState)(null);
-  (0, import_react10.useEffect)(() => {
+  const ref = (0, import_react11.useRef)(null);
+  const [size, setSize] = (0, import_react11.useState)(null);
+  (0, import_react11.useEffect)(() => {
     if (!ref.current) return;
     const el = ref.current;
     const measure = () => {
@@ -14911,7 +14937,7 @@ function CoAuthorGraphPanel({ graph }) {
   }, []);
   const nodes = graph?.nodes ?? [];
   const myRor = graph?.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
-  const legendAdapter = (0, import_react10.useMemo)(() => ({
+  const legendAdapter = (0, import_react11.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -14954,15 +14980,15 @@ function CoAuthorGraphPanelSkeleton() {
 }
 
 // public/portfolio-velocity.tsx
-var import_react11 = __toESM(require_react());
+var import_react12 = __toESM(require_react());
 var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 var TREND_SYMBOL = { rising: "\u25B2", flat: "\u2192", falling: "\u25BC" };
 var TREND_COLOR = { rising: "var(--ok)", flat: "var(--fg-dim)", falling: "var(--err)" };
 function VelocityPanel({ velocity }) {
   const { series, forecast = [], score, trend } = velocity;
-  const wrapRef = (0, import_react11.useRef)(null);
-  const [w, setW] = (0, import_react11.useState)(460);
-  (0, import_react11.useLayoutEffect)(() => {
+  const wrapRef = (0, import_react12.useRef)(null);
+  const [w, setW] = (0, import_react12.useState)(460);
+  (0, import_react12.useLayoutEffect)(() => {
     const el = wrapRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries2) => {
@@ -15042,7 +15068,7 @@ function VelocityPanelSkeleton() {
 }
 
 // public/portfolio-cadence.tsx
-var import_react12 = __toESM(require_react());
+var import_react13 = __toESM(require_react());
 
 // public/type-metals.ts
 var TYPE_METAL = {
@@ -15068,9 +15094,9 @@ var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 var typeLabel = (t) => TYPE_DISPLAY_LABELS[t] || (t === "unknown" ? "Unknown" : t);
 function CadencePanel({ cadence }) {
   const { series, types, meanPerYear } = cadence;
-  const wrapRef = (0, import_react12.useRef)(null);
-  const [w, setW] = (0, import_react12.useState)(460);
-  (0, import_react12.useLayoutEffect)(() => {
+  const wrapRef = (0, import_react13.useRef)(null);
+  const [w, setW] = (0, import_react13.useState)(460);
+  (0, import_react13.useLayoutEffect)(() => {
     const el = wrapRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries2) => {
@@ -15532,9 +15558,9 @@ function DashboardContent({ data }) {
   ] });
 }
 function App() {
-  const [data, setData] = (0, import_react13.useState)(null);
-  const [err, setErr] = (0, import_react13.useState)(null);
-  (0, import_react13.useEffect)(() => {
+  const [data, setData] = (0, import_react14.useState)(null);
+  const [err, setErr] = (0, import_react14.useState)(null);
+  (0, import_react14.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
   return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
