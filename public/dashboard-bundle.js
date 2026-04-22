@@ -13105,31 +13105,33 @@ function buildCommunityColors(nodes, adapter, primaryKey, minSize) {
 }
 
 // public/community-graph/projection.ts
-var LIFT = 0.75;
-var FORESHORTEN = 0.75;
-var FLAT = { tilt: 0, yaw: 0, cx: 0, cy: 0 };
+var FLAT = { pitch: 0, yaw: 0, cx: 0, cy: 0 };
 function project(n, cam) {
-  if (cam.tilt <= 0 && cam.yaw === 0) return { x: n.x, y: n.y };
+  if (cam.pitch === 0 && cam.yaw === 0) return { x: n.x, y: n.y };
   const dx = n.x - cam.cx;
   const dy = n.y - cam.cy;
-  const c2 = Math.cos(cam.yaw);
-  const s = Math.sin(cam.yaw);
-  const rx = dx * c2 - dy * s;
-  const ry = dx * s + dy * c2;
-  const fore = 1 - (1 - FORESHORTEN) * cam.tilt;
-  return { x: cam.cx + rx, y: cam.cy + ry * fore - n.z * LIFT * cam.tilt };
+  const cy = Math.cos(cam.yaw);
+  const sy = Math.sin(cam.yaw);
+  const rx = dx * cy - dy * sy;
+  const ry = dx * sy + dy * cy;
+  const cp = Math.cos(cam.pitch);
+  const sp = Math.sin(cam.pitch);
+  return { x: cam.cx + rx, y: cam.cy + ry * cp - n.z * sp };
 }
 function unproject(p, z, cam) {
-  if (cam.tilt <= 0 && cam.yaw === 0) return { x: p.x, y: p.y };
-  const fore = 1 - (1 - FORESHORTEN) * cam.tilt;
+  if (cam.pitch === 0 && cam.yaw === 0) return { x: p.x, y: p.y };
+  const cp = Math.cos(cam.pitch);
   const rx = p.x - cam.cx;
-  const ry = (p.y - cam.cy + z * LIFT * cam.tilt) / fore;
-  const c2 = Math.cos(-cam.yaw);
-  const s = Math.sin(-cam.yaw);
-  return { x: cam.cx + rx * c2 - ry * s, y: cam.cy + rx * s + ry * c2 };
+  const ry = cp === 0 ? 0 : (p.y - cam.cy + z * Math.sin(cam.pitch)) / cp;
+  const cy = Math.cos(-cam.yaw);
+  const sy = Math.sin(-cam.yaw);
+  return { x: cam.cx + rx * cy - ry * sy, y: cam.cy + rx * sy + ry * cy };
 }
 function floorShadow(x3, y3, cam) {
   return project({ x: x3, y: y3, z: 0 }, cam);
+}
+function pitchLift(cam) {
+  return Math.min(1, Math.max(0, Math.sin(cam.pitch)));
 }
 
 // public/community-graph/drag.ts
@@ -13207,7 +13209,8 @@ function Links({ links, connected, camera }) {
 }
 function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, camera }) {
   const zSorted = [...nodes].sort((a2, b) => a2.z - b.z);
-  const showShadows = camera.tilt > 0.02;
+  const lift = pitchLift(camera);
+  const showShadows = lift > 0.02;
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
     showShadows && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { style: { pointerEvents: "none" }, children: zSorted.map((n) => {
       if (n.z <= 0) return null;
@@ -13215,8 +13218,8 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
       const r = adapter.getRadius(n);
       const dim = connected && !connected.has(id);
       const p = floorShadow(n.x, n.y, camera);
-      const lift = n.z * camera.tilt;
-      const spread = Math.min(1.4, 1 + lift / 180);
+      const nodeLift = n.z * lift;
+      const spread = Math.min(1.4, 1 + nodeLift / 180);
       return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
         "ellipse",
         {
@@ -13225,7 +13228,7 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
           rx: r * spread,
           ry: r * 0.45 * spread,
           fill: "url(#graph-node-shadow)",
-          opacity: dim ? 0.1 : 0.35 * camera.tilt
+          opacity: dim ? 0.1 : 0.35 * lift
         },
         `sh-${id}`
       );
@@ -14607,12 +14610,12 @@ function useCameraAnim(target) {
     const step = () => {
       const cur = cameraRef.current;
       const next = {
-        tilt: cur.tilt + (target.tilt - cur.tilt) * 0.15,
+        pitch: cur.pitch + (target.pitch - cur.pitch) * 0.2,
         yaw: cur.yaw + (target.yaw - cur.yaw) * 0.25,
         cx: target.cx,
         cy: target.cy
       };
-      const settled = Math.abs(next.tilt - target.tilt) < 1e-3 && Math.abs(next.yaw - target.yaw) < 1e-3;
+      const settled = Math.abs(next.pitch - target.pitch) < 1e-3 && Math.abs(next.yaw - target.yaw) < 1e-3;
       if (settled) {
         cameraRef.current = target;
         setCamera(target);
@@ -14624,23 +14627,39 @@ function useCameraAnim(target) {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [target.tilt, target.yaw, target.cx, target.cy]);
+  }, [target.pitch, target.yaw, target.cx, target.cy]);
   return { camera, cameraRef };
 }
 
-// public/community-graph/use-yaw-drag.ts
+// public/community-graph/use-orbit-drag.ts
 var import_react6 = __toESM(require_react());
-function useYawDrag(tiltActive) {
+var MAX_PITCH = Math.PI / 2 - 0.15;
+var MIN_PITCH = 0;
+function useOrbitDrag(active, defaultPitch) {
+  const [pitch, setPitch] = (0, import_react6.useState)(defaultPitch);
   const [yaw, setYaw] = (0, import_react6.useState)(0);
   (0, import_react6.useEffect)(() => {
-    if (!tiltActive) setYaw(0);
-  }, [tiltActive]);
-  const startYawDrag = (e) => {
-    if (!tiltActive) return;
+    if (!active) {
+      setPitch(0);
+      setYaw(0);
+      return;
+    }
+    setPitch(defaultPitch);
+    setYaw(0);
+  }, [active, defaultPitch]);
+  const startOrbitDrag = (e) => {
+    if (!active) return;
     e.preventDefault();
     const startX = e.clientX;
+    const startY = e.clientY;
     const startYaw = yaw;
-    const onMove = (ev) => setYaw(startYaw + (ev.clientX - startX) * 6e-3);
+    const startPitch = pitch;
+    const onMove = (ev) => {
+      const dYaw = (ev.clientX - startX) * 6e-3;
+      const dPitch = -(ev.clientY - startY) * 6e-3;
+      setYaw(startYaw + dYaw);
+      setPitch(Math.min(MAX_PITCH, Math.max(MIN_PITCH, startPitch + dPitch)));
+    };
     const onUp = () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
@@ -14648,7 +14667,7 @@ function useYawDrag(tiltActive) {
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   };
-  return { yaw, startYawDrag };
+  return { pitch, yaw, startOrbitDrag };
 }
 
 // public/community-graph/node-color.ts
@@ -14746,8 +14765,9 @@ function CommunityGraph({
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
   const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
-  const { yaw, startYawDrag } = useYawDrag(tiltTarget > 0);
-  const target = { tilt: tiltTarget, yaw, cx: width / 2, cy: height / 2 };
+  const defaultPitch = tiltTarget * 0.75;
+  const { pitch, yaw, startOrbitDrag } = useOrbitDrag(tiltTarget > 0, defaultPitch);
+  const target = { pitch, yaw, cx: width / 2, cy: height / 2 };
   const { camera, cameraRef } = useCameraAnim(target);
   const handleMouseDown = (e, node) => {
     const isEgo = adapter.isEgo(node);
@@ -14800,7 +14820,7 @@ function CommunityGraph({
       },
       camera,
       rotatable: tiltTarget > 0,
-      onBackgroundMouseDown: startYawDrag
+      onBackgroundMouseDown: startOrbitDrag
     }
   ) });
 }

@@ -11,7 +11,7 @@ import type { CommunityAdapter, ForceConfig } from './types';
 import { DEFAULT_FORCE_CONFIG } from './types';
 import { useViewTransform } from './use-view-transform';
 import { useCameraAnim } from './use-camera-anim';
-import { useYawDrag } from './use-yaw-drag';
+import { useOrbitDrag } from './use-orbit-drag';
 import { resolveNodeColor } from './node-color';
 import type { Camera } from './projection';
 
@@ -40,8 +40,8 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
   onHoverChange?: (id: string | null) => void;
   /** Fires when the pointer enters/leaves a community hull. */
   onHullHoverChange?: (key: string | null) => void;
-  /** Camera tilt ∈ [0, 1]. 0 = top-down (Z invisible), 1 = full isometric rake.
-   *  Internally eased toward this target via rAF for smooth transitions. */
+  /** Tilt ∈ [0, 1] — 0 is flat top-down, 1 is the default 3D orbit pose.
+   *  Drag then lets the user freely spin/tumble. */
   tilt?: number;
 }
 
@@ -113,8 +113,9 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   const showHover = hovered && !adapter.isEgo(hovered);
   const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
 
-  const { yaw, startYawDrag } = useYawDrag(tiltTarget > 0);
-  const target: Camera = { tilt: tiltTarget, yaw, cx: width / 2, cy: height / 2 };
+  const defaultPitch = tiltTarget * 0.75; // ~43° at full tilt
+  const { pitch, yaw, startOrbitDrag } = useOrbitDrag(tiltTarget > 0, defaultPitch);
+  const target: Camera = { pitch, yaw, cx: width / 2, cy: height / 2 };
   const { camera, cameraRef } = useCameraAnim(target);
 
   const handleMouseDown = (e: React.MouseEvent, node: SimN<N>) => {
@@ -142,7 +143,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         onHullHover={k => { setHullHoverKey(k); onHullHoverChange?.(k); }}
         camera={camera}
         rotatable={tiltTarget > 0}
-        onBackgroundMouseDown={startYawDrag}
+        onBackgroundMouseDown={startOrbitDrag}
       />
     </div>
   );

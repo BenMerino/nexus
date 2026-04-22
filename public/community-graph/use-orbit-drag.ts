@@ -1,22 +1,44 @@
 import { useEffect, useState } from 'react';
 
-/** Drag-to-rotate: mousedown on the canvas background starts a yaw drag;
- *  horizontal pointer delta maps linearly to radians. Resets to 0 when the
- *  view goes flat so tilt-back doesn't restore a hidden rotation. */
-export function useYawDrag(tiltActive: boolean): {
+const MAX_PITCH = Math.PI / 2 - 0.15; // stop just shy of edge-on so nodes stay visible
+const MIN_PITCH = 0;
+
+/** Drag-to-orbit: horizontal pointer delta maps to yaw, vertical delta to
+ *  pitch. Pitch is clamped so the view doesn't tumble past edge-on; yaw is
+ *  unclamped so the scene can spin freely.
+ *
+ *  Fully resets to the default pose when the parent signals the view has
+ *  gone flat, so toggling back to 3D always starts from a clean pose. */
+export function useOrbitDrag(
+  active: boolean,
+  defaultPitch: number,
+): {
+  pitch: number;
   yaw: number;
-  startYawDrag: (e: React.MouseEvent) => void;
+  startOrbitDrag: (e: React.MouseEvent) => void;
 } {
+  const [pitch, setPitch] = useState(defaultPitch);
   const [yaw, setYaw] = useState(0);
 
-  useEffect(() => { if (!tiltActive) setYaw(0); }, [tiltActive]);
+  useEffect(() => {
+    if (!active) { setPitch(0); setYaw(0); return; }
+    setPitch(defaultPitch);
+    setYaw(0);
+  }, [active, defaultPitch]);
 
-  const startYawDrag = (e: React.MouseEvent) => {
-    if (!tiltActive) return;
+  const startOrbitDrag = (e: React.MouseEvent) => {
+    if (!active) return;
     e.preventDefault();
     const startX = e.clientX;
+    const startY = e.clientY;
     const startYaw = yaw;
-    const onMove = (ev: MouseEvent) => setYaw(startYaw + (ev.clientX - startX) * 0.006);
+    const startPitch = pitch;
+    const onMove = (ev: MouseEvent) => {
+      const dYaw = (ev.clientX - startX) * 0.006;
+      const dPitch = -(ev.clientY - startY) * 0.006;
+      setYaw(startYaw + dYaw);
+      setPitch(Math.min(MAX_PITCH, Math.max(MIN_PITCH, startPitch + dPitch)));
+    };
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
@@ -25,5 +47,5 @@ export function useYawDrag(tiltActive: boolean): {
     window.addEventListener('mouseup', onUp);
   };
 
-  return { yaw, startYawDrag };
+  return { pitch, yaw, startOrbitDrag };
 }

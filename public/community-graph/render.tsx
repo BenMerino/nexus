@@ -1,7 +1,7 @@
 import React from 'react';
 import type { CommunityAdapter } from './types';
 import type { SimN, SimL, BaseLink } from './forces';
-import { project, floorShadow, type Camera } from './projection';
+import { project, floorShadow, pitchLift, type Camera } from './projection';
 
 export function GraphDefs() {
   return (
@@ -79,7 +79,8 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
   // when tilted. When flat (tilt ≈ 0) the order still puts larger-Z nodes on
   // top, which matches the "institutions float over papers" intuition.
   const zSorted = [...nodes].sort((a, b) => a.z - b.z);
-  const showShadows = camera.tilt > 0.02;
+  const lift = pitchLift(camera);
+  const showShadows = lift > 0.02;
   return (
     <>
       {showShadows && (
@@ -90,15 +91,15 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
             const r = adapter.getRadius(n);
             const dim = connected && !connected.has(id);
             const p = floorShadow(n.x, n.y, camera);
-            const lift = n.z * camera.tilt;
-            const spread = Math.min(1.4, 1 + lift / 180);
+            const nodeLift = n.z * lift;
+            const spread = Math.min(1.4, 1 + nodeLift / 180);
             return (
               <ellipse
                 key={`sh-${id}`}
                 cx={p.x} cy={p.y + 2}
                 rx={r * spread} ry={r * 0.45 * spread}
                 fill="url(#graph-node-shadow)"
-                opacity={dim ? 0.1 : 0.35 * camera.tilt}
+                opacity={dim ? 0.1 : 0.35 * lift}
               />
             );
           })}
