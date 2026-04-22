@@ -13756,7 +13756,12 @@ function ringToWorld(ring, pad) {
 var import_jsx_runtime8 = __toESM(require_jsx_runtime());
 var DEFAULT_PAD2 = 32;
 var DEFAULT_LERP_ALPHA2 = 0.18;
-var MIN_PRISM_HEIGHT = 120;
+var MIN_PRISM_HEIGHT = 30;
+var HEIGHT_PER_NODE = 14;
+var MAX_PRISM_HEIGHT = 260;
+function heightForPoints(count) {
+  return Math.min(MAX_PRISM_HEIGHT, MIN_PRISM_HEIGHT + count * HEIGHT_PER_NODE);
+}
 function polyPath(pts) {
   if (pts.length === 0) return "";
   let d = `M ${pts[0].x} ${pts[0].y}`;
@@ -13776,8 +13781,9 @@ function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LE
     let bottomZ = g.bottomZ;
     let topZ = g.topZ;
     const span = topZ - bottomZ;
-    if (span < MIN_PRISM_HEIGHT) {
-      const need = (MIN_PRISM_HEIGHT - span) / 2;
+    const target = Math.max(span, heightForPoints(g.points.length));
+    if (target > span) {
+      const need = (target - span) / 2;
       bottomZ -= need;
       topZ += need;
     }

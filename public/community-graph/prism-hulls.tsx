@@ -24,9 +24,16 @@ interface Props {
 
 const DEFAULT_PAD = 32;
 const DEFAULT_LERP_ALPHA = 0.18;
-/** Each community gets a prism at least this tall so same-layer groups
- *  still render as a real volume rather than a flat disc. */
-const MIN_PRISM_HEIGHT = 120;
+/** Prism heights scale with member count — bigger communities tower over
+ *  smaller ones, so the 3D stack reads as a bar chart of community size
+ *  instead of a row of identical columns. */
+const MIN_PRISM_HEIGHT = 30;
+const HEIGHT_PER_NODE = 14;
+const MAX_PRISM_HEIGHT = 260;
+
+function heightForPoints(count: number): number {
+  return Math.min(MAX_PRISM_HEIGHT, MIN_PRISM_HEIGHT + count * HEIGHT_PER_NODE);
+}
 
 function polyPath(pts: { x: number; y: number }[]): string {
   if (pts.length === 0) return '';
@@ -54,8 +61,12 @@ export function PrismHulls({ groups, camera, pad = DEFAULT_PAD, lerpAlpha = DEFA
     let bottomZ = g.bottomZ;
     let topZ = g.topZ;
     const span = topZ - bottomZ;
-    if (span < MIN_PRISM_HEIGHT) {
-      const need = (MIN_PRISM_HEIGHT - span) / 2;
+    // If the community spans multiple layers, that natural span is already
+    // meaningful. If it sits on a single layer, give it a member-count-based
+    // height so the volume reflects how many nodes are inside.
+    const target = Math.max(span, heightForPoints(g.points.length));
+    if (target > span) {
+      const need = (target - span) / 2;
       bottomZ -= need;
       topZ += need;
     }
