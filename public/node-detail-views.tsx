@@ -42,6 +42,7 @@ export function AuthorView({ d, onClose }: { d: AuthorD; onClose: () => void }) 
       <div className="detail-stats">
         <div><span className="mono">{d.papersCount}</span><label>papers</label></div>
         <div><span className="mono">{d.citations}</span><label>citations</label></div>
+        <div><span className="mono">{d.hIndex ?? 0}</span><label>h-index</label></div>
       </div>
       <div className="detail-section">
         <div className="detail-section-label">Recent papers</div>

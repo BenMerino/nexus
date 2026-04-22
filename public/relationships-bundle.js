@@ -13003,6 +13003,10 @@ function AuthorView({ d, onClose }) {
       /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: d.citations }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { children: "citations" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: d.hIndex ?? 0 }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { children: "h-index" })
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-section", children: [
@@ -13184,6 +13188,10 @@ function DetailSkeleton({ nodeId }) {
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "\xA0" })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sk-bar sk-stat" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "\xA0" })
+      ] }),
+      group === "author" && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sk-bar sk-stat" }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "\xA0" })
       ] })
