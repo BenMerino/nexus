@@ -72,7 +72,6 @@ function DetailSkeleton({ nodeId }: { nodeId: string }) {
       <div className="detail-stats">
         <div><span className="sk-bar sk-stat" /><label>&nbsp;</label></div>
         <div><span className="sk-bar sk-stat" /><label>&nbsp;</label></div>
-        {group === 'author' && <div><span className="sk-bar sk-stat" /><label>&nbsp;</label></div>}
       </div>
       <div className="detail-section">
         <div className="detail-section-label">Recent papers</div>
