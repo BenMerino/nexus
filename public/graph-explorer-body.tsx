@@ -14,6 +14,8 @@ import { GraphContents } from './graph-contents';
 import { explorerSelectedColor } from './explorer-selected-color';
 import { useSelectionStack } from './use-selection-stack';
 import { useYearRangeFilter } from './use-year-range-filter';
+import { useLayerOrder } from './use-layer-order';
+import { GraphCanvasCorners } from './graph-canvas-corners';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 
@@ -51,6 +53,7 @@ export function GraphExplorerBody() {
       return next;
     });
   }, []);
+  const { layerOrder, reorderLayer } = useLayerOrder();
   const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
   const highlightedIds = useMemo(() => {
     const o = new URLSearchParams(window.location.search).get('highlight');
@@ -109,23 +112,13 @@ export function GraphExplorerBody() {
       </header>
 
       <div className="graph-layout">
-        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFrom={yearFrom} yearTo={yearTo} onYearRangeChange={(f, t) => setRange([f, t])} nodes={projectedNodes} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} />
+        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFrom={yearFrom} yearTo={yearTo} onYearRangeChange={(f, t) => setRange([f, t])} nodes={projectedNodes} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled={tilted} />
 
         <div className="graph-canvas">
-          <div className="canvas-corner-tl">
-            <div>tenant · <em>{me?.tenant || '—'}</em></div>
-            <div>role · <em>{me?.role || '—'}</em></div>
-            <div>scope · {(yearFrom > yearMin || yearTo < yearMax) ? `${yearFrom}–${yearTo}` : 'all years'}</div>
-          </div>
-          <div className="canvas-corner-tr">
-            <button className="tilt-toggle" data-on={tilted ? '1' : '0'} onClick={toggleTilt} title={tilted ? 'Switch to top-down view' : 'Tilt into 3D layered view'}>
-              <span className="tilt-glyph" />
-              {tilted ? '3D' : '2D'}
-            </button>
-          </div>
+          <GraphCanvasCorners tenant={me?.tenant ?? null} role={me?.role ?? null} yearFrom={yearFrom} yearTo={yearTo} yearMin={yearMin} yearMax={yearMax} tilted={tilted} onToggleTilt={toggleTilt} />
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={tilted ? 1 : 0} />}
+            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={tilted ? 1 : 0} layerOrder={layerOrder} />}
         </div>
 
         <aside className="detail-panel" ref={detailPanelRef}>

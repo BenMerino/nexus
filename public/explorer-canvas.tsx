@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ForceGraph } from './force-graph';
 import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
+import type { LayerType } from './explorer-layers';
 
 interface Props {
   nodes: EnrichedSimNode[];
@@ -18,9 +19,10 @@ interface Props {
   onHullHoverChange?: (key: string | null) => void;
   minHeight?: number;
   tilt?: number;
+  layerOrder?: LayerType[];
 }
 
-export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0 }: Props) {
+export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
 
@@ -56,6 +58,7 @@ export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, 
           onHoverChange={onHoverChange}
           onHullHoverChange={onHullHoverChange}
           tilt={tilt}
+          layerOrder={layerOrder}
         />
       )}
     </div>
