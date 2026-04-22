@@ -5,7 +5,8 @@ import type { ExplorerAffiliations } from './explorer-affiliations';
 import { CommunityGraph, type CommunityAdapter } from './community-graph';
 import { explorerCommunityKey, type HullTier } from './explorer-community';
 import { computeVisibility } from './explorer-visibility';
-import { DEFAULT_LAYER_ORDER, layerTypeForNode, layerZ, type LayerType } from './explorer-layers';
+import { DEFAULT_LAYER_ORDER, type LayerType } from './explorer-layers';
+import { explorerLayerZ } from './explorer-layer-z';
 
 function hullTierFor(nodes: EnrichedSimNode[]): HullTier {
   if (nodes.some(n => n.group === 'institution')) return 'institution';
@@ -42,11 +43,6 @@ function baseRadius(n: EnrichedSimNode): number {
 }
 
 const EMPTY_IDS: Set<string> = new Set();
-
-/** Extra Z the home institution floats above the rest of its layer.
- *  Roughly half a layer-gap — high enough to read as lifted, low enough
- *  that the institution stays visually part of its own layer. */
-const HOME_INSTITUTION_LIFT = 30;
 
 export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS }: Props) {
   const labelById = useMemo(() => {
@@ -96,11 +92,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       return labelById.get(firstId) || null;
     },
     getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
-    getLayerZ: n => {
-      const base = layerZ(layerTypeForNode(n, coauthorIds), layerOrder);
-      if (n.id === homeInstitutionId) return base + HOME_INSTITUTION_LIFT;
-      return base;
-    },
+    getLayerZ: n => explorerLayerZ({ n, layerOrder, coauthorIds, homeInstitutionId, egoAuthorId }),
   }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier, layerOrder, coauthorIds]);
 
   const forceConfig = useMemo(() => {
