@@ -12955,15 +12955,150 @@ function Check({ checked, onChange, label, color }) {
   ] });
 }
 
-// public/node-author-view.tsx
+// public/rich-label.ts
+var NAMED_ENTITY = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  ndash: "\u2013",
+  mdash: "\u2014",
+  hellip: "\u2026",
+  laquo: "\xAB",
+  raquo: "\xBB",
+  lsquo: "\u2018",
+  rsquo: "\u2019",
+  ldquo: "\u201C",
+  rdquo: "\u201D",
+  times: "\xD7",
+  divide: "\xF7",
+  plus: "+",
+  minus: "\u2212",
+  alpha: "\u03B1",
+  beta: "\u03B2",
+  gamma: "\u03B3",
+  delta: "\u03B4",
+  epsilon: "\u03B5",
+  zeta: "\u03B6",
+  eta: "\u03B7",
+  theta: "\u03B8",
+  iota: "\u03B9",
+  kappa: "\u03BA",
+  lambda: "\u03BB",
+  mu: "\u03BC",
+  nu: "\u03BD",
+  xi: "\u03BE",
+  omicron: "\u03BF",
+  pi: "\u03C0",
+  rho: "\u03C1",
+  sigma: "\u03C3",
+  tau: "\u03C4",
+  upsilon: "\u03C5",
+  phi: "\u03C6",
+  chi: "\u03C7",
+  psi: "\u03C8",
+  omega: "\u03C9",
+  Alpha: "\u0391",
+  Beta: "\u0392",
+  Gamma: "\u0393",
+  Delta: "\u0394",
+  Epsilon: "\u0395",
+  Zeta: "\u0396",
+  Eta: "\u0397",
+  Theta: "\u0398",
+  Iota: "\u0399",
+  Kappa: "\u039A",
+  Lambda: "\u039B",
+  Mu: "\u039C",
+  Nu: "\u039D",
+  Xi: "\u039E",
+  Omicron: "\u039F",
+  Pi: "\u03A0",
+  Rho: "\u03A1",
+  Sigma: "\u03A3",
+  Tau: "\u03A4",
+  Upsilon: "\u03A5",
+  Phi: "\u03A6",
+  Chi: "\u03A7",
+  Psi: "\u03A8",
+  Omega: "\u03A9",
+  deg: "\xB0",
+  plusmn: "\xB1",
+  micro: "\xB5",
+  trade: "\u2122",
+  copy: "\xA9",
+  reg: "\xAE"
+};
+function decodeEntities(s) {
+  return s.replace(/&(#(\d+)|#x([0-9a-f]+)|([a-zA-Z]+));/g, (m2, _, dec, hex, name) => {
+    if (dec) return String.fromCodePoint(parseInt(dec, 10));
+    if (hex) return String.fromCodePoint(parseInt(hex, 16));
+    return NAMED_ENTITY[name] ?? m2;
+  });
+}
+var TAG_MAP = {
+  i: "italic",
+  em: "italic",
+  b: "bold",
+  strong: "bold",
+  sub: "sub",
+  sup: "sup"
+};
+function parseLabel(raw) {
+  if (!raw) return [];
+  const runs = [];
+  const stack = [{}];
+  const tagRe = /<\/?\s*([a-zA-Z0-9]+)[^>]*>/g;
+  let last = 0;
+  let m2;
+  const push = (text) => {
+    if (!text) return;
+    const top = stack[stack.length - 1];
+    runs.push({ text: decodeEntities(text), ...top });
+  };
+  while ((m2 = tagRe.exec(raw)) !== null) {
+    if (m2.index > last) push(raw.slice(last, m2.index));
+    const full = m2[0];
+    const name = m2[1].toLowerCase();
+    const closing = full.startsWith("</");
+    const flag = TAG_MAP[name];
+    if (closing) {
+      if (flag) stack.pop();
+    } else if (flag) {
+      stack.push({ ...stack[stack.length - 1], [flag]: true });
+    }
+    last = m2.index + full.length;
+  }
+  if (last < raw.length) push(raw.slice(last));
+  return runs;
+}
+
+// public/rich-text.tsx
 var import_jsx_runtime3 = __toESM(require_jsx_runtime());
+function RichHtml({ raw }) {
+  const runs = parseLabel(raw);
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_jsx_runtime3.Fragment, { children: runs.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Run, { run: r }, i)) });
+}
+function Run({ run }) {
+  let el = run.text;
+  if (run.italic) el = /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("i", { children: el });
+  if (run.bold) el = /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("b", { children: el });
+  if (run.sub) el = /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("sub", { children: el });
+  if (run.sup) el = /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("sup", { children: el });
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_jsx_runtime3.Fragment, { children: el });
+}
+
+// public/node-author-view.tsx
+var import_jsx_runtime4 = __toESM(require_jsx_runtime());
 function PaperRow({ p }) {
   const year = p.published?.slice(0, 4);
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-item", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { children: p.title || "(untitled)" }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-item-sub", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono muted", children: p.doi }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono muted detail-item-year", children: year || "" })
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-item", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { children: p.title || "(untitled)" }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-item-sub", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono muted", children: p.doi }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono muted detail-item-year", children: year || "" })
     ] })
   ] });
 }
@@ -12986,159 +13121,159 @@ function groupPapersByJournal(papers) {
 }
 function AuthorView({ d, onClose }) {
   const groups = groupPapersByJournal(d.papers);
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "eyebrow", children: "Author" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { children: d.name }),
-        d.hIndex != null && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-hindex", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: "h-index" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "eyebrow", children: "Author" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { children: d.name }),
+        d.hIndex != null && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-hindex", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: "h-index" }),
           " ",
           d.hIndex
         ] }),
-        d.orcid && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "mono detail-id", children: [
+        d.orcid && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "mono detail-id", children: [
           "ORCID ",
           d.orcid
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { className: "close", onClick: onClose, "aria-label": "Close", children: Ico.close })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "close", onClick: onClose, "aria-label": "Close", children: Ico.close })
     ] }),
-    (d.faculty || d.role) && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-meta", children: [
-      d.faculty && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "muted", children: "Faculty" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: d.faculty })
+    (d.faculty || d.role) && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-meta", children: [
+      d.faculty && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "muted", children: "Faculty" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: d.faculty })
       ] }),
-      d.role && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "muted", children: "Role" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: d.role })
+      d.role && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "muted", children: "Role" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: d.role })
       ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-stats", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: d.papersCount }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { children: "papers" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: d.citations }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { children: "citations" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono", children: d.journalsCount ?? groups.length }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { children: "journals" })
-      ] })
-    ] }),
-    groups.map((g) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "detail-section-label", children: [
-        g.journal,
-        " ",
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "mono muted", children: g.papers.length })
-      ] }),
-      g.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(PaperRow, { p }, p.doi))
-    ] }, g.journal))
-  ] });
-}
-
-// public/node-detail-views.tsx
-var import_jsx_runtime4 = __toESM(require_jsx_runtime());
-function PaperRow2({ p }) {
-  const year = p.published?.slice(0, 4);
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-item", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { children: p.title || "(untitled)" }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-item-sub", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono muted", children: p.doi }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono muted detail-item-year", children: year || "" })
-    ] })
-  ] });
-}
-var CloseBtn = ({ onClose }) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "close", onClick: onClose, "aria-label": "Close", children: Ico.close });
-function InstitutionView({ d, onClose }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "eyebrow", children: "Institution" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { children: d.name }),
-        d.ror && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "mono detail-id", children: [
-          "ROR ",
-          d.ror
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CloseBtn, { onClose })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-stats", children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: d.papersCount }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "papers" })
       ] }),
-      d.citations != null && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: d.citations }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "citations" })
       ] }),
-      d.journalsCount != null && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: d.journalsCount }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: d.journalsCount ?? groups.length }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("label", { children: "journals" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-section-label", children: "Recent publications" }),
-      d.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperRow2, { p }, p.doi))
+    groups.map((g) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-section-label", children: [
+        g.journal,
+        " ",
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono muted", children: g.papers.length })
+      ] }),
+      g.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperRow, { p }, p.doi))
+    ] }, g.journal))
+  ] });
+}
+
+// public/node-detail-views.tsx
+var import_jsx_runtime5 = __toESM(require_jsx_runtime());
+function PaperRow2({ p }) {
+  const year = p.published?.slice(0, 4);
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-item", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { children: p.title ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RichHtml, { raw: p.title }) : "(untitled)" }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-item-sub", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "mono muted", children: p.doi }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "mono muted detail-item-year", children: year || "" })
+    ] })
+  ] });
+}
+var CloseBtn = ({ onClose }) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { className: "close", onClick: onClose, "aria-label": "Close", children: Ico.close });
+function InstitutionView({ d, onClose }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "eyebrow", children: "Institution" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { children: d.name }),
+        d.ror && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "mono detail-id", children: [
+          "ROR ",
+          d.ror
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CloseBtn, { onClose })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-stats", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "mono", children: d.papersCount }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("label", { children: "papers" })
+      ] }),
+      d.citations != null && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "mono", children: d.citations }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("label", { children: "citations" })
+      ] }),
+      d.journalsCount != null && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "mono", children: d.journalsCount }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("label", { children: "journals" })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "detail-section-label", children: "Recent publications" }),
+      d.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(PaperRow2, { p }, p.doi))
     ] })
   ] });
 }
 function JournalView({ d, onClose }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "eyebrow", children: "Journal" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { children: d.name }),
-        d.issn && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "mono detail-id", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "eyebrow", children: "Journal" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { children: d.name }),
+        d.issn && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "mono detail-id", children: [
           "ISSN-L ",
           d.issn
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CloseBtn, { onClose })
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CloseBtn, { onClose })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-meta", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "muted", children: "Our papers" }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: d.papersCount })
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "detail-meta", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "muted", children: "Our papers" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: d.papersCount })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-section-label", children: "Published here" }),
-      d.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PaperRow2, { p }, p.doi))
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "detail-section-label", children: "Published here" }),
+      d.papers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(PaperRow2, { p }, p.doi))
     ] })
   ] });
 }
 function PaperView({ d, onClose }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "eyebrow", children: "Paper" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { className: "paper-detail-title", children: d.title || "(untitled)" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "mono detail-id", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "eyebrow", children: "Paper" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { className: "paper-detail-title", children: d.title ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RichHtml, { raw: d.title }) : "(untitled)" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "mono detail-id", children: [
           "DOI ",
           d.doi
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CloseBtn, { onClose })
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CloseBtn, { onClose })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-meta", children: [
-      d.journal && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "muted", children: "Journal" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: d.journal })
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-meta", children: [
+      d.journal && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "muted", children: "Journal" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: d.journal })
       ] }),
-      d.published && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "muted", children: "Year" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: d.published.slice(0, 4) })
+      d.published && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "muted", children: "Year" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: d.published.slice(0, 4) })
       ] }),
-      d.citations != null && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "muted", children: "Citations" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: d.citations })
+      d.citations != null && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "muted", children: "Citations" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: d.citations })
       ] })
     ] }),
-    d.authors.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-section-label", children: "Authors" }),
-      d.authors.slice(0, 20).map((a2, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-item", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { children: a2.name || a2.orcid || "\u2014" }),
-        a2.orcid && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "mono muted", children: [
+    d.authors.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "detail-section-label", children: "Authors" }),
+      d.authors.slice(0, 20).map((a2, i) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-item", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { children: a2.name || a2.orcid || "\u2014" }),
+        a2.orcid && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "mono muted", children: [
           "ORCID ",
           a2.orcid
         ] })
@@ -13147,26 +13282,26 @@ function PaperView({ d, onClose }) {
   ] });
 }
 function EmptyState() {
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-empty", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty-glyph", children: "\u25CE" }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "detail-empty-head", children: "Select a node" }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-empty", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "detail-empty-glyph", children: "\u25CE" }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "detail-empty-head", children: "Select a node" }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("p", { children: [
       "Every node carries a canonical identifier \u2014 ",
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: "ORCID" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "mono", children: "ORCID" }),
       " for authors, ",
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: "ROR" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "mono", children: "ROR" }),
       " for institutions, ",
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: "ISSN-L" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "mono", children: "ISSN-L" }),
       " for journals, ",
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: "DOI" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "mono", children: "DOI" }),
       " for papers."
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "No canonical ID, no tag. That\u2019s how the graph stays clean." })
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { children: "No canonical ID, no tag. That\u2019s how the graph stays clean." })
   ] });
 }
 
 // public/node-detail.tsx
-var import_jsx_runtime5 = __toESM(require_jsx_runtime());
+var import_jsx_runtime6 = __toESM(require_jsx_runtime());
 var detailCache = /* @__PURE__ */ new Map();
 var inflight = /* @__PURE__ */ new Map();
 function fetchDetail(id) {
@@ -13222,51 +13357,51 @@ var EYEBROW_BY_GROUP = {
 function DetailSkeleton({ nodeId }) {
   const group = nodeId.split(":", 1)[0];
   const eyebrow = EYEBROW_BY_GROUP[group] ?? "";
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail detail-skeleton", "aria-busy": "true", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "detail-head", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "eyebrow", children: eyebrow }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "sk-bar sk-title" }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "sk-bar sk-subtitle" })
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail detail-skeleton", "aria-busy": "true", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-head", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "eyebrow", children: eyebrow }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "sk-bar sk-title" }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "sk-bar sk-subtitle" })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-stats", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "sk-bar sk-stat" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("label", { children: "\xA0" })
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-stats", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "sk-bar sk-stat" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("label", { children: "\xA0" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "sk-bar sk-stat" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("label", { children: "\xA0" })
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "sk-bar sk-stat" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("label", { children: "\xA0" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "detail-section-label", children: "Recent papers" }),
-      [0, 1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-item", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "sk-bar sk-row" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "sk-bar sk-row-sub" })
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-section-label", children: "Recent papers" }),
+      [0, 1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "detail-item", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "sk-bar sk-row" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "sk-bar sk-row-sub" })
       ] }, i))
     ] })
   ] });
 }
 function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
   const { data, error } = useNodeDetail(nodeId);
-  const fallback = empty ?? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(EmptyState, {});
+  const fallback = empty ?? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(EmptyState, {});
   const style = accentColor ? { ["--detail-accent"]: accentColor } : void 0;
-  const back = onBack ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("button", { type: "button", className: "detail-back", onClick: onBack, "aria-label": "Back", children: [
+  const back = onBack ? /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("button", { type: "button", className: "detail-back", onClick: onBack, "aria-label": "Back", children: [
     Ico.back,
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: "Back" })
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: "Back" })
   ] }) : null;
   const detailBody = (() => {
-    if (error) return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "status error", children: [
+    if (error) return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "detail-empty", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "status error", children: [
       "Error: ",
       error
     ] }) });
     if (!nodeId) return null;
-    if (!data) return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
+    if (!data) return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
       back,
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(DetailSkeleton, { nodeId })
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(DetailSkeleton, { nodeId })
     ] });
-    const ch = data.type === "author" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(AuthorView, { d: data, onClose }) : data.type === "institution" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(InstitutionView, { d: data, onClose }) : data.type === "journal" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(JournalView, { d: data, onClose }) : data.type === "paper" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(PaperView, { d: data, onClose }) : null;
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
+    const ch = data.type === "author" ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(AuthorView, { d: data, onClose }) : data.type === "institution" ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(InstitutionView, { d: data, onClose }) : data.type === "journal" ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(JournalView, { d: data, onClose }) : data.type === "paper" ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(PaperView, { d: data, onClose }) : null;
+    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
       back,
       ch
     ] });
@@ -13282,9 +13417,9 @@ function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
     const t = setTimeout(() => setDetailInDom(false), 260);
     return () => clearTimeout(t);
   }, [showingDetail]);
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: `node-detail-viewport${showingDetail ? " showing-detail" : ""}`, children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "node-detail-track", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "node-detail-pane node-detail-home", children: fallback }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: `node-detail-pane node-detail-overlay${accented && accentColor ? " detail-accented" : ""}`, style: accented ? style : void 0, children: detailInDom ? detailBody : null })
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: `node-detail-viewport${showingDetail ? " showing-detail" : ""}`, children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "node-detail-track", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "node-detail-pane node-detail-home", children: fallback }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: `node-detail-pane node-detail-overlay${accented && accentColor ? " detail-accented" : ""}`, style: accented ? style : void 0, children: detailInDom ? detailBody : null })
   ] }) });
 }
 
@@ -13413,13 +13548,13 @@ function startDrag(e, node, svg, sim, pinAfterDrag, getCamera = () => FLAT) {
 }
 
 // public/community-graph/render-nodes.tsx
-var import_jsx_runtime6 = __toESM(require_jsx_runtime());
+var import_jsx_runtime7 = __toESM(require_jsx_runtime());
 function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, camera }) {
   const zSorted = [...nodes].sort((a2, b) => a2.z - b.z);
   const lift = pitchLift(camera);
   const showShadows = lift > 0.02;
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    showShadows && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { style: { pointerEvents: "none" }, children: zSorted.map((n) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+    showShadows && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { style: { pointerEvents: "none" }, children: zSorted.map((n) => {
       if (n.z <= 0) return null;
       const id = adapter.getId(n);
       const r = adapter.getRadius(n);
@@ -13427,7 +13562,7 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
       const p = floorShadow(n.x, n.y, camera);
       const nodeLift = n.z * lift;
       const spread = Math.min(1.4, 1 + nodeLift / 180);
-      return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
         "ellipse",
         {
           cx: p.x,
@@ -13440,14 +13575,14 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
         `sh-${id}`
       );
     }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { children: zSorted.map((n) => {
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("g", { children: zSorted.map((n) => {
       const id = adapter.getId(n);
       const r = adapter.getRadius(n);
       const isHov = id === hoverId;
       const isSel = id === selectedId;
       const dim = connected && !connected.has(id);
       const p = project(n, camera);
-      return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
         "g",
         {
           transform: `translate(${p.x}, ${p.y})`,
@@ -13461,8 +13596,8 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
           },
           style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
           children: [
-            (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+            (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
               "circle",
               {
                 r,
@@ -13480,22 +13615,22 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
 }
 
 // public/community-graph/render.tsx
-var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+var import_jsx_runtime8 = __toESM(require_jsx_runtime());
 function GraphDefs() {
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("defs", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("radialGradient", { id: "community-glow", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("defs", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("radialGradient", { id: "community-glow", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("stop", { offset: "0%", stopColor: "var(--accent)", stopOpacity: "0.5" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("stop", { offset: "100%", stopColor: "var(--accent)", stopOpacity: "0" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("radialGradient", { id: "graph-node-shadow", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "0%", stopColor: "rgba(0,0,0,0.55)" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("stop", { offset: "100%", stopColor: "rgba(0,0,0,0)" })
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("radialGradient", { id: "graph-node-shadow", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("stop", { offset: "0%", stopColor: "rgba(0,0,0,0.55)" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("stop", { offset: "100%", stopColor: "rgba(0,0,0,0)" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("pattern", { id: "graph-grid", x: "0", y: "0", width: "40", height: "40", patternUnits: "userSpaceOnUse", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "M 40 0 L 0 0 0 40", fill: "none", stroke: "var(--border-soft)", strokeWidth: "1" }) })
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("pattern", { id: "graph-grid", x: "0", y: "0", width: "40", height: "40", patternUnits: "userSpaceOnUse", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M 40 0 L 0 0 0 40", fill: "none", stroke: "var(--border-soft)", strokeWidth: "1" }) })
   ] });
 }
 function GridBackdrop() {
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
 function Links({ links, connected, camera, pathMode }) {
   const hasFocus = !!connected;
@@ -13518,11 +13653,11 @@ function Links({ links, connected, camera, pathMode }) {
       inFocus: !!connected && connected.has(s.id) && connected.has(t.id)
     });
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("g", { style: { pointerEvents: "none" }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("g", { style: { pointerEvents: "none" }, children: [
     edges.map((e) => {
       const baseWidth = Math.min(2.5, 0.5 + e.w * 0.3);
       const solidOpacity = hasFocus ? e.inFocus ? 0.25 : 0.05 : 0.14;
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
         "line",
         {
           x1: e.x1,
@@ -13537,7 +13672,7 @@ function Links({ links, connected, camera, pathMode }) {
     }),
     hasFocus && edges.filter((e) => e.inFocus).map((e) => {
       const baseWidth = Math.min(2.5, 0.5 + e.w * 0.3);
-      return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
         "line",
         {
           x1: e.x1,
@@ -13616,7 +13751,7 @@ function smoothClosedPath(pts, tension) {
 }
 
 // public/smoothed-hulls.tsx
-var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+var import_jsx_runtime9 = __toESM(require_jsx_runtime());
 var DEFAULT_LERP_ALPHA = 0.18;
 var DEFAULT_PAD = 32;
 var MIN_GROUP_SIZE = 1;
@@ -13650,11 +13785,11 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
   for (const key of [...state.keys()]) {
     if (!seenKeys.has(key)) state.delete(key);
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("g", { children: paths.map((p) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("g", { children: paths.map((p) => {
     const fill = p.deemphasis ? 0.03 : p.emphasis ? 0.22 : 0.1;
     const stroke = p.deemphasis ? 0.1 : p.emphasis ? 0.7 : 0.35;
     const width = p.emphasis ? 1.8 : 1;
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       "path",
       {
         d: p.d,
@@ -13677,7 +13812,7 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
 }
 
 // public/community-graph/hulls.tsx
-var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+var import_jsx_runtime10 = __toESM(require_jsx_runtime());
 function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey, onHoverKey, camera }) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const groups = /* @__PURE__ */ new Map();
@@ -13701,24 +13836,42 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey,
       deemphasis: hasFocus && !isFocus
     });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(SmoothedHulls, { groups: hullGroups, onHoverKey });
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(SmoothedHulls, { groups: hullGroups, onHoverKey });
+}
+
+// public/community-graph/label-runs.tsx
+var import_jsx_runtime11 = __toESM(require_jsx_runtime());
+function RichText({ raw }) {
+  const runs = parseLabel(raw);
+  if (runs.length === 0) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_jsx_runtime11.Fragment, { children: runs.map((r, i) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("tspan", { style: tspanStyle(r), children: r.text }, i)) });
+}
+function tspanStyle(r) {
+  const s = {};
+  if (r.italic) s.fontStyle = "italic";
+  if (r.bold) s.fontWeight = 700;
+  if (r.sub || r.sup) {
+    s.fontSize = "0.72em";
+    s.baselineShift = r.sup ? "super" : "sub";
+  }
+  return s;
 }
 
 // public/community-graph/labels.tsx
-var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+var import_jsx_runtime12 = __toESM(require_jsx_runtime());
 function EgoLabel({ ego, adapter, scale, camera }) {
   const r = adapter.getRadius(ego);
   const p = project({ x: ego.x, y: ego.y, z: ego.z ?? 0 }, camera);
   const x3 = p.x;
   const y3 = p.y;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
     "text",
     {
       x: x3,
       y: y3 + r + 14 / scale,
       textAnchor: "middle",
       style: { pointerEvents: "none", fontSize: 11 / scale, fill: "rgba(255,255,255,0.85)", paintOrder: "stroke", stroke: "rgba(0,0,0,0.6)", strokeWidth: 3 / scale, strokeLinejoin: "round" },
-      children: adapter.getLabel(ego)
+      children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(RichText, { raw: adapter.getLabel(ego) })
     }
   );
 }
@@ -13734,7 +13887,7 @@ function HoverTooltip({ node, adapter, scale, camera }) {
   if (footnote) lines.push(footnote);
   const line = 14 / scale;
   const topY = y3 - r - 10 / scale - (lines.length - 1) * line;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("g", { style: { pointerEvents: "none" }, children: lines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("g", { style: { pointerEvents: "none" }, children: lines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
     "text",
     {
       x: x3,
@@ -13749,25 +13902,25 @@ function HoverTooltip({ node, adapter, scale, camera }) {
         strokeWidth: 3 / scale,
         strokeLinejoin: "round"
       },
-      children: l
+      children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(RichText, { raw: l })
     },
     i
   )) });
 }
 function PathLabels({ nodes, adapter, scale, camera, ids }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("g", { style: { pointerEvents: "none" }, children: nodes.map((n) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("g", { style: { pointerEvents: "none" }, children: nodes.map((n) => {
     const id = adapter.getId(n);
     if (!ids.has(id)) return null;
     const r = adapter.getRadius(n);
     const p = project({ x: n.x, y: n.y, z: n.z ?? 0 }, camera);
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
       "text",
       {
         x: p.x,
         y: p.y + r + 14 / scale,
         textAnchor: "middle",
         style: { fontSize: 11 / scale, fill: "rgba(255,255,255,0.85)", paintOrder: "stroke", stroke: "rgba(0,0,0,0.6)", strokeWidth: 3 / scale, strokeLinejoin: "round" },
-        children: adapter.getLabel(n)
+        children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(RichText, { raw: adapter.getLabel(n) })
       },
       id
     );
@@ -13775,7 +13928,7 @@ function PathLabels({ nodes, adapter, scale, camera, ids }) {
 }
 
 // public/community-graph/scene.tsx
-var import_jsx_runtime11 = __toESM(require_jsx_runtime());
+var import_jsx_runtime13 = __toESM(require_jsx_runtime());
 function GraphScene({
   svgRef,
   width,
@@ -13805,9 +13958,9 @@ function GraphScene({
   rotatable
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GraphDefs, {}),
-    rotatable && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(GraphDefs, {}),
+    rotatable && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
       "rect",
       {
         x: 0,
@@ -13819,11 +13972,11 @@ function GraphScene({
         style: { cursor: "grab" }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridBackdrop, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera, pathMode: true }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(GridBackdrop, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(Links, { links, connected, camera, pathMode: true }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
         Nodes,
         {
           nodes,
@@ -13839,8 +13992,8 @@ function GraphScene({
           camera
         }
       ),
-      ego && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, camera }),
-      connected && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+      ego && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, camera }),
+      connected && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
         PathLabels,
         {
           nodes,
@@ -13850,7 +14003,7 @@ function GraphScene({
           ids: new Set([...connected].filter((id) => id !== (ego && adapter.getId(ego)) && id !== hoverId))
         }
       ),
-      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1, camera })
+      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1, camera })
     ] })
   ] });
 }
@@ -15077,7 +15230,7 @@ function buildFocusSet(hoverId, selectedId, egoId, links) {
 }
 
 // public/community-graph/CommunityGraph.tsx
-var import_jsx_runtime12 = __toESM(require_jsx_runtime());
+var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 function CommunityGraph({
   nodes: inNodes,
   links: inLinks,
@@ -15165,7 +15318,7 @@ function CommunityGraph({
     height,
     camera
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { position: "relative", width, height }, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { position: "relative", width, height }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
     GraphScene,
     {
       svgRef,
@@ -15209,7 +15362,7 @@ function CommunityGraph({
 
 // public/community-graph/legend.tsx
 var import_react8 = __toESM(require_react());
-var import_jsx_runtime13 = __toESM(require_jsx_runtime());
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 
 // public/explorer-community.ts
 function pickMaxKey(counts, homeKey) {
@@ -15337,7 +15490,7 @@ function explorerLayerZ({ n, layerOrder, coauthorIds, homeInstitutionId, egoAuth
 }
 
 // public/force-graph.tsx
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
 function hullTierFor(nodes) {
   if (nodes.some((n) => n.group === "institution")) return "institution";
   if (nodes.some((n) => n.group === "journal")) return "journal";
@@ -15417,7 +15570,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     onExpand(n.id);
     onNodeClick?.(n);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
     CommunityGraph,
     {
       nodes,
@@ -15440,7 +15593,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
 }
 
 // public/explorer-canvas.tsx
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
 function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds }) {
   const ref = (0, import_react10.useRef)(null);
   const [size, setSize] = (0, import_react10.useState)(null);
@@ -15456,7 +15609,7 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight, overflow: "hidden" }, children: size && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight, overflow: "hidden" }, children: size && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
     ForceGraph,
     {
       nodes,
@@ -15548,7 +15701,7 @@ var import_react15 = __toESM(require_react());
 
 // public/year-range-slider.tsx
 var import_react13 = __toESM(require_react());
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 function YearRangeSlider({ min, max, from, to, onChange }) {
   const span = max - min || 1;
   const leftPct = (from - min) / span * 100;
@@ -15565,10 +15718,10 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
     left: `${leftPct}%`,
     width: `${Math.max(rightPct - leftPct, 0)}%`
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-range", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-range-track", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "year-range-fill", style: fillStyle }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "year-range", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "year-range-track", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "year-range-fill", style: fillStyle }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         "input",
         {
           type: "range",
@@ -15580,7 +15733,7 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
           style: from >= to ? { zIndex: 4 } : void 0
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         "input",
         {
           type: "range",
@@ -15592,17 +15745,17 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-range-readout mono", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { children: from }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "muted", children: "\u2013" }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { children: to })
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "year-range-readout mono", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { children: from }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "muted", children: "\u2013" }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { children: to })
     ] })
   ] });
 }
 
 // public/layer-stack.tsx
 var import_react14 = __toESM(require_react());
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 function LayerStack({ rows, order, onReorder, enabled }) {
   const [dragIdx, setDragIdx] = (0, import_react14.useState)(null);
   const [overIdx, setOverIdx] = (0, import_react14.useState)(null);
@@ -15644,7 +15797,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
   (0, import_react14.useEffect)(() => {
     rowRefs.current = rowRefs.current.slice(0, entries.length);
   }, [entries.length]);
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, row }, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, row }, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
     "div",
     {
       ref: (el) => {
@@ -15654,7 +15807,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
       "data-dragging": dragIdx === i ? "1" : "0",
       "data-over": overIdx === i && dragIdx !== null && dragIdx !== i ? "1" : "0",
       children: [
-        enabled && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        enabled && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
           "span",
           {
             className: "layer-stack-handle",
@@ -15663,7 +15816,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
             children: "\u283F"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "layer-stack-checks", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "layer-stack-checks", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
       ]
     },
     layer
@@ -15681,22 +15834,22 @@ function buildLayerRows(flags, setFlag) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange, layerOrder, onReorderLayer, layersEnabled }) {
   const layerRows = (0, import_react15.useMemo)(() => buildLayerRows(flags, setFlag), [flags, setFlag]);
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("aside", { className: "graph-filters", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-label", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("aside", { className: "graph-filters", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "filter-label", children: [
         "Node types",
-        layersEnabled && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "filter-hint-inline", children: "\xB7 drag to reorder layers" })
+        layersEnabled && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "filter-hint-inline", children: "\xB7 drag to reorder layers" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(LayerStack, { rows: layerRows, order: layerOrder, onReorder: onReorderLayer, enabled: layersEnabled })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(LayerStack, { rows: layerRows, order: layerOrder, onReorder: onReorderLayer, enabled: layersEnabled })
     ] }),
-    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "filter-label", children: "Year range" }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: onYearRangeChange })
+    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "filter-label", children: "Year range" }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: onYearRangeChange })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
   ] });
 }
 
@@ -15935,7 +16088,7 @@ function useFlipReorder(container, keys, durationMs = 260) {
 
 // public/graph-search.tsx
 var import_react19 = __toESM(require_react());
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 function GraphSearch({ nodes, onSelect }) {
   const [query, setQuery] = (0, import_react19.useState)("");
   const [open, setOpen] = (0, import_react19.useState)(false);
@@ -15944,7 +16097,7 @@ function GraphSearch({ nodes, onSelect }) {
     const q = query.toLowerCase();
     return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
   }, [query, nodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
     "div",
     {
       style: { position: "relative", display: "inline-block" },
@@ -15952,7 +16105,7 @@ function GraphSearch({ nodes, onSelect }) {
         if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
           "input",
           {
             value: query,
@@ -15965,7 +16118,7 @@ function GraphSearch({ nodes, onSelect }) {
             style: { fontFamily: "var(--mono)", fontSize: 12, padding: "6px 10px", width: 180 }
           }
         ),
-        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: {
+        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: {
           position: "absolute",
           top: "100%",
           left: 0,
@@ -15978,7 +16131,7 @@ function GraphSearch({ nodes, onSelect }) {
           overflow: "auto",
           width: 280,
           marginTop: 4
-        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
+        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
           "div",
           {
             tabIndex: 0,
@@ -16002,9 +16155,9 @@ function GraphSearch({ nodes, onSelect }) {
             onMouseOver: (e) => e.currentTarget.style.background = "var(--bg-elev)",
             onMouseOut: (e) => e.currentTarget.style.background = "transparent",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
+              /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
+              /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
             ]
           },
           n.id
@@ -16015,7 +16168,7 @@ function GraphSearch({ nodes, onSelect }) {
 }
 
 // public/graph-contents.tsx
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
+var import_jsx_runtime22 = __toESM(require_jsx_runtime());
 function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }) {
   const journalByDoi = (0, import_react20.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
@@ -16068,22 +16221,22 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, [onHover]);
   if (!nodes.length) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "graph-contents", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "graph-contents-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "graph-contents-search", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(GraphSearch, { nodes, onSelect: (id) => (onSearchSelect || onSelect)(id) }) })
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "graph-contents", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "graph-contents-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "graph-contents-search", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphSearch, { nodes, onSelect: (id) => (onSearchSelect || onSelect)(id) }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
   ] });
 }
 function BucketView({ b, onSelect, onHover }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
   const headInstId = b.institutions[0]?.id;
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("header", { className: "gc-community-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("header", { className: "gc-community-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
         "button",
         {
           type: "button",
@@ -16091,14 +16244,14 @@ function BucketView({ b, onSelect, onHover }) {
           onClick: () => headInstId && onSelect(headInstId),
           onMouseEnter: () => headInstId && onHover?.(headInstId),
           onMouseLeave: () => onHover?.(null),
-          children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("h4", { children: b.label })
+          children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("h4", { children: b.label })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "mono muted gc-count", children: total })
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "mono muted gc-count", children: total })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
   ] });
 }
 var ORCID_RE = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
@@ -16108,15 +16261,15 @@ function displayLabel(n) {
 }
 function NodeList({ label, color, ns, onSelect, onHover }) {
   if (ns.length === 0) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "gc-list", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "gc-list-label", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "dot", style: { background: color } }),
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "gc-list", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "gc-list-label", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "dot", style: { background: color } }),
       " ",
       label,
       " ",
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "mono muted", children: ns.length })
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "mono muted", children: ns.length })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
       "button",
       {
         type: "button",
@@ -16188,7 +16341,7 @@ var import_react23 = __toESM(require_react());
 
 // public/time-slider.tsx
 var import_react22 = __toESM(require_react());
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
+var import_jsx_runtime23 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
   const y3 = parseInt(n.published.substring(0, 4));
@@ -16272,25 +16425,25 @@ function useLayerOrder() {
 }
 
 // public/graph-canvas-corners.tsx
-var import_jsx_runtime22 = __toESM(require_jsx_runtime());
+var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt }) {
   const scope = yearFrom > yearMin || yearTo < yearMax ? `${yearFrom}\u2013${yearTo}` : "all years";
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "canvas-corner-tl", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "canvas-corner-tl", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { children: [
         "tenant \xB7 ",
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("em", { children: tenant || "\u2014" })
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: tenant || "\u2014" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { children: [
         "role \xB7 ",
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("em", { children: role || "\u2014" })
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: role || "\u2014" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { children: [
         "scope \xB7 ",
         scope
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "canvas-corner-tr", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "canvas-corner-tr", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
       "button",
       {
         className: "tilt-toggle",
@@ -16298,7 +16451,7 @@ function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, 
         onClick: onToggleTilt,
         title: tilted ? "Switch to top-down view" : "Tilt into 3D layered view",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "tilt-glyph" }),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { className: "tilt-glyph" }),
           tilted ? "3D" : "2D"
         ]
       }
@@ -16307,7 +16460,7 @@ function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, 
 }
 
 // public/graph-explorer-body.tsx
-var import_jsx_runtime23 = __toESM(require_jsx_runtime());
+var import_jsx_runtime25 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
@@ -16391,36 +16544,36 @@ function GraphExplorerBody() {
     projectedNodes,
     institutionsByAuthor: affiliations.institutionsByAuthor
   });
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
-  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "view graph-view", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("header", { className: "view-head compact", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("h1", { className: "view-title tight", children: [
+  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
+  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "eyebrow", children: "No data." }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "view graph-view", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("header", { className: "view-head compact", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("h1", { className: "view-title tight", children: [
           "The institution as a ",
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("em", { children: "network" }),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("em", { children: "network" }),
           "."
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(Tag, { mono: true, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(Tag, { mono: true, children: [
           projectedNodes.length,
           " NODES"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(Tag, { mono: true, tone: "muted", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(Tag, { mono: true, tone: "muted", children: [
           projectedEdges.length,
           " EDGES"
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-layout", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-canvas", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds })
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "graph-layout", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "graph-canvas", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         NodeDetail,
         {
           nodeId: selectedNodeId,
@@ -16428,7 +16581,7 @@ function GraphExplorerBody() {
           onBack: selectionStack.length >= 1 ? popSelection : void 0,
           accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
           navDir,
-          empty: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
+          empty: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);
             expand(id);
           }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })
@@ -16439,14 +16592,14 @@ function GraphExplorerBody() {
 }
 
 // public/relationships.tsx
-var import_jsx_runtime24 = __toESM(require_jsx_runtime());
+var import_jsx_runtime26 = __toESM(require_jsx_runtime());
 var root = null;
 function mount() {
   const el = document.getElementById("relationships-root");
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime24.jsx)(GraphExplorerBody, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphExplorerBody, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/relationships-bundle.js"] = mount;

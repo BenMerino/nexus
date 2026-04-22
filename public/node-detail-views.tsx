@@ -1,5 +1,6 @@
 import React from 'react';
 import { Ico } from './ui-primitives';
+import { RichHtml } from './rich-text';
 
 export interface Paper { doi: string; title: string | null; published: string | null; citation_count: number | null; journal?: string | null }
 
@@ -13,7 +14,7 @@ function PaperRow({ p }: { p: Paper }) {
   const year = p.published?.slice(0, 4);
   return (
     <div className="detail-item">
-      <div>{p.title || '(untitled)'}</div>
+      <div>{p.title ? <RichHtml raw={p.title} /> : '(untitled)'}</div>
       <div className="detail-item-sub">
         <span className="mono muted">{p.doi}</span>
         <span className="mono muted detail-item-year">{year || ''}</span>
@@ -69,7 +70,7 @@ export function PaperView({ d, onClose }: { d: PaperD; onClose: () => void }) {
       <div className="detail-head">
         <div>
           <div className="eyebrow">Paper</div>
-          <h3 className="paper-detail-title">{d.title || '(untitled)'}</h3>
+          <h3 className="paper-detail-title">{d.title ? <RichHtml raw={d.title} /> : '(untitled)'}</h3>
           <div className="mono detail-id">DOI {d.doi}</div>
         </div>
         <CloseBtn onClose={onClose} />

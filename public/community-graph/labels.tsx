@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CommunityAdapter } from './types';
 import { project, type Camera } from './projection';
+import { RichText } from './label-runs';
 
 type Positioned<N> = N & { x: number; y: number; z?: number };
 
@@ -23,7 +24,7 @@ export function EgoLabel<N>({ ego, adapter, scale, camera }: EgoProps<N>) {
       textAnchor="middle"
       style={{ pointerEvents: 'none', fontSize: 11 / scale, fill: 'rgba(255,255,255,0.85)', paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.6)', strokeWidth: 3 / scale, strokeLinejoin: 'round' }}
     >
-      {adapter.getLabel(ego)}
+      <RichText raw={adapter.getLabel(ego)} />
     </text>
   );
 }
@@ -57,7 +58,7 @@ export function HoverTooltip<N>({ node, adapter, scale, camera }: HoverProps<N>)
             fontWeight: i === 0 ? 500 : 400,
             paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.7)', strokeWidth: 3 / scale, strokeLinejoin: 'round',
           }}
-        >{l}</text>
+        ><RichText raw={l} /></text>
       ))}
     </g>
   );
@@ -86,7 +87,7 @@ export function PathLabels<N>({ nodes, adapter, scale, camera, ids }: PathLabels
         return (
           <text key={id} x={p.x} y={p.y + r + 14 / scale} textAnchor="middle"
             style={{ fontSize: 11 / scale, fill: 'rgba(255,255,255,0.85)', paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.6)', strokeWidth: 3 / scale, strokeLinejoin: 'round' }}
-          >{adapter.getLabel(n)}</text>
+          ><RichText raw={adapter.getLabel(n)} /></text>
         );
       })}
     </g>
