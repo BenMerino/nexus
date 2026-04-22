@@ -16,6 +16,7 @@ import { useLayerIntegration } from './use-layer-integration';
 import { resolveNodeColor } from './node-color';
 import { connectedSet } from './connected-set';
 import type { Camera } from './projection';
+import { buildCloudCommunities, CloudsLayer } from './clouds-bridge';
 
 export interface CommunityGraphProps<N, L extends BaseLink> {
   nodes: N[];
@@ -107,11 +108,9 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
 
   const defaultPitch = tiltTarget * 0.75; // ~43° at full tilt
-  const clearHover = () => {
-    setInternalHoverId(null); setHullHoverKey(null);
-    onHoverChange?.(null); onHullHoverChange?.(null);
-  };
-  const { pitch, yaw, isOrbiting, startOrbitDrag } = useOrbitDrag(tiltTarget > 0, defaultPitch, clearHover);
+  const { pitch, yaw, isOrbiting, startOrbitDrag } = useOrbitDrag(tiltTarget > 0, defaultPitch, () => {
+    setInternalHoverId(null); setHullHoverKey(null); onHoverChange?.(null); onHullHoverChange?.(null);
+  });
   const target: Camera = { pitch, yaw, cx: width / 2, cy: height / 2 };
   const { camera, cameraRef } = useCameraAnim(target);
 
@@ -124,8 +123,11 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
     override: viewTransform, zoomToId, zoomScale, nodes, adapter, width, height, camera,
   });
 
+  const clouds = buildCloudCommunities(nodes, adapter, primaryKey, communityColors, config.minCommunitySize, focusKey);
+
   return (
     <div style={{ position: 'relative', width, height }}>
+      <CloudsLayer camera={camera} width={width} height={height} communities={clouds} />
       <GraphScene
         svgRef={svgRef} width={width} height={height}
         nodes={nodes} links={links} adapter={adapter} primaryKey={primaryKey}
