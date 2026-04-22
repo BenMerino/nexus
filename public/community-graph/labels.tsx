@@ -1,6 +1,6 @@
 import React from 'react';
 import type { CommunityAdapter } from './types';
-import { project } from './projection';
+import { project, type Camera } from './projection';
 
 type Positioned<N> = N & { x: number; y: number; z?: number };
 
@@ -8,12 +8,12 @@ interface EgoProps<N> {
   ego: Positioned<N>;
   adapter: CommunityAdapter<N>;
   scale: number;
-  tilt: number;
+  camera: Camera;
 }
 
-export function EgoLabel<N>({ ego, adapter, scale, tilt }: EgoProps<N>) {
+export function EgoLabel<N>({ ego, adapter, scale, camera }: EgoProps<N>) {
   const r = adapter.getRadius(ego);
-  const p = project({ x: ego.x, y: ego.y, z: ego.z ?? 0 }, tilt);
+  const p = project({ x: ego.x, y: ego.y, z: ego.z ?? 0 }, camera);
   const x = p.x;
   const y = p.y;
   return (
@@ -32,14 +32,14 @@ interface HoverProps<N> {
   node: Positioned<N>;
   adapter: CommunityAdapter<N>;
   scale: number;
-  tilt: number;
+  camera: Camera;
 }
 
-export function HoverTooltip<N>({ node, adapter, scale, tilt }: HoverProps<N>) {
+export function HoverTooltip<N>({ node, adapter, scale, camera }: HoverProps<N>) {
   const r = adapter.getRadius(node);
   const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
   const footnote = adapter.getHoverFootnote?.(node) ?? null;
-  const p = project({ x: node.x, y: node.y, z: node.z ?? 0 }, tilt);
+  const p = project({ x: node.x, y: node.y, z: node.z ?? 0 }, camera);
   const x = p.x;
   const y = p.y;
   const lines: string[] = [adapter.getLabel(node)];

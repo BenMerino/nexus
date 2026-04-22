@@ -1,7 +1,7 @@
 import React from 'react';
 import type { CommunityAdapter } from './types';
 import type { SimN, SimL, BaseLink } from './forces';
-import { project, floorShadow } from './projection';
+import { project, floorShadow, type Camera } from './projection';
 
 export function GraphDefs() {
   return (
@@ -31,10 +31,10 @@ export function GridBackdrop() {
 interface LinksProps<N, L extends BaseLink & { weight?: number }> {
   links: SimL<L>[];
   connected: Set<string> | null;
-  tilt: number;
+  camera: Camera;
 }
 
-export function Links<N, L extends BaseLink & { weight?: number }>({ links, connected, tilt }: LinksProps<N, L>) {
+export function Links<N, L extends BaseLink & { weight?: number }>({ links, connected, camera }: LinksProps<N, L>) {
   return (
     <g style={{ pointerEvents: 'none' }}>
       {links.map((l, i) => {
@@ -45,8 +45,8 @@ export function Links<N, L extends BaseLink & { weight?: number }>({ links, conn
         const w = l.weight || 1;
         const sz = (s as unknown as { z?: number }).z ?? 0;
         const tz = (t as unknown as { z?: number }).z ?? 0;
-        const ps = project({ x: s.x, y: s.y, z: sz }, tilt);
-        const pt = project({ x: t.x, y: t.y, z: tz }, tilt);
+        const ps = project({ x: s.x, y: s.y, z: sz }, camera);
+        const pt = project({ x: t.x, y: t.y, z: tz }, camera);
         return (
           <line
             key={i}
@@ -71,15 +71,15 @@ interface NodesProps<N> {
   onHoverEnd: () => void;
   onMouseDown: (e: React.MouseEvent, n: SimN<N>) => void;
   onClick: (n: SimN<N>) => void;
-  tilt: number;
+  camera: Camera;
 }
 
-export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, tilt }: NodesProps<N>) {
+export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, camera }: NodesProps<N>) {
   // Painter's algorithm: lower Z renders first so raised layers stack on top
   // when tilted. When flat (tilt ≈ 0) the order still puts larger-Z nodes on
   // top, which matches the "institutions float over papers" intuition.
   const zSorted = [...nodes].sort((a, b) => a.z - b.z);
-  const showShadows = tilt > 0.02;
+  const showShadows = camera.tilt > 0.02;
   return (
     <>
       {showShadows && (
@@ -89,8 +89,8 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
             const id = adapter.getId(n);
             const r = adapter.getRadius(n);
             const dim = connected && !connected.has(id);
-            const p = floorShadow(n.x, n.y, tilt);
-            const lift = n.z * tilt;
+            const p = floorShadow(n.x, n.y, camera);
+            const lift = n.z * camera.tilt;
             const spread = Math.min(1.4, 1 + lift / 180);
             return (
               <ellipse
@@ -98,7 +98,7 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
                 cx={p.x} cy={p.y + 2}
                 rx={r * spread} ry={r * 0.45 * spread}
                 fill="url(#graph-node-shadow)"
-                opacity={dim ? 0.1 : 0.35 * tilt}
+                opacity={dim ? 0.1 : 0.35 * camera.tilt}
               />
             );
           })}
@@ -111,7 +111,7 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
           const isHov = id === hoverId;
           const isSel = id === selectedId;
           const dim = connected && !connected.has(id);
-          const p = project(n, tilt);
+          const p = project(n, camera);
           return (
             <g
               key={id}

@@ -12747,7 +12747,7 @@ var require_jsx_runtime = __commonJS({
 });
 
 // public/dashboard-charts.tsx
-var import_react12 = __toESM(require_react());
+var import_react13 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
 // public/shell-helpers.ts
@@ -13054,13 +13054,13 @@ function ClaimPaperPanel({ onClaimed }) {
 }
 
 // public/coauthor-graph-preview.tsx
-var import_react9 = __toESM(require_react());
+var import_react10 = __toESM(require_react());
 
 // public/coauthor-graph-sim.tsx
-var import_react8 = __toESM(require_react());
+var import_react9 = __toESM(require_react());
 
 // public/community-graph/CommunityGraph.tsx
-var import_react6 = __toESM(require_react());
+var import_react7 = __toESM(require_react());
 
 // public/community-graph/communities.ts
 var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1"];
@@ -13104,10 +13104,36 @@ function buildCommunityColors(nodes, adapter, primaryKey, minSize) {
   return map;
 }
 
+// public/community-graph/projection.ts
+var LIFT = 0.75;
+var FORESHORTEN = 0.75;
+var FLAT = { tilt: 0, yaw: 0, cx: 0, cy: 0 };
+function project(n, cam) {
+  if (cam.tilt <= 0 && cam.yaw === 0) return { x: n.x, y: n.y };
+  const dx = n.x - cam.cx;
+  const dy = n.y - cam.cy;
+  const c2 = Math.cos(cam.yaw);
+  const s = Math.sin(cam.yaw);
+  const rx = dx * c2 - dy * s;
+  const ry = dx * s + dy * c2;
+  const fore = 1 - (1 - FORESHORTEN) * cam.tilt;
+  return { x: cam.cx + rx, y: cam.cy + ry * fore - n.z * LIFT * cam.tilt };
+}
+function unproject(p, z, cam) {
+  if (cam.tilt <= 0 && cam.yaw === 0) return { x: p.x, y: p.y };
+  const fore = 1 - (1 - FORESHORTEN) * cam.tilt;
+  const rx = p.x - cam.cx;
+  const ry = (p.y - cam.cy + z * LIFT * cam.tilt) / fore;
+  const c2 = Math.cos(-cam.yaw);
+  const s = Math.sin(-cam.yaw);
+  return { x: cam.cx + rx * c2 - ry * s, y: cam.cy + rx * s + ry * c2 };
+}
+function floorShadow(x3, y3, cam) {
+  return project({ x: x3, y: y3, z: 0 }, cam);
+}
+
 // public/community-graph/drag.ts
-var DX = 0.35;
-var DY = 0.75;
-function startDrag(e, node, svg, sim, pinAfterDrag, getTilt = () => 0) {
+function startDrag(e, node, svg, sim, pinAfterDrag, getCamera = () => FLAT) {
   e.preventDefault();
   e.stopPropagation();
   const pt = svg.createSVGPoint();
@@ -13118,10 +13144,10 @@ function startDrag(e, node, svg, sim, pinAfterDrag, getTilt = () => 0) {
     pt.x = ev.clientX;
     pt.y = ev.clientY;
     const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-    const tilt = getTilt();
-    const z = node.z ?? 0;
-    node.fx = p.x - z * DX * tilt;
-    node.fy = p.y + z * DY * tilt;
+    const cam = getCamera();
+    const logical = unproject({ x: p.x, y: p.y }, node.z ?? 0, cam);
+    node.fx = logical.x;
+    node.fy = logical.y;
   };
   const onUp = () => {
     window.removeEventListener("mousemove", onMove);
@@ -13134,20 +13160,6 @@ function startDrag(e, node, svg, sim, pinAfterDrag, getTilt = () => 0) {
   };
   window.addEventListener("mousemove", onMove);
   window.addEventListener("mouseup", onUp);
-}
-
-// public/community-graph/projection.ts
-var DX2 = 0.35;
-var DY2 = 0.75;
-function projectXY(x3, y3, z, tilt) {
-  if (tilt <= 0) return { x: x3, y: y3 };
-  return { x: x3 + z * DX2 * tilt, y: y3 - z * DY2 * tilt };
-}
-function project(n, tilt) {
-  return projectXY(n.x, n.y, n.z, tilt);
-}
-function floorShadow(x3, y3, tilt) {
-  return projectXY(x3, y3, 0, tilt);
 }
 
 // public/community-graph/render.tsx
@@ -13168,7 +13180,7 @@ function GraphDefs() {
 function GridBackdrop() {
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
-function Links({ links, connected, tilt }) {
+function Links({ links, connected, camera }) {
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { style: { pointerEvents: "none" }, children: links.map((l, i) => {
     const s = typeof l.source === "object" ? l.source : null;
     const t = typeof l.target === "object" ? l.target : null;
@@ -13177,8 +13189,8 @@ function Links({ links, connected, tilt }) {
     const w = l.weight || 1;
     const sz = s.z ?? 0;
     const tz = t.z ?? 0;
-    const ps = project({ x: s.x, y: s.y, z: sz }, tilt);
-    const pt = project({ x: t.x, y: t.y, z: tz }, tilt);
+    const ps = project({ x: s.x, y: s.y, z: sz }, camera);
+    const pt = project({ x: t.x, y: t.y, z: tz }, camera);
     return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
       "line",
       {
@@ -13193,17 +13205,17 @@ function Links({ links, connected, tilt }) {
     );
   }) });
 }
-function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, tilt }) {
+function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, camera }) {
   const zSorted = [...nodes].sort((a2, b) => a2.z - b.z);
-  const showShadows = tilt > 0.02;
+  const showShadows = camera.tilt > 0.02;
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
     showShadows && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { style: { pointerEvents: "none" }, children: zSorted.map((n) => {
       if (n.z <= 0) return null;
       const id = adapter.getId(n);
       const r = adapter.getRadius(n);
       const dim = connected && !connected.has(id);
-      const p = floorShadow(n.x, n.y, tilt);
-      const lift = n.z * tilt;
+      const p = floorShadow(n.x, n.y, camera);
+      const lift = n.z * camera.tilt;
       const spread = Math.min(1.4, 1 + lift / 180);
       return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
         "ellipse",
@@ -13213,7 +13225,7 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
           rx: r * spread,
           ry: r * 0.45 * spread,
           fill: "url(#graph-node-shadow)",
-          opacity: dim ? 0.1 : 0.35 * tilt
+          opacity: dim ? 0.1 : 0.35 * camera.tilt
         },
         `sh-${id}`
       );
@@ -13224,7 +13236,7 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
       const isHov = id === hoverId;
       const isSel = id === selectedId;
       const dim = connected && !connected.has(id);
-      const p = project(n, tilt);
+      const p = project(n, camera);
       return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
         "g",
         {
@@ -13379,13 +13391,13 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
 
 // public/community-graph/hulls.tsx
 var import_jsx_runtime7 = __toESM(require_jsx_runtime());
-function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey, onHoverKey, tilt }) {
+function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey, onHoverKey, camera }) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const groups = /* @__PURE__ */ new Map();
   for (const n of nodes) {
     const key = effectiveKey(n, adapter, major);
     if (!key) continue;
-    const p = project({ x: n.x, y: n.y, z: n.z ?? 0 }, tilt);
+    const p = project({ x: n.x, y: n.y, z: n.z ?? 0 }, camera);
     const points = groups.get(key);
     if (points) points.push({ x: p.x, y: p.y });
     else groups.set(key, [{ x: p.x, y: p.y }]);
@@ -13407,9 +13419,9 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey,
 
 // public/community-graph/labels.tsx
 var import_jsx_runtime8 = __toESM(require_jsx_runtime());
-function EgoLabel({ ego, adapter, scale, tilt }) {
+function EgoLabel({ ego, adapter, scale, camera }) {
   const r = adapter.getRadius(ego);
-  const p = project({ x: ego.x, y: ego.y, z: ego.z ?? 0 }, tilt);
+  const p = project({ x: ego.x, y: ego.y, z: ego.z ?? 0 }, camera);
   const x3 = p.x;
   const y3 = p.y;
   return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
@@ -13423,11 +13435,11 @@ function EgoLabel({ ego, adapter, scale, tilt }) {
     }
   );
 }
-function HoverTooltip({ node, adapter, scale, tilt }) {
+function HoverTooltip({ node, adapter, scale, camera }) {
   const r = adapter.getRadius(node);
   const subtitle = adapter.getHoverSubtitle?.(node) ?? null;
   const footnote = adapter.getHoverFootnote?.(node) ?? null;
-  const p = project({ x: node.x, y: node.y, z: node.z ?? 0 }, tilt);
+  const p = project({ x: node.x, y: node.y, z: node.z ?? 0 }, camera);
   const x3 = p.x;
   const y3 = p.y;
   const lines = [adapter.getLabel(node)];
@@ -13482,15 +13494,29 @@ function GraphScene({
   hovered,
   showHover,
   onHullHover,
-  tilt
+  camera,
+  onBackgroundMouseDown,
+  rotatable
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GraphDefs, {}),
+    rotatable && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+      "rect",
+      {
+        x: 0,
+        y: 0,
+        width,
+        height,
+        fill: "transparent",
+        onMouseDown: onBackgroundMouseDown,
+        style: { cursor: "grab" }
+      }
+    ),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GridBackdrop, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, tilt }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected, tilt }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected, camera }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
         Nodes,
         {
@@ -13504,11 +13530,11 @@ function GraphScene({
           onHoverEnd,
           onMouseDown,
           onClick: (n) => onNodeClick?.(n),
-          tilt
+          camera
         }
       ),
-      ego && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, tilt }),
-      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1, tilt })
+      ego && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, camera }),
+      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1, camera })
     ] })
   ] });
 }
@@ -14513,26 +14539,26 @@ function easeOutCubic(t) {
 function lerp2(a2, b, t) {
   return a2 + (b - a2) * t;
 }
-function targetFor(zoomToId, nodes, adapter, zoomScale, width, height, tilt) {
+function targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera) {
   if (!zoomToId) return IDENTITY;
   const target = nodes.find((n) => adapter.getId(n) === zoomToId);
   if (!target) return null;
-  const p = project(target, tilt);
+  const p = project(target, camera);
   return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
 }
-function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height, tilt }) {
+function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height, camera }) {
   const [, bump] = (0, import_react4.useState)(0);
   const startRef = (0, import_react4.useRef)(IDENTITY);
   const endRef = (0, import_react4.useRef)(IDENTITY);
   const startTimeRef = (0, import_react4.useRef)(0);
   const currentRef = (0, import_react4.useRef)(IDENTITY);
   const lastZoomIdRef = (0, import_react4.useRef)(null);
-  const liveRef = (0, import_react4.useRef)({ zoomToId, zoomScale, nodes, adapter, width, height, tilt });
-  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height, tilt };
+  const liveRef = (0, import_react4.useRef)({ zoomToId, zoomScale, nodes, adapter, width, height, camera });
+  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height, camera };
   if (lastZoomIdRef.current !== zoomToId) {
     lastZoomIdRef.current = zoomToId;
     startRef.current = { ...currentRef.current };
-    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height, tilt);
+    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera);
     startTimeRef.current = typeof performance !== "undefined" ? performance.now() : 0;
   }
   (0, import_react4.useEffect)(() => {
@@ -14552,7 +14578,7 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
       };
       if (p >= 1) {
         const l = liveRef.current;
-        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.tilt);
+        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
         if (live) {
           endRef.current = live;
           currentRef.current = live;
@@ -14571,29 +14597,58 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
   return { t: currentRef.current };
 }
 
-// public/community-graph/use-tilt-anim.ts
+// public/community-graph/use-camera-anim.ts
 var import_react5 = __toESM(require_react());
-function useTiltAnim(target) {
-  const [tilt, setTilt] = (0, import_react5.useState)(target);
-  const tiltRef = (0, import_react5.useRef)(target);
+function useCameraAnim(target) {
+  const [camera, setCamera] = (0, import_react5.useState)(target);
+  const cameraRef = (0, import_react5.useRef)(target);
   (0, import_react5.useEffect)(() => {
     let raf = 0;
     const step = () => {
-      const cur = tiltRef.current;
-      const next = cur + (target - cur) * 0.15;
-      if (Math.abs(next - target) < 1e-3) {
-        tiltRef.current = target;
-        setTilt(target);
+      const cur = cameraRef.current;
+      const next = {
+        tilt: cur.tilt + (target.tilt - cur.tilt) * 0.15,
+        yaw: cur.yaw + (target.yaw - cur.yaw) * 0.25,
+        cx: target.cx,
+        cy: target.cy
+      };
+      const settled = Math.abs(next.tilt - target.tilt) < 1e-3 && Math.abs(next.yaw - target.yaw) < 1e-3;
+      if (settled) {
+        cameraRef.current = target;
+        setCamera(target);
         return;
       }
-      tiltRef.current = next;
-      setTilt(next);
+      cameraRef.current = next;
+      setCamera(next);
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [target]);
-  return { tilt, tiltRef };
+  }, [target.tilt, target.yaw, target.cx, target.cy]);
+  return { camera, cameraRef };
+}
+
+// public/community-graph/use-yaw-drag.ts
+var import_react6 = __toESM(require_react());
+function useYawDrag(tiltActive) {
+  const [yaw, setYaw] = (0, import_react6.useState)(0);
+  (0, import_react6.useEffect)(() => {
+    if (!tiltActive) setYaw(0);
+  }, [tiltActive]);
+  const startYawDrag = (e) => {
+    if (!tiltActive) return;
+    e.preventDefault();
+    const startX = e.clientX;
+    const startYaw = yaw;
+    const onMove = (ev) => setYaw(startYaw + (ev.clientX - startX) * 6e-3);
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+  return { yaw, startYawDrag };
 }
 
 // public/community-graph/node-color.ts
@@ -14633,31 +14688,31 @@ function CommunityGraph({
   tilt: tiltTarget = 0
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
-  const svgRef = (0, import_react6.useRef)(null);
-  const simRef = (0, import_react6.useRef)(null);
-  const [, tick] = (0, import_react6.useState)(0);
-  const [internalHoverId, setInternalHoverId] = (0, import_react6.useState)(null);
-  const [hullHoverKey, setHullHoverKey] = (0, import_react6.useState)(null);
+  const svgRef = (0, import_react7.useRef)(null);
+  const simRef = (0, import_react7.useRef)(null);
+  const [, tick] = (0, import_react7.useState)(0);
+  const [internalHoverId, setInternalHoverId] = (0, import_react7.useState)(null);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react7.useState)(null);
   const hoverId = externalHoverId ?? internalHoverId;
-  const communityColors = (0, import_react6.useMemo)(
+  const communityColors = (0, import_react7.useMemo)(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const major = (0, import_react6.useMemo)(
+  const major = (0, import_react7.useMemo)(
     () => majorCommunities(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const { nodes, links } = (0, import_react6.useMemo)(() => {
+  const { nodes, links } = (0, import_react7.useMemo)(() => {
     const ns = initialNodes(inNodes, adapter, width, height);
     const ls = initialLinks(inLinks, ns, adapter);
     return { nodes: ns, links: ls };
   }, [inNodes, inLinks, width, height]);
-  const anchors = (0, import_react6.useMemo)(
+  const anchors = (0, import_react7.useMemo)(
     () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [nodes, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
   );
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     const sim = createSimulation({
       nodes,
       links,
@@ -14675,7 +14730,7 @@ function CommunityGraph({
     };
   }, [nodes, links, anchors, primaryKey, width, height]);
   const nodeColor = (n) => resolveNodeColor(n, adapter, communityColors, major);
-  const connected = (0, import_react6.useMemo)(() => {
+  const connected = (0, import_react7.useMemo)(() => {
     const focusId = hoverId || selectedId || null;
     if (!focusId) return null;
     const set2 = /* @__PURE__ */ new Set([focusId]);
@@ -14691,10 +14746,12 @@ function CommunityGraph({
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
   const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
-  const { tilt: tiltAnim, tiltRef } = useTiltAnim(tiltTarget);
+  const { yaw, startYawDrag } = useYawDrag(tiltTarget > 0);
+  const target = { tilt: tiltTarget, yaw, cx: width / 2, cy: height / 2 };
+  const { camera, cameraRef } = useCameraAnim(target);
   const handleMouseDown = (e, node) => {
     const isEgo = adapter.isEgo(node);
-    startDrag(e, node, svgRef.current, simRef.current, pinDraggedNodes || isEgo, () => tiltRef.current);
+    startDrag(e, node, svgRef.current, simRef.current, pinDraggedNodes || isEgo, () => cameraRef.current);
   };
   const { t: effectiveTransform } = useViewTransform({
     override: viewTransform,
@@ -14704,7 +14761,7 @@ function CommunityGraph({
     adapter,
     width,
     height,
-    tilt: tiltAnim
+    camera
   });
   return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { position: "relative", width, height }, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
     GraphScene,
@@ -14741,18 +14798,20 @@ function CommunityGraph({
         setHullHoverKey(k);
         onHullHoverChange?.(k);
       },
-      tilt: tiltAnim
+      camera,
+      rotatable: tiltTarget > 0,
+      onBackgroundMouseDown: startYawDrag
     }
   ) });
 }
 
 // public/community-graph/legend.tsx
-var import_react7 = __toESM(require_react());
+var import_react8 = __toESM(require_react());
 var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
-  const colors = (0, import_react7.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const major = (0, import_react7.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const items = (0, import_react7.useMemo)(() => {
+  const colors = (0, import_react8.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const major = (0, import_react8.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const items = (0, import_react8.useMemo)(() => {
     const byKey = /* @__PURE__ */ new Map();
     for (const n of nodes) {
       const key = effectiveKey(n, adapter, major);
@@ -14787,7 +14846,7 @@ function radius(n) {
 }
 function CoAuthorSim({ graph, width, height, onNodeClick }) {
   const myRor = graph.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
-  const adapter = (0, import_react8.useMemo)(() => ({
+  const adapter = (0, import_react9.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: radius,
@@ -14816,9 +14875,9 @@ function CoAuthorSim({ graph, width, height, onNodeClick }) {
 // public/coauthor-graph-preview.tsx
 var import_jsx_runtime13 = __toESM(require_jsx_runtime());
 function CoAuthorGraphPanel({ graph }) {
-  const ref = (0, import_react9.useRef)(null);
-  const [size, setSize] = (0, import_react9.useState)(null);
-  (0, import_react9.useEffect)(() => {
+  const ref = (0, import_react10.useRef)(null);
+  const [size, setSize] = (0, import_react10.useState)(null);
+  (0, import_react10.useEffect)(() => {
     if (!ref.current) return;
     const el = ref.current;
     const measure = () => {
@@ -14832,7 +14891,7 @@ function CoAuthorGraphPanel({ graph }) {
   }, []);
   const nodes = graph?.nodes ?? [];
   const myRor = graph?.nodes.find((n) => n.isMe)?.affiliation?.ror || null;
-  const legendAdapter = (0, import_react9.useMemo)(() => ({
+  const legendAdapter = (0, import_react10.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -14875,15 +14934,15 @@ function CoAuthorGraphPanelSkeleton() {
 }
 
 // public/portfolio-velocity.tsx
-var import_react10 = __toESM(require_react());
+var import_react11 = __toESM(require_react());
 var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 var TREND_SYMBOL = { rising: "\u25B2", flat: "\u2192", falling: "\u25BC" };
 var TREND_COLOR = { rising: "var(--ok)", flat: "var(--fg-dim)", falling: "var(--err)" };
 function VelocityPanel({ velocity }) {
   const { series, forecast = [], score, trend } = velocity;
-  const wrapRef = (0, import_react10.useRef)(null);
-  const [w, setW] = (0, import_react10.useState)(460);
-  (0, import_react10.useLayoutEffect)(() => {
+  const wrapRef = (0, import_react11.useRef)(null);
+  const [w, setW] = (0, import_react11.useState)(460);
+  (0, import_react11.useLayoutEffect)(() => {
     const el = wrapRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries2) => {
@@ -14963,7 +15022,7 @@ function VelocityPanelSkeleton() {
 }
 
 // public/portfolio-cadence.tsx
-var import_react11 = __toESM(require_react());
+var import_react12 = __toESM(require_react());
 
 // public/type-metals.ts
 var TYPE_METAL = {
@@ -14989,9 +15048,9 @@ var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 var typeLabel = (t) => TYPE_DISPLAY_LABELS[t] || (t === "unknown" ? "Unknown" : t);
 function CadencePanel({ cadence }) {
   const { series, types, meanPerYear } = cadence;
-  const wrapRef = (0, import_react11.useRef)(null);
-  const [w, setW] = (0, import_react11.useState)(460);
-  (0, import_react11.useLayoutEffect)(() => {
+  const wrapRef = (0, import_react12.useRef)(null);
+  const [w, setW] = (0, import_react12.useState)(460);
+  (0, import_react12.useLayoutEffect)(() => {
     const el = wrapRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries2) => {
@@ -15453,9 +15512,9 @@ function DashboardContent({ data }) {
   ] });
 }
 function App() {
-  const [data, setData] = (0, import_react12.useState)(null);
-  const [err, setErr] = (0, import_react12.useState)(null);
-  (0, import_react12.useEffect)(() => {
+  const [data, setData] = (0, import_react13.useState)(null);
+  const [err, setErr] = (0, import_react13.useState)(null);
+  (0, import_react13.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
   return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [

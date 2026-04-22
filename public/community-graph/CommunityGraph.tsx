@@ -10,8 +10,10 @@ import {
 import type { CommunityAdapter, ForceConfig } from './types';
 import { DEFAULT_FORCE_CONFIG } from './types';
 import { useViewTransform } from './use-view-transform';
-import { useTiltAnim } from './use-tilt-anim';
+import { useCameraAnim } from './use-camera-anim';
+import { useYawDrag } from './use-yaw-drag';
 import { resolveNodeColor } from './node-color';
+import type { Camera } from './projection';
 
 export interface CommunityGraphProps<N, L extends BaseLink> {
   nodes: N[];
@@ -111,15 +113,17 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   const showHover = hovered && !adapter.isEgo(hovered);
   const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
 
-  const { tilt: tiltAnim, tiltRef } = useTiltAnim(tiltTarget);
+  const { yaw, startYawDrag } = useYawDrag(tiltTarget > 0);
+  const target: Camera = { tilt: tiltTarget, yaw, cx: width / 2, cy: height / 2 };
+  const { camera, cameraRef } = useCameraAnim(target);
 
   const handleMouseDown = (e: React.MouseEvent, node: SimN<N>) => {
     const isEgo = adapter.isEgo(node);
-    startDrag(e, node, svgRef.current!, simRef.current, pinDraggedNodes || isEgo, () => tiltRef.current);
+    startDrag(e, node, svgRef.current!, simRef.current, pinDraggedNodes || isEgo, () => cameraRef.current);
   };
 
   const { t: effectiveTransform } = useViewTransform({
-    override: viewTransform, zoomToId, zoomScale, nodes, adapter, width, height, tilt: tiltAnim,
+    override: viewTransform, zoomToId, zoomScale, nodes, adapter, width, height, camera,
   });
 
   return (
@@ -136,7 +140,9 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         transform={effectiveTransform}
         ego={ego} hovered={hovered ?? null} showHover={!!showHover}
         onHullHover={k => { setHullHoverKey(k); onHullHoverChange?.(k); }}
-        tilt={tiltAnim}
+        camera={camera}
+        rotatable={tiltTarget > 0}
+        onBackgroundMouseDown={startYawDrag}
       />
     </div>
   );

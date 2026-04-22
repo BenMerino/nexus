@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CommunityAdapter } from './types';
 import type { SimN } from './forces';
-import { project } from './projection';
+import { project, type Camera } from './projection';
 
 export interface ViewTransform { tx: number; ty: number; scale: number }
 
@@ -13,7 +13,7 @@ interface Args<N> {
   adapter: CommunityAdapter<N>;
   width: number;
   height: number;
-  tilt: number;
+  camera: Camera;
 }
 
 const EASE_MS = 400;
@@ -22,11 +22,11 @@ const IDENTITY: ViewTransform = { tx: 0, ty: 0, scale: 1 };
 function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 
-function targetFor<N>(zoomToId: string | null | undefined, nodes: SimN<N>[], adapter: CommunityAdapter<N>, zoomScale: number, width: number, height: number, tilt: number): ViewTransform | null {
+function targetFor<N>(zoomToId: string | null | undefined, nodes: SimN<N>[], adapter: CommunityAdapter<N>, zoomScale: number, width: number, height: number, camera: Camera): ViewTransform | null {
   if (!zoomToId) return IDENTITY;
   const target = nodes.find(n => adapter.getId(n) === zoomToId);
   if (!target) return null;
-  const p = project(target, tilt);
+  const p = project(target, camera);
   return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
 }
 
@@ -34,7 +34,7 @@ function targetFor<N>(zoomToId: string | null | undefined, nodes: SimN<N>[], ada
  *  transition. Each frame updates the computed style, so the browser's
  *  hit-test is always synced to the visible position — users can click
  *  a node even while a previous zoom is still easing toward another one. */
-export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adapter, width, height, tilt }: Args<N>): { t: ViewTransform | null } {
+export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adapter, width, height, camera }: Args<N>): { t: ViewTransform | null } {
   const [, bump] = useState(0);
   const startRef = useRef<ViewTransform>(IDENTITY);
   const endRef = useRef<ViewTransform | null>(IDENTITY);
@@ -44,14 +44,14 @@ export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adap
 
   // Keep these fresh each render so the rAF loop sees the latest, without
   // restarting on every adapter / nodes-array identity change.
-  const liveRef = useRef({ zoomToId, zoomScale, nodes, adapter, width, height, tilt });
-  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height, tilt };
+  const liveRef = useRef({ zoomToId, zoomScale, nodes, adapter, width, height, camera });
+  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height, camera };
 
   // Retarget on zoom change — runs in render to be ready before the next frame.
   if (lastZoomIdRef.current !== zoomToId) {
     lastZoomIdRef.current = zoomToId;
     startRef.current = { ...currentRef.current };
-    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height, tilt);
+    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera);
     startTimeRef.current = typeof performance !== 'undefined' ? performance.now() : 0;
   }
 
@@ -73,7 +73,7 @@ export function useViewTransform<N>({ override, zoomToId, zoomScale, nodes, adap
       // After the ease lands, keep the view locked on the live target position.
       if (p >= 1) {
         const l = liveRef.current;
-        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.tilt);
+        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
         if (live) { endRef.current = live; currentRef.current = live; }
       }
       bump(v => (v + 1) % 1e9);

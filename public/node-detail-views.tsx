@@ -3,7 +3,7 @@ import { Ico } from './ui-primitives';
 
 export interface Paper { doi: string; title: string | null; published: string | null; citation_count: number | null; journal?: string | null }
 
-export interface AuthorD   { type: 'author';      name: string; orcid: string | null; faculty?: string | null; role?: string | null; papersCount: number; citations: number; papers: Paper[] }
+export interface AuthorD   { type: 'author';      name: string; orcid: string | null; faculty?: string | null; role?: string | null; papersCount: number; citations: number; hIndex?: number; papers: Paper[] }
 export interface InstD     { type: 'institution'; name: string; ror: string | null; papersCount: number; papers: Paper[] }
 export interface JournalD  { type: 'journal';     name: string; issn: string | null; papersCount: number; papers: Paper[] }
 export interface PaperD    { type: 'paper';       doi: string; title: string | null; published: string | null; citations: number | null; journal: string | null; authors: { name?: string; orcid?: string }[] }
