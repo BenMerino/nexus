@@ -14783,6 +14783,56 @@ function connectedSet(focusId, links, maxHops = 1) {
   }
   return set2;
 }
+function shortestPath(fromId, toId, links) {
+  if (fromId === toId) return [fromId];
+  const adjacency = /* @__PURE__ */ new Map();
+  for (const l of links) {
+    const s = idOf(l.source);
+    const t = idOf(l.target);
+    const sn = adjacency.get(s) ?? [];
+    sn.push(t);
+    adjacency.set(s, sn);
+    const tn = adjacency.get(t) ?? [];
+    tn.push(s);
+    adjacency.set(t, tn);
+  }
+  const parent = /* @__PURE__ */ new Map();
+  const queue = [fromId];
+  const seen = /* @__PURE__ */ new Set([fromId]);
+  while (queue.length) {
+    const id = queue.shift();
+    if (id === toId) {
+      const path = [];
+      let cur = id;
+      while (cur !== void 0) {
+        path.push(cur);
+        cur = parent.get(cur);
+      }
+      return path.reverse();
+    }
+    for (const nb of adjacency.get(id) ?? []) {
+      if (seen.has(nb)) continue;
+      seen.add(nb);
+      parent.set(nb, id);
+      queue.push(nb);
+    }
+  }
+  return null;
+}
+
+// public/community-graph/focus-set.ts
+function buildFocusSet(hoverId, selectedId, egoId, links) {
+  if (hoverId) {
+    const set2 = connectedSet(hoverId, links, 1) ?? /* @__PURE__ */ new Set([hoverId]);
+    if (egoId && egoId !== hoverId) {
+      const path = shortestPath(hoverId, egoId, links);
+      if (path) for (const id of path) set2.add(id);
+    }
+    return set2;
+  }
+  if (selectedId) return connectedSet(selectedId, links, 3);
+  return null;
+}
 
 // public/community-graph/CommunityGraph.tsx
 var import_jsx_runtime11 = __toESM(require_jsx_runtime());
@@ -14849,12 +14899,9 @@ function CommunityGraph({
   }, [nodes, links, anchors, primaryKey, width, height]);
   useLayerIntegration(nodes, adapter, config.layerStrength, () => tick((v) => v + 1));
   const nodeColor = (n) => resolveNodeColor(n, adapter, communityColors, major);
-  const connected = (0, import_react8.useMemo)(() => {
-    if (hoverId) return connectedSet(hoverId, links, 1);
-    if (selectedId) return connectedSet(selectedId, links, 3);
-    return null;
-  }, [hoverId, selectedId, links]);
   const ego = nodes.find((n) => adapter.isEgo(n));
+  const egoId = ego ? adapter.getId(ego) : null;
+  const connected = (0, import_react8.useMemo)(() => buildFocusSet(hoverId, selectedId, egoId, links), [hoverId, selectedId, egoId, links]);
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
   const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
