@@ -13470,7 +13470,7 @@ var MIN_GROUP_SIZE = 1;
 function lerp(a2, b, t) {
   return a2 + (b - a2) * t;
 }
-function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALPHA }) {
+function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALPHA, onHoverKey }) {
   const stateRef = (0, import_react2.useRef)(/* @__PURE__ */ new Map());
   const state = stateRef.current;
   const paths = [];
@@ -13497,7 +13497,7 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
   for (const key of [...state.keys()]) {
     if (!seenKeys.has(key)) state.delete(key);
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { style: { pointerEvents: "none" }, children: paths.map((p) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("g", { children: paths.map((p) => {
     const fill = p.deemphasis ? 0.03 : p.emphasis ? 0.22 : 0.1;
     const stroke = p.deemphasis ? 0.1 : p.emphasis ? 0.7 : 0.35;
     const width = p.emphasis ? 1.8 : 1;
@@ -13510,7 +13510,13 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
         stroke: p.color,
         strokeOpacity: stroke,
         strokeWidth: width,
-        style: { transition: "fill-opacity 150ms, stroke-opacity 150ms" }
+        onMouseEnter: onHoverKey ? () => onHoverKey(p.key) : void 0,
+        onMouseLeave: onHoverKey ? () => onHoverKey(null) : void 0,
+        style: {
+          transition: "fill-opacity 150ms, stroke-opacity 150ms",
+          pointerEvents: onHoverKey ? "fill" : "none",
+          cursor: onHoverKey ? "pointer" : "default"
+        }
       },
       p.key
     );
@@ -13519,7 +13525,7 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
 
 // public/community-graph/hulls.tsx
 var import_jsx_runtime7 = __toESM(require_jsx_runtime());
-function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey }) {
+function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey, onHoverKey }) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const groups = /* @__PURE__ */ new Map();
   for (const n of nodes) {
@@ -13541,7 +13547,7 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey 
       deemphasis: hasFocus && !isFocus
     });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(SmoothedHulls, { groups: hullGroups });
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(SmoothedHulls, { groups: hullGroups, onHoverKey });
 }
 
 // public/community-graph/labels.tsx
@@ -13617,14 +13623,15 @@ function GraphScene({
   transform,
   ego,
   hovered,
-  showHover
+  showHover,
+  onHullHover
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GraphDefs, {}),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GridBackdrop, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Links, { links, connected }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
         Nodes,
@@ -14714,6 +14721,7 @@ function CommunityGraph({
   const simRef = (0, import_react4.useRef)(null);
   const [, tick] = (0, import_react4.useState)(0);
   const [internalHoverId, setInternalHoverId] = (0, import_react4.useState)(null);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react4.useState)(null);
   const hoverId = externalHoverId ?? internalHoverId;
   const communityColors = (0, import_react4.useMemo)(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
@@ -14778,7 +14786,7 @@ function CommunityGraph({
   const ego = nodes.find((n) => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
-  const focusKey = hovered ? effectiveKey(hovered, adapter, major) : null;
+  const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
   const handleMouseDown = (e, node) => {
     const isEgo = adapter.isEgo(node);
     startDrag(e, node, svgRef.current, simRef.current, pinDraggedNodes || isEgo);
@@ -14822,7 +14830,8 @@ function CommunityGraph({
       transform: effectiveTransform,
       ego,
       hovered: hovered ?? null,
-      showHover: !!showHover
+      showHover: !!showHover,
+      onHullHover: setHullHoverKey
     }
   ) });
 }

@@ -46,6 +46,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   const simRef = useRef<Simulation<SimN<N>, SimL<L>> | null>(null);
   const [, tick] = useState(0);
   const [internalHoverId, setInternalHoverId] = useState<string | null>(null);
+  const [hullHoverKey, setHullHoverKey] = useState<string | null>(null);
   const hoverId = externalHoverId ?? internalHoverId;
 
   const communityColors = useMemo(
@@ -113,7 +114,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   const ego = nodes.find(n => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find(n => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
-  const focusKey = hovered ? effectiveKey(hovered, adapter, major) : null;
+  const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
 
   const handleMouseDown = (e: React.MouseEvent, node: SimN<N>) => {
     const isEgo = adapter.isEgo(node);
@@ -137,6 +138,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         onMouseDown={handleMouseDown} onNodeClick={onNodeClick}
         transform={effectiveTransform}
         ego={ego} hovered={hovered ?? null} showHover={!!showHover}
+        onHullHover={setHullHoverKey}
       />
     </div>
   );

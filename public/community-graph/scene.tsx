@@ -29,12 +29,13 @@ interface Props<N, L extends BaseLink & { weight?: number }> {
   ego: SimN<N> | undefined;
   hovered: SimN<N> | null;
   showHover: boolean;
+  onHullHover?: (key: string | null) => void;
 }
 
 export function GraphScene<N, L extends BaseLink & { weight?: number }>({
   svgRef, width, height, nodes, links, adapter, primaryKey, communityColors, minCommunitySize,
   focusKey, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick,
-  transform, ego, hovered, showHover,
+  transform, ego, hovered, showHover, onHullHover,
 }: Props<N, L>) {
   const t = transform
     ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})`
@@ -44,7 +45,7 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
       <GraphDefs />
       <g style={{ transform: t, transformOrigin: '0 0' }}>
         <GridBackdrop />
-        <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} focusKey={focusKey} />
+        <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} focusKey={focusKey} onHoverKey={onHullHover} />
         <Links links={links} connected={connected} />
         <Nodes
           nodes={nodes} adapter={adapter}

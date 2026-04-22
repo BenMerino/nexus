@@ -14,9 +14,11 @@ interface Props<N> {
   minSize: number;
   /** Hovered hull key: this hull gets emphasis, others fade. */
   focusKey?: string | null;
+  /** Fires when pointer enters/leaves a hull — enables hull-as-hover-target. */
+  onHoverKey?: (key: string | null) => void;
 }
 
-export function CommunityHulls<N>({ nodes, adapter, primaryKey, colors, minSize, focusKey }: Props<N>) {
+export function CommunityHulls<N>({ nodes, adapter, primaryKey, colors, minSize, focusKey, onHoverKey }: Props<N>) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
   const groups = new Map<string, Point[]>();
   for (const n of nodes) {
@@ -38,5 +40,5 @@ export function CommunityHulls<N>({ nodes, adapter, primaryKey, colors, minSize,
       deemphasis: hasFocus && !isFocus,
     });
   }
-  return <SmoothedHulls groups={hullGroups} />;
+  return <SmoothedHulls groups={hullGroups} onHoverKey={onHoverKey} />;
 }

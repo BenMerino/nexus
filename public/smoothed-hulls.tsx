@@ -21,12 +21,13 @@ interface Props {
   groups: HullGroup[];
   pad?: number;
   lerpAlpha?: number;
+  onHoverKey?: (key: string | null) => void;
 }
 
 /** Renders one smooth flowing hull per group, with per-frame temporal smoothing
  *  so shape transitions flow instead of ticking. Generic — callers decide the
  *  grouping (institution, journal, year, community, etc.). */
-export function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALPHA }: Props) {
+export function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALPHA, onHoverKey }: Props) {
   const stateRef = useRef<Map<string, RingState>>(new Map());
   const state = stateRef.current;
 
@@ -63,7 +64,7 @@ export function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_L
   }
 
   return (
-    <g style={{ pointerEvents: 'none' }}>
+    <g>
       {paths.map(p => {
         const fill = p.deemphasis ? 0.03 : p.emphasis ? 0.22 : 0.1;
         const stroke = p.deemphasis ? 0.1 : p.emphasis ? 0.7 : 0.35;
@@ -72,7 +73,13 @@ export function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_L
           <path key={p.key} d={p.d}
             fill={p.color} fillOpacity={fill}
             stroke={p.color} strokeOpacity={stroke} strokeWidth={width}
-            style={{ transition: 'fill-opacity 150ms, stroke-opacity 150ms' }}
+            onMouseEnter={onHoverKey ? () => onHoverKey(p.key) : undefined}
+            onMouseLeave={onHoverKey ? () => onHoverKey(null) : undefined}
+            style={{
+              transition: 'fill-opacity 150ms, stroke-opacity 150ms',
+              pointerEvents: onHoverKey ? 'fill' : 'none',
+              cursor: onHoverKey ? 'pointer' : 'default',
+            }}
           />
         );
       })}
