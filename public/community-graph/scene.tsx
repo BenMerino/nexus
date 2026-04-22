@@ -45,7 +45,7 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
     ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})`
     : 'translate(0px, 0px) scale(1)';
   return (
-    <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none', position: 'relative', zIndex: 1 }}>
+    <svg ref={svgRef} width={width} height={height} style={{ display: 'block', userSelect: 'none' }}>
       <GraphDefs />
       {rotatable && (
         <rect

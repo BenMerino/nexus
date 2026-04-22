@@ -1,7 +1,20 @@
 import React, { useMemo } from 'react';
+import { type EnrichedSimNode } from './relationship-types';
+import type { ExplorerAffiliations } from './explorer-affiliations';
+import { CommunityLegend, type CommunityAdapter } from './community-graph';
+import { explorerCommunityKey, type HullTier } from './explorer-community';
 import { YearRangeSlider } from './year-range-slider';
 import { LayerStack, buildLayerRows } from './layer-stack';
 import type { LayerType } from './explorer-layers';
+
+/** Last-ditch label for a community key when the label map misses. Strips
+ *  the group:prefix and any ROR/URL noise so at least something human lands
+ *  on screen instead of the raw identifier. */
+function prettyFallback(key: string): string {
+  const bare = key.replace(/^[a-z]+:/, '');
+  const m = bare.match(/\/([^/]+)\/?$/);
+  return m ? m[1] : bare;
+}
 
 export interface NodeTypeFlags {
   institution: boolean;
@@ -19,12 +32,45 @@ interface Props {
   yearFrom: number;
   yearTo: number;
   onYearRangeChange: (from: number, to: number) => void;
+  nodes: EnrichedSimNode[];
+  allNodes: { id: string; group: string; label: string }[];
+  affiliations: ExplorerAffiliations;
+  homeInstitutionId: string | null;
   layerOrder: LayerType[];
   onReorderLayer: (from: number, to: number) => void;
   layersEnabled: boolean;
 }
 
-export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange, layerOrder, onReorderLayer, layersEnabled }: Props) {
+export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange, nodes, allNodes, affiliations, homeInstitutionId, layerOrder, onReorderLayer, layersEnabled }: Props) {
+  const labelById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const n of allNodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
+    return m;
+  }, [allNodes]);
+
+  const journalByDoi = useMemo(() => {
+    const hasPapers = nodes.some(n => n.group === 'doi');
+    if (!hasPapers) return null;
+    const m = new Map<string, string>();
+    for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m.set(d, jId);
+    return m;
+  }, [nodes, affiliations.doisByJournal]);
+
+  const hullTier: HullTier = useMemo(() => {
+    if (nodes.some(n => n.group === 'institution')) return 'institution';
+    if (nodes.some(n => n.group === 'journal')) return 'journal';
+    return 'none';
+  }, [nodes]);
+
+  const legendAdapter = useMemo<CommunityAdapter<EnrichedSimNode>>(() => ({
+    getId: n => n.id,
+    getLabel: n => n.label,
+    getRadius: () => 0,
+    getCommunityKey: n => explorerCommunityKey(n, affiliations.institutionCountsByAuthor, affiliations.journalCountsByAuthor, homeInstitutionId, journalByDoi, hullTier),
+    isEgo: () => false,
+    getCommunityLabel: key => labelById.get(key) || prettyFallback(key),
+  }), [affiliations, labelById, homeInstitutionId, journalByDoi, hullTier]);
+
   const layerRows = useMemo(() => buildLayerRows(flags, setFlag), [flags, setFlag]);
 
   return (
@@ -41,6 +87,13 @@ export function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom
         <div className="filter-group">
           <div className="filter-label">Year range</div>
           <YearRangeSlider min={yearMin} max={yearMax} from={yearFrom} to={yearTo} onChange={onYearRangeChange} />
+        </div>
+      )}
+
+      {nodes.length > 0 && (
+        <div className="filter-group legend">
+          <div className="filter-label">Communities</div>
+          <CommunityLegend nodes={nodes} adapter={legendAdapter} primaryKey={homeInstitutionId} minSize={1} />
         </div>
       )}
 
