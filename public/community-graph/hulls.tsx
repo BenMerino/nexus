@@ -4,8 +4,11 @@ import type { Point } from '../convex-hull';
 import { majorCommunities, effectiveKey } from './communities';
 import type { CommunityAdapter } from './types';
 import { project, type Camera } from './projection';
+import { PrismHulls, type PrismGroup } from './prism-hulls';
 
 type Positioned<N> = N & { x: number; y: number; z?: number };
+
+const PRISM_PITCH_THRESHOLD = 0.05;
 
 interface Props<N> {
   nodes: Positioned<N>[];
@@ -23,12 +26,39 @@ interface Props<N> {
 
 export function CommunityHulls<N>({ nodes, adapter, primaryKey, colors, minSize, focusKey, onHoverKey, camera }: Props<N>) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
+
+  // When the camera is tilted, render volumetric prisms: hulls are extruded
+  // from the floor (z=0) up to each community's tallest node. When flat,
+  // fall back to the existing 2D smoothed-hull renderer — it's cheaper and
+  // visually identical at pitch=0.
+  if (camera.pitch > PRISM_PITCH_THRESHOLD) {
+    const prismByKey = new Map<string, { points: Point[]; topZ: number }>();
+    for (const n of nodes) {
+      const key = effectiveKey(n, adapter, major);
+      if (!key) continue;
+      const z = n.z ?? 0;
+      const entry = prismByKey.get(key);
+      if (entry) { entry.points.push({ x: n.x, y: n.y }); if (z > entry.topZ) entry.topZ = z; }
+      else prismByKey.set(key, { points: [{ x: n.x, y: n.y }], topZ: Math.max(0, z) });
+    }
+    const prismGroups: PrismGroup[] = [];
+    for (const [key, { points, topZ }] of prismByKey) {
+      const isFocus = focusKey != null && key === focusKey;
+      const hasFocus = focusKey != null;
+      prismGroups.push({
+        key, color: colors.get(key) || '#888', points, topZ,
+        emphasis: isFocus || (!hasFocus && key === primaryKey),
+        deemphasis: hasFocus && !isFocus,
+      });
+    }
+    return <PrismHulls groups={prismGroups} camera={camera} onHoverKey={onHoverKey} />;
+  }
+
+  // Flat view: 2D smoothed hulls, wrapped in screen space.
   const groups = new Map<string, Point[]>();
   for (const n of nodes) {
     const key = effectiveKey(n, adapter, major);
     if (!key) continue;
-    // Project nodes at z=0 — hulls lie flat on the ground plane, so when the
-    // camera tilts they foreshorten like floor patches (nodes lift above them).
     const p = project({ x: n.x, y: n.y, z: 0 }, camera);
     const points = groups.get(key);
     if (points) points.push({ x: p.x, y: p.y });
@@ -39,9 +69,7 @@ export function CommunityHulls<N>({ nodes, adapter, primaryKey, colors, minSize,
     const isFocus = focusKey != null && key === focusKey;
     const hasFocus = focusKey != null;
     hullGroups.push({
-      key,
-      color: colors.get(key) || '#888',
-      points,
+      key, color: colors.get(key) || '#888', points,
       emphasis: isFocus || (!hasFocus && key === primaryKey),
       deemphasis: hasFocus && !isFocus,
     });

@@ -766,7 +766,7 @@ var require_react = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React14 = require_react();
+    var React15 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React14.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React15.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React14 = require_react();
+    var React15 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React14.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React15.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React14.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React15.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12750,7 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react25 = __toESM(require_react());
+var import_react26 = __toESM(require_react());
 
 // public/node-classify.ts
 function percentile(sorted, p) {
@@ -13293,10 +13293,10 @@ function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
 }
 
 // public/explorer-canvas.tsx
-var import_react10 = __toESM(require_react());
+var import_react11 = __toESM(require_react());
 
 // public/force-graph.tsx
-var import_react9 = __toESM(require_react());
+var import_react10 = __toESM(require_react());
 
 // public/relationship-types.ts
 var COLORS = {
@@ -13312,7 +13312,7 @@ function nodeRadius(weight, role) {
 }
 
 // public/community-graph/CommunityGraph.tsx
-var import_react7 = __toESM(require_react());
+var import_react8 = __toESM(require_react());
 
 // public/community-graph/communities.ts
 var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1"];
@@ -13644,10 +13644,145 @@ function SmoothedHulls({ groups, pad = DEFAULT_PAD, lerpAlpha = DEFAULT_LERP_ALP
   }) });
 }
 
-// public/community-graph/hulls.tsx
+// public/community-graph/prism-hulls.tsx
+var import_react3 = __toESM(require_react());
+
+// public/community-graph/prism-geometry.ts
+var MIN_GROUP_SIZE2 = 1;
+function lerp2(a2, b, t) {
+  return a2 + (b - a2) * t;
+}
+function tickRing(state, key, points, alpha) {
+  if (points.length < MIN_GROUP_SIZE2) return null;
+  const cx = points.reduce((s, p) => s + p.x, 0) / points.length;
+  const cy = points.reduce((s, p) => s + p.y, 0) / points.length;
+  const target = computeRawRadii(points, cx, cy);
+  const prev = state.get(key);
+  const radii = prev ? prev.radii.map((r, i) => lerp2(r, target[i], alpha)) : target;
+  const scx = prev ? lerp2(prev.cx, cx, alpha) : cx;
+  const scy = prev ? lerp2(prev.cy, cy, alpha) : cy;
+  state.set(key, { radii, cx: scx, cy: scy });
+  return { radii, cx: scx, cy: scy };
+}
+function projectRing(ring, pad, topZ, camera) {
+  const floor = [];
+  const ceiling = [];
+  for (let i = 0; i < RING_SAMPLES; i++) {
+    const angle = i / RING_SAMPLES * Math.PI * 2;
+    const r = ring.radii[i] + pad;
+    const x3 = ring.cx + Math.cos(angle) * r;
+    const y3 = ring.cy + Math.sin(angle) * r;
+    floor.push(project({ x: x3, y: y3, z: 0 }, camera));
+    ceiling.push(project({ x: x3, y: y3, z: topZ }, camera));
+  }
+  return { floor, ceiling };
+}
+function ringPath(pts) {
+  const n = pts.length;
+  if (n < 2) return "";
+  const k = 0.5 / 6;
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n];
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % n];
+    const p3 = pts[(i + 2) % n];
+    const c1x = p1.x + (p2.x - p0.x) * k;
+    const c1y = p1.y + (p2.y - p0.y) * k;
+    const c2x = p2.x - (p3.x - p1.x) * k;
+    const c2y = p2.y - (p3.y - p1.y) * k;
+    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
+  }
+  return d + " Z";
+}
+function wallsPath(floor, ceiling) {
+  let d = "";
+  const n = floor.length;
+  for (let i = 0; i < n; i++) {
+    const f1 = floor[i];
+    const f2 = floor[(i + 1) % n];
+    const c2 = ceiling[(i + 1) % n];
+    const c1 = ceiling[i];
+    d += `M ${f1.x} ${f1.y} L ${f2.x} ${f2.y} L ${c2.x} ${c2.y} L ${c1.x} ${c1.y} Z `;
+  }
+  return d;
+}
+
+// public/community-graph/prism-hulls.tsx
 var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+var DEFAULT_PAD2 = 32;
+var DEFAULT_LERP_ALPHA2 = 0.18;
+function PrismHulls({ groups, camera, pad = DEFAULT_PAD2, lerpAlpha = DEFAULT_LERP_ALPHA2, onHoverKey }) {
+  const stateRef = (0, import_react3.useRef)(/* @__PURE__ */ new Map());
+  const state = stateRef.current;
+  const seen = /* @__PURE__ */ new Set();
+  const rendered = [];
+  for (const g of groups) {
+    const ring = tickRing(state, g.key, g.points, lerpAlpha);
+    if (!ring) continue;
+    seen.add(g.key);
+    const { floor, ceiling } = projectRing(ring, pad, g.topZ, camera);
+    rendered.push({ key: g.key, color: g.color, floor, ceiling, emphasis: !!g.emphasis, deemphasis: !!g.deemphasis });
+  }
+  for (const key of [...state.keys()]) if (!seen.has(key)) state.delete(key);
+  rendered.sort((a2, b) => {
+    const ay = a2.ceiling.reduce((s, p) => s + p.y, 0) / a2.ceiling.length;
+    const by = b.ceiling.reduce((s, p) => s + p.y, 0) / b.ceiling.length;
+    return ay - by;
+  });
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("g", { children: rendered.map((p) => {
+    const fill = p.deemphasis ? 0.03 : p.emphasis ? 0.18 : 0.09;
+    const stroke = p.deemphasis ? 0.1 : p.emphasis ? 0.65 : 0.32;
+    const width = p.emphasis ? 1.6 : 1;
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+      "g",
+      {
+        onMouseEnter: onHoverKey ? () => onHoverKey(p.key) : void 0,
+        onMouseLeave: onHoverKey ? () => onHoverKey(null) : void 0,
+        style: { cursor: onHoverKey ? "pointer" : "default" },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: ringPath(p.floor), fill: p.color, fillOpacity: fill, stroke: p.color, strokeOpacity: stroke * 0.55, strokeWidth: width, style: { pointerEvents: "fill" } }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: wallsPath(p.floor, p.ceiling), fill: p.color, fillOpacity: fill * 0.55, stroke: "none", style: { pointerEvents: "none" } }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: ringPath(p.ceiling), fill: p.color, fillOpacity: fill * 0.7, stroke: p.color, strokeOpacity: stroke, strokeWidth: width, style: { pointerEvents: "none" } })
+        ]
+      },
+      p.key
+    );
+  }) });
+}
+
+// public/community-graph/hulls.tsx
+var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+var PRISM_PITCH_THRESHOLD = 0.05;
 function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey, onHoverKey, camera }) {
   const major = majorCommunities(nodes, adapter, primaryKey, minSize);
+  if (camera.pitch > PRISM_PITCH_THRESHOLD) {
+    const prismByKey = /* @__PURE__ */ new Map();
+    for (const n of nodes) {
+      const key = effectiveKey(n, adapter, major);
+      if (!key) continue;
+      const z = n.z ?? 0;
+      const entry = prismByKey.get(key);
+      if (entry) {
+        entry.points.push({ x: n.x, y: n.y });
+        if (z > entry.topZ) entry.topZ = z;
+      } else prismByKey.set(key, { points: [{ x: n.x, y: n.y }], topZ: Math.max(0, z) });
+    }
+    const prismGroups = [];
+    for (const [key, { points, topZ }] of prismByKey) {
+      const isFocus = focusKey != null && key === focusKey;
+      const hasFocus = focusKey != null;
+      prismGroups.push({
+        key,
+        color: colors.get(key) || "#888",
+        points,
+        topZ,
+        emphasis: isFocus || !hasFocus && key === primaryKey,
+        deemphasis: hasFocus && !isFocus
+      });
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(PrismHulls, { groups: prismGroups, camera, onHoverKey });
+  }
   const groups = /* @__PURE__ */ new Map();
   for (const n of nodes) {
     const key = effectiveKey(n, adapter, major);
@@ -13669,17 +13804,17 @@ function CommunityHulls({ nodes, adapter, primaryKey, colors, minSize, focusKey,
       deemphasis: hasFocus && !isFocus
     });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(SmoothedHulls, { groups: hullGroups, onHoverKey });
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(SmoothedHulls, { groups: hullGroups, onHoverKey });
 }
 
 // public/community-graph/labels.tsx
-var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+var import_jsx_runtime10 = __toESM(require_jsx_runtime());
 function EgoLabel({ ego, adapter, scale, camera }) {
   const r = adapter.getRadius(ego);
   const p = project({ x: ego.x, y: ego.y, z: ego.z ?? 0 }, camera);
   const x3 = p.x;
   const y3 = p.y;
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
     "text",
     {
       x: x3,
@@ -13702,7 +13837,7 @@ function HoverTooltip({ node, adapter, scale, camera }) {
   if (footnote) lines.push(footnote);
   const line = 14 / scale;
   const topY = y3 - r - 10 / scale - (lines.length - 1) * line;
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("g", { style: { pointerEvents: "none" }, children: lines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("g", { style: { pointerEvents: "none" }, children: lines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
     "text",
     {
       x: x3,
@@ -13724,7 +13859,7 @@ function HoverTooltip({ node, adapter, scale, camera }) {
 }
 
 // public/community-graph/scene.tsx
-var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function GraphScene({
   svgRef,
   width,
@@ -13754,9 +13889,9 @@ function GraphScene({
   rotatable
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(GraphDefs, {}),
-    rotatable && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GraphDefs, {}),
+    rotatable && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
       "rect",
       {
         x: 0,
@@ -13768,11 +13903,11 @@ function GraphScene({
         style: { cursor: "grab" }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(GridBackdrop, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Links, { links, connected, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridBackdrop, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         Nodes,
         {
           nodes,
@@ -13788,8 +13923,8 @@ function GraphScene({
           camera
         }
       ),
-      ego && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, camera }),
-      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1, camera })
+      ego && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, camera }),
+      showHover && hovered && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(HoverTooltip, { node: hovered, adapter, scale: transform?.scale ?? 1, camera })
     ] })
   ] });
 }
@@ -14784,13 +14919,13 @@ var DEFAULT_FORCE_CONFIG = {
 };
 
 // public/community-graph/use-view-transform.ts
-var import_react3 = __toESM(require_react());
+var import_react4 = __toESM(require_react());
 var EASE_MS = 400;
 var IDENTITY = { tx: 0, ty: 0, scale: 1 };
 function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
-function lerp2(a2, b, t) {
+function lerp3(a2, b, t) {
   return a2 + (b - a2) * t;
 }
 function targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera) {
@@ -14801,13 +14936,13 @@ function targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera) {
   return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
 }
 function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height, camera }) {
-  const [, bump] = (0, import_react3.useState)(0);
-  const startRef = (0, import_react3.useRef)(IDENTITY);
-  const endRef = (0, import_react3.useRef)(IDENTITY);
-  const startTimeRef = (0, import_react3.useRef)(0);
-  const currentRef = (0, import_react3.useRef)(IDENTITY);
-  const lastZoomIdRef = (0, import_react3.useRef)(null);
-  const liveRef = (0, import_react3.useRef)({ zoomToId, zoomScale, nodes, adapter, width, height, camera });
+  const [, bump] = (0, import_react4.useState)(0);
+  const startRef = (0, import_react4.useRef)(IDENTITY);
+  const endRef = (0, import_react4.useRef)(IDENTITY);
+  const startTimeRef = (0, import_react4.useRef)(0);
+  const currentRef = (0, import_react4.useRef)(IDENTITY);
+  const lastZoomIdRef = (0, import_react4.useRef)(null);
+  const liveRef = (0, import_react4.useRef)({ zoomToId, zoomScale, nodes, adapter, width, height, camera });
   liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height, camera };
   if (lastZoomIdRef.current !== zoomToId) {
     lastZoomIdRef.current = zoomToId;
@@ -14815,7 +14950,7 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
     endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera);
     startTimeRef.current = typeof performance !== "undefined" ? performance.now() : 0;
   }
-  (0, import_react3.useEffect)(() => {
+  (0, import_react4.useEffect)(() => {
     let cancelled = false;
     let raf = 0;
     const tick = (now2) => {
@@ -14826,9 +14961,9 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
       const p = Math.min(1, elapsed / EASE_MS);
       const e = easeOutCubic(p);
       currentRef.current = {
-        tx: lerp2(startRef.current.tx, end.tx, e),
-        ty: lerp2(startRef.current.ty, end.ty, e),
-        scale: lerp2(startRef.current.scale, end.scale, e)
+        tx: lerp3(startRef.current.tx, end.tx, e),
+        ty: lerp3(startRef.current.ty, end.ty, e),
+        scale: lerp3(startRef.current.scale, end.scale, e)
       };
       if (p >= 1) {
         const l = liveRef.current;
@@ -14852,11 +14987,11 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
 }
 
 // public/community-graph/use-camera-anim.ts
-var import_react4 = __toESM(require_react());
+var import_react5 = __toESM(require_react());
 function useCameraAnim(target) {
-  const [camera, setCamera] = (0, import_react4.useState)(target);
-  const cameraRef = (0, import_react4.useRef)(target);
-  (0, import_react4.useEffect)(() => {
+  const [camera, setCamera] = (0, import_react5.useState)(target);
+  const cameraRef = (0, import_react5.useRef)(target);
+  (0, import_react5.useEffect)(() => {
     let raf = 0;
     const step = () => {
       const cur = cameraRef.current;
@@ -14883,14 +15018,14 @@ function useCameraAnim(target) {
 }
 
 // public/community-graph/use-orbit-drag.ts
-var import_react5 = __toESM(require_react());
+var import_react6 = __toESM(require_react());
 var MAX_PITCH = Math.PI / 2 - 0.15;
 var MIN_PITCH = 0;
 function useOrbitDrag(active, defaultPitch, onOrbitStart) {
-  const [pitch, setPitch] = (0, import_react5.useState)(defaultPitch);
-  const [yaw, setYaw] = (0, import_react5.useState)(0);
-  const [isOrbiting, setIsOrbiting] = (0, import_react5.useState)(false);
-  (0, import_react5.useEffect)(() => {
+  const [pitch, setPitch] = (0, import_react6.useState)(defaultPitch);
+  const [yaw, setYaw] = (0, import_react6.useState)(0);
+  const [isOrbiting, setIsOrbiting] = (0, import_react6.useState)(false);
+  (0, import_react6.useEffect)(() => {
     if (!active) {
       setPitch(0);
       setYaw(0);
@@ -14926,12 +15061,12 @@ function useOrbitDrag(active, defaultPitch, onOrbitStart) {
 }
 
 // public/community-graph/use-layer-integration.ts
-var import_react6 = __toESM(require_react());
+var import_react7 = __toESM(require_react());
 var EPS = 0.05;
 function useLayerIntegration(nodes, adapter, strength, onTick) {
-  const adapterRef = (0, import_react6.useRef)(adapter);
+  const adapterRef = (0, import_react7.useRef)(adapter);
   adapterRef.current = adapter;
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     if (!adapter.getLayerZ) return;
     let raf = 0;
     const step = () => {
@@ -14978,7 +15113,7 @@ function connectedSet(focusId, links) {
 }
 
 // public/community-graph/CommunityGraph.tsx
-var import_jsx_runtime11 = __toESM(require_jsx_runtime());
+var import_jsx_runtime12 = __toESM(require_jsx_runtime());
 function CommunityGraph({
   nodes: inNodes,
   links: inLinks,
@@ -14999,31 +15134,31 @@ function CommunityGraph({
   tilt: tiltTarget = 0
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
-  const svgRef = (0, import_react7.useRef)(null);
-  const simRef = (0, import_react7.useRef)(null);
-  const [, tick] = (0, import_react7.useState)(0);
-  const [internalHoverId, setInternalHoverId] = (0, import_react7.useState)(null);
-  const [hullHoverKey, setHullHoverKey] = (0, import_react7.useState)(null);
+  const svgRef = (0, import_react8.useRef)(null);
+  const simRef = (0, import_react8.useRef)(null);
+  const [, tick] = (0, import_react8.useState)(0);
+  const [internalHoverId, setInternalHoverId] = (0, import_react8.useState)(null);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react8.useState)(null);
   const hoverId = externalHoverId ?? internalHoverId;
-  const communityColors = (0, import_react7.useMemo)(
+  const communityColors = (0, import_react8.useMemo)(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const major = (0, import_react7.useMemo)(
+  const major = (0, import_react8.useMemo)(
     () => majorCommunities(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const { nodes, links } = (0, import_react7.useMemo)(() => {
+  const { nodes, links } = (0, import_react8.useMemo)(() => {
     const ns = initialNodes(inNodes, adapter, width, height);
     const ls = initialLinks(inLinks, ns, adapter);
     return { nodes: ns, links: ls };
   }, [inNodes, inLinks, width, height]);
-  const anchors = (0, import_react7.useMemo)(
+  const anchors = (0, import_react8.useMemo)(
     () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [nodes, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
   );
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     const sim = createSimulation({
       nodes,
       links,
@@ -15042,7 +15177,7 @@ function CommunityGraph({
   }, [nodes, links, anchors, primaryKey, width, height]);
   useLayerIntegration(nodes, adapter, config.layerStrength, () => tick((v) => v + 1));
   const nodeColor = (n) => resolveNodeColor(n, adapter, communityColors, major);
-  const connected = (0, import_react7.useMemo)(() => connectedSet(hoverId || selectedId, links), [hoverId, selectedId, links]);
+  const connected = (0, import_react8.useMemo)(() => connectedSet(hoverId || selectedId, links), [hoverId, selectedId, links]);
   const ego = nodes.find((n) => adapter.isEgo(n));
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
@@ -15071,7 +15206,7 @@ function CommunityGraph({
     height,
     camera
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { position: "relative", width, height }, children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { position: "relative", width, height }, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
     GraphScene,
     {
       svgRef,
@@ -15117,12 +15252,12 @@ function CommunityGraph({
 }
 
 // public/community-graph/legend.tsx
-var import_react8 = __toESM(require_react());
-var import_jsx_runtime12 = __toESM(require_jsx_runtime());
+var import_react9 = __toESM(require_react());
+var import_jsx_runtime13 = __toESM(require_jsx_runtime());
 function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
-  const colors = (0, import_react8.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const major = (0, import_react8.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
-  const items = (0, import_react8.useMemo)(() => {
+  const colors = (0, import_react9.useMemo)(() => buildCommunityColors(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const major = (0, import_react9.useMemo)(() => majorCommunities(nodes, adapter, primaryKey, minSize), [nodes, adapter, primaryKey, minSize]);
+  const items = (0, import_react9.useMemo)(() => {
     const byKey = /* @__PURE__ */ new Map();
     for (const n of nodes) {
       const key = effectiveKey(n, adapter, major);
@@ -15140,10 +15275,10 @@ function CommunityLegend({ nodes, adapter, primaryKey, minSize = 3 }) {
       return b[1].count - a2[1].count;
     });
   }, [nodes, adapter, major, primaryKey]);
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: info.name }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--fg-muted)" }, children: items.map(([key, info]) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: colors.get(key), flexShrink: 0 } }),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: info.name }),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { style: { color: "var(--fg-dim)", fontFamily: "var(--mono)" }, children: [
       "\xB7",
       info.count
     ] })
@@ -15280,7 +15415,7 @@ function explorerLayerZ({ n, layerOrder, coauthorIds, homeInstitutionId, egoAuth
 }
 
 // public/force-graph.tsx
-var import_jsx_runtime13 = __toESM(require_jsx_runtime());
+var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 function hullTierFor(nodes) {
   if (nodes.some((n) => n.group === "institution")) return "institution";
   if (nodes.some((n) => n.group === "journal")) return "journal";
@@ -15294,12 +15429,12 @@ function baseRadius(n) {
 }
 var EMPTY_IDS = /* @__PURE__ */ new Set();
 function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS }) {
-  const labelById = (0, import_react9.useMemo)(() => {
+  const labelById = (0, import_react10.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [nodes]);
-  const journalByDoi = (0, import_react9.useMemo)(() => {
+  const journalByDoi = (0, import_react10.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
     const m2 = /* @__PURE__ */ new Map();
@@ -15308,12 +15443,12 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     }
     return m2;
   }, [nodes, affiliations.doisByJournal]);
-  const { placeholder } = (0, import_react9.useMemo)(
+  const { placeholder } = (0, import_react10.useMemo)(
     () => computeVisibility(nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds),
     [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds]
   );
-  const hullTier = (0, import_react9.useMemo)(() => hullTierFor(nodes), [nodes]);
-  const adapter = (0, import_react9.useMemo)(() => ({
+  const hullTier = (0, import_react10.useMemo)(() => hullTierFor(nodes), [nodes]);
+  const adapter = (0, import_react10.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: (n) => placeholder.has(n.id) ? PLACEHOLDER_RADIUS : baseRadius(n),
@@ -15338,7 +15473,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     getHoverFootnote: (n) => n.weight ? `${n.weight} ${n.weight === 1 ? "paper" : "papers"}` : null,
     getLayerZ: (n) => explorerLayerZ({ n, layerOrder, coauthorIds, homeInstitutionId, egoAuthorId })
   }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier, layerOrder, coauthorIds]);
-  const forceConfig = (0, import_react9.useMemo)(() => {
+  const forceConfig = (0, import_react10.useMemo)(() => {
     const area = Math.max(width * height, 1);
     const perNode = Math.sqrt(area / Math.max(nodes.length, 1));
     const linkDistance = Math.max(24, Math.min(140, perNode * 0.8));
@@ -15360,7 +15495,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     onExpand(n.id);
     onNodeClick?.(n);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
     CommunityGraph,
     {
       nodes,
@@ -15383,11 +15518,11 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
 }
 
 // public/explorer-canvas.tsx
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds }) {
-  const ref = (0, import_react10.useRef)(null);
-  const [size, setSize] = (0, import_react10.useState)(null);
-  (0, import_react10.useEffect)(() => {
+  const ref = (0, import_react11.useRef)(null);
+  const [size, setSize] = (0, import_react11.useState)(null);
+  (0, import_react11.useEffect)(() => {
     const el = ref.current;
     if (!el) return;
     const measure = () => {
@@ -15399,7 +15534,7 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight, overflow: "hidden" }, children: size && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { ref, style: { position: "relative", width: "100%", height: "100%", minHeight, overflow: "hidden" }, children: size && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
     ForceGraph,
     {
       nodes,
@@ -15424,15 +15559,15 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
 }
 
 // public/use-graph-data.ts
-var import_react11 = __toESM(require_react());
+var import_react12 = __toESM(require_react());
 var EMPTY_AFFS = { byAuthor: {} };
 function useGraphData() {
-  const [rawNodes, setRawNodes] = (0, import_react11.useState)([]);
-  const [rawEdges, setRawEdges] = (0, import_react11.useState)([]);
-  const [affiliations, setAffiliations] = (0, import_react11.useState)(EMPTY_AFFS);
-  const [tagMeta, setTagMeta] = (0, import_react11.useState)({});
-  const [loading, setLoading] = (0, import_react11.useState)(true);
-  (0, import_react11.useEffect)(() => {
+  const [rawNodes, setRawNodes] = (0, import_react12.useState)([]);
+  const [rawEdges, setRawEdges] = (0, import_react12.useState)([]);
+  const [affiliations, setAffiliations] = (0, import_react12.useState)(EMPTY_AFFS);
+  const [tagMeta, setTagMeta] = (0, import_react12.useState)({});
+  const [loading, setLoading] = (0, import_react12.useState)(true);
+  (0, import_react12.useEffect)(() => {
     fetch("/api/graph").then((r) => r.json()).then((d) => {
       setRawNodes(d.nodes);
       setRawEdges(d.edges);
@@ -15446,10 +15581,10 @@ function useGraphData() {
 }
 
 // public/shell-helpers.ts
-var import_react12 = __toESM(require_react());
+var import_react13 = __toESM(require_react());
 var CACHE_KEY = "nexus.me";
 function useCurrentUser() {
-  const [me, setMe] = (0, import_react12.useState)(() => {
+  const [me, setMe] = (0, import_react13.useState)(() => {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -15457,9 +15592,9 @@ function useCurrentUser() {
       return null;
     }
   });
-  const [loading, setLoading] = (0, import_react12.useState)(!me);
-  const [error, setError] = (0, import_react12.useState)(null);
-  (0, import_react12.useEffect)(() => {
+  const [loading, setLoading] = (0, import_react13.useState)(!me);
+  const [error, setError] = (0, import_react13.useState)(null);
+  (0, import_react13.useEffect)(() => {
     let cancelled = false;
     fetch("/api/auth?action=me").then((r) => r.status === 401 ? null : r.json()).then((d) => {
       if (cancelled) return;
@@ -15487,20 +15622,20 @@ function applyTheme(me) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_react15 = __toESM(require_react());
+var import_react16 = __toESM(require_react());
 
 // public/year-range-slider.tsx
-var import_react13 = __toESM(require_react());
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+var import_react14 = __toESM(require_react());
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
 function YearRangeSlider({ min, max, from, to, onChange }) {
   const span = max - min || 1;
   const leftPct = (from - min) / span * 100;
   const rightPct = (to - min) / span * 100;
-  const onFrom = (0, import_react13.useCallback)((e) => {
+  const onFrom = (0, import_react14.useCallback)((e) => {
     const v = Math.min(parseInt(e.target.value), to);
     onChange(v, to);
   }, [to, onChange]);
-  const onTo = (0, import_react13.useCallback)((e) => {
+  const onTo = (0, import_react14.useCallback)((e) => {
     const v = Math.max(parseInt(e.target.value), from);
     onChange(from, v);
   }, [from, onChange]);
@@ -15508,10 +15643,10 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
     left: `${leftPct}%`,
     width: `${Math.max(rightPct - leftPct, 0)}%`
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "year-range", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "year-range-track", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "year-range-fill", style: fillStyle }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-range", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-range-track", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "year-range-fill", style: fillStyle }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
         "input",
         {
           type: "range",
@@ -15523,7 +15658,7 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
           style: from >= to ? { zIndex: 4 } : void 0
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
         "input",
         {
           type: "range",
@@ -15535,24 +15670,24 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "year-range-readout mono", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { children: from }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "muted", children: "\u2013" }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { children: to })
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "year-range-readout mono", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { children: from }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "muted", children: "\u2013" }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { children: to })
     ] })
   ] });
 }
 
 // public/layer-stack.tsx
-var import_react14 = __toESM(require_react());
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_react15 = __toESM(require_react());
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
 function LayerStack({ rows, order, onReorder, enabled }) {
-  const [dragIdx, setDragIdx] = (0, import_react14.useState)(null);
-  const [overIdx, setOverIdx] = (0, import_react14.useState)(null);
-  const rowRefs = (0, import_react14.useRef)([]);
-  const dragStateRef = (0, import_react14.useRef)(null);
+  const [dragIdx, setDragIdx] = (0, import_react15.useState)(null);
+  const [overIdx, setOverIdx] = (0, import_react15.useState)(null);
+  const rowRefs = (0, import_react15.useRef)([]);
+  const dragStateRef = (0, import_react15.useRef)(null);
   const entries = order.map((layer) => ({ layer, row: rows.find((r) => r.layer === layer) })).filter((e) => !!e.row);
-  const pickRow = (0, import_react14.useCallback)((clientY) => {
+  const pickRow = (0, import_react15.useCallback)((clientY) => {
     const rects = rowRefs.current.map((el) => el?.getBoundingClientRect());
     for (let i = 0; i < rects.length; i++) {
       const r = rects[i];
@@ -15562,7 +15697,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
     if (first && clientY < first.top) return 0;
     return rects.length - 1;
   }, []);
-  const startDrag2 = (0, import_react14.useCallback)((e, fromIdx) => {
+  const startDrag2 = (0, import_react15.useCallback)((e, fromIdx) => {
     if (!enabled) return;
     e.preventDefault();
     setDragIdx(fromIdx);
@@ -15584,10 +15719,10 @@ function LayerStack({ rows, order, onReorder, enabled }) {
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   }, [enabled, onReorder, pickRow]);
-  (0, import_react14.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     rowRefs.current = rowRefs.current.slice(0, entries.length);
   }, [entries.length]);
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, row }, i) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, row }, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
     "div",
     {
       ref: (el) => {
@@ -15597,7 +15732,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
       "data-dragging": dragIdx === i ? "1" : "0",
       "data-over": overIdx === i && dragIdx !== null && dragIdx !== i ? "1" : "0",
       children: [
-        enabled && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+        enabled && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
           "span",
           {
             className: "layer-stack-handle",
@@ -15606,7 +15741,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
             children: "\u283F"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "layer-stack-checks", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "layer-stack-checks", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
       ]
     },
     layer
@@ -15624,31 +15759,31 @@ function buildLayerRows(flags, setFlag) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 function prettyFallback(key) {
   const bare = key.replace(/^[a-z]+:/, "");
   const m2 = bare.match(/\/([^/]+)\/?$/);
   return m2 ? m2[1] : bare;
 }
 function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange, nodes, allNodes, affiliations, homeInstitutionId, layerOrder, onReorderLayer, layersEnabled }) {
-  const labelById = (0, import_react15.useMemo)(() => {
+  const labelById = (0, import_react16.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of allNodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [allNodes]);
-  const journalByDoi = (0, import_react15.useMemo)(() => {
+  const journalByDoi = (0, import_react16.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
     const m2 = /* @__PURE__ */ new Map();
     for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m2.set(d, jId);
     return m2;
   }, [nodes, affiliations.doisByJournal]);
-  const hullTier = (0, import_react15.useMemo)(() => {
+  const hullTier = (0, import_react16.useMemo)(() => {
     if (nodes.some((n) => n.group === "institution")) return "institution";
     if (nodes.some((n) => n.group === "journal")) return "journal";
     return "none";
   }, [nodes]);
-  const legendAdapter = (0, import_react15.useMemo)(() => ({
+  const legendAdapter = (0, import_react16.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -15656,24 +15791,24 @@ function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearT
     isEgo: () => false,
     getCommunityLabel: (key) => labelById.get(key) || prettyFallback(key)
   }), [affiliations, labelById, homeInstitutionId, journalByDoi, hullTier]);
-  const layerRows = (0, import_react15.useMemo)(() => buildLayerRows(flags, setFlag), [flags, setFlag]);
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("aside", { className: "graph-filters", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "filter-label", children: [
+  const layerRows = (0, import_react16.useMemo)(() => buildLayerRows(flags, setFlag), [flags, setFlag]);
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("aside", { className: "graph-filters", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-label", children: [
         "Node types",
-        layersEnabled && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "filter-hint-inline", children: "\xB7 drag to reorder layers" })
+        layersEnabled && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "filter-hint-inline", children: "\xB7 drag to reorder layers" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(LayerStack, { rows: layerRows, order: layerOrder, onReorder: onReorderLayer, enabled: layersEnabled })
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(LayerStack, { rows: layerRows, order: layerOrder, onReorder: onReorderLayer, enabled: layersEnabled })
     ] }),
-    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "filter-label", children: "Year range" }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: onYearRangeChange })
+    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "filter-label", children: "Year range" }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: onYearRangeChange })
     ] }),
-    nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "filter-group legend", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "filter-label", children: "Communities" }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId, minSize: 1 })
+    nodes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "filter-group legend", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "filter-label", children: "Communities" }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CommunityLegend, { nodes, adapter: legendAdapter, primaryKey: homeInstitutionId, minSize: 1 })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
   ] });
 }
 
@@ -15732,22 +15867,22 @@ function buildExplorerAffiliations(rawNodes, rawEdges, authoritative) {
 }
 
 // public/use-explorer-ego.ts
-var import_react16 = __toESM(require_react());
+var import_react17 = __toESM(require_react());
 var bareRor = (r) => r ? r.replace(/^https?:\/\/ror\.org\//, "") : null;
 function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) {
-  const homeInstitutionId = (0, import_react16.useMemo)(() => {
+  const homeInstitutionId = (0, import_react17.useMemo)(() => {
     const ror = bareRor(me?.profile.ror);
     if (!ror) return null;
     const hit = rawNodes.find((n) => n.group === "institution" && bareRor(n.ext_id) === ror);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const egoAuthorId = (0, import_react16.useMemo)(() => {
+  const egoAuthorId = (0, import_react17.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = projectedNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, projectedNodes]);
-  const effectiveHomeKey = (0, import_react16.useMemo)(() => {
+  const effectiveHomeKey = (0, import_react17.useMemo)(() => {
     if (homeInstitutionId) return homeInstitutionId;
     if (!egoAuthorId) return null;
     const insts = institutionsByAuthor.get(egoAuthorId);
@@ -15758,7 +15893,7 @@ function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) 
 }
 
 // public/use-explorer-nodes.ts
-var import_react17 = __toESM(require_react());
+var import_react18 = __toESM(require_react());
 
 // public/enrich-meta.ts
 function enrichWithMeta(nodes, tagMeta) {
@@ -15793,14 +15928,14 @@ function buildCoauthorSet(rawEdges, egoAuthorId) {
 
 // public/use-explorer-nodes.ts
 function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags }) {
-  const rawEgoAuthorId = (0, import_react17.useMemo)(() => {
+  const rawEgoAuthorId = (0, import_react18.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = rawNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const coauthorIds = (0, import_react17.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
-  const projectedNodes = (0, import_react17.useMemo)(() => {
+  const coauthorIds = (0, import_react18.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
+  const projectedNodes = (0, import_react18.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     const authorAllowed = (id) => {
       if (id === rawEgoAuthorId) return flags.author || flags.coauthor;
@@ -15813,7 +15948,7 @@ function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags
 }
 
 // public/graph-contents.tsx
-var import_react20 = __toESM(require_react());
+var import_react21 = __toESM(require_react());
 
 // public/graph-contents-buckets.ts
 function sortByWeightThenLabel(a2, b) {
@@ -15872,10 +16007,10 @@ function buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey = n
 }
 
 // public/use-flip-reorder.ts
-var import_react18 = __toESM(require_react());
+var import_react19 = __toESM(require_react());
 function useFlipReorder(container, keys, durationMs = 260) {
-  const prevTops = (0, import_react18.useRef)(/* @__PURE__ */ new Map());
-  (0, import_react18.useLayoutEffect)(() => {
+  const prevTops = (0, import_react19.useRef)(/* @__PURE__ */ new Map());
+  (0, import_react19.useLayoutEffect)(() => {
     const el = container.current;
     if (!el) return;
     const children = Array.from(el.querySelectorAll("[data-flip-key]"));
@@ -15901,17 +16036,17 @@ function useFlipReorder(container, keys, durationMs = 260) {
 }
 
 // public/graph-search.tsx
-var import_react19 = __toESM(require_react());
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var import_react20 = __toESM(require_react());
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 function GraphSearch({ nodes, onSelect }) {
-  const [query, setQuery] = (0, import_react19.useState)("");
-  const [open, setOpen] = (0, import_react19.useState)(false);
-  const matches = (0, import_react19.useMemo)(() => {
+  const [query, setQuery] = (0, import_react20.useState)("");
+  const [open, setOpen] = (0, import_react20.useState)(false);
+  const matches = (0, import_react20.useMemo)(() => {
     if (!query || query.length < 2) return [];
     const q = query.toLowerCase();
     return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
   }, [query, nodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
     "div",
     {
       style: { position: "relative", display: "inline-block" },
@@ -15919,7 +16054,7 @@ function GraphSearch({ nodes, onSelect }) {
         if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
           "input",
           {
             value: query,
@@ -15932,7 +16067,7 @@ function GraphSearch({ nodes, onSelect }) {
             style: { fontFamily: "var(--mono)", fontSize: 12, padding: "6px 10px", width: 180 }
           }
         ),
-        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: {
+        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: {
           position: "absolute",
           top: "100%",
           left: 0,
@@ -15945,7 +16080,7 @@ function GraphSearch({ nodes, onSelect }) {
           overflow: "auto",
           width: 280,
           marginTop: 4
-        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
           "div",
           {
             tabIndex: 0,
@@ -15969,9 +16104,9 @@ function GraphSearch({ nodes, onSelect }) {
             onMouseOver: (e) => e.currentTarget.style.background = "var(--bg-elev)",
             onMouseOut: (e) => e.currentTarget.style.background = "transparent",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
+              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
+              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
             ]
           },
           n.id
@@ -15982,26 +16117,26 @@ function GraphSearch({ nodes, onSelect }) {
 }
 
 // public/graph-contents.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }) {
-  const journalByDoi = (0, import_react20.useMemo)(() => {
+  const journalByDoi = (0, import_react21.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
     if (!hasPapers) return null;
     const m2 = /* @__PURE__ */ new Map();
     for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m2.set(d, jId);
     return m2;
   }, [nodes, affiliations.doisByJournal]);
-  const labelById = (0, import_react20.useMemo)(() => {
+  const labelById = (0, import_react21.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [nodes]);
-  const hullTier = (0, import_react20.useMemo)(() => {
+  const hullTier = (0, import_react21.useMemo)(() => {
     if (nodes.some((n) => n.group === "institution")) return "institution";
     if (nodes.some((n) => n.group === "journal")) return "journal";
     return "none";
   }, [nodes]);
-  const adapter = (0, import_react20.useMemo)(() => ({
+  const adapter = (0, import_react21.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -16012,21 +16147,21 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: (key) => labelById.get(key) || key
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById, hullTier]);
-  const focusKey = (0, import_react20.useMemo)(() => {
+  const focusKey = (0, import_react21.useMemo)(() => {
     if (hoveredId) {
       const hovered = nodes.find((n) => n.id === hoveredId);
       if (hovered) return adapter.getCommunityKey(hovered);
     }
     return hoveredHullKey ?? null;
   }, [hoveredId, hoveredHullKey, nodes, adapter]);
-  const buckets = (0, import_react20.useMemo)(
+  const buckets = (0, import_react21.useMemo)(
     () => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
     [nodes, adapter, homeInstitutionId, labelById, focusKey]
   );
-  const listRef = (0, import_react20.useRef)(null);
+  const listRef = (0, import_react21.useRef)(null);
   useFlipReorder(listRef, buckets.map((b) => b.key));
-  const prefetchTimer = (0, import_react20.useRef)(null);
-  const onRowHover = (0, import_react20.useCallback)((id) => {
+  const prefetchTimer = (0, import_react21.useRef)(null);
+  const onRowHover = (0, import_react21.useCallback)((id) => {
     onHover?.(id);
     if (prefetchTimer.current) {
       clearTimeout(prefetchTimer.current);
@@ -16035,22 +16170,22 @@ function GraphContents({ nodes, affiliations, homeInstitutionId, egoAuthorId, on
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, [onHover]);
   if (!nodes.length) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "graph-contents", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "graph-contents-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "graph-contents-search", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(GraphSearch, { nodes, onSelect: (id) => (onSearchSelect || onSelect)(id) }) })
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "graph-contents", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "graph-contents-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "graph-contents-search", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(GraphSearch, { nodes, onSelect: (id) => (onSearchSelect || onSelect)(id) }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
   ] });
 }
 function BucketView({ b, onSelect, onHover }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
   const headInstId = b.institutions[0]?.id;
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("header", { className: "gc-community-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, style: { borderColor: b.color }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("header", { className: "gc-community-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
         "button",
         {
           type: "button",
@@ -16058,14 +16193,14 @@ function BucketView({ b, onSelect, onHover }) {
           onClick: () => headInstId && onSelect(headInstId),
           onMouseEnter: () => headInstId && onHover?.(headInstId),
           onMouseLeave: () => onHover?.(null),
-          children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h4", { children: b.label })
+          children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("h4", { children: b.label })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "mono muted gc-count", children: total })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "mono muted gc-count", children: total })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
   ] });
 }
 var ORCID_RE = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
@@ -16075,15 +16210,15 @@ function displayLabel(n) {
 }
 function NodeList({ label, color, ns, onSelect, onHover }) {
   if (ns.length === 0) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "gc-list", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "gc-list-label", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "dot", style: { background: color } }),
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "gc-list", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "gc-list-label", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "dot", style: { background: color } }),
       " ",
       label,
       " ",
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "mono muted", children: ns.length })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "mono muted", children: ns.length })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
       "button",
       {
         type: "button",
@@ -16128,12 +16263,12 @@ function explorerSelectedColor(selectedId, nodes, affiliations, homeInstitutionI
 }
 
 // public/use-selection-stack.ts
-var import_react21 = __toESM(require_react());
+var import_react22 = __toESM(require_react());
 function useSelectionStack() {
-  const [selectionStack, setSelectionStack] = (0, import_react21.useState)([]);
-  const [navDir, setNavDir] = (0, import_react21.useState)("forward");
+  const [selectionStack, setSelectionStack] = (0, import_react22.useState)([]);
+  const [navDir, setNavDir] = (0, import_react22.useState)("forward");
   const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
-  const pushSelection = (0, import_react21.useCallback)((id) => setSelectionStack((prev) => {
+  const pushSelection = (0, import_react22.useCallback)((id) => setSelectionStack((prev) => {
     if (id === null) {
       setNavDir("back");
       return [];
@@ -16142,7 +16277,7 @@ function useSelectionStack() {
     setNavDir("forward");
     return [...prev, id];
   }), []);
-  const popSelection = (0, import_react21.useCallback)(() => setSelectionStack((prev) => {
+  const popSelection = (0, import_react22.useCallback)(() => setSelectionStack((prev) => {
     if (!prev.length) return prev;
     setNavDir("back");
     return prev.slice(0, -1);
@@ -16151,18 +16286,18 @@ function useSelectionStack() {
 }
 
 // public/use-year-range-filter.ts
-var import_react23 = __toESM(require_react());
+var import_react24 = __toESM(require_react());
 
 // public/time-slider.tsx
-var import_react22 = __toESM(require_react());
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
+var import_react23 = __toESM(require_react());
+var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
   const y3 = parseInt(n.published.substring(0, 4));
   return y3 > 1900 ? y3 : 0;
 }
 function useTimeRange(nodes) {
-  return (0, import_react22.useMemo)(() => {
+  return (0, import_react23.useMemo)(() => {
     let min = 9999, max = 0;
     for (const n of nodes) {
       const y3 = yearOf(n);
@@ -16183,13 +16318,13 @@ function yearOf2(n) {
 }
 function useYearRangeFilter(rawNodes, rawEdges) {
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  const [range, setRange] = (0, import_react23.useState)(null);
-  (0, import_react23.useEffect)(() => {
+  const [range, setRange] = (0, import_react24.useState)(null);
+  (0, import_react24.useEffect)(() => {
     if (yearMin && yearMax && !range) setRange([yearMin, yearMax]);
   }, [yearMin, yearMax, range]);
   const yearFrom = range ? range[0] : yearMin;
   const yearTo = range ? range[1] : yearMax;
-  const filteredRaw = (0, import_react23.useMemo)(() => {
+  const filteredRaw = (0, import_react24.useMemo)(() => {
     const fullSpan = yearFrom <= yearMin && yearTo >= yearMax;
     if (fullSpan) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
@@ -16207,7 +16342,7 @@ function useYearRangeFilter(rawNodes, rawEdges) {
 }
 
 // public/use-layer-order.ts
-var import_react24 = __toESM(require_react());
+var import_react25 = __toESM(require_react());
 var STORAGE_KEY = "graph-layer-order";
 function load() {
   try {
@@ -16222,8 +16357,8 @@ function load() {
   }
 }
 function useLayerOrder() {
-  const [layerOrder, setLayerOrder] = (0, import_react24.useState)(load);
-  const reorderLayer = (0, import_react24.useCallback)((from, to) => {
+  const [layerOrder, setLayerOrder] = (0, import_react25.useState)(load);
+  const reorderLayer = (0, import_react25.useCallback)((from, to) => {
     setLayerOrder((prev) => {
       const next = [...prev];
       const [moved] = next.splice(from, 1);
@@ -16239,25 +16374,25 @@ function useLayerOrder() {
 }
 
 // public/graph-canvas-corners.tsx
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
+var import_jsx_runtime22 = __toESM(require_jsx_runtime());
 function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt }) {
   const scope = yearFrom > yearMin || yearTo < yearMax ? `${yearFrom}\u2013${yearTo}` : "all years";
-  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "canvas-corner-tl", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "canvas-corner-tl", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
         "tenant \xB7 ",
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: tenant || "\u2014" })
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("em", { children: tenant || "\u2014" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
         "role \xB7 ",
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: role || "\u2014" })
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("em", { children: role || "\u2014" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
         "scope \xB7 ",
         scope
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "canvas-corner-tr", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "canvas-corner-tr", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
       "button",
       {
         className: "tilt-toggle",
@@ -16265,7 +16400,7 @@ function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, 
         onClick: onToggleTilt,
         title: tilted ? "Switch to top-down view" : "Tilt into 3D layered view",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: "tilt-glyph" }),
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "tilt-glyph" }),
           tilted ? "3D" : "2D"
         ]
       }
@@ -16274,45 +16409,45 @@ function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, 
 }
 
 // public/graph-explorer-body.tsx
-var import_jsx_runtime22 = __toESM(require_jsx_runtime());
+var import_jsx_runtime23 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
   const { selectionStack, selectedNodeId, navDir, pushSelection, popSelection } = useSelectionStack();
-  const detailPanelRef = (0, import_react25.useRef)(null);
-  const [hover, setHover] = (0, import_react25.useState)({ id: null, source: "canvas" });
+  const detailPanelRef = (0, import_react26.useRef)(null);
+  const [hover, setHover] = (0, import_react26.useState)({ id: null, source: "canvas" });
   const hoverId = hover.id;
-  const prefetchTimer = (0, import_react25.useRef)(null);
-  const schedulePrefetch = (0, import_react25.useCallback)((id) => {
+  const prefetchTimer = (0, import_react26.useRef)(null);
+  const schedulePrefetch = (0, import_react26.useCallback)((id) => {
     if (prefetchTimer.current) {
       clearTimeout(prefetchTimer.current);
       prefetchTimer.current = null;
     }
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, []);
-  const hoverFromCanvas = (0, import_react25.useCallback)((id) => {
+  const hoverFromCanvas = (0, import_react26.useCallback)((id) => {
     setHover({ id, source: "canvas" });
     schedulePrefetch(id);
   }, [schedulePrefetch]);
-  const hoverFromSidebar = (0, import_react25.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
-  const [hullHoverKey, setHullHoverKey] = (0, import_react25.useState)(null);
-  const [expandedIds, setExpandedIds] = (0, import_react25.useState)(/* @__PURE__ */ new Set());
-  const expand = (0, import_react25.useCallback)((id) => setExpandedIds((prev) => {
+  const hoverFromSidebar = (0, import_react26.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react26.useState)(null);
+  const [expandedIds, setExpandedIds] = (0, import_react26.useState)(/* @__PURE__ */ new Set());
+  const expand = (0, import_react26.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
     const n = new Set(prev);
     n.add(id);
     return n;
   }), []);
-  const [flags, setFlags] = (0, import_react25.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react25.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
-  const [tilted, setTilted] = (0, import_react25.useState)(() => {
+  const [flags, setFlags] = (0, import_react26.useState)(DEFAULT_FLAGS);
+  const setFlag = (0, import_react26.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
+  const [tilted, setTilted] = (0, import_react26.useState)(() => {
     try {
       return localStorage.getItem("graph-tilted") === "1";
     } catch {
       return false;
     }
   });
-  const toggleTilt = (0, import_react25.useCallback)(() => {
+  const toggleTilt = (0, import_react26.useCallback)(() => {
     setTilted((v) => {
       const next = !v;
       try {
@@ -16324,69 +16459,69 @@ function GraphExplorerBody() {
   }, []);
   const { layerOrder, reorderLayer } = useLayerOrder();
   const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
-  const highlightedIds = (0, import_react25.useMemo)(() => {
+  const highlightedIds = (0, import_react26.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  (0, import_react25.useEffect)(() => {
+  (0, import_react26.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) pushSelection(f);
   }, [rawNodes, highlightedIds]);
-  (0, import_react25.useEffect)(() => {
+  (0, import_react26.useEffect)(() => {
     const el = detailPanelRef.current;
     if (!el) return;
     el.querySelectorAll(".node-detail-pane").forEach((p) => {
       p.scrollTop = 0;
     });
   }, [selectedNodeId]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react25.useMemo)(
+  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react26.useMemo)(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, flags.paper),
     [filteredRaw, flags.paper]
   );
   const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
-  const projectedEdges = (0, import_react25.useMemo)(() => {
+  const projectedEdges = (0, import_react26.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const affiliations = (0, import_react25.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
+  const affiliations = (0, import_react26.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
     rawNodes,
     projectedNodes,
     institutionsByAuthor: affiliations.institutionsByAuthor
   });
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
-  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "view graph-view", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("header", { className: "view-head compact", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("h1", { className: "view-title tight", children: [
+  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
+  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: "No data." }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "view graph-view", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("header", { className: "view-head compact", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("h1", { className: "view-title tight", children: [
           "The institution as a ",
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("em", { children: "network" }),
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("em", { children: "network" }),
           "."
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(Tag, { mono: true, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(Tag, { mono: true, children: [
           projectedNodes.length,
           " NODES"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(Tag, { mono: true, tone: "muted", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(Tag, { mono: true, tone: "muted", children: [
           projectedEdges.length,
           " EDGES"
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "graph-layout", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), nodes: projectedNodes, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "graph-canvas", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds })
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-layout", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), nodes: projectedNodes, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-canvas", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         NodeDetail,
         {
           nodeId: selectedNodeId,
@@ -16394,7 +16529,7 @@ function GraphExplorerBody() {
           onBack: selectionStack.length >= 1 ? popSelection : void 0,
           accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
           navDir,
-          empty: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
+          empty: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphContents, { nodes: projectedNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, onSelect: (id) => {
             pushSelection(id);
             expand(id);
           }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })
@@ -16405,14 +16540,14 @@ function GraphExplorerBody() {
 }
 
 // public/relationships.tsx
-var import_jsx_runtime23 = __toESM(require_jsx_runtime());
+var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 var root = null;
 function mount() {
   const el = document.getElementById("relationships-root");
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphExplorerBody, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime24.jsx)(GraphExplorerBody, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/relationships-bundle.js"] = mount;
