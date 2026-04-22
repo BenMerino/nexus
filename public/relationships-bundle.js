@@ -15235,23 +15235,6 @@ function computeVisibility(nodes, edges, affiliations, egoAuthorId, homeInstitut
 
 // public/explorer-layers.ts
 var DEFAULT_LAYER_ORDER = ["institution", "author", "coauthor", "journal", "paper"];
-function layerTypeForNode(n, coauthorIds) {
-  if (n.group === "institution") return "institution";
-  if (n.group === "journal") return "journal";
-  if (n.group === "doi") return "paper";
-  if (n.group === "author") return coauthorIds.has(n.id) ? "coauthor" : "author";
-  return null;
-}
-function layerZ(layer, order) {
-  if (!layer) return 0;
-  const idx = order.indexOf(layer);
-  if (idx < 0) return 0;
-  const span = order.length - 1;
-  if (span <= 0) return 0;
-  const TOP = 160;
-  const BOTTOM = -60;
-  return TOP - idx / span * (TOP - BOTTOM);
-}
 
 // public/force-graph.tsx
 var import_jsx_runtime13 = __toESM(require_jsx_runtime());
@@ -15268,6 +15251,7 @@ function baseRadius(n) {
 }
 var EMPTY_IDS = /* @__PURE__ */ new Set();
 var HOME_INSTITUTION_LIFT = 30;
+var EGO_CLEARANCE = 55;
 function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS }) {
   const labelById = (0, import_react9.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
@@ -15314,6 +15298,10 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     getLayerZ: (n) => {
       const base = layerZ(layerTypeForNode(n, coauthorIds), layerOrder);
       if (n.id === homeInstitutionId) return base + HOME_INSTITUTION_LIFT;
+      if (egoAuthorId && n.id === egoAuthorId) {
+        const institutionZ = layerZ("institution", layerOrder) + HOME_INSTITUTION_LIFT;
+        return Math.max(base, institutionZ) + EGO_CLEARANCE;
+      }
       return base;
     }
   }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier, layerOrder, coauthorIds]);
