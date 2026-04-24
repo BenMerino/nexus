@@ -8,7 +8,7 @@
 export type LayerType = 'ego' | 'coauthor' | 'paper' | 'journal' | 'author';
 
 export const DEFAULT_LAYER_ORDER: LayerType[] = [
-  'ego', 'coauthor', 'paper', 'journal', 'author',
+  'ego', 'coauthor', 'journal', 'paper', 'author',
 ];
 
 interface NodeContext {

@@ -15492,8 +15492,8 @@ function computeVisibility(nodes, edges, affiliations, egoAuthorId, homeInstitut
 var DEFAULT_LAYER_ORDER = [
   "ego",
   "coauthor",
-  "paper",
   "journal",
+  "paper",
   "author"
 ];
 function layerTypeForNode(n, ctx) {
@@ -15871,8 +15871,8 @@ function buildLayerRows(flags, setFlag) {
   return [
     { layer: "ego", flagKey: "ego", label: "You", color: "var(--accent)", checked: true, onToggle: noop2, fixed: true },
     { layer: "coauthor", flagKey: "coauthor", label: "Co-authors", color: COLORS.author, checked: flags.coauthor, onToggle: (v) => setFlag("coauthor", v) },
-    { layer: "paper", flagKey: "paper", label: "Papers", color: paperColor, checked: flags.paper, onToggle: (v) => setFlag("paper", v) },
     { layer: "journal", flagKey: "journal", label: "Journals", color: COLORS.journal, checked: flags.journal, onToggle: (v) => setFlag("journal", v) },
+    { layer: "paper", flagKey: "paper", label: "Papers", color: paperColor, checked: flags.paper, onToggle: (v) => setFlag("paper", v) },
     { layer: "author", flagKey: "author", label: "Other authors", color: COLORS.author, checked: flags.author, onToggle: (v) => setFlag("author", v) }
   ];
 }
@@ -16556,7 +16556,7 @@ function useYearRangeFilter(rawNodes, rawEdges) {
 
 // public/use-layer-order.ts
 var import_react25 = __toESM(require_react());
-var STORAGE_KEY = "graph-layer-order-v5";
+var STORAGE_KEY = "graph-layer-order-v6";
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);

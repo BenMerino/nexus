@@ -4,7 +4,7 @@ import { DEFAULT_LAYER_ORDER, type LayerType } from './explorer-layers';
 // Bump the suffix to force everyone back to the default layer order on their
 // next page load. Existing saved orders under older keys are ignored and
 // eventually drop off (browsers cap localStorage size; we don't clean up).
-const STORAGE_KEY = 'graph-layer-order-v5';
+const STORAGE_KEY = 'graph-layer-order-v6';
 
 function load(): LayerType[] {
   try {
