@@ -2,6 +2,7 @@ import React from 'react';
 import type { EnrichedSimNode } from './relationship-types';
 import { COLORS } from './relationship-types';
 import type { Bucket } from './graph-contents-buckets';
+import { RichHtml } from './rich-text';
 
 const ORCID_RE = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
 
@@ -9,6 +10,11 @@ function displayLabel(n: EnrichedSimNode): string {
   if (n.group === 'author' && (!n.label || ORCID_RE.test(n.label))) return 'Unknown author';
   return n.label;
 }
+
+// Safety-net rich render: sidebar labels go through RichHtml so any
+// HTML-encoded legacy strings (&amp; &lt; etc.) in the DB still render
+// decoded until the backfill runs.
+function RichLabel({ raw }: { raw: string }) { return <RichHtml raw={raw} />; }
 
 interface ListProps {
   label: string;
@@ -29,7 +35,7 @@ function NodeList({ label, color, ns, onSelect, onHover }: ListProps) {
             <button type="button"
               onClick={() => onSelect(n.id)}
               onMouseEnter={() => onHover?.(n.id)}
-              onMouseLeave={() => onHover?.(null)}>{displayLabel(n)}</button>
+              onMouseLeave={() => onHover?.(null)}><RichLabel raw={displayLabel(n)} /></button>
           </li>
         ))}
       </ul>
@@ -51,7 +57,7 @@ export function BucketView({ b, onSelect, onHover }: BucketProps) {
           onClick={() => headInstId && onSelect(headInstId)}
           onMouseEnter={() => headInstId && onHover?.(headInstId)}
           onMouseLeave={() => onHover?.(null)}>
-          <h4>{b.label}</h4>
+          <h4><RichLabel raw={b.label} /></h4>
         </button>
         <span className="mono muted gc-count">{total}</span>
       </header>

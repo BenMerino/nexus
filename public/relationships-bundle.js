@@ -16318,6 +16318,9 @@ function displayLabel(n) {
   if (n.group === "author" && (!n.label || ORCID_RE.test(n.label))) return "Unknown author";
   return n.label;
 }
+function RichLabel({ raw }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(RichHtml, { raw });
+}
 function NodeList({ label, color, ns, onSelect, onHover }) {
   if (ns.length === 0) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gc-list", children: [
@@ -16335,7 +16338,7 @@ function NodeList({ label, color, ns, onSelect, onHover }) {
         onClick: () => onSelect(n.id),
         onMouseEnter: () => onHover?.(n.id),
         onMouseLeave: () => onHover?.(null),
-        children: displayLabel(n)
+        children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(RichLabel, { raw: displayLabel(n) })
       }
     ) }, n.id)) })
   ] });
@@ -16355,7 +16358,7 @@ function BucketView({ b, onSelect, onHover }) {
           onClick: () => headInstId && onSelect(headInstId),
           onMouseEnter: () => headInstId && onHover?.(headInstId),
           onMouseLeave: () => onHover?.(null),
-          children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("h4", { children: b.label })
+          children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(RichLabel, { raw: b.label }) })
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "mono muted gc-count", children: total })
@@ -16623,6 +16626,35 @@ function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, 
   ] });
 }
 
+// public/ego-edge-routing.ts
+function routeEgoThroughJournals(edges, egoAuthorId) {
+  if (!egoAuthorId) return edges;
+  const egoPapers = /* @__PURE__ */ new Set();
+  const journalForPaper = /* @__PURE__ */ new Map();
+  for (const e of edges) {
+    if (e.target === egoAuthorId && e.source.startsWith("doi:")) egoPapers.add(e.source);
+    if (e.source === egoAuthorId && e.target.startsWith("doi:")) egoPapers.add(e.target);
+    if (e.source.startsWith("doi:") && e.target.startsWith("journal:")) journalForPaper.set(e.source, e.target);
+    if (e.target.startsWith("doi:") && e.source.startsWith("journal:")) journalForPaper.set(e.target, e.source);
+  }
+  const egoJournals = /* @__PURE__ */ new Set();
+  for (const p of egoPapers) {
+    const j = journalForPaper.get(p);
+    if (j) egoJournals.add(j);
+  }
+  const filtered = edges.filter((e) => {
+    const touchesEgo = e.source === egoAuthorId || e.target === egoAuthorId;
+    if (!touchesEgo) return true;
+    const other = e.source === egoAuthorId ? e.target : e.source;
+    return !other.startsWith("doi:");
+  });
+  const extra = [];
+  for (const jId of egoJournals) {
+    extra.push({ source: egoAuthorId, target: jId, weight: 1, sharedDois: [] });
+  }
+  return [...filtered, ...extra];
+}
+
 // public/graph-explorer-body.tsx
 var import_jsx_runtime27 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: true, author: true, coauthor: true, journal: true, paper: false };
@@ -16696,11 +16728,12 @@ function GraphExplorerBody() {
     [filteredRaw]
   );
   const focusedId = hoverId || selectedNodeId;
-  const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, projectedEdges: projectedEdgesAll, tagMeta, rawNodes, rawEdges, me, flags, focusedId });
+  const { projectedNodes, coauthorIds, rawEgoAuthorId } = useExplorerNodes({ projectedRaw, projectedEdges: projectedEdgesAll, tagMeta, rawNodes, rawEdges, me, flags, focusedId });
+  const routedEdges = (0, import_react26.useMemo)(() => routeEgoThroughJournals(projectedEdgesAll, rawEgoAuthorId), [projectedEdgesAll, rawEgoAuthorId]);
   const projectedEdges = (0, import_react26.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
-    return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
-  }, [projectedEdgesAll, projectedNodes]);
+    return routedEdges.filter((e) => ids.has(e.source) && ids.has(e.target));
+  }, [routedEdges, projectedNodes]);
   const affiliations = (0, import_react26.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,

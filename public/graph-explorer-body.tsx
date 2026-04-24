@@ -16,6 +16,7 @@ import { useSelectionStack } from './use-selection-stack';
 import { useYearRangeFilter } from './use-year-range-filter';
 import { useLayerOrder } from './use-layer-order';
 import { GraphCanvasCorners } from './graph-canvas-corners';
+import { routeEgoThroughJournals } from './ego-edge-routing';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 
@@ -83,12 +84,16 @@ export function GraphExplorerBody() {
     [filteredRaw]);
 
   const focusedId = hoverId || selectedNodeId;
-  const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, projectedEdges: projectedEdgesAll, tagMeta, rawNodes, rawEdges, me, flags, focusedId });
+  const { projectedNodes, coauthorIds, rawEgoAuthorId } = useExplorerNodes({ projectedRaw, projectedEdges: projectedEdgesAll, tagMeta, rawNodes, rawEdges, me, flags, focusedId });
+
+  // Route the ego's paper attachments through journals: ego → journal → paper.
+  // Co-authors still attach to papers directly.
+  const routedEdges = useMemo(() => routeEgoThroughJournals(projectedEdgesAll, rawEgoAuthorId), [projectedEdgesAll, rawEgoAuthorId]);
 
   const projectedEdges = useMemo(() => {
     const ids = new Set(projectedNodes.map(n => n.id));
-    return projectedEdgesAll.filter(e => ids.has(e.source) && ids.has(e.target));
-  }, [projectedEdgesAll, projectedNodes]);
+    return routedEdges.filter(e => ids.has(e.source) && ids.has(e.target));
+  }, [routedEdges, projectedNodes]);
 
   const affiliations = useMemo(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
 
