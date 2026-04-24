@@ -15525,8 +15525,8 @@ function explorerLayerZ({ n, layerOrder, coauthorIds, homeInstitutionId, egoAuth
 
 // public/force-graph.tsx
 var import_jsx_runtime16 = __toESM(require_jsx_runtime());
-function hullTierFor(nodes) {
-  if (nodes.some((n) => n.group === "institution")) return "institution";
+function hullTierFor(nodes, homeId) {
+  if (nodes.some((n) => n.group === "institution" && n.id !== homeId)) return "institution";
   if (nodes.some((n) => n.group === "journal")) return "journal";
   return "none";
 }
@@ -15556,7 +15556,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
     () => computeVisibility(nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds),
     [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds]
   );
-  const hullTier = (0, import_react9.useMemo)(() => hullTierFor(nodes), [nodes]);
+  const hullTier = (0, import_react9.useMemo)(() => hullTierFor(nodes, homeInstitutionId), [nodes, homeInstitutionId]);
   const adapter = (0, import_react9.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,

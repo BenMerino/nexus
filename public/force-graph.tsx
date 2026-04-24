@@ -8,8 +8,9 @@ import { computeVisibility } from './explorer-visibility';
 import { DEFAULT_LAYER_ORDER, type LayerType } from './explorer-layers';
 import { explorerLayerZ } from './explorer-layer-z';
 
-function hullTierFor(nodes: EnrichedSimNode[]): HullTier {
-  if (nodes.some(n => n.group === 'institution')) return 'institution';
+function hullTierFor(nodes: EnrichedSimNode[], homeId: string | null): HullTier {
+  // Ignore the home institution — always on as anchor; doesn't force tier.
+  if (nodes.some(n => n.group === 'institution' && n.id !== homeId)) return 'institution';
   if (nodes.some(n => n.group === 'journal')) return 'journal';
   return 'none';
 }
@@ -67,7 +68,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
     [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds],
   );
 
-  const hullTier = useMemo(() => hullTierFor(nodes), [nodes]);
+  const hullTier = useMemo(() => hullTierFor(nodes, homeInstitutionId), [nodes, homeInstitutionId]);
 
   const adapter = useMemo<CommunityAdapter<EnrichedSimNode>>(() => ({
     getId: n => n.id,
