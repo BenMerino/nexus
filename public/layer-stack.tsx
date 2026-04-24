@@ -117,12 +117,11 @@ export function buildLayerRows(
   // the user can reorder the full stack. `checked: true, onToggle: noop`.
   const noop = () => {};
   return [
-    { layer: 'ego',         flagKey: 'ego',         label: 'You',               color: 'var(--accent)',     checked: true,              onToggle: noop, fixed: true },
-    { layer: 'coauthor',    flagKey: 'coauthor',    label: 'Co-authors',        color: COLORS.author,       checked: flags.coauthor,    onToggle: v => setFlag('coauthor', v) },
-    { layer: 'paper',       flagKey: 'paper',       label: 'Papers',            color: paperColor,          checked: flags.paper,       onToggle: v => setFlag('paper', v) },
-    { layer: 'home',        flagKey: 'home',        label: 'Your institution',  color: COLORS.institution,  checked: true,              onToggle: noop, fixed: true },
-    { layer: 'institution', flagKey: 'institution', label: 'Other institutions',color: COLORS.institution,  checked: flags.institution, onToggle: v => setFlag('institution', v) },
-    { layer: 'journal',     flagKey: 'journal',     label: 'Journals',          color: COLORS.journal,      checked: flags.journal,     onToggle: v => setFlag('journal', v) },
-    { layer: 'author',      flagKey: 'author',      label: 'Other authors',     color: COLORS.author,       checked: flags.author,      onToggle: v => setFlag('author', v) },
+    { layer: 'ego',      flagKey: 'ego',      label: 'You',              color: 'var(--accent)',    checked: true,           onToggle: noop, fixed: true },
+    { layer: 'coauthor', flagKey: 'coauthor', label: 'Co-authors',       color: COLORS.author,      checked: flags.coauthor, onToggle: v => setFlag('coauthor', v) },
+    { layer: 'paper',    flagKey: 'paper',    label: 'Papers',           color: paperColor,         checked: flags.paper,    onToggle: v => setFlag('paper', v) },
+    { layer: 'home',     flagKey: 'home',     label: 'Your institution', color: COLORS.institution, checked: true,           onToggle: noop, fixed: true },
+    { layer: 'journal',  flagKey: 'journal',  label: 'Journals',         color: COLORS.journal,     checked: flags.journal,  onToggle: v => setFlag('journal', v) },
+    { layer: 'author',   flagKey: 'author',   label: 'Other authors',    color: COLORS.author,      checked: flags.author,   onToggle: v => setFlag('author', v) },
   ];
 }

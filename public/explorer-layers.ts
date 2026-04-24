@@ -1,13 +1,14 @@
 /** Reorderable elevation layers for the 3D explorer. One entry per visible
  *  node class, ordered top-to-bottom in the sidebar — index 0 floats highest,
- *  last index sits lowest. Seven distinct layers, no sharing:
- *  ego, co-authors, papers, home institution, other institutions, journals,
- *  other authors. Centered on the ego's actual scholarly network. */
+ *  last index sits lowest. Six distinct layers:
+ *  ego, co-authors, papers, home institution, journals, other authors.
+ *  Non-home institutions aren't a layer — "you + your co-authors" embody
+ *  those institutions in concept. */
 
-export type LayerType = 'ego' | 'coauthor' | 'paper' | 'home' | 'institution' | 'journal' | 'author';
+export type LayerType = 'ego' | 'coauthor' | 'paper' | 'home' | 'journal' | 'author';
 
 export const DEFAULT_LAYER_ORDER: LayerType[] = [
-  'ego', 'coauthor', 'paper', 'home', 'institution', 'journal', 'author',
+  'ego', 'coauthor', 'paper', 'home', 'journal', 'author',
 ];
 
 interface NodeContext {
@@ -24,7 +25,8 @@ export function layerTypeForNode(
 ): LayerType | null {
   if (ctx.egoAuthorId && n.id === ctx.egoAuthorId) return 'ego';
   if (ctx.homeInstitutionId && n.id === ctx.homeInstitutionId) return 'home';
-  if (n.group === 'institution') return 'institution';
+  // Non-home institutions aren't rendered as nodes, so they don't land on a layer.
+  if (n.group === 'institution') return null;
   if (n.group === 'journal') return 'journal';
   if (n.group === 'doi') return 'paper';
   if (n.group === 'author') return ctx.coauthorIds.has(n.id) ? 'coauthor' : 'author';
