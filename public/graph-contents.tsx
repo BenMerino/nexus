@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
-import { explorerCommunityKey, type HullTier } from './explorer-community';
 import type { CommunityAdapter } from './community-graph';
 import { buildBuckets } from './graph-contents-buckets';
 import { useFlipReorder } from './use-flip-reorder';
@@ -38,39 +37,31 @@ interface Props {
 
 export function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }: Props) {
   const hoveredNode = useMemo(() => hoveredId ? nodes.find(n => n.id === hoveredId) ?? null : null, [hoveredId, nodes]);
-  const journalByDoi = useMemo(() => {
-    const hasPapers = nodes.some(n => n.group === 'doi');
-    if (!hasPapers) return null;
-    const m = new Map<string, string>();
-    for (const [jId, dois] of affiliations.doisByJournal) for (const d of dois) m.set(d, jId);
-    return m;
-  }, [nodes, affiliations.doisByJournal]);
 
   const labelById = useMemo(() => {
     const m = new Map<string, string>();
-    // Pull from allNodes so communities whose anchor institution was hidden
-    // by visibility flags still resolve to a human label instead of an id.
-    for (const n of allNodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
+    for (const n of allNodes) if (n.group === 'journal') m.set(n.id, n.label);
     return m;
   }, [allNodes]);
-
-  const hullTier: HullTier = useMemo(() => {
-    if (nodes.some(n => n.group === 'institution')) return 'institution';
-    if (nodes.some(n => n.group === 'journal')) return 'journal';
-    return 'none';
-  }, [nodes]);
 
   const adapter = useMemo<CommunityAdapter<EnrichedSimNode>>(() => ({
     getId: n => n.id,
     getLabel: n => n.label,
     getRadius: () => 0,
     getCommunityKey: n => {
-      if (hullTier === 'institution' && egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
-      return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, affiliations.journalCountsByAuthor, homeInstitutionId, journalByDoi, hullTier);
+      if (n.group === 'doi') return (n as EnrichedSimNode & { journalId?: string }).journalId ?? null;
+      if (n.group === 'author') {
+        const counts = affiliations.journalCountsByAuthor.get(n.id);
+        if (!counts || counts.size === 0) return null;
+        let best: string | null = null; let bestN = -1;
+        for (const [k, c] of counts) if (c > bestN) { best = k; bestN = c; }
+        return best;
+      }
+      return null;
     },
     isEgo: n => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: key => labelById.get(key) || prettyFallback(key),
-  }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById, hullTier]);
+  }), [affiliations, egoAuthorId, labelById]);
 
   const focusKey = useMemo(() => {
     if (hoveredId) {

@@ -3,17 +3,9 @@ import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
 import { COLORS, nodeRadius } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
 import { CommunityGraph, type CommunityAdapter } from './community-graph';
-import { explorerCommunityKey, type HullTier } from './explorer-community';
 import { computeVisibility } from './explorer-visibility';
 import { DEFAULT_LAYER_ORDER, type LayerType } from './explorer-layers';
 import { explorerLayerZ } from './explorer-layer-z';
-
-function hullTierFor(nodes: EnrichedSimNode[], homeId: string | null): HullTier {
-  // Ignore the home institution — always on as anchor; doesn't force tier.
-  if (nodes.some(n => n.group === 'institution' && n.id !== homeId)) return 'institution';
-  if (nodes.some(n => n.group === 'journal')) return 'journal';
-  return 'none';
-}
 
 const PLACEHOLDER_RADIUS = 3;
 const PLACEHOLDER_COLOR = 'rgba(255,255,255,0.22)';
@@ -37,6 +29,9 @@ interface Props {
   tilt?: number;
   layerOrder?: LayerType[];
   coauthorIds?: Set<string>;
+  /** journalId → human name. Journals aren't nodes anymore but hulls still
+   *  label communities with the journal name, so we need a separate lookup. */
+  journalLabels?: Map<string, string>;
 }
 
 function baseRadius(n: EnrichedSimNode): number {
@@ -45,64 +40,50 @@ function baseRadius(n: EnrichedSimNode): number {
 
 const EMPTY_IDS: Set<string> = new Set();
 
-export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS }: Props) {
-  const labelById = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const n of nodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
-    return m;
-  }, [nodes]);
-
-  // Papers get grouped by journal only when papers are actually on screen.
-  const journalByDoi = useMemo(() => {
-    const hasPapers = nodes.some(n => n.group === 'doi');
-    if (!hasPapers) return null;
-    const m = new Map<string, string>();
-    for (const [journalId, dois] of affiliations.doisByJournal) {
-      for (const doi of dois) m.set(doi, journalId);
-    }
-    return m;
-  }, [nodes, affiliations.doisByJournal]);
-
+export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, journalLabels }: Props) {
   const { placeholder } = useMemo(
     () => computeVisibility(nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds),
     [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds],
   );
-
-  const hullTier = useMemo(() => hullTierFor(nodes, homeInstitutionId), [nodes, homeInstitutionId]);
 
   const adapter = useMemo<CommunityAdapter<EnrichedSimNode>>(() => ({
     getId: n => n.id,
     getLabel: n => n.label,
     getRadius: n => (placeholder.has(n.id) ? PLACEHOLDER_RADIUS : baseRadius(n)),
     getCommunityKey: n => {
-      if (hullTier === 'institution' && egoAuthorId && n.id === egoAuthorId) return homeInstitutionId;
-      return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, affiliations.journalCountsByAuthor, homeInstitutionId, journalByDoi, hullTier);
+      // Papers live in their journal's community. Authors (including the ego)
+      // group into the journal they publish with most. No journal → no
+      // community; the node floats.
+      if (n.group === 'doi') {
+        const nj = (n as unknown as { journalId?: string }).journalId;
+        return nj ?? null;
+      }
+      if (n.group === 'author') {
+        const counts = affiliations.journalCountsByAuthor.get(n.id);
+        if (!counts || counts.size === 0) return null;
+        let bestKey: string | null = null; let best = -1;
+        for (const [k, c] of counts) if (c > best) { bestKey = k; best = c; }
+        return bestKey;
+      }
+      return null;
     },
     isEgo: n => !!egoAuthorId && n.id === egoAuthorId,
-    getCommunityLabel: key => labelById.get(key) || key,
+    getCommunityLabel: key => (journalLabels && journalLabels.get(key)) || key,
     getNodeColor: (n, communityColor) => {
       if (placeholder.has(n.id)) return PLACEHOLDER_COLOR;
-      if (n.group === 'institution' || n.group === 'author' || n.group === 'journal') return communityColor;
+      if (n.group === 'author') return communityColor;
       return COLORS[n.group] || null;
     },
-    getHoverSubtitle: n => {
-      if (n.group !== 'author') return null;
-      const insts = affiliations.institutionsByAuthor.get(n.id);
-      if (!insts || insts.size === 0) return null;
-      const firstId = [...insts].sort()[0];
-      return labelById.get(firstId) || null;
-    },
+    getHoverSubtitle: () => null,
     getHoverFootnote: n => (n.weight ? `${n.weight} ${n.weight === 1 ? 'paper' : 'papers'}` : null),
     getLayerZ: n => explorerLayerZ({ n, layerOrder, coauthorIds, homeInstitutionId, egoAuthorId }),
     getTypeTag: n => {
       if (n.id === egoAuthorId) return 'EGO';
-      if (n.group === 'institution') return 'INSTITUTION';
-      if (n.group === 'journal') return 'JOURNAL';
       if (n.group === 'doi') return 'PAPER';
       if (n.group === 'author') return coauthorIds.has(n.id) ? 'CO-AUTHOR' : 'AUTHOR';
       return null;
     },
-  }), [affiliations, labelById, journalByDoi, egoAuthorId, homeInstitutionId, placeholder, hullTier, layerOrder, coauthorIds]);
+  }), [affiliations, journalLabels, egoAuthorId, homeInstitutionId, placeholder, layerOrder, coauthorIds]);
 
   const forceConfig = useMemo(() => {
     const area = Math.max(width * height, 1);
@@ -120,7 +101,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       minCommunitySize: 1,
       orbitRadius: 0.36,
     };
-  }, [width, height, nodes.length, journalByDoi]);
+  }, [width, height, nodes.length]);
 
   const handleClick = (n: EnrichedSimNode) => {
     if (n.id === selectedId) return;

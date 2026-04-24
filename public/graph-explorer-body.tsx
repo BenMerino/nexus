@@ -16,7 +16,6 @@ import { useSelectionStack } from './use-selection-stack';
 import { useYearRangeFilter } from './use-year-range-filter';
 import { useLayerOrder } from './use-layer-order';
 import { GraphCanvasCorners } from './graph-canvas-corners';
-import { routeEgoThroughJournals } from './ego-edge-routing';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: true, author: true, coauthor: true, journal: true, paper: false };
 
@@ -84,18 +83,21 @@ export function GraphExplorerBody() {
     [filteredRaw]);
 
   const focusedId = hoverId || selectedNodeId;
-  const { projectedNodes, coauthorIds, rawEgoAuthorId } = useExplorerNodes({ projectedRaw, projectedEdges: projectedEdgesAll, tagMeta, rawNodes, rawEdges, me, flags, focusedId });
-
-  // Route the ego's paper attachments through journals: ego → journal → paper.
-  // Co-authors still attach to papers directly.
-  const routedEdges = useMemo(() => routeEgoThroughJournals(projectedEdgesAll, rawEgoAuthorId), [projectedEdgesAll, rawEgoAuthorId]);
+  const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, projectedEdges: projectedEdgesAll, tagMeta, rawNodes, rawEdges, me, flags, focusedId });
 
   const projectedEdges = useMemo(() => {
     const ids = new Set(projectedNodes.map(n => n.id));
-    return routedEdges.filter(e => ids.has(e.source) && ids.has(e.target));
-  }, [routedEdges, projectedNodes]);
+    return projectedEdgesAll.filter(e => ids.has(e.source) && ids.has(e.target));
+  }, [projectedEdgesAll, projectedNodes]);
 
   const affiliations = useMemo(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
+
+  // Journals aren't nodes anymore, but hull labels still need their names.
+  const journalLabels = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const n of rawNodes) if (n.group === 'journal') m.set(n.id, n.label);
+    return m;
+  }, [rawNodes]);
 
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
     me,
@@ -127,7 +129,7 @@ export function GraphExplorerBody() {
           <GraphCanvasCorners tenant={me?.tenant ?? null} role={me?.role ?? null} yearFrom={yearFrom} yearTo={yearTo} yearMin={yearMin} yearMax={yearMax} tilted={tilted} onToggleTilt={toggleTilt} />
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={tilted ? 1 : 0} layerOrder={layerOrder} coauthorIds={coauthorIds} />}
+            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={tilted ? 1 : 0} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} />}
         </div>
 
         <aside className="detail-panel" ref={detailPanelRef}>

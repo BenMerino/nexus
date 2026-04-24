@@ -2,14 +2,14 @@ import type { RawNode, RawEdge, TagNode, ProjectedEdge, Category, EnrichedTagNod
 import { classifyNodes } from './node-classify';
 
 /**
- * Structural model: every relationship is mediated by a paper. We don't
- * emit shortcut edges like "institution ↔ author" or "author ↔ journal" —
- * those always pass through the paper that brought them together. Instead
- * each DOI becomes a paper node connected directly to its institutions,
- * authors, and journal. The caller can hide paper nodes visually, but the
- * structural edges always go through them.
+ * Model:
+ *   - Institutions are concepts, not nodes (see earlier commits).
+ *   - Journals are communities, not nodes — each paper carries its journal id
+ *     so the hull renderer can group papers into journal communities, but no
+ *     line connects a paper to "its journal" because there's no journal node.
+ *   - Authors connect to papers directly.
  *
- * When `expandedJournal` is set, only that journal + its papers are emitted.
+ * When `expandedJournal` is set, only papers in that journal are emitted.
  */
 export function projectGraph(
   rawNodes: RawNode[],
@@ -31,63 +31,47 @@ export function projectGraph(
     doiToTags.set(e.source, list);
   }
 
-  const institutions = rawNodes.filter(n => n.group === 'institution');
   const authors = rawNodes.filter(n => n.group === 'author');
   const journals = new Map(rawNodes.filter(n => n.group === 'journal').map(n => [n.id, n]));
 
-  const isInst = (id: string) => id.startsWith('institution:');
   const isAuth = (id: string) => id.startsWith('author:');
-
-  const journalPapers = new Map<string, PaperEntry[]>();
-  for (const [doiId, tags] of doiToTags) {
-    const jTag = tags.find(t => journals.has(t));
-    if (jTag) {
-      const list = journalPapers.get(jTag) || [];
-      list.push({ doi: doiId.replace('doi:', ''), title: doiLabels.get(doiId) || doiId });
-      journalPapers.set(jTag, list);
-    }
-  }
 
   const allNodes: TagNode[] = [];
   const allEdges: ProjectedEdge[] = [];
   const matchingDois = new Set<string>();
   const added = new Set<string>();
 
-  function addNode(id: string, label: string, group: string, w: number, papers?: PaperEntry[], ext_id?: string) {
-    if (added.has(id)) return;
-    added.add(id);
-    allNodes.push({ id, label, group, ext_id, doiCount: w, degree: 0, weight: w || 1, papers });
+  function addNode(args: {
+    id: string; label: string; group: string;
+    ext_id?: string; weight?: number; papers?: PaperEntry[]; journalId?: string;
+  }) {
+    if (added.has(args.id)) return;
+    added.add(args.id);
+    const node: TagNode = {
+      id: args.id, label: args.label, group: args.group,
+      ext_id: args.ext_id, doiCount: 0, degree: 0,
+      weight: args.weight ?? 1, papers: args.papers,
+    };
+    if (args.journalId) (node as TagNode & { journalId?: string }).journalId = args.journalId;
+    allNodes.push(node);
   }
 
-  for (const inst of institutions) addNode(inst.id, inst.label, 'institution', 0, undefined, inst.id.replace(/^[^:]+:/, ''));
-  for (const auth of authors) addNode(auth.id, auth.label, 'author', 0, undefined, auth.id.replace(/^[^:]+:/, ''));
-  for (const [jId, papers] of journalPapers) {
-    if (expandedJournal && expandedJournal !== jId) continue;
-    const j = journals.get(jId)!;
-    addNode(j.id, j.label, 'journal', papers.length, papers, j.id.replace(/^[^:]+:/, ''));
-    for (const p of papers) matchingDois.add(p.doi);
-  }
+  for (const auth of authors) addNode({ id: auth.id, label: auth.label, group: 'author', ext_id: auth.id.replace(/^[^:]+:/, '') });
 
-  // Emit paper nodes and the real edges that run through them. Every
-  // institution / author / journal that co-occurs on a DOI gets an edge
-  // *to that DOI*, never directly to each other.
+  // Emit paper nodes + paper↔author edges. Each paper remembers its journal
+  // id so the hull renderer can group papers into journal communities even
+  // though there's no journal node to link to.
   for (const [doiId, tags] of doiToTags) {
     const jTag = tags.find(t => journals.has(t));
     if (expandedJournal && expandedJournal !== jTag) continue;
-    const instTags = tags.filter(isInst);
     const authTags = tags.filter(isAuth);
-    if (instTags.length === 0 && authTags.length === 0 && !jTag) continue;
+    if (authTags.length === 0 && !jTag) continue;
     const title = doiLabels.get(doiId) || doiId;
-    addNode(doiId, title, 'doi', 0);
-    for (const i of instTags) allEdges.push({ source: doiId, target: i, weight: 1, sharedDois: [doiId] });
+    addNode({ id: doiId, label: title, group: 'doi', journalId: jTag });
+    if (jTag) matchingDois.add(doiId.replace('doi:', ''));
     for (const a of authTags) allEdges.push({ source: doiId, target: a, weight: 1, sharedDois: [doiId] });
-    if (jTag && added.has(jTag)) allEdges.push({ source: doiId, target: jTag, weight: 1, sharedDois: [doiId] });
   }
 
-  // When papers are hidden (includePapers=false and no expansion), drop the
-  // paper nodes we emitted — but the caller sees no inter-category edges,
-  // which is structurally honest: those relationships only exist through
-  // papers that aren't on screen.
   if (!includePapers && !expandedJournal) {
     const paperIds = new Set<string>();
     for (let i = allNodes.length - 1; i >= 0; i--) {
@@ -105,7 +89,7 @@ export function projectGraph(
 
   const communityMap = new Map<string, number>();
   allNodes.forEach(n => {
-    communityMap.set(n.id, n.group === 'institution' ? 0 : n.group === 'author' ? 1 : n.group === 'journal' ? 2 : 3);
+    communityMap.set(n.id, n.group === 'author' ? 1 : 3);
   });
 
   const nodes = classifyNodes(allNodes, allEdges, allNodes, communityMap);
