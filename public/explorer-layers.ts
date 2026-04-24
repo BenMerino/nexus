@@ -1,14 +1,14 @@
 /** Reorderable elevation layers for the 3D explorer. One entry per visible
  *  node class, ordered top-to-bottom in the sidebar — index 0 floats highest,
- *  last index sits lowest. Six distinct layers:
- *  ego, co-authors, papers, home institution, journals, other authors.
- *  Non-home institutions aren't a layer — "you + your co-authors" embody
- *  those institutions in concept. */
+ *  last index sits lowest. Five distinct layers:
+ *  ego, co-authors, papers, journals, other authors.
+ *  Institutions (home or otherwise) aren't rendered — you + your co-authors
+ *  embody your institution's network in concept. */
 
-export type LayerType = 'ego' | 'coauthor' | 'paper' | 'home' | 'journal' | 'author';
+export type LayerType = 'ego' | 'coauthor' | 'paper' | 'journal' | 'author';
 
 export const DEFAULT_LAYER_ORDER: LayerType[] = [
-  'ego', 'coauthor', 'paper', 'home', 'journal', 'author',
+  'ego', 'coauthor', 'paper', 'journal', 'author',
 ];
 
 interface NodeContext {
@@ -17,15 +17,14 @@ interface NodeContext {
   homeInstitutionId: string | null;
 }
 
-/** Maps a sim node to its layer. Ego and home institution get their own
- *  tiers; every other node falls into the regular class layer. */
+/** Maps a sim node to its layer. The ego gets its own tier; every other
+ *  node falls into the regular class layer. Institutions don't map to a
+ *  layer because they don't render as nodes. */
 export function layerTypeForNode(
   n: { id: string; group: string },
   ctx: NodeContext,
 ): LayerType | null {
   if (ctx.egoAuthorId && n.id === ctx.egoAuthorId) return 'ego';
-  if (ctx.homeInstitutionId && n.id === ctx.homeInstitutionId) return 'home';
-  // Non-home institutions aren't rendered as nodes, so they don't land on a layer.
   if (n.group === 'institution') return null;
   if (n.group === 'journal') return 'journal';
   if (n.group === 'doi') return 'paper';

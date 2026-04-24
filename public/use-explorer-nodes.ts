@@ -63,13 +63,12 @@ export function useExplorerNodes({ projectedRaw, projectedEdges, tagMeta, rawNod
       if (id === rawEgoAuthorId) return true;
       return coauthorIds.has(id) ? flags.coauthor : flags.author;
     };
-    // Only the home institution survives — non-home institutions are
-    // represented in concept by "you + your co-authors" and don't appear
-    // as their own nodes.
-    const institutionAllowed = (id: string) => id === homeInstitutionId;
+    // Institutions (home or otherwise) aren't rendered as nodes — you and
+    // your co-authors embody your institution's network in concept.
+    const institutionAllowed = () => false;
     const paperAllowed = (id: string) => flags.paper || (bridgePaperIds?.has(id) ?? false);
     const groupMatch = (n: { id: string; group: string }) =>
-      (n.group === 'institution' && institutionAllowed(n.id)) ||
+      (n.group === 'institution' && institutionAllowed()) ||
       (n.group === 'author' && authorAllowed(n.id)) ||
       (n.group === 'journal' && flags.journal) ||
       (n.group === 'doi' && paperAllowed(n.id));

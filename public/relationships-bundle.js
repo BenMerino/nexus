@@ -15493,13 +15493,11 @@ var DEFAULT_LAYER_ORDER = [
   "ego",
   "coauthor",
   "paper",
-  "home",
   "journal",
   "author"
 ];
 function layerTypeForNode(n, ctx) {
   if (ctx.egoAuthorId && n.id === ctx.egoAuthorId) return "ego";
-  if (ctx.homeInstitutionId && n.id === ctx.homeInstitutionId) return "home";
   if (n.group === "institution") return null;
   if (n.group === "journal") return "journal";
   if (n.group === "doi") return "paper";
@@ -15874,7 +15872,6 @@ function buildLayerRows(flags, setFlag) {
     { layer: "ego", flagKey: "ego", label: "You", color: "var(--accent)", checked: true, onToggle: noop2, fixed: true },
     { layer: "coauthor", flagKey: "coauthor", label: "Co-authors", color: COLORS.author, checked: flags.coauthor, onToggle: (v) => setFlag("coauthor", v) },
     { layer: "paper", flagKey: "paper", label: "Papers", color: paperColor, checked: flags.paper, onToggle: (v) => setFlag("paper", v) },
-    { layer: "home", flagKey: "home", label: "Your institution", color: COLORS.institution, checked: true, onToggle: noop2, fixed: true },
     { layer: "journal", flagKey: "journal", label: "Journals", color: COLORS.journal, checked: flags.journal, onToggle: (v) => setFlag("journal", v) },
     { layer: "author", flagKey: "author", label: "Other authors", color: COLORS.author, checked: flags.author, onToggle: (v) => setFlag("author", v) }
   ];
@@ -16044,9 +16041,9 @@ function useExplorerNodes({ projectedRaw, projectedEdges, tagMeta, rawNodes, raw
       if (id === rawEgoAuthorId) return true;
       return coauthorIds.has(id) ? flags.coauthor : flags.author;
     };
-    const institutionAllowed = (id) => id === homeInstitutionId;
+    const institutionAllowed = () => false;
     const paperAllowed = (id) => flags.paper || (bridgePaperIds?.has(id) ?? false);
-    const groupMatch = (n) => n.group === "institution" && institutionAllowed(n.id) || n.group === "author" && authorAllowed(n.id) || n.group === "journal" && flags.journal || n.group === "doi" && paperAllowed(n.id);
+    const groupMatch = (n) => n.group === "institution" && institutionAllowed() || n.group === "author" && authorAllowed(n.id) || n.group === "journal" && flags.journal || n.group === "doi" && paperAllowed(n.id);
     return enriched.filter((n) => groupMatch(n));
   }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId, homeInstitutionId, bridgePaperIds]);
   return { projectedNodes, coauthorIds, rawEgoAuthorId };
@@ -16559,7 +16556,7 @@ function useYearRangeFilter(rawNodes, rawEdges) {
 
 // public/use-layer-order.ts
 var import_react25 = __toESM(require_react());
-var STORAGE_KEY = "graph-layer-order-v4";
+var STORAGE_KEY = "graph-layer-order-v5";
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
