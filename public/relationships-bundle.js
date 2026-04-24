@@ -16034,16 +16034,23 @@ function useExplorerNodes({ projectedRaw, projectedEdges, tagMeta, rawNodes, raw
     }
     return set2;
   }, [focusedId, flags.paper, projectedEdges]);
+  const homeInstitutionId = (0, import_react17.useMemo)(() => {
+    const ror = me?.profile.ror?.replace(/^https?:\/\/ror\.org\//, "") ?? null;
+    if (!ror) return null;
+    const hit = rawNodes.find((n) => n.group === "institution" && n.ext_id?.replace(/^https?:\/\/ror\.org\//, "") === ror);
+    return hit?.id ?? null;
+  }, [me, rawNodes]);
   const projectedNodes = (0, import_react17.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     const authorAllowed = (id) => {
-      if (id === rawEgoAuthorId) return flags.author || flags.coauthor;
+      if (id === rawEgoAuthorId) return true;
       return coauthorIds.has(id) ? flags.coauthor : flags.author;
     };
+    const institutionAllowed = (id) => id === homeInstitutionId || flags.institution;
     const paperAllowed = (id) => flags.paper || (bridgePaperIds?.has(id) ?? false);
-    const groupMatch = (n) => n.group === "institution" && flags.institution || n.group === "author" && authorAllowed(n.id) || n.group === "journal" && flags.journal || n.group === "doi" && paperAllowed(n.id);
+    const groupMatch = (n) => n.group === "institution" && institutionAllowed(n.id) || n.group === "author" && authorAllowed(n.id) || n.group === "journal" && flags.journal || n.group === "doi" && paperAllowed(n.id);
     return enriched.filter((n) => groupMatch(n));
-  }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId, bridgePaperIds]);
+  }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId, homeInstitutionId, bridgePaperIds]);
   return { projectedNodes, coauthorIds, rawEgoAuthorId };
 }
 

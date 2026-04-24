@@ -47,20 +47,31 @@ export function useExplorerNodes({ projectedRaw, projectedEdges, tagMeta, rawNod
     return set;
   }, [focusedId, flags.paper, projectedEdges]);
 
+  const homeInstitutionId = useMemo(() => {
+    const ror = me?.profile.ror?.replace(/^https?:\/\/ror\.org\//, '') ?? null;
+    if (!ror) return null;
+    const hit = rawNodes.find(n => n.group === 'institution' && n.ext_id?.replace(/^https?:\/\/ror\.org\//, '') === ror);
+    return hit?.id ?? null;
+  }, [me, rawNodes]);
+
   const projectedNodes = useMemo(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
+    // Ego and home institution are "fixed" in the sidebar — they always stay
+    // visible regardless of class-level toggles, so the graph always has an
+    // ego to anchor relationships to.
     const authorAllowed = (id: string) => {
-      if (id === rawEgoAuthorId) return flags.author || flags.coauthor;
+      if (id === rawEgoAuthorId) return true;
       return coauthorIds.has(id) ? flags.coauthor : flags.author;
     };
+    const institutionAllowed = (id: string) => id === homeInstitutionId || flags.institution;
     const paperAllowed = (id: string) => flags.paper || (bridgePaperIds?.has(id) ?? false);
     const groupMatch = (n: { id: string; group: string }) =>
-      (n.group === 'institution' && flags.institution) ||
+      (n.group === 'institution' && institutionAllowed(n.id)) ||
       (n.group === 'author' && authorAllowed(n.id)) ||
       (n.group === 'journal' && flags.journal) ||
       (n.group === 'doi' && paperAllowed(n.id));
     return enriched.filter(n => groupMatch(n)) as EnrichedSimNode[];
-  }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId, bridgePaperIds]);
+  }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId, homeInstitutionId, bridgePaperIds]);
 
   return { projectedNodes, coauthorIds, rawEgoAuthorId };
 }
