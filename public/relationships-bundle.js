@@ -16368,7 +16368,12 @@ function BucketView({ b, onSelect, onHover }) {
 
 // public/graph-contents.tsx
 var import_jsx_runtime24 = __toESM(require_jsx_runtime());
-function GraphContents({ nodes, edges, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }) {
+function prettyFallback(key) {
+  const bare = key.replace(/^[a-z]+:/, "");
+  const m2 = bare.match(/\/([^/]+)\/?$/);
+  return m2 ? m2[1] : bare;
+}
+function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }) {
   const hoveredNode = (0, import_react21.useMemo)(() => hoveredId ? nodes.find((n) => n.id === hoveredId) ?? null : null, [hoveredId, nodes]);
   const journalByDoi = (0, import_react21.useMemo)(() => {
     const hasPapers = nodes.some((n) => n.group === "doi");
@@ -16379,9 +16384,9 @@ function GraphContents({ nodes, edges, affiliations, homeInstitutionId, egoAutho
   }, [nodes, affiliations.doisByJournal]);
   const labelById = (0, import_react21.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
-    for (const n of nodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
+    for (const n of allNodes) if (n.group === "institution" || n.group === "journal") m2.set(n.id, n.label);
     return m2;
-  }, [nodes]);
+  }, [allNodes]);
   const hullTier = (0, import_react21.useMemo)(() => {
     if (nodes.some((n) => n.group === "institution")) return "institution";
     if (nodes.some((n) => n.group === "journal")) return "journal";
@@ -16396,7 +16401,7 @@ function GraphContents({ nodes, edges, affiliations, homeInstitutionId, egoAutho
       return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, affiliations.journalCountsByAuthor, homeInstitutionId, journalByDoi, hullTier);
     },
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
-    getCommunityLabel: (key) => labelById.get(key) || key
+    getCommunityLabel: (key) => labelById.get(key) || prettyFallback(key)
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById, hullTier]);
   const focusKey = (0, import_react21.useMemo)(() => {
     if (hoveredId) {
@@ -16740,7 +16745,7 @@ function GraphExplorerBody() {
           onBack: selectionStack.length >= 1 ? popSelection : void 0,
           accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
           navDir,
-          empty: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphContents, { nodes: projectedNodes, edges: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, coauthorIds, onSelect: (id) => {
+          empty: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphContents, { nodes: projectedNodes, edges: projectedEdges, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, coauthorIds, onSelect: (id) => {
             pushSelection(id);
             expand(id);
           }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })

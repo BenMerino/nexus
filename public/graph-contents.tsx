@@ -10,9 +10,21 @@ import { GraphSearch } from './graph-search';
 import { HoverCard } from './hover-card';
 import { BucketView } from './graph-contents-bucket';
 
+/** Last-ditch fallback when labelById has no entry for a community key.
+ *  Strips the `category:` prefix and any trailing ROR/URL noise so we
+ *  show "030eybx10" instead of "institution:030eybx10". */
+function prettyFallback(key: string): string {
+  const bare = key.replace(/^[a-z]+:/, '');
+  const m = bare.match(/\/([^/]+)\/?$/);
+  return m ? m[1] : bare;
+}
+
 interface Props {
   nodes: EnrichedSimNode[];
   edges: ProjectedEdge[];
+  /** All raw nodes — used to resolve labels for communities whose
+   *  anchor node was filtered out of `nodes` by the visibility flags. */
+  allNodes: { id: string; group: string; label: string }[];
   affiliations: ExplorerAffiliations;
   homeInstitutionId: string | null;
   egoAuthorId: string | null;
@@ -24,7 +36,7 @@ interface Props {
   onSearchSelect?: (id: string) => void;
 }
 
-export function GraphContents({ nodes, edges, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }: Props) {
+export function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }: Props) {
   const hoveredNode = useMemo(() => hoveredId ? nodes.find(n => n.id === hoveredId) ?? null : null, [hoveredId, nodes]);
   const journalByDoi = useMemo(() => {
     const hasPapers = nodes.some(n => n.group === 'doi');
@@ -36,9 +48,11 @@ export function GraphContents({ nodes, edges, affiliations, homeInstitutionId, e
 
   const labelById = useMemo(() => {
     const m = new Map<string, string>();
-    for (const n of nodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
+    // Pull from allNodes so communities whose anchor institution was hidden
+    // by visibility flags still resolve to a human label instead of an id.
+    for (const n of allNodes) if (n.group === 'institution' || n.group === 'journal') m.set(n.id, n.label);
     return m;
-  }, [nodes]);
+  }, [allNodes]);
 
   const hullTier: HullTier = useMemo(() => {
     if (nodes.some(n => n.group === 'institution')) return 'institution';
@@ -55,7 +69,7 @@ export function GraphContents({ nodes, edges, affiliations, homeInstitutionId, e
       return explorerCommunityKey(n, affiliations.institutionCountsByAuthor, affiliations.journalCountsByAuthor, homeInstitutionId, journalByDoi, hullTier);
     },
     isEgo: n => !!egoAuthorId && n.id === egoAuthorId,
-    getCommunityLabel: key => labelById.get(key) || key,
+    getCommunityLabel: key => labelById.get(key) || prettyFallback(key),
   }), [affiliations, homeInstitutionId, egoAuthorId, journalByDoi, labelById, hullTier]);
 
   const focusKey = useMemo(() => {
