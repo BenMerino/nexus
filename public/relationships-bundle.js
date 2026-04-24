@@ -13095,7 +13095,7 @@ var import_jsx_runtime4 = __toESM(require_jsx_runtime());
 function PaperRow({ p }) {
   const year = p.published?.slice(0, 4);
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-item", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { children: p.title || "(untitled)" }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { children: p.title ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(RichHtml, { raw: p.title }) : "(untitled)" }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-item-sub", children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono muted", children: p.doi }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono muted detail-item-year", children: year || "" })
@@ -13125,7 +13125,7 @@ function AuthorView({ d, onClose }) {
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "eyebrow", children: "Author" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { children: d.name }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(RichHtml, { raw: d.name }) }),
         d.hIndex != null && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-hindex", children: [
           /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono", children: "h-index" }),
           " ",
@@ -13164,7 +13164,7 @@ function AuthorView({ d, onClose }) {
     ] }),
     groups.map((g) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-section", children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "detail-section-label", children: [
-        g.journal,
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(RichHtml, { raw: g.journal }),
         " ",
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mono muted", children: g.papers.length })
       ] }),
@@ -13191,7 +13191,7 @@ function InstitutionView({ d, onClose }) {
     /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "eyebrow", children: "Institution" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { children: d.name }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RichHtml, { raw: d.name }) }),
         d.ror && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "mono detail-id", children: [
           "ROR ",
           d.ror
@@ -13224,7 +13224,7 @@ function JournalView({ d, onClose }) {
     /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "eyebrow", children: "Journal" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { children: d.name }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RichHtml, { raw: d.name }) }),
         d.issn && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "mono detail-id", children: [
           "ISSN-L ",
           d.issn
@@ -13258,7 +13258,7 @@ function PaperView({ d, onClose }) {
     /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-meta", children: [
       d.journal && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "muted", children: "Journal" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: d.journal })
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RichHtml, { raw: d.journal }) })
       ] }),
       d.published && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "muted", children: "Year" }),
@@ -13272,7 +13272,7 @@ function PaperView({ d, onClose }) {
     d.authors.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-section", children: [
       /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "detail-section-label", children: "Authors" }),
       d.authors.slice(0, 20).map((a2, i) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "detail-item", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { children: a2.name || a2.orcid || "\u2014" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { children: a2.name ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RichHtml, { raw: a2.name }) : a2.orcid || "\u2014" }),
         a2.orcid && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "mono muted", children: [
           "ORCID ",
           a2.orcid

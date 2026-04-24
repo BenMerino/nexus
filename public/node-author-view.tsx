@@ -1,12 +1,13 @@
 import React from 'react';
 import { Ico } from './ui-primitives';
 import type { AuthorD, Paper } from './node-detail-views';
+import { RichHtml } from './rich-text';
 
 function PaperRow({ p }: { p: Paper }) {
   const year = p.published?.slice(0, 4);
   return (
     <div className="detail-item">
-      <div>{p.title || '(untitled)'}</div>
+      <div>{p.title ? <RichHtml raw={p.title} /> : '(untitled)'}</div>
       <div className="detail-item-sub">
         <span className="mono muted">{p.doi}</span>
         <span className="mono muted detail-item-year">{year || ''}</span>
@@ -41,7 +42,7 @@ export function AuthorView({ d, onClose }: { d: AuthorD; onClose: () => void }) 
       <div className="detail-head">
         <div>
           <div className="eyebrow">Author</div>
-          <h3>{d.name}</h3>
+          <h3><RichHtml raw={d.name} /></h3>
           {d.hIndex != null && <div className="detail-hindex"><span className="mono">h-index</span> {d.hIndex}</div>}
           {d.orcid && <div className="mono detail-id">ORCID {d.orcid}</div>}
         </div>
@@ -61,7 +62,7 @@ export function AuthorView({ d, onClose }: { d: AuthorD; onClose: () => void }) 
       {groups.map(g => (
         <div key={g.journal} className="detail-section">
           <div className="detail-section-label">
-            {g.journal} <span className="mono muted">{g.papers.length}</span>
+            <RichHtml raw={g.journal} /> <span className="mono muted">{g.papers.length}</span>
           </div>
           {g.papers.map(p => <PaperRow key={p.doi} p={p} />)}
         </div>

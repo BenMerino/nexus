@@ -32,7 +32,7 @@ export function InstitutionView({ d, onClose }: { d: InstD; onClose: () => void 
   return (
     <div className="detail">
       <div className="detail-head">
-        <div><div className="eyebrow">Institution</div><h3>{d.name}</h3>{d.ror && <div className="mono detail-id">ROR {d.ror}</div>}</div>
+        <div><div className="eyebrow">Institution</div><h3><RichHtml raw={d.name} /></h3>{d.ror && <div className="mono detail-id">ROR {d.ror}</div>}</div>
         <CloseBtn onClose={onClose} />
       </div>
       <div className="detail-stats">
@@ -52,7 +52,7 @@ export function JournalView({ d, onClose }: { d: JournalD; onClose: () => void }
   return (
     <div className="detail">
       <div className="detail-head">
-        <div><div className="eyebrow">Journal</div><h3>{d.name}</h3>{d.issn && <div className="mono detail-id">ISSN-L {d.issn}</div>}</div>
+        <div><div className="eyebrow">Journal</div><h3><RichHtml raw={d.name} /></h3>{d.issn && <div className="mono detail-id">ISSN-L {d.issn}</div>}</div>
         <CloseBtn onClose={onClose} />
       </div>
       <div className="detail-meta"><div><span className="muted">Our papers</span><span>{d.papersCount}</span></div></div>
@@ -76,7 +76,7 @@ export function PaperView({ d, onClose }: { d: PaperD; onClose: () => void }) {
         <CloseBtn onClose={onClose} />
       </div>
       <div className="detail-meta">
-        {d.journal && <div><span className="muted">Journal</span><span>{d.journal}</span></div>}
+        {d.journal && <div><span className="muted">Journal</span><span><RichHtml raw={d.journal} /></span></div>}
         {d.published && <div><span className="muted">Year</span><span>{d.published.slice(0, 4)}</span></div>}
         {d.citations != null && <div><span className="muted">Citations</span><span>{d.citations}</span></div>}
       </div>
@@ -85,7 +85,7 @@ export function PaperView({ d, onClose }: { d: PaperD; onClose: () => void }) {
           <div className="detail-section-label">Authors</div>
           {d.authors.slice(0, 20).map((a, i) => (
             <div key={i} className="detail-item">
-              <div>{a.name || a.orcid || '—'}</div>
+              <div>{a.name ? <RichHtml raw={a.name} /> : a.orcid || '—'}</div>
               {a.orcid && <div className="mono muted">ORCID {a.orcid}</div>}
             </div>
           ))}
