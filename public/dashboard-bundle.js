@@ -13252,7 +13252,7 @@ function GraphDefs() {
 function GridBackdrop() {
   return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
-function Links({ links, connected, camera, pathMode, hiddenIds }) {
+function Links({ links, connected, camera, pathMode, hiddenIds, onlyEdgesOfId }) {
   const hasFocus = !!connected;
   const edges = [];
   links.forEach((l, i) => {
@@ -13260,6 +13260,7 @@ function Links({ links, connected, camera, pathMode, hiddenIds }) {
     const t = typeof l.target === "object" ? l.target : null;
     if (!s || !t) return;
     if (hiddenIds && (hiddenIds.has(s.id) || hiddenIds.has(t.id))) return;
+    if (onlyEdgesOfId && s.id !== onlyEdgesOfId && t.id !== onlyEdgesOfId) return;
     const sz = s.z ?? 0;
     const tz = t.z ?? 0;
     const ps = project({ x: s.x, y: s.y, z: sz }, camera);
@@ -13714,7 +13715,8 @@ function GraphScene({
   camera,
   onBackgroundMouseDown,
   rotatable,
-  hiddenIds
+  hiddenIds,
+  edgesOnlyForId
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
@@ -13734,7 +13736,17 @@ function GraphScene({
     /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera, pathMode: true, hiddenIds }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+        Links,
+        {
+          links,
+          connected,
+          camera,
+          pathMode: true,
+          hiddenIds,
+          onlyEdgesOfId: edgesOnlyForId
+        }
+      ),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         Nodes,
         {
@@ -15020,7 +15032,8 @@ function CommunityGraph({
   onHoverChange,
   onHullHoverChange,
   tilt: tiltTarget = 0,
-  hiddenIds
+  hiddenIds,
+  edgesOnlyForId
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react8.useRef)(null);
@@ -15128,7 +15141,8 @@ function CommunityGraph({
       camera,
       rotatable: tiltTarget > 0,
       onBackgroundMouseDown: startOrbitDrag,
-      hiddenIds
+      hiddenIds,
+      edgesOnlyForId
     }
   ) });
 }

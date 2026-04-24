@@ -13626,7 +13626,7 @@ function GraphDefs() {
 function GridBackdrop() {
   return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
-function Links({ links, connected, camera, pathMode, hiddenIds }) {
+function Links({ links, connected, camera, pathMode, hiddenIds, onlyEdgesOfId }) {
   const hasFocus = !!connected;
   const edges = [];
   links.forEach((l, i) => {
@@ -13634,6 +13634,7 @@ function Links({ links, connected, camera, pathMode, hiddenIds }) {
     const t = typeof l.target === "object" ? l.target : null;
     if (!s || !t) return;
     if (hiddenIds && (hiddenIds.has(s.id) || hiddenIds.has(t.id))) return;
+    if (onlyEdgesOfId && s.id !== onlyEdgesOfId && t.id !== onlyEdgesOfId) return;
     const sz = s.z ?? 0;
     const tz = t.z ?? 0;
     const ps = project({ x: s.x, y: s.y, z: sz }, camera);
@@ -13968,7 +13969,8 @@ function GraphScene({
   camera,
   onBackgroundMouseDown,
   rotatable,
-  hiddenIds
+  hiddenIds,
+  edgesOnlyForId
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
   return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
@@ -13988,7 +13990,17 @@ function GraphScene({
     /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(Links, { links, connected, camera, pathMode: true, hiddenIds }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+        Links,
+        {
+          links,
+          connected,
+          camera,
+          pathMode: true,
+          hiddenIds,
+          onlyEdgesOfId: edgesOnlyForId
+        }
+      ),
       /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
         Nodes,
         {
@@ -15274,7 +15286,8 @@ function CommunityGraph({
   onHoverChange,
   onHullHoverChange,
   tilt: tiltTarget = 0,
-  hiddenIds
+  hiddenIds,
+  edgesOnlyForId
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react7.useRef)(null);
@@ -15382,7 +15395,8 @@ function CommunityGraph({
       camera,
       rotatable: tiltTarget > 0,
       onBackgroundMouseDown: startOrbitDrag,
-      hiddenIds
+      hiddenIds,
+      edgesOnlyForId
     }
   ) });
 }
@@ -15488,7 +15502,7 @@ function baseRadius(n) {
   return nodeRadius(n.weight || 1, n.role);
 }
 var EMPTY_IDS = /* @__PURE__ */ new Set();
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, journalLabels, hiddenIds }) {
+function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, journalLabels, hiddenIds, edgesOnlyForId }) {
   const { placeholder } = (0, import_react9.useMemo)(
     () => computeVisibility(nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds),
     [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds]
@@ -15572,14 +15586,15 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       onHoverChange,
       onHullHoverChange,
       tilt,
-      hiddenIds
+      hiddenIds,
+      edgesOnlyForId
     }
   );
 }
 
 // public/explorer-canvas.tsx
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds, journalLabels, hiddenIds }) {
+function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId }) {
   const ref = (0, import_react10.useRef)(null);
   const [size, setSize] = (0, import_react10.useState)(null);
   (0, import_react10.useEffect)(() => {
@@ -15615,7 +15630,8 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
       layerOrder,
       coauthorIds,
       journalLabels,
-      hiddenIds
+      hiddenIds,
+      edgesOnlyForId
     }
   ) });
 }
@@ -16663,13 +16679,9 @@ function GraphExplorerBody() {
     for (const n of rawNodes) if (n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [rawNodes]);
-  const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
-    me,
-    rawNodes,
-    projectedNodes,
-    institutionsByAuthor: affiliations.institutionsByAuthor
-  });
+  const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor: affiliations.institutionsByAuthor });
   const hiddenIds = useHiddenAuthors(projectedNodes, projectedEdges, hoverId, coauthorIds, flags, egoAuthorId);
+  const edgesOnlyForId = !flags.author && !flags.coauthor && hoverId?.startsWith("doi:") ? hoverId : null;
   if (loading) return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
   if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "No data." }) });
   return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "view graph-view", children: [
@@ -16697,7 +16709,7 @@ function GraphExplorerBody() {
       /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
       /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "graph-canvas", children: [
         /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds, journalLabels, hiddenIds })
+        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
         NodeDetail,

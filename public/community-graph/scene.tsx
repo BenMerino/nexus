@@ -36,12 +36,14 @@ interface Props<N, L extends BaseLink & { weight?: number }> {
   rotatable?: boolean;
   /** Ids to render invisible but keep in the sim. */
   hiddenIds?: Set<string>;
+  /** When set, Links only draws edges directly on this node. */
+  edgesOnlyForId?: string | null;
 }
 
 export function GraphScene<N, L extends BaseLink & { weight?: number }>({
   svgRef, width, height, nodes, links, adapter, primaryKey, communityColors, minCommunitySize,
   focusKey, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick,
-  transform, ego, hovered, showHover, onHullHover, camera, onBackgroundMouseDown, rotatable, hiddenIds,
+  transform, ego, hovered, showHover, onHullHover, camera, onBackgroundMouseDown, rotatable, hiddenIds, edgesOnlyForId,
 }: Props<N, L>) {
   const t = transform
     ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})`
@@ -59,7 +61,9 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
       <g style={{ transform: t, transformOrigin: '0 0' }}>
         <GridBackdrop />
         <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} focusKey={focusKey} onHoverKey={onHullHover} camera={camera} />
-        <Links links={links} connected={connected} camera={camera} pathMode hiddenIds={hiddenIds} />
+        <Links links={links} connected={connected} camera={camera} pathMode hiddenIds={hiddenIds}
+          onlyEdgesOfId={edgesOnlyForId}
+        />
         <Nodes
           nodes={nodes} adapter={adapter}
           hoverId={hoverId} selectedId={selectedId} connected={connected} nodeColor={nodeColor}

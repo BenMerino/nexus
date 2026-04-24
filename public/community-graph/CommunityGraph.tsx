@@ -47,12 +47,14 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
   tilt?: number;
   /** Ids to render invisible but keep in the sim. */
   hiddenIds?: Set<string>;
+  /** When set, Links only draws edges directly on this node. */
+  edgesOnlyForId?: string | null;
 }
 
 export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   nodes: inNodes, links: inLinks, adapter, primaryKey = null, width, height, selectedId,
   forceConfig, onNodeClick, pinDraggedNodes = false, viewTransform, zoomToId, zoomScale = 2,
-  externalHoverId, onHoverChange, onHullHoverChange, tilt: tiltTarget = 0, hiddenIds,
+  externalHoverId, onHoverChange, onHullHoverChange, tilt: tiltTarget = 0, hiddenIds, edgesOnlyForId,
 }: CommunityGraphProps<N, L>) {
   const config: ForceConfig = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -140,6 +142,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         rotatable={tiltTarget > 0}
         onBackgroundMouseDown={startOrbitDrag}
         hiddenIds={hiddenIds}
+        edgesOnlyForId={edgesOnlyForId}
       />
     </div>
   );

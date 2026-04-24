@@ -23,9 +23,10 @@ interface Props {
   coauthorIds?: Set<string>;
   journalLabels?: Map<string, string>;
   hiddenIds?: Set<string>;
+  edgesOnlyForId?: string | null;
 }
 
-export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds, journalLabels, hiddenIds }: Props) {
+export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
 
@@ -65,6 +66,7 @@ export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, 
           coauthorIds={coauthorIds}
           journalLabels={journalLabels}
           hiddenIds={hiddenIds}
+          edgesOnlyForId={edgesOnlyForId}
         />
       )}
     </div>

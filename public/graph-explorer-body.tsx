@@ -99,14 +99,11 @@ export function GraphExplorerBody() {
     return m;
   }, [rawNodes]);
 
-  const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({
-    me,
-    rawNodes,
-    projectedNodes,
-    institutionsByAuthor: affiliations.institutionsByAuthor,
-  });
-
+  const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor: affiliations.institutionsByAuthor });
   const hiddenIds = useHiddenAuthors(projectedNodes, projectedEdges, hoverId, coauthorIds, flags, egoAuthorId);
+  // Hovering a paper while authors are globally hidden → render only that
+  // paper's edges, so revealing its authors doesn't surface their other edges.
+  const edgesOnlyForId = !flags.author && !flags.coauthor && hoverId?.startsWith('doi:') ? hoverId : null;
 
   if (loading) return <div className="view"><div className="eyebrow">Loading graph data…</div></div>;
   if (!rawNodes.length) return <div className="view"><div className="eyebrow">No data.</div></div>;
@@ -131,7 +128,7 @@ export function GraphExplorerBody() {
           <GraphCanvasCorners tenant={me?.tenant ?? null} role={me?.role ?? null} yearFrom={yearFrom} yearTo={yearTo} yearMin={yearMin} yearMax={yearMax} tilted={tilted} onToggleTilt={toggleTilt} />
           {projectedNodes.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={tilted ? 1 : 0} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} hiddenIds={hiddenIds} />}
+            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={tilted ? 1 : 0} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} hiddenIds={hiddenIds} edgesOnlyForId={edgesOnlyForId} />}
         </div>
 
         <aside className="detail-panel" ref={detailPanelRef}>
