@@ -13166,7 +13166,7 @@ function startDrag(e, node, svg, sim, pinAfterDrag, getCamera = () => FLAT) {
 
 // public/community-graph/render-nodes.tsx
 var import_jsx_runtime5 = __toESM(require_jsx_runtime());
-function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, camera }) {
+function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, camera, hiddenIds }) {
   const zSorted = [...nodes].sort((a2, b) => a2.z - b.z);
   const lift = pitchLift(camera);
   const showShadows = lift > 0.02;
@@ -13174,6 +13174,7 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
     showShadows && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { style: { pointerEvents: "none" }, children: zSorted.map((n) => {
       if (n.z <= 0) return null;
       const id = adapter.getId(n);
+      if (hiddenIds?.has(id)) return null;
       const r = adapter.getRadius(n);
       const dim = connected && !connected.has(id);
       const p = floorShadow(n.x, n.y, camera);
@@ -13194,11 +13195,13 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
     }) }),
     /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { children: zSorted.map((n) => {
       const id = adapter.getId(n);
+      const hidden = hiddenIds?.has(id) ?? false;
       const r = adapter.getRadius(n);
       const isHov = id === hoverId;
       const isSel = id === selectedId;
       const dim = connected && !connected.has(id);
       const p = project(n, camera);
+      const baseOpacity = hidden ? 0 : dim ? 0.25 : 1;
       return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
         "g",
         {
@@ -13211,7 +13214,7 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
             e.preventDefault();
             onClick(n);
           },
-          style: { cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 0.2s" },
+          style: { cursor: hidden ? "default" : "pointer", opacity: baseOpacity, pointerEvents: hidden ? "none" : "auto", transition: "opacity 0.2s" },
           children: [
             (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
             /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
@@ -13249,13 +13252,14 @@ function GraphDefs() {
 function GridBackdrop() {
   return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("rect", { x: -5e3, y: -5e3, width: 1e4, height: 1e4, fill: "url(#graph-grid)", style: { pointerEvents: "none" } });
 }
-function Links({ links, connected, camera, pathMode }) {
+function Links({ links, connected, camera, pathMode, hiddenIds }) {
   const hasFocus = !!connected;
   const edges = [];
   links.forEach((l, i) => {
     const s = typeof l.source === "object" ? l.source : null;
     const t = typeof l.target === "object" ? l.target : null;
     if (!s || !t) return;
+    if (hiddenIds && (hiddenIds.has(s.id) || hiddenIds.has(t.id))) return;
     const sz = s.z ?? 0;
     const tz = t.z ?? 0;
     const ps = project({ x: s.x, y: s.y, z: sz }, camera);
@@ -13709,7 +13713,8 @@ function GraphScene({
   onHullHover,
   camera,
   onBackgroundMouseDown,
-  rotatable
+  rotatable,
+  hiddenIds
 }) {
   const t = transform ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})` : "translate(0px, 0px) scale(1)";
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("svg", { ref: svgRef, width, height, style: { display: "block", userSelect: "none" }, children: [
@@ -13729,7 +13734,7 @@ function GraphScene({
     /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("g", { style: { transform: t, transformOrigin: "0 0" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(GridBackdrop, {}),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CommunityHulls, { nodes, adapter, primaryKey, colors: communityColors, minSize: minCommunitySize, focusKey, onHoverKey: onHullHover, camera }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera, pathMode: true }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Links, { links, connected, camera, pathMode: true, hiddenIds }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         Nodes,
         {
@@ -13743,7 +13748,8 @@ function GraphScene({
           onHoverEnd,
           onMouseDown,
           onClick: (n) => onNodeClick?.(n),
-          camera
+          camera,
+          hiddenIds
         }
       ),
       ego && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(EgoLabel, { ego, adapter, scale: transform?.scale ?? 1, camera }),
@@ -15013,7 +15019,8 @@ function CommunityGraph({
   externalHoverId,
   onHoverChange,
   onHullHoverChange,
-  tilt: tiltTarget = 0
+  tilt: tiltTarget = 0,
+  hiddenIds
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = (0, import_react8.useRef)(null);
@@ -15120,7 +15127,8 @@ function CommunityGraph({
       },
       camera,
       rotatable: tiltTarget > 0,
-      onBackgroundMouseDown: startOrbitDrag
+      onBackgroundMouseDown: startOrbitDrag,
+      hiddenIds
     }
   ) });
 }

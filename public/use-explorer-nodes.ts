@@ -37,25 +37,15 @@ export function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me
     return hit?.id ?? null;
   }, [me, rawNodes]);
 
+  // Structural set: papers + every author that touches any paper. Stable —
+  // doesn't depend on the visibility flags, so toggling "hide authors" or
+  // hovering a paper doesn't re-seed the force sim. The renderer consumes
+  // separate `hiddenIds` state to dim nodes in/out.
   const projectedNodes = useMemo(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
-    // Ego and home institution are "fixed" in the sidebar — they always stay
-    // visible regardless of class-level toggles, so the graph always has an
-    // ego to anchor relationships to.
-    const authorAllowed = (id: string) => {
-      if (id === rawEgoAuthorId) return true;
-      return coauthorIds.has(id) ? flags.coauthor : flags.author;
-    };
-    // Institutions (home or otherwise) aren't rendered as nodes — you and
-    // your co-authors embody your institution's network in concept.
-    const institutionAllowed = () => false;
-    const groupMatch = (n: { id: string; group: string }) =>
-      (n.group === 'institution' && institutionAllowed()) ||
-      (n.group === 'author' && authorAllowed(n.id)) ||
-      (n.group === 'journal' && flags.journal) ||
-      (n.group === 'doi' && flags.paper);
-    return enriched.filter(n => groupMatch(n)) as EnrichedSimNode[];
-  }, [projectedRaw, tagMeta, flags, coauthorIds, rawEgoAuthorId, homeInstitutionId]);
+    // Institutions + journals aren't rendered as nodes.
+    return enriched.filter(n => n.group === 'author' || n.group === 'doi') as EnrichedSimNode[];
+  }, [projectedRaw, tagMeta]);
 
   return { projectedNodes, coauthorIds, rawEgoAuthorId };
 }
