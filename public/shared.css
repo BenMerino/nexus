@@ -359,23 +359,24 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   position: relative; width: 100%; height: 100%;
   border-radius: 0; border: 0; flex: 1 1 auto;
 }
+/* Overlays float over the canvas with no visible frame — just a strip
+ * containing the rows/cards. Contents own their own glass styling
+ * (LayerStack rows are bare; bucket cards in Graph contents already
+ * carry the gradient look themselves). */
 .graph-overlay {
   position: absolute; top: 14px; bottom: 14px;
   width: 280px; z-index: 4;
   display: flex; flex-direction: column;
-  background: linear-gradient(180deg, rgba(20, 22, 26, 0.78), rgba(20, 22, 26, 0.62));
-  border: 1px solid var(--border-soft); border-radius: var(--radius);
-  backdrop-filter: blur(10px);
-  overflow: hidden;
+  pointer-events: none;
 }
 .graph-overlay-left { left: 14px; width: 220px; }
 .graph-overlay-right { right: 14px; }
-.graph-overlay > * { flex: 1 1 auto; min-height: 0; min-width: 0; height: 100%; }
-/* Inside the overlay glass panel the inner components shouldn't paint
- * their own opaque background — let the overlay's gradient show through —
- * but they still own their layout (filmstrip panes, scroll, padding). */
-.graph-overlay .graph-filters { background: transparent; border: 0; height: 100%; box-sizing: border-box; }
+.graph-overlay > * { flex: 1 1 auto; min-height: 0; min-width: 0; height: 100%; pointer-events: auto; }
+.graph-overlay .graph-filters { background: transparent; border: 0; padding: 0; height: 100%; box-sizing: border-box; }
 .graph-overlay .detail-panel { background: transparent; border: 0; height: 100%; }
+/* Drop the section headings ("Node types", "Year range") — the rows
+ * carry their own labels and the headings just add panel-chrome noise. */
+.graph-overlay .filter-label { display: none; }
 @media (max-width: 1200px) {
   .graph-overlay-left { width: 200px; }
   .graph-overlay-right { width: 260px; }
