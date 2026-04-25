@@ -14073,20 +14073,28 @@ function targetFor(zoomToId, zoomToCommunityKey, nodes, adapter, zoomScale, widt
     return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
   }
   if (zoomToCommunityKey) {
-    let sx = 0;
-    let sy = 0;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
     let count = 0;
     for (const n of nodes) {
       if (adapter.getCommunityKey(n) !== zoomToCommunityKey) continue;
       const p = project(n, camera);
-      sx += p.x;
-      sy += p.y;
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
       count++;
     }
     if (count === 0) return null;
-    const cx = sx / count;
-    const cy = sy / count;
-    const scale = Math.max(1, zoomScale * 0.6);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const PAD = 80;
+    const bw = Math.max(1, maxX - minX);
+    const bh = Math.max(1, maxY - minY);
+    const fit = Math.min((width - PAD * 2) / bw, (height - PAD * 2) / bh);
+    const scale = Math.min(zoomScale, Math.max(0.4, fit));
     return { tx: width / 2 - cx * scale, ty: height / 2 - cy * scale, scale };
   }
   return IDENTITY;
