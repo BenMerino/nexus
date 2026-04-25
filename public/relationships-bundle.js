@@ -16188,25 +16188,16 @@ function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }) {
               onClick: () => onToggle(b.key),
               children: [
                 /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(RichLabel, { raw: b.label }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "gc-community-metrics muted", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
-                    b.papers.length,
-                    " ",
-                    b.papers.length === 1 ? "paper" : "papers"
-                  ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { "aria-hidden": "true", children: "\xB7" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
-                    b.authors.length,
-                    " ",
-                    b.authors.length === 1 ? "author" : "authors"
-                  ] })
-                ] })
+                /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "gc-community-metrics muted", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
+                  b.papers.length,
+                  " ",
+                  b.papers.length === 1 ? "paper" : "papers"
+                ] }) })
               ]
             }
           )
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "gc-community-body", "aria-hidden": !open, children: /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "gc-community-body-inner", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
           /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
           /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
         ] }) })

@@ -58,14 +58,11 @@ export function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }
           <h4><RichLabel raw={b.label} /></h4>
           <div className="gc-community-metrics muted">
             <span>{b.papers.length} {b.papers.length === 1 ? 'paper' : 'papers'}</span>
-            <span aria-hidden="true">·</span>
-            <span>{b.authors.length} {b.authors.length === 1 ? 'author' : 'authors'}</span>
           </div>
         </button>
       </header>
       <div className="gc-community-body" aria-hidden={!open}>
         <div className="gc-community-body-inner">
-          <NodeList label="Authors"  color={COLORS.author}  ns={b.authors}  onSelect={onSelect} onHover={onHover} />
           <NodeList label="Journals" color={COLORS.journal} ns={b.journals} onSelect={onSelect} onHover={onHover} />
           <NodeList label="Papers"   color="#888"           ns={b.papers}   onSelect={onSelect} onHover={onHover} />
         </div>
