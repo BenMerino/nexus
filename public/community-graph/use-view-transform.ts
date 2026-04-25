@@ -11,6 +11,10 @@ interface Args<N> {
   /** When set (and `zoomToId` is null), zoom to the centroid of the
    *  community whose adapter key matches this. */
   zoomToCommunityKey?: string | null;
+  /** When zooming to a node id, expand the target to include this set of
+   *  related ids — so 1-hop neighbors don't fall off-canvas at the zoomed
+   *  scale. Ignored when zooming to a community. */
+  zoomToIdRelated?: Set<string> | null;
   zoomScale: number;
   nodes: SimN<N>[];
   adapter: CommunityAdapter<N>;
@@ -25,33 +29,44 @@ const IDENTITY: ViewTransform = { tx: 0, ty: 0, scale: 1 };
 function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 
-function targetFor<N>(zoomToId: string | null | undefined, zoomToCommunityKey: string | null | undefined, nodes: SimN<N>[], adapter: CommunityAdapter<N>, zoomScale: number, width: number, height: number, camera: Camera): ViewTransform | null {
+/** Fit the bounding box of `points` (in projected canvas space) into the
+ *  viewport with `pad` margin. Cap zoom-in at `maxScale` so a tiny set
+ *  doesn't blow up. */
+function fitBbox(points: { x: number; y: number }[], width: number, height: number, maxScale: number, pad = 80): ViewTransform | null {
+  if (points.length === 0) return null;
+  let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y;
+  }
+  const cx = (minX + maxX) / 2; const cy = (minY + maxY) / 2;
+  const bw = Math.max(1, maxX - minX);
+  const bh = Math.max(1, maxY - minY);
+  const fit = Math.min((width - pad * 2) / bw, (height - pad * 2) / bh);
+  const scale = Math.min(maxScale, Math.max(0.4, fit));
+  return { tx: width / 2 - cx * scale, ty: height / 2 - cy * scale, scale };
+}
+
+function targetFor<N>(zoomToId: string | null | undefined, zoomToCommunityKey: string | null | undefined, zoomToIdRelated: Set<string> | null | undefined, nodes: SimN<N>[], adapter: CommunityAdapter<N>, zoomScale: number, width: number, height: number, camera: Camera): ViewTransform | null {
   if (zoomToId) {
     const target = nodes.find(n => adapter.getId(n) === zoomToId);
     if (!target) return null;
+    if (zoomToIdRelated && zoomToIdRelated.size > 1) {
+      const points: { x: number; y: number }[] = [];
+      for (const n of nodes) if (zoomToIdRelated.has(adapter.getId(n))) points.push(project(n, camera));
+      const fit = fitBbox(points, width, height, zoomScale);
+      if (fit) return fit;
+    }
     const p = project(target, camera);
     return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
   }
   if (zoomToCommunityKey) {
-    let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity; let count = 0;
+    const points: { x: number; y: number }[] = [];
     for (const n of nodes) {
       if (adapter.getCommunityKey(n) !== zoomToCommunityKey) continue;
-      const p = project(n, camera);
-      if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y;
-      if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y;
-      count++;
+      points.push(project(n, camera));
     }
-    if (count === 0) return null;
-    const cx = (minX + maxX) / 2; const cy = (minY + maxY) / 2;
-    // Fit the community's bounding box to the viewport with padding for
-    // node radii + breathing room. Cap to zoomScale so a tiny community
-    // doesn't zoom past single-node depth.
-    const PAD = 80;
-    const bw = Math.max(1, maxX - minX);
-    const bh = Math.max(1, maxY - minY);
-    const fit = Math.min((width - PAD * 2) / bw, (height - PAD * 2) / bh);
-    const scale = Math.min(zoomScale, Math.max(0.4, fit));
-    return { tx: width / 2 - cx * scale, ty: height / 2 - cy * scale, scale };
+    return fitBbox(points, width, height, zoomScale);
   }
   return IDENTITY;
 }
@@ -60,7 +75,7 @@ function targetFor<N>(zoomToId: string | null | undefined, zoomToCommunityKey: s
  *  transition. Each frame updates the computed style, so the browser's
  *  hit-test is always synced to the visible position — users can click
  *  a node even while a previous zoom is still easing toward another one. */
-export function useViewTransform<N>({ override, zoomToId, zoomToCommunityKey, zoomScale, nodes, adapter, width, height, camera }: Args<N>): { t: ViewTransform | null } {
+export function useViewTransform<N>({ override, zoomToId, zoomToCommunityKey, zoomToIdRelated, zoomScale, nodes, adapter, width, height, camera }: Args<N>): { t: ViewTransform | null } {
   const [, bump] = useState(0);
   const startRef = useRef<ViewTransform>(IDENTITY);
   const endRef = useRef<ViewTransform | null>(IDENTITY);
@@ -70,8 +85,8 @@ export function useViewTransform<N>({ override, zoomToId, zoomToCommunityKey, zo
 
   // Keep these fresh each render so the rAF loop sees the latest, without
   // restarting on every adapter / nodes-array identity change.
-  const liveRef = useRef({ zoomToId, zoomToCommunityKey, zoomScale, nodes, adapter, width, height, camera });
-  liveRef.current = { zoomToId, zoomToCommunityKey, zoomScale, nodes, adapter, width, height, camera };
+  const liveRef = useRef({ zoomToId, zoomToCommunityKey, zoomToIdRelated, zoomScale, nodes, adapter, width, height, camera });
+  liveRef.current = { zoomToId, zoomToCommunityKey, zoomToIdRelated, zoomScale, nodes, adapter, width, height, camera };
 
   // Retarget when either the node id or community key changes. A composite
   // key disambiguates the two channels so switching from one to the other
@@ -80,7 +95,7 @@ export function useViewTransform<N>({ override, zoomToId, zoomToCommunityKey, zo
   if (lastTargetRef.current !== targetKey) {
     lastTargetRef.current = targetKey;
     startRef.current = { ...currentRef.current };
-    endRef.current = targetFor(zoomToId, zoomToCommunityKey, nodes, adapter, zoomScale, width, height, camera);
+    endRef.current = targetFor(zoomToId, zoomToCommunityKey, zoomToIdRelated, nodes, adapter, zoomScale, width, height, camera);
     startTimeRef.current = typeof performance !== 'undefined' ? performance.now() : 0;
   }
 
@@ -102,7 +117,7 @@ export function useViewTransform<N>({ override, zoomToId, zoomToCommunityKey, zo
       // After the ease lands, keep the view locked on the live target position.
       if (p >= 1) {
         const l = liveRef.current;
-        const live = targetFor(l.zoomToId, l.zoomToCommunityKey, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
+        const live = targetFor(l.zoomToId, l.zoomToCommunityKey, l.zoomToIdRelated, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
         if (live) { endRef.current = live; currentRef.current = live; }
       }
       bump(v => (v + 1) % 1e9);

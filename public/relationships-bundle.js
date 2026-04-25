@@ -14065,54 +14065,63 @@ function easeOutCubic(t) {
 function lerp2(a2, b, t) {
   return a2 + (b - a2) * t;
 }
-function targetFor(zoomToId, zoomToCommunityKey, nodes, adapter, zoomScale, width, height, camera) {
+function fitBbox(points, width, height, maxScale, pad = 80) {
+  if (points.length === 0) return null;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const bw = Math.max(1, maxX - minX);
+  const bh = Math.max(1, maxY - minY);
+  const fit = Math.min((width - pad * 2) / bw, (height - pad * 2) / bh);
+  const scale = Math.min(maxScale, Math.max(0.4, fit));
+  return { tx: width / 2 - cx * scale, ty: height / 2 - cy * scale, scale };
+}
+function targetFor(zoomToId, zoomToCommunityKey, zoomToIdRelated, nodes, adapter, zoomScale, width, height, camera) {
   if (zoomToId) {
     const target = nodes.find((n) => adapter.getId(n) === zoomToId);
     if (!target) return null;
+    if (zoomToIdRelated && zoomToIdRelated.size > 1) {
+      const points = [];
+      for (const n of nodes) if (zoomToIdRelated.has(adapter.getId(n))) points.push(project(n, camera));
+      const fit = fitBbox(points, width, height, zoomScale);
+      if (fit) return fit;
+    }
     const p = project(target, camera);
     return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
   }
   if (zoomToCommunityKey) {
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    let count = 0;
+    const points = [];
     for (const n of nodes) {
       if (adapter.getCommunityKey(n) !== zoomToCommunityKey) continue;
-      const p = project(n, camera);
-      if (p.x < minX) minX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y > maxY) maxY = p.y;
-      count++;
+      points.push(project(n, camera));
     }
-    if (count === 0) return null;
-    const cx = (minX + maxX) / 2;
-    const cy = (minY + maxY) / 2;
-    const PAD = 80;
-    const bw = Math.max(1, maxX - minX);
-    const bh = Math.max(1, maxY - minY);
-    const fit = Math.min((width - PAD * 2) / bw, (height - PAD * 2) / bh);
-    const scale = Math.min(zoomScale, Math.max(0.4, fit));
-    return { tx: width / 2 - cx * scale, ty: height / 2 - cy * scale, scale };
+    return fitBbox(points, width, height, zoomScale);
   }
   return IDENTITY;
 }
-function useViewTransform({ override, zoomToId, zoomToCommunityKey, zoomScale, nodes, adapter, width, height, camera }) {
+function useViewTransform({ override, zoomToId, zoomToCommunityKey, zoomToIdRelated, zoomScale, nodes, adapter, width, height, camera }) {
   const [, bump] = (0, import_react3.useState)(0);
   const startRef = (0, import_react3.useRef)(IDENTITY);
   const endRef = (0, import_react3.useRef)(IDENTITY);
   const startTimeRef = (0, import_react3.useRef)(0);
   const currentRef = (0, import_react3.useRef)(IDENTITY);
   const lastTargetRef = (0, import_react3.useRef)("");
-  const liveRef = (0, import_react3.useRef)({ zoomToId, zoomToCommunityKey, zoomScale, nodes, adapter, width, height, camera });
-  liveRef.current = { zoomToId, zoomToCommunityKey, zoomScale, nodes, adapter, width, height, camera };
+  const liveRef = (0, import_react3.useRef)({ zoomToId, zoomToCommunityKey, zoomToIdRelated, zoomScale, nodes, adapter, width, height, camera });
+  liveRef.current = { zoomToId, zoomToCommunityKey, zoomToIdRelated, zoomScale, nodes, adapter, width, height, camera };
   const targetKey = `${zoomToId ?? ""}|${zoomToCommunityKey ?? ""}`;
   if (lastTargetRef.current !== targetKey) {
     lastTargetRef.current = targetKey;
     startRef.current = { ...currentRef.current };
-    endRef.current = targetFor(zoomToId, zoomToCommunityKey, nodes, adapter, zoomScale, width, height, camera);
+    endRef.current = targetFor(zoomToId, zoomToCommunityKey, zoomToIdRelated, nodes, adapter, zoomScale, width, height, camera);
     startTimeRef.current = typeof performance !== "undefined" ? performance.now() : 0;
   }
   (0, import_react3.useEffect)(() => {
@@ -14132,7 +14141,7 @@ function useViewTransform({ override, zoomToId, zoomToCommunityKey, zoomScale, n
       };
       if (p >= 1) {
         const l = liveRef.current;
-        const live = targetFor(l.zoomToId, l.zoomToCommunityKey, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
+        const live = targetFor(l.zoomToId, l.zoomToCommunityKey, l.zoomToIdRelated, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
         if (live) {
           endRef.current = live;
           currentRef.current = live;
@@ -15415,6 +15424,7 @@ function CommunityGraph({
     override: viewTransform,
     zoomToId,
     zoomToCommunityKey: externalHullKey,
+    zoomToIdRelated: connected,
     zoomScale,
     nodes,
     adapter,
