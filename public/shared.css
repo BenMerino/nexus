@@ -371,17 +371,14 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .graph-overlay-left { left: 18px; width: 240px; }
 .graph-overlay-right { right: 18px; }
-/* Bottom horizontal overlay — used for graph contents. Spans the canvas
- * width with a glass background; cards inside flow horizontally with
- * x-axis scroll. */
+/* Bottom horizontal overlay — used for graph contents. Strip is invisible;
+ * each bucket card carries its own glass background so they float over the
+ * canvas the same way the side overlays do. */
 .graph-overlay.graph-overlay-bottom {
   top: auto; bottom: 18px; left: 18px; right: 18px;
   width: auto; height: auto; max-height: 30%;
-  flex-direction: row; padding: 12px 16px;
-  background: linear-gradient(180deg, rgba(20, 22, 26, 0.62), rgba(20, 22, 26, 0.78));
-  border: 1px solid var(--border-soft); border-radius: var(--radius);
-  backdrop-filter: blur(10px);
-  pointer-events: auto;
+  flex-direction: row;
+  pointer-events: none;
 }
 .graph-overlay.graph-overlay-bottom > * { height: auto; }
 .graph-overlay.graph-overlay-bottom .graph-contents { width: 100%; }
