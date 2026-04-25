@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { TYPE_DISPLAY_LABELS } from './type-labels.js';
-import { typeColor, typeRank, typeMetalName } from './type-metals.js';
+import { typeColor, typeRank } from './type-metals.js';
 
 export type CadenceSegment = { type: string; count: number };
 export type CadencePoint = { year: number; count: number; segments: CadenceSegment[] };
@@ -94,15 +94,12 @@ export function CadencePanel({ cadence }: { cadence: Cadence }) {
       </svg>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', marginTop: 10, fontSize: 11 }}>
-        {[...types].sort((a, b) => typeRank(a) - typeRank(b)).map(t => {
-          const metal = typeMetalName(t);
-          return (
-            <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)' }}>
-              <span style={{ width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: 'inline-block' }} />
-              {typeLabel(t)}{metal ? <span style={{ color: 'var(--fg-muted)', opacity: 0.7 }}> · {metal}</span> : null}
-            </span>
-          );
-        })}
+        {[...types].sort((a, b) => typeRank(a) - typeRank(b)).map(t => (
+          <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)' }}>
+            <span style={{ width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: 'inline-block' }} />
+            {typeLabel(t)}
+          </span>
+        ))}
       </div>
 
       <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 8 }}>

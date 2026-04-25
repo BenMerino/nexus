@@ -15437,7 +15437,6 @@ var TYPE_METAL = {
 };
 var typeColor = (t) => `var(${TYPE_METAL[t]?.token || "--metal-unknown"})`;
 var typeRank = (t) => TYPE_METAL[t]?.rank ?? 99;
-var typeMetalName = (t) => TYPE_METAL[t]?.name || "";
 
 // public/portfolio-cadence.tsx
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
@@ -15504,17 +15503,10 @@ function CadencePanel({ cadence }) {
         ] }, p.year);
       })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: [...types].sort((a2, b) => typeRank(a2) - typeRank(b)).map((t) => {
-      const metal = typeMetalName(t);
-      return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: "inline-block" } }),
-        typeLabel(t),
-        metal ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { color: "var(--fg-muted)", opacity: 0.7 }, children: [
-          " \xB7 ",
-          metal
-        ] }) : null
-      ] }, t);
-    }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: [...types].sort((a2, b) => typeRank(a2) - typeRank(b)).map((t) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: "inline-block" } }),
+      typeLabel(t)
+    ] }, t)) }),
     /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: [
       "Publications per year (",
       series[0].year,
