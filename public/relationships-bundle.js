@@ -766,7 +766,7 @@ var require_react = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React15 = require_react();
+    var React16 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React15.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React16.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React15 = require_react();
+    var React16 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React15.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React16.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React15.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React16.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12750,7 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react27 = __toESM(require_react());
+var import_react28 = __toESM(require_react());
 
 // public/node-classify.ts
 function percentile(sorted, p) {
@@ -15946,7 +15946,7 @@ function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags
 }
 
 // public/graph-contents.tsx
-var import_react20 = __toESM(require_react());
+var import_react21 = __toESM(require_react());
 
 // public/graph-contents-buckets.ts
 function sortByWeightThenLabel(a2, b) {
@@ -16203,6 +16203,7 @@ function buildPath(fromId, egoId, edges, nodesById) {
 }
 
 // public/graph-contents-bucket.tsx
+var import_react20 = __toESM(require_react());
 var import_jsx_runtime22 = __toESM(require_jsx_runtime());
 var ORCID_RE = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
 function displayLabel(n) {
@@ -16238,7 +16239,8 @@ function BucketView({ b, onSelect, onHover }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
   const headInstId = b.institutions[0]?.id;
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, children: [
+  const [open, setOpen] = (0, import_react20.useState)(false);
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}${open ? " open" : ""}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("header", { className: "gc-community-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
       /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
@@ -16246,17 +16248,24 @@ function BucketView({ b, onSelect, onHover }) {
         {
           type: "button",
           className: "gc-community-title",
-          onClick: () => headInstId && onSelect(headInstId),
+          onClick: () => setOpen((o) => !o),
           onMouseEnter: () => headInstId && onHover?.(headInstId),
           onMouseLeave: () => onHover?.(null),
           children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichLabel, { raw: b.label }) })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "mono muted gc-count", children: total })
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { className: "mono muted gc-count", children: [
+        b.papers.length,
+        "p \xB7 ",
+        b.authors.length,
+        "a"
+      ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
+    open && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
+    ] })
   ] });
 }
 
@@ -16268,13 +16277,13 @@ function prettyFallback(key) {
   return m2 ? m2[1] : bare;
 }
 function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }) {
-  const hoveredNode = (0, import_react20.useMemo)(() => hoveredId ? nodes.find((n) => n.id === hoveredId) ?? null : null, [hoveredId, nodes]);
-  const labelById = (0, import_react20.useMemo)(() => {
+  const hoveredNode = (0, import_react21.useMemo)(() => hoveredId ? nodes.find((n) => n.id === hoveredId) ?? null : null, [hoveredId, nodes]);
+  const labelById = (0, import_react21.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of allNodes) if (n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [allNodes]);
-  const adapter = (0, import_react20.useMemo)(() => ({
+  const adapter = (0, import_react21.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -16296,21 +16305,21 @@ function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: (key) => labelById.get(key) || prettyFallback(key)
   }), [affiliations, egoAuthorId, labelById]);
-  const focusKey = (0, import_react20.useMemo)(() => {
+  const focusKey = (0, import_react21.useMemo)(() => {
     if (hoveredId) {
       const hovered = nodes.find((n) => n.id === hoveredId);
       if (hovered) return adapter.getCommunityKey(hovered);
     }
     return hoveredHullKey ?? null;
   }, [hoveredId, hoveredHullKey, nodes, adapter]);
-  const buckets = (0, import_react20.useMemo)(
+  const buckets = (0, import_react21.useMemo)(
     () => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
     [nodes, adapter, homeInstitutionId, labelById, focusKey]
   );
-  const listRef = (0, import_react20.useRef)(null);
+  const listRef = (0, import_react21.useRef)(null);
   useFlipReorder(listRef, buckets.map((b) => b.key));
-  const prefetchTimer = (0, import_react20.useRef)(null);
-  const onRowHover = (0, import_react20.useCallback)((id) => {
+  const prefetchTimer = (0, import_react21.useRef)(null);
+  const onRowHover = (0, import_react21.useCallback)((id) => {
     onHover?.(id);
     if (prefetchTimer.current) {
       clearTimeout(prefetchTimer.current);
@@ -16376,12 +16385,12 @@ function communityKeyFor(n, affiliations) {
 }
 
 // public/use-selection-stack.ts
-var import_react21 = __toESM(require_react());
+var import_react22 = __toESM(require_react());
 function useSelectionStack() {
-  const [selectionStack, setSelectionStack] = (0, import_react21.useState)([]);
-  const [navDir, setNavDir] = (0, import_react21.useState)("forward");
+  const [selectionStack, setSelectionStack] = (0, import_react22.useState)([]);
+  const [navDir, setNavDir] = (0, import_react22.useState)("forward");
   const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
-  const pushSelection = (0, import_react21.useCallback)((id) => setSelectionStack((prev) => {
+  const pushSelection = (0, import_react22.useCallback)((id) => setSelectionStack((prev) => {
     if (id === null) {
       setNavDir("back");
       return [];
@@ -16390,7 +16399,7 @@ function useSelectionStack() {
     setNavDir("forward");
     return [...prev, id];
   }), []);
-  const popSelection = (0, import_react21.useCallback)(() => setSelectionStack((prev) => {
+  const popSelection = (0, import_react22.useCallback)(() => setSelectionStack((prev) => {
     if (!prev.length) return prev;
     setNavDir("back");
     return prev.slice(0, -1);
@@ -16399,10 +16408,10 @@ function useSelectionStack() {
 }
 
 // public/use-year-range-filter.ts
-var import_react23 = __toESM(require_react());
+var import_react24 = __toESM(require_react());
 
 // public/time-slider.tsx
-var import_react22 = __toESM(require_react());
+var import_react23 = __toESM(require_react());
 var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
@@ -16410,7 +16419,7 @@ function yearOf(n) {
   return y3 > 1900 ? y3 : 0;
 }
 function useTimeRange(nodes) {
-  return (0, import_react22.useMemo)(() => {
+  return (0, import_react23.useMemo)(() => {
     let min = 9999, max = 0;
     for (const n of nodes) {
       const y3 = yearOf(n);
@@ -16431,13 +16440,13 @@ function yearOf2(n) {
 }
 function useYearRangeFilter(rawNodes, rawEdges) {
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  const [range, setRange] = (0, import_react23.useState)(null);
-  (0, import_react23.useEffect)(() => {
+  const [range, setRange] = (0, import_react24.useState)(null);
+  (0, import_react24.useEffect)(() => {
     if (yearMin && yearMax && !range) setRange([yearMin, yearMax]);
   }, [yearMin, yearMax, range]);
   const yearFrom = range ? range[0] : yearMin;
   const yearTo = range ? range[1] : yearMax;
-  const filteredRaw = (0, import_react23.useMemo)(() => {
+  const filteredRaw = (0, import_react24.useMemo)(() => {
     const fullSpan = yearFrom <= yearMin && yearTo >= yearMax;
     if (fullSpan) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
@@ -16455,7 +16464,7 @@ function useYearRangeFilter(rawNodes, rawEdges) {
 }
 
 // public/use-layer-order.ts
-var import_react24 = __toESM(require_react());
+var import_react25 = __toESM(require_react());
 var STORAGE_KEY = "graph-layer-order-v7";
 function load() {
   try {
@@ -16470,8 +16479,8 @@ function load() {
   }
 }
 function useLayerOrder() {
-  const [layerOrder, setLayerOrder] = (0, import_react24.useState)(load);
-  const reorderLayer = (0, import_react24.useCallback)((from, to) => {
+  const [layerOrder, setLayerOrder] = (0, import_react25.useState)(load);
+  const reorderLayer = (0, import_react25.useCallback)((from, to) => {
     setLayerOrder((prev) => {
       const next = [...prev];
       const [moved] = next.splice(from, 1);
@@ -16487,17 +16496,17 @@ function useLayerOrder() {
 }
 
 // public/year-range-slider.tsx
-var import_react25 = __toESM(require_react());
+var import_react26 = __toESM(require_react());
 var import_jsx_runtime25 = __toESM(require_jsx_runtime());
 function YearRangeSlider({ min, max, from, to, onChange }) {
   const span = max - min || 1;
   const leftPct = (from - min) / span * 100;
   const rightPct = (to - min) / span * 100;
-  const onFrom = (0, import_react25.useCallback)((e) => {
+  const onFrom = (0, import_react26.useCallback)((e) => {
     const v = Math.min(parseInt(e.target.value), to);
     onChange(v, to);
   }, [to, onChange]);
-  const onTo = (0, import_react25.useCallback)((e) => {
+  const onTo = (0, import_react26.useCallback)((e) => {
     const v = Math.max(parseInt(e.target.value), from);
     onChange(from, v);
   }, [from, onChange]);
@@ -16541,9 +16550,9 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
 }
 
 // public/use-hidden-authors.ts
-var import_react26 = __toESM(require_react());
+var import_react27 = __toESM(require_react());
 function useHiddenAuthors(projectedNodes, projectedEdges, hoverId, coauthorIds, flags, egoAuthorId) {
-  return (0, import_react26.useMemo)(() => {
+  return (0, import_react27.useMemo)(() => {
     const hidden = /* @__PURE__ */ new Set();
     const revealed = /* @__PURE__ */ new Set();
     if (hoverId) {
@@ -16574,19 +16583,19 @@ var DEFAULT_FLAGS = { institution: false, author: false, coauthor: false, journa
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
   const { selectionStack, selectedNodeId, navDir, pushSelection, popSelection } = useSelectionStack();
-  const detailPanelRef = (0, import_react27.useRef)(null);
-  const [hover, setHover] = (0, import_react27.useState)({ id: null, source: "canvas" });
+  const detailPanelRef = (0, import_react28.useRef)(null);
+  const [hover, setHover] = (0, import_react28.useState)({ id: null, source: "canvas" });
   const hoverId = hover.id;
-  const prefetchTimer = (0, import_react27.useRef)(null);
-  const releaseTimer = (0, import_react27.useRef)(null);
-  const schedulePrefetch = (0, import_react27.useCallback)((id) => {
+  const prefetchTimer = (0, import_react28.useRef)(null);
+  const releaseTimer = (0, import_react28.useRef)(null);
+  const schedulePrefetch = (0, import_react28.useCallback)((id) => {
     if (prefetchTimer.current) {
       clearTimeout(prefetchTimer.current);
       prefetchTimer.current = null;
     }
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, []);
-  const hoverFromCanvas = (0, import_react27.useCallback)((id) => {
+  const hoverFromCanvas = (0, import_react28.useCallback)((id) => {
     if (releaseTimer.current) {
       clearTimeout(releaseTimer.current);
       releaseTimer.current = null;
@@ -16598,47 +16607,47 @@ function GraphExplorerBody() {
       releaseTimer.current = window.setTimeout(() => setHover({ id: null, source: "canvas" }), 250);
     }
   }, [schedulePrefetch]);
-  const hoverFromSidebar = (0, import_react27.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
-  const [hullHoverKey, setHullHoverKey] = (0, import_react27.useState)(null);
-  const [expandedIds, setExpandedIds] = (0, import_react27.useState)(/* @__PURE__ */ new Set());
-  const expand = (0, import_react27.useCallback)((id) => setExpandedIds((prev) => {
+  const hoverFromSidebar = (0, import_react28.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react28.useState)(null);
+  const [expandedIds, setExpandedIds] = (0, import_react28.useState)(/* @__PURE__ */ new Set());
+  const expand = (0, import_react28.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
     const n = new Set(prev);
     n.add(id);
     return n;
   }), []);
-  const [flags, setFlags] = (0, import_react27.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react27.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
+  const [flags, setFlags] = (0, import_react28.useState)(DEFAULT_FLAGS);
+  const setFlag = (0, import_react28.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
   const { layerOrder, reorderLayer } = useLayerOrder();
   const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
-  const highlightedIds = (0, import_react27.useMemo)(() => {
+  const highlightedIds = (0, import_react28.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  (0, import_react27.useEffect)(() => {
+  (0, import_react28.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) pushSelection(f);
   }, [rawNodes, highlightedIds]);
-  (0, import_react27.useEffect)(() => {
+  (0, import_react28.useEffect)(() => {
     const el = detailPanelRef.current;
     if (!el) return;
     el.querySelectorAll(".node-detail-pane").forEach((p) => {
       p.scrollTop = 0;
     });
   }, [selectedNodeId]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react27.useMemo)(
+  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react28.useMemo)(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, true),
     [filteredRaw]
   );
   const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
-  const projectedEdges = (0, import_react27.useMemo)(() => {
+  const projectedEdges = (0, import_react28.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const affiliations = (0, import_react27.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
-  const journalLabels = (0, import_react27.useMemo)(() => {
+  const affiliations = (0, import_react28.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
+  const journalLabels = (0, import_react28.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of rawNodes) if (n.group === "journal") m2.set(n.id, n.label);
     return m2;

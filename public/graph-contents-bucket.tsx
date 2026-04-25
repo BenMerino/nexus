@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { EnrichedSimNode } from './relationship-types';
 import { COLORS } from './relationship-types';
 import type { Bucket } from './graph-contents-buckets';
@@ -49,21 +49,26 @@ export function BucketView({ b, onSelect, onHover }: BucketProps) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
   const headInstId = b.institutions[0]?.id;
+  const [open, setOpen] = useState(false);
   return (
-    <section data-flip-key={b.key} className={`gc-community${b.emphasis ? ' emphasis' : ''}`}>
+    <section data-flip-key={b.key} className={`gc-community${b.emphasis ? ' emphasis' : ''}${open ? ' open' : ''}`}>
       <header className="gc-community-head">
         <span className="gc-swatch" style={{ background: b.color }} />
         <button type="button" className="gc-community-title"
-          onClick={() => headInstId && onSelect(headInstId)}
+          onClick={() => setOpen(o => !o)}
           onMouseEnter={() => headInstId && onHover?.(headInstId)}
           onMouseLeave={() => onHover?.(null)}>
           <h4><RichLabel raw={b.label} /></h4>
         </button>
-        <span className="mono muted gc-count">{total}</span>
+        <span className="mono muted gc-count">{b.papers.length}p · {b.authors.length}a</span>
       </header>
-      <NodeList label="Authors"  color={COLORS.author}  ns={b.authors}  onSelect={onSelect} onHover={onHover} />
-      <NodeList label="Journals" color={COLORS.journal} ns={b.journals} onSelect={onSelect} onHover={onHover} />
-      <NodeList label="Papers"   color="#888"           ns={b.papers}   onSelect={onSelect} onHover={onHover} />
+      {open && (
+        <>
+          <NodeList label="Authors"  color={COLORS.author}  ns={b.authors}  onSelect={onSelect} onHover={onHover} />
+          <NodeList label="Journals" color={COLORS.journal} ns={b.journals} onSelect={onSelect} onHover={onHover} />
+          <NodeList label="Papers"   color="#888"           ns={b.papers}   onSelect={onSelect} onHover={onHover} />
+        </>
+      )}
     </section>
   );
 }
