@@ -370,7 +370,14 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   pointer-events: none;
 }
 .graph-overlay-left { left: 18px; width: 240px; }
-.graph-overlay-right { right: 18px; }
+.graph-overlay-right {
+  right: 18px;
+  background: linear-gradient(180deg, rgba(20, 22, 26, 0.78), rgba(20, 22, 26, 0.62));
+  border: 1px solid var(--border-soft); border-radius: var(--radius);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+  overflow: hidden;
+}
 /* Bottom horizontal overlay — used for graph contents. Strip is invisible;
  * each bucket card carries its own glass background so they float over the
  * canvas the same way the side overlays do. */
