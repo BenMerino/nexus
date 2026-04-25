@@ -2,12 +2,41 @@
   var esc = function (s) { return window.claustroEsc(s); };
   var fmtCLP = function (n) { return window.fmtCLP(n); };
 
+  var FACULTADES = [
+    "Facultad de Ciencias Agrarias",
+    "Facultad de Arquitectura, Música y Diseño",
+    "Facultad de Economía y Negocios",
+    "Facultad de Ciencias de la Educación",
+    "Facultad de Ingeniería",
+    "Facultad de Ciencias Jurídicas y Sociales",
+    "Facultad de Medicina",
+    "Facultad de Odontología",
+    "Facultad de Psicología",
+    "Facultad de Ciencias de la Salud",
+    "Facultad de Tecnologías Industriales",
+  ];
+
   function fundingOptions(selected) {
     var html = "";
     for (var i = 0; i < window.FUNDING_SOURCES.length; i++) {
       var f = window.FUNDING_SOURCES[i];
       var sel = f.name === selected ? " selected" : "";
       html += '<option value="' + esc(f.id) + '"' + sel + ">" + esc(f.name) + "</option>";
+    }
+    return html;
+  }
+
+  function facultadOptions(selected) {
+    var html = '<option value="">— Seleccionar —</option>';
+    var found = false;
+    for (var i = 0; i < FACULTADES.length; i++) {
+      var f = FACULTADES[i];
+      var sel = f === selected ? " selected" : "";
+      if (sel) found = true;
+      html += '<option value="' + esc(f) + '"' + sel + ">" + esc(f) + "</option>";
+    }
+    if (selected && !found) {
+      html += '<option value="' + esc(selected) + '" selected>' + esc(selected) + "</option>";
     }
     return html;
   }
@@ -47,7 +76,7 @@
     html += '<div class="form-hint mono" id="monto-hint" style="' + (p.monto ? "" : "display:none;") + '">' + (p.monto ? esc(fmtCLP(p.monto)) : "") + "</div></div>";
 
     html += '<div class="form-row"><label class="form-label">Facultad</label>';
-    html += '<input class="form-input" id="p-depto" value="' + esc(p.departamento || "") + '" placeholder="Ingeniería, Ciencias..."></div>';
+    html += '<select class="form-input" id="p-depto">' + facultadOptions(p.departamento || "") + "</select></div>";
 
     html += '<div class="form-row"><label class="form-label">Fecha inicio</label>';
     html += '<input class="form-input mono" id="p-inicio" type="date" value="' + esc(toDateInput(p.fecha_inicio)) + '"></div>';
