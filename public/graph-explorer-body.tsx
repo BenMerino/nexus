@@ -14,6 +14,7 @@ import { explorerSelectedColor } from './explorer-selected-color';
 import { useSelectionStack } from './use-selection-stack';
 import { useYearRangeFilter } from './use-year-range-filter';
 import { useLayerOrder } from './use-layer-order';
+import { YearRangeSlider } from './year-range-slider';
 import { useHiddenAuthors } from './use-hidden-authors';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: false, author: false, coauthor: false, journal: false, paper: true };
@@ -105,8 +106,14 @@ export function GraphExplorerBody() {
           : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={1} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} hiddenIds={hiddenIds} edgesOnlyForId={edgesOnlyForId} />}
 
         <aside className="graph-overlay graph-overlay-left">
-          <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFrom={yearFrom} yearTo={yearTo} onYearRangeChange={(f, t) => setRange([f, t])} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled />
+          <GraphFiltersSidebar flags={flags} setFlag={setFlag} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled />
         </aside>
+
+        {yearMax > yearMin && (
+          <div className="graph-overlay graph-overlay-top">
+            <YearRangeSlider min={yearMin} max={yearMax} from={yearFrom} to={yearTo} onChange={(f, t) => setRange([f, t])} />
+          </div>
+        )}
 
         <aside className="graph-overlay graph-overlay-right" ref={detailPanelRef}>
           <NodeDetail

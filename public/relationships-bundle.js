@@ -15697,72 +15697,18 @@ function applyTheme(me) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_react15 = __toESM(require_react());
-
-// public/year-range-slider.tsx
-var import_react13 = __toESM(require_react());
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
-function YearRangeSlider({ min, max, from, to, onChange }) {
-  const span = max - min || 1;
-  const leftPct = (from - min) / span * 100;
-  const rightPct = (to - min) / span * 100;
-  const onFrom = (0, import_react13.useCallback)((e) => {
-    const v = Math.min(parseInt(e.target.value), to);
-    onChange(v, to);
-  }, [to, onChange]);
-  const onTo = (0, import_react13.useCallback)((e) => {
-    const v = Math.max(parseInt(e.target.value), from);
-    onChange(from, v);
-  }, [from, onChange]);
-  const fillStyle = {
-    left: `${leftPct}%`,
-    width: `${Math.max(rightPct - leftPct, 0)}%`
-  };
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "year-range", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "year-range-track", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "year-range-fill", style: fillStyle }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-        "input",
-        {
-          type: "range",
-          min,
-          max,
-          value: from,
-          onChange: onFrom,
-          className: "year-range-input year-range-from",
-          style: from >= to ? { zIndex: 4 } : void 0
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-        "input",
-        {
-          type: "range",
-          min,
-          max,
-          value: to,
-          onChange: onTo,
-          className: "year-range-input year-range-to"
-        }
-      )
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "year-range-readout mono", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { children: from }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "muted", children: "\u2013" }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { children: to })
-    ] })
-  ] });
-}
+var import_react14 = __toESM(require_react());
 
 // public/layer-stack.tsx
-var import_react14 = __toESM(require_react());
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_react13 = __toESM(require_react());
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 function LayerStack({ rows, order, onReorder, enabled }) {
-  const [dragIdx, setDragIdx] = (0, import_react14.useState)(null);
-  const [overIdx, setOverIdx] = (0, import_react14.useState)(null);
-  const rowRefs = (0, import_react14.useRef)([]);
-  const dragStateRef = (0, import_react14.useRef)(null);
+  const [dragIdx, setDragIdx] = (0, import_react13.useState)(null);
+  const [overIdx, setOverIdx] = (0, import_react13.useState)(null);
+  const rowRefs = (0, import_react13.useRef)([]);
+  const dragStateRef = (0, import_react13.useRef)(null);
   const entries = order.map((layer) => ({ layer, row: rows.find((r) => r.layer === layer) })).filter((e) => !!e.row);
-  const pickRow = (0, import_react14.useCallback)((clientY) => {
+  const pickRow = (0, import_react13.useCallback)((clientY) => {
     const rects = rowRefs.current.map((el) => el?.getBoundingClientRect());
     for (let i = 0; i < rects.length; i++) {
       const r = rects[i];
@@ -15772,7 +15718,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
     if (first && clientY < first.top) return 0;
     return rects.length - 1;
   }, []);
-  const startDrag2 = (0, import_react14.useCallback)((e, fromIdx) => {
+  const startDrag2 = (0, import_react13.useCallback)((e, fromIdx) => {
     if (!enabled) return;
     e.preventDefault();
     setDragIdx(fromIdx);
@@ -15794,10 +15740,10 @@ function LayerStack({ rows, order, onReorder, enabled }) {
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   }, [enabled, onReorder, pickRow]);
-  (0, import_react14.useEffect)(() => {
+  (0, import_react13.useEffect)(() => {
     rowRefs.current = rowRefs.current.slice(0, entries.length);
   }, [entries.length]);
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, row }, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, row }, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
     "div",
     {
       ref: (el) => {
@@ -15807,7 +15753,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
       "data-dragging": dragIdx === i ? "1" : "0",
       "data-over": overIdx === i && dragIdx !== null && dragIdx !== i ? "1" : "0",
       children: [
-        enabled && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+        enabled && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
           "span",
           {
             className: "layer-stack-handle",
@@ -15816,10 +15762,10 @@ function LayerStack({ rows, order, onReorder, enabled }) {
             children: "\u283F"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "layer-stack-checks", children: row.fixed ? /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { className: "layer-stack-fixed", style: { color: row.color }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "layer-stack-fixed-dot", style: { background: row.color } }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "layer-stack-checks", children: row.fixed ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { className: "layer-stack-fixed", style: { color: row.color }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "layer-stack-fixed-dot", style: { background: row.color } }),
           row.label
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(Check, { checked: row.checked, onChange: row.onToggle, label: row.label, color: row.color }) })
       ]
     },
     layer
@@ -15838,23 +15784,16 @@ function buildLayerRows(flags, setFlag) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_jsx_runtime20 = __toESM(require_jsx_runtime());
-function GraphFiltersSidebar({ flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange, layerOrder, onReorderLayer, layersEnabled }) {
-  const layerRows = (0, import_react15.useMemo)(() => buildLayerRows(flags, setFlag), [flags, setFlag]);
-  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("aside", { className: "graph-filters", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "filter-label", children: [
-        "Node types",
-        layersEnabled && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "filter-hint-inline", children: "\xB7 drag to reorder layers" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(LayerStack, { rows: layerRows, order: layerOrder, onReorder: onReorderLayer, enabled: layersEnabled })
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+function GraphFiltersSidebar({ flags, setFlag, layerOrder, onReorderLayer, layersEnabled }) {
+  const layerRows = (0, import_react14.useMemo)(() => buildLayerRows(flags, setFlag), [flags, setFlag]);
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("aside", { className: "graph-filters", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "filter-group", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "filter-label", children: [
+      "Node types",
+      layersEnabled && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "filter-hint-inline", children: "\xB7 drag to reorder layers" })
     ] }),
-    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "filter-group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "filter-label", children: "Year range" }),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: onYearRangeChange })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "filter-hint mono", children: "DRAG nodes \xB7 CLICK for detail \xB7 HOVER to isolate" })
-  ] });
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(LayerStack, { rows: layerRows, order: layerOrder, onReorder: onReorderLayer, enabled: layersEnabled })
+  ] }) });
 }
 
 // public/explorer-affiliations.ts
@@ -15912,22 +15851,22 @@ function buildExplorerAffiliations(rawNodes, rawEdges, authoritative) {
 }
 
 // public/use-explorer-ego.ts
-var import_react16 = __toESM(require_react());
+var import_react15 = __toESM(require_react());
 var bareRor = (r) => r ? r.replace(/^https?:\/\/ror\.org\//, "") : null;
 function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) {
-  const homeInstitutionId = (0, import_react16.useMemo)(() => {
+  const homeInstitutionId = (0, import_react15.useMemo)(() => {
     const ror = bareRor(me?.profile.ror);
     if (!ror) return null;
     const hit = rawNodes.find((n) => n.group === "institution" && bareRor(n.ext_id) === ror);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const egoAuthorId = (0, import_react16.useMemo)(() => {
+  const egoAuthorId = (0, import_react15.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = projectedNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, projectedNodes]);
-  const effectiveHomeKey = (0, import_react16.useMemo)(() => {
+  const effectiveHomeKey = (0, import_react15.useMemo)(() => {
     if (homeInstitutionId) return homeInstitutionId;
     if (!egoAuthorId) return null;
     const insts = institutionsByAuthor.get(egoAuthorId);
@@ -15938,7 +15877,7 @@ function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) 
 }
 
 // public/use-explorer-nodes.ts
-var import_react17 = __toESM(require_react());
+var import_react16 = __toESM(require_react());
 
 // public/enrich-meta.ts
 function enrichWithMeta(nodes, tagMeta) {
@@ -15973,20 +15912,20 @@ function buildCoauthorSet(rawEdges, egoAuthorId) {
 
 // public/use-explorer-nodes.ts
 function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags }) {
-  const rawEgoAuthorId = (0, import_react17.useMemo)(() => {
+  const rawEgoAuthorId = (0, import_react16.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = rawNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const coauthorIds = (0, import_react17.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
-  const homeInstitutionId = (0, import_react17.useMemo)(() => {
+  const coauthorIds = (0, import_react16.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
+  const homeInstitutionId = (0, import_react16.useMemo)(() => {
     const ror = me?.profile.ror?.replace(/^https?:\/\/ror\.org\//, "") ?? null;
     if (!ror) return null;
     const hit = rawNodes.find((n) => n.group === "institution" && n.ext_id?.replace(/^https?:\/\/ror\.org\//, "") === ror);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const projectedNodes = (0, import_react17.useMemo)(() => {
+  const projectedNodes = (0, import_react16.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     return enriched.filter((n) => n.group === "author" || n.group === "doi");
   }, [projectedRaw, tagMeta]);
@@ -15994,7 +15933,7 @@ function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags
 }
 
 // public/graph-contents.tsx
-var import_react21 = __toESM(require_react());
+var import_react20 = __toESM(require_react());
 
 // public/graph-contents-buckets.ts
 function sortByWeightThenLabel(a2, b) {
@@ -16053,10 +15992,10 @@ function buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey = n
 }
 
 // public/use-flip-reorder.ts
-var import_react18 = __toESM(require_react());
+var import_react17 = __toESM(require_react());
 function useFlipReorder(container, keys, durationMs = 260) {
-  const prevTops = (0, import_react18.useRef)(/* @__PURE__ */ new Map());
-  (0, import_react18.useLayoutEffect)(() => {
+  const prevTops = (0, import_react17.useRef)(/* @__PURE__ */ new Map());
+  (0, import_react17.useLayoutEffect)(() => {
     const el = container.current;
     if (!el) return;
     const children = Array.from(el.querySelectorAll("[data-flip-key]"));
@@ -16082,17 +16021,17 @@ function useFlipReorder(container, keys, durationMs = 260) {
 }
 
 // public/graph-search.tsx
-var import_react19 = __toESM(require_react());
-var import_jsx_runtime21 = __toESM(require_jsx_runtime());
+var import_react18 = __toESM(require_react());
+var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 function GraphSearch({ nodes, onSelect }) {
-  const [query, setQuery] = (0, import_react19.useState)("");
-  const [open, setOpen] = (0, import_react19.useState)(false);
-  const matches = (0, import_react19.useMemo)(() => {
+  const [query, setQuery] = (0, import_react18.useState)("");
+  const [open, setOpen] = (0, import_react18.useState)(false);
+  const matches = (0, import_react18.useMemo)(() => {
     if (!query || query.length < 2) return [];
     const q = query.toLowerCase();
     return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
   }, [query, nodes]);
-  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(
     "div",
     {
       style: { position: "relative", display: "inline-block" },
@@ -16100,7 +16039,7 @@ function GraphSearch({ nodes, onSelect }) {
         if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
           "input",
           {
             value: query,
@@ -16113,7 +16052,7 @@ function GraphSearch({ nodes, onSelect }) {
             style: { fontFamily: "var(--mono)", fontSize: 12, padding: "6px 10px", width: 180 }
           }
         ),
-        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: {
+        open && matches.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: {
           position: "absolute",
           top: "100%",
           left: 0,
@@ -16126,7 +16065,7 @@ function GraphSearch({ nodes, onSelect }) {
           overflow: "auto",
           width: 280,
           marginTop: 4
-        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
+        }, children: matches.map((n) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(
           "div",
           {
             tabIndex: 0,
@@ -16150,9 +16089,9 @@ function GraphSearch({ nodes, onSelect }) {
             onMouseOver: (e) => e.currentTarget.style.background = "var(--bg-elev)",
             onMouseOut: (e) => e.currentTarget.style.background = "transparent",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
+              /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", background: COLORS[n.group], flexShrink: 0 } }),
+              /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: n.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { color: "var(--fg-dim)", fontSize: 10, marginLeft: "auto" }, children: n.group })
             ]
           },
           n.id
@@ -16163,32 +16102,32 @@ function GraphSearch({ nodes, onSelect }) {
 }
 
 // public/hover-card.tsx
-var import_react20 = __toESM(require_react());
-var import_jsx_runtime22 = __toESM(require_jsx_runtime());
+var import_react19 = __toESM(require_react());
+var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 function HoverCard({ node, nodes, edges, egoAuthorId, homeInstitutionId, coauthorIds }) {
-  const nodesById = (0, import_react20.useMemo)(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
-  const typeTag = (0, import_react20.useMemo)(() => tagFor(node, coauthorIds, egoAuthorId, homeInstitutionId), [node, coauthorIds, egoAuthorId, homeInstitutionId]);
-  const subtitle = (0, import_react20.useMemo)(() => subtitleFor(node, edges, nodesById), [node, edges, nodesById]);
-  const neighborCounts = (0, import_react20.useMemo)(() => countNeighborsByType(node.id, edges, nodesById), [node.id, edges, nodesById]);
-  const path = (0, import_react20.useMemo)(() => buildPath(node.id, egoAuthorId, edges, nodesById), [node.id, egoAuthorId, edges, nodesById]);
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "hover-card", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "hover-card-tag", children: typeTag }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "hover-card-name", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichHtml, { raw: node.label }) }),
-    subtitle && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "hover-card-sub", children: subtitle }),
-    neighborCounts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "hover-card-counts", children: neighborCounts.map((c2) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "hover-card-count", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "hover-card-count-num", children: c2.count }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "hover-card-count-label", children: c2.label })
+  const nodesById = (0, import_react19.useMemo)(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
+  const typeTag = (0, import_react19.useMemo)(() => tagFor(node, coauthorIds, egoAuthorId, homeInstitutionId), [node, coauthorIds, egoAuthorId, homeInstitutionId]);
+  const subtitle = (0, import_react19.useMemo)(() => subtitleFor(node, edges, nodesById), [node, edges, nodesById]);
+  const neighborCounts = (0, import_react19.useMemo)(() => countNeighborsByType(node.id, edges, nodesById), [node.id, edges, nodesById]);
+  const path = (0, import_react19.useMemo)(() => buildPath(node.id, egoAuthorId, edges, nodesById), [node.id, egoAuthorId, edges, nodesById]);
+  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "hover-card", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "hover-card-tag", children: typeTag }),
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "hover-card-name", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(RichHtml, { raw: node.label }) }),
+    subtitle && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "hover-card-sub", children: subtitle }),
+    neighborCounts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "hover-card-counts", children: neighborCounts.map((c2) => /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "hover-card-count", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: "hover-card-count-num", children: c2.count }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: "hover-card-count-label", children: c2.label })
     ] }, c2.label)) }),
-    path && path.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "hover-card-path", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "hover-card-path-head", children: "Path to you" }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("ol", { children: path.map((id, i) => {
+    path && path.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "hover-card-path", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "hover-card-path-head", children: "Path to you" }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("ol", { children: path.map((id, i) => {
         const n = nodesById.get(id);
         if (!n) return null;
         const step = tagFor(n, coauthorIds, egoAuthorId, homeInstitutionId).toLowerCase();
-        return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("li", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "hover-card-path-step", children: step }),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "hover-card-path-label", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichHtml, { raw: n.label }) }),
-          i < path.length - 1 && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "hover-card-path-arrow", children: "\u2193" })
+        return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("li", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: "hover-card-path-step", children: step }),
+          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: "hover-card-path-label", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(RichHtml, { raw: n.label }) }),
+          i < path.length - 1 && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: "hover-card-path-arrow", children: "\u2193" })
         ] }, id);
       }) })
     ] })
@@ -16251,33 +16190,33 @@ function buildPath(fromId, egoId, edges, nodesById) {
 }
 
 // public/graph-contents-bucket.tsx
-var import_jsx_runtime23 = __toESM(require_jsx_runtime());
+var import_jsx_runtime22 = __toESM(require_jsx_runtime());
 var ORCID_RE = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
 function displayLabel(n) {
   if (n.group === "author" && (!n.label || ORCID_RE.test(n.label))) return "Unknown author";
   return n.label;
 }
 function RichLabel({ raw }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(RichHtml, { raw });
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichHtml, { raw });
 }
 function NodeList({ label, color, ns, onSelect, onHover }) {
   if (ns.length === 0) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gc-list", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gc-list-label", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "dot", style: { background: color } }),
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "gc-list", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "gc-list-label", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "dot", style: { background: color } }),
       " ",
       label,
       " ",
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "mono muted", children: ns.length })
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "mono muted", children: ns.length })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("ul", { children: ns.map((n) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
       "button",
       {
         type: "button",
         onClick: () => onSelect(n.id),
         onMouseEnter: () => onHover?.(n.id),
         onMouseLeave: () => onHover?.(null),
-        children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(RichLabel, { raw: displayLabel(n) })
+        children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichLabel, { raw: displayLabel(n) })
       }
     ) }, n.id)) })
   ] });
@@ -16286,10 +16225,10 @@ function BucketView({ b, onSelect, onHover }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
   const headInstId = b.institutions[0]?.id;
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("header", { className: "gc-community-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("header", { className: "gc-community-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
         "button",
         {
           type: "button",
@@ -16297,32 +16236,32 @@ function BucketView({ b, onSelect, onHover }) {
           onClick: () => headInstId && onSelect(headInstId),
           onMouseEnter: () => headInstId && onHover?.(headInstId),
           onMouseLeave: () => onHover?.(null),
-          children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(RichLabel, { raw: b.label }) })
+          children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichLabel, { raw: b.label }) })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "mono muted gc-count", children: total })
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "mono muted gc-count", children: total })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
   ] });
 }
 
 // public/graph-contents.tsx
-var import_jsx_runtime24 = __toESM(require_jsx_runtime());
+var import_jsx_runtime23 = __toESM(require_jsx_runtime());
 function prettyFallback(key) {
   const bare = key.replace(/^[a-z]+:/, "");
   const m2 = bare.match(/\/([^/]+)\/?$/);
   return m2 ? m2[1] : bare;
 }
 function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }) {
-  const hoveredNode = (0, import_react21.useMemo)(() => hoveredId ? nodes.find((n) => n.id === hoveredId) ?? null : null, [hoveredId, nodes]);
-  const labelById = (0, import_react21.useMemo)(() => {
+  const hoveredNode = (0, import_react20.useMemo)(() => hoveredId ? nodes.find((n) => n.id === hoveredId) ?? null : null, [hoveredId, nodes]);
+  const labelById = (0, import_react20.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of allNodes) if (n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [allNodes]);
-  const adapter = (0, import_react21.useMemo)(() => ({
+  const adapter = (0, import_react20.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -16344,21 +16283,21 @@ function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: (key) => labelById.get(key) || prettyFallback(key)
   }), [affiliations, egoAuthorId, labelById]);
-  const focusKey = (0, import_react21.useMemo)(() => {
+  const focusKey = (0, import_react20.useMemo)(() => {
     if (hoveredId) {
       const hovered = nodes.find((n) => n.id === hoveredId);
       if (hovered) return adapter.getCommunityKey(hovered);
     }
     return hoveredHullKey ?? null;
   }, [hoveredId, hoveredHullKey, nodes, adapter]);
-  const buckets = (0, import_react21.useMemo)(
+  const buckets = (0, import_react20.useMemo)(
     () => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
     [nodes, adapter, homeInstitutionId, labelById, focusKey]
   );
-  const listRef = (0, import_react21.useRef)(null);
+  const listRef = (0, import_react20.useRef)(null);
   useFlipReorder(listRef, buckets.map((b) => b.key));
-  const prefetchTimer = (0, import_react21.useRef)(null);
-  const onRowHover = (0, import_react21.useCallback)((id) => {
+  const prefetchTimer = (0, import_react20.useRef)(null);
+  const onRowHover = (0, import_react20.useCallback)((id) => {
     onHover?.(id);
     if (prefetchTimer.current) {
       clearTimeout(prefetchTimer.current);
@@ -16367,12 +16306,12 @@ function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, [onHover]);
   if (!nodes.length) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "graph-contents", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "graph-contents-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "graph-contents-search", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(GraphSearch, { nodes, onSelect: (id) => (onSearchSelect || onSelect)(id) }) })
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-contents", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "graph-contents-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: "Graph contents" }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "graph-contents-search", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphSearch, { nodes, onSelect: (id) => (onSearchSelect || onSelect)(id) }) })
     ] }),
-    hoveredNode && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    hoveredNode && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
       HoverCard,
       {
         node: hoveredNode,
@@ -16383,7 +16322,7 @@ function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId
         coauthorIds
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
   ] });
 }
 
@@ -16424,12 +16363,12 @@ function communityKeyFor(n, affiliations) {
 }
 
 // public/use-selection-stack.ts
-var import_react22 = __toESM(require_react());
+var import_react21 = __toESM(require_react());
 function useSelectionStack() {
-  const [selectionStack, setSelectionStack] = (0, import_react22.useState)([]);
-  const [navDir, setNavDir] = (0, import_react22.useState)("forward");
+  const [selectionStack, setSelectionStack] = (0, import_react21.useState)([]);
+  const [navDir, setNavDir] = (0, import_react21.useState)("forward");
   const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
-  const pushSelection = (0, import_react22.useCallback)((id) => setSelectionStack((prev) => {
+  const pushSelection = (0, import_react21.useCallback)((id) => setSelectionStack((prev) => {
     if (id === null) {
       setNavDir("back");
       return [];
@@ -16438,7 +16377,7 @@ function useSelectionStack() {
     setNavDir("forward");
     return [...prev, id];
   }), []);
-  const popSelection = (0, import_react22.useCallback)(() => setSelectionStack((prev) => {
+  const popSelection = (0, import_react21.useCallback)(() => setSelectionStack((prev) => {
     if (!prev.length) return prev;
     setNavDir("back");
     return prev.slice(0, -1);
@@ -16447,18 +16386,18 @@ function useSelectionStack() {
 }
 
 // public/use-year-range-filter.ts
-var import_react24 = __toESM(require_react());
+var import_react23 = __toESM(require_react());
 
 // public/time-slider.tsx
-var import_react23 = __toESM(require_react());
-var import_jsx_runtime25 = __toESM(require_jsx_runtime());
+var import_react22 = __toESM(require_react());
+var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
   const y3 = parseInt(n.published.substring(0, 4));
   return y3 > 1900 ? y3 : 0;
 }
 function useTimeRange(nodes) {
-  return (0, import_react23.useMemo)(() => {
+  return (0, import_react22.useMemo)(() => {
     let min = 9999, max = 0;
     for (const n of nodes) {
       const y3 = yearOf(n);
@@ -16479,13 +16418,13 @@ function yearOf2(n) {
 }
 function useYearRangeFilter(rawNodes, rawEdges) {
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  const [range, setRange] = (0, import_react24.useState)(null);
-  (0, import_react24.useEffect)(() => {
+  const [range, setRange] = (0, import_react23.useState)(null);
+  (0, import_react23.useEffect)(() => {
     if (yearMin && yearMax && !range) setRange([yearMin, yearMax]);
   }, [yearMin, yearMax, range]);
   const yearFrom = range ? range[0] : yearMin;
   const yearTo = range ? range[1] : yearMax;
-  const filteredRaw = (0, import_react24.useMemo)(() => {
+  const filteredRaw = (0, import_react23.useMemo)(() => {
     const fullSpan = yearFrom <= yearMin && yearTo >= yearMax;
     if (fullSpan) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
@@ -16503,7 +16442,7 @@ function useYearRangeFilter(rawNodes, rawEdges) {
 }
 
 // public/use-layer-order.ts
-var import_react25 = __toESM(require_react());
+var import_react24 = __toESM(require_react());
 var STORAGE_KEY = "graph-layer-order-v7";
 function load() {
   try {
@@ -16518,8 +16457,8 @@ function load() {
   }
 }
 function useLayerOrder() {
-  const [layerOrder, setLayerOrder] = (0, import_react25.useState)(load);
-  const reorderLayer = (0, import_react25.useCallback)((from, to) => {
+  const [layerOrder, setLayerOrder] = (0, import_react24.useState)(load);
+  const reorderLayer = (0, import_react24.useCallback)((from, to) => {
     setLayerOrder((prev) => {
       const next = [...prev];
       const [moved] = next.splice(from, 1);
@@ -16532,6 +16471,60 @@ function useLayerOrder() {
     });
   }, []);
   return { layerOrder, reorderLayer };
+}
+
+// public/year-range-slider.tsx
+var import_react25 = __toESM(require_react());
+var import_jsx_runtime25 = __toESM(require_jsx_runtime());
+function YearRangeSlider({ min, max, from, to, onChange }) {
+  const span = max - min || 1;
+  const leftPct = (from - min) / span * 100;
+  const rightPct = (to - min) / span * 100;
+  const onFrom = (0, import_react25.useCallback)((e) => {
+    const v = Math.min(parseInt(e.target.value), to);
+    onChange(v, to);
+  }, [to, onChange]);
+  const onTo = (0, import_react25.useCallback)((e) => {
+    const v = Math.max(parseInt(e.target.value), from);
+    onChange(from, v);
+  }, [from, onChange]);
+  const fillStyle = {
+    left: `${leftPct}%`,
+    width: `${Math.max(rightPct - leftPct, 0)}%`
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "year-range", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "year-range-track", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { className: "year-range-fill", style: fillStyle }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        "input",
+        {
+          type: "range",
+          min,
+          max,
+          value: from,
+          onChange: onFrom,
+          className: "year-range-input year-range-from",
+          style: from >= to ? { zIndex: 4 } : void 0
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        "input",
+        {
+          type: "range",
+          min,
+          max,
+          value: to,
+          onChange: onTo,
+          className: "year-range-input year-range-to"
+        }
+      )
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className: "year-range-readout mono", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { children: from }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { className: "muted", children: "\u2013" }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { children: to })
+    ] })
+  ] });
 }
 
 // public/use-hidden-authors.ts
@@ -16631,7 +16624,8 @@ function GraphExplorerBody() {
   if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "eyebrow", children: "No data." }) });
   return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "graph-view fullbleed", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "graph-canvas fullbleed", children: [
     projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: 1, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("aside", { className: "graph-overlay graph-overlay-left", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: true }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("aside", { className: "graph-overlay graph-overlay-left", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphFiltersSidebar, { flags, setFlag, layerOrder, onReorderLayer: reorderLayer, layersEnabled: true }) }),
+    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "graph-overlay graph-overlay-top", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: (f, t) => setRange([f, t]) }) }),
     /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("aside", { className: "graph-overlay graph-overlay-right", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
       NodeDetail,
       {
