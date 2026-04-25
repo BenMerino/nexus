@@ -16533,10 +16533,14 @@ function useHiddenAuthors(projectedNodes, projectedEdges, hoverId, coauthorIds, 
   return (0, import_react26.useMemo)(() => {
     const hidden = /* @__PURE__ */ new Set();
     const revealed = /* @__PURE__ */ new Set();
-    if (hoverId && hoverId.startsWith("doi:")) {
-      for (const e of projectedEdges) {
-        if (e.source === hoverId && e.target.startsWith("author:")) revealed.add(e.target);
-        if (e.target === hoverId && e.source.startsWith("author:")) revealed.add(e.source);
+    if (hoverId) {
+      if (hoverId.startsWith("doi:")) {
+        for (const e of projectedEdges) {
+          if (e.source === hoverId && e.target.startsWith("author:")) revealed.add(e.target);
+          if (e.target === hoverId && e.source.startsWith("author:")) revealed.add(e.source);
+        }
+      } else if (hoverId.startsWith("author:")) {
+        revealed.add(hoverId);
       }
     }
     for (const n of projectedNodes) {

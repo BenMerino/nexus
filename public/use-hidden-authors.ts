@@ -21,10 +21,17 @@ export function useHiddenAuthors(
   return useMemo(() => {
     const hidden = new Set<string>();
     const revealed = new Set<string>();
-    if (hoverId && hoverId.startsWith('doi:')) {
-      for (const e of projectedEdges) {
-        if (e.source === hoverId && e.target.startsWith('author:')) revealed.add(e.target);
-        if (e.target === hoverId && e.source.startsWith('author:')) revealed.add(e.source);
+    if (hoverId) {
+      if (hoverId.startsWith('doi:')) {
+        // Hovering a paper: reveal its authors.
+        for (const e of projectedEdges) {
+          if (e.source === hoverId && e.target.startsWith('author:')) revealed.add(e.target);
+          if (e.target === hoverId && e.source.startsWith('author:')) revealed.add(e.source);
+        }
+      } else if (hoverId.startsWith('author:')) {
+        // Hovering an author (e.g. from a sidebar row): reveal that author so
+        // the highlighted node actually shows up on the canvas.
+        revealed.add(hoverId);
       }
     }
     for (const n of projectedNodes) {
