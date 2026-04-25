@@ -370,10 +370,12 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .graph-overlay-left { left: 14px; width: 220px; }
 .graph-overlay-right { right: 14px; }
-.graph-overlay > * { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 14px; }
-.graph-overlay .graph-filters { background: transparent; border: 0; padding: 14px; }
-.graph-overlay .detail-panel,
-.graph-overlay .graph-contents { background: transparent; border: 0; }
+.graph-overlay > * { flex: 1 1 auto; min-height: 0; min-width: 0; height: 100%; }
+/* Inside the overlay glass panel the inner components shouldn't paint
+ * their own opaque background — let the overlay's gradient show through —
+ * but they still own their layout (filmstrip panes, scroll, padding). */
+.graph-overlay .graph-filters { background: transparent; border: 0; }
+.graph-overlay .detail-panel { background: transparent; border: 0; height: 100%; }
 @media (max-width: 1200px) {
   .graph-overlay-left { width: 200px; }
   .graph-overlay-right { width: 260px; }
