@@ -46,7 +46,7 @@
     html += '<input class="form-input mono" id="p-monto" type="number" value="' + esc(p.monto || "") + '" placeholder="0">';
     html += '<div class="form-hint mono" id="monto-hint" style="' + (p.monto ? "" : "display:none;") + '">' + (p.monto ? esc(fmtCLP(p.monto)) : "") + "</div></div>";
 
-    html += '<div class="form-row"><label class="form-label">Departamento</label>';
+    html += '<div class="form-row"><label class="form-label">Facultad</label>';
     html += '<input class="form-input" id="p-depto" value="' + esc(p.departamento || "") + '" placeholder="Ingeniería, Ciencias..."></div>';
 
     html += '<div class="form-row"><label class="form-label">Fecha inicio</label>';

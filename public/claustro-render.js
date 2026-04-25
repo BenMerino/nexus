@@ -70,7 +70,7 @@
     html += '<div class="project-meta">';
     html += '<div><span>Código</span><span class="mono">' + esc(p.codigo || "—") + "</span></div>";
     html += '<div><span>Monto</span><span class="mono" style="color:var(--accent);">' + esc(fmtCLP(p.monto)) + "</span></div>";
-    html += '<div><span>Depto.</span><span>' + esc(p.departamento || "—") + "</span></div>";
+    html += '<div><span>Facultad</span><span>' + esc(p.departamento || "—") + "</span></div>";
     html += '<div><span>Periodo</span><span class="mono">' + esc((p.fecha_inicio || "?").slice(0, 10)) + " → " + esc((p.fecha_fin || "?").slice(0, 10)) + "</span></div>";
     html += "</div>";
     if (p.notas) html += '<div class="project-notes">' + esc(p.notas) + "</div>";

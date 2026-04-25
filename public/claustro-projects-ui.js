@@ -7,7 +7,7 @@
       var d = state.projects[i].departamento;
       if (d) depts[d] = (depts[d] || 0) + 1;
     }
-    var html = '<button class="pill ' + (state.deptFilter === "all" ? "on" : "") + '" data-dept="all">Todos · ' + state.projects.length + "</button>";
+    var html = '<button class="pill ' + (state.deptFilter === "all" ? "on" : "") + '" data-dept="all">Todas · ' + state.projects.length + "</button>";
     var keys = Object.keys(depts).sort();
     for (var j = 0; j < keys.length; j++) {
       var k = keys[j];
