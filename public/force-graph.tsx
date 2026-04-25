@@ -122,7 +122,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       selectedId={selectedId ?? null}
       onNodeClick={handleClick}
       forceConfig={forceConfig}
-      zoomToId={selectedId ?? null}
+      zoomToId={selectedId ?? externalHoverId ?? null}
       zoomScale={ZOOM_SCALE}
       externalHoverId={externalHoverId ?? null}
       onHoverChange={onHoverChange}
