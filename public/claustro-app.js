@@ -21,7 +21,7 @@
       state.me = d;
       gateProyectos();
       loadIndices().then(loadClaustro);
-      if (isEditor()) loadProjects();
+      if (isEditor()) { loadProjects(); switchTab("proyectos"); }
     });
   }
   function switchTab(name) {

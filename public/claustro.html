@@ -11,12 +11,14 @@
     <div id="sidebar-mount" data-path="/claustro.html"></div>
     <main class="main">
       <style>
-        .claustro-tabs { display: flex; gap: 6px; margin: 14px 0 18px; border-bottom: 1px solid var(--border-soft); }
+        .claustro-tabs { display: flex; gap: 4px; margin: 14px 0 18px; border-bottom: 1px solid var(--border-soft); }
         .claustro-tabs button {
-          background: transparent; border: 0; padding: 10px 16px; cursor: pointer;
-          font: inherit; color: var(--fg-dim); border-bottom: 2px solid transparent;
+          background: transparent; border: 0; padding: 12px 20px; cursor: pointer;
+          font: inherit; font-size: 14px; color: var(--fg-dim);
+          border-bottom: 2px solid transparent; font-weight: 500;
         }
-        .claustro-tabs button.active { color: var(--fg); border-bottom-color: var(--accent); }
+        .claustro-tabs button:hover { color: var(--fg); }
+        .claustro-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
         .claustro-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .claustro-table th, .claustro-table td {
           padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-soft);
