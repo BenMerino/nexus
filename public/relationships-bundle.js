@@ -15874,9 +15874,9 @@ function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) 
   const egoAuthorId = (0, import_react15.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
-    const hit = projectedNodes.find((n) => n.group === "author" && n.ext_id === orcid);
+    const hit = rawNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
-  }, [me, projectedNodes]);
+  }, [me, rawNodes]);
   const effectiveHomeKey = (0, import_react15.useMemo)(() => {
     if (homeInstitutionId) return homeInstitutionId;
     if (!egoAuthorId) return null;
@@ -15938,8 +15938,10 @@ function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags
   }, [me, rawNodes]);
   const projectedNodes = (0, import_react16.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
-    return enriched.filter((n) => n.group === "author" || n.group === "doi");
-  }, [projectedRaw, tagMeta]);
+    return enriched.filter(
+      (n) => (n.group === "author" || n.group === "doi") && n.id !== rawEgoAuthorId
+    );
+  }, [projectedRaw, tagMeta, rawEgoAuthorId]);
   return { projectedNodes, coauthorIds, rawEgoAuthorId };
 }
 

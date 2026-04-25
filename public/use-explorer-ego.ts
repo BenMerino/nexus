@@ -28,12 +28,15 @@ export function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAut
     return hit?.id ?? null;
   }, [me, rawNodes]);
 
+  // Look in rawNodes, not projectedNodes — the ego author isn't rendered as
+  // a node, but its id is still needed for co-author classification and
+  // focus-path resolution.
   const egoAuthorId = useMemo(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
-    const hit = projectedNodes.find(n => n.group === 'author' && n.ext_id === orcid);
+    const hit = rawNodes.find(n => n.group === 'author' && n.ext_id === orcid);
     return hit?.id ?? null;
-  }, [me, projectedNodes]);
+  }, [me, rawNodes]);
 
   const effectiveHomeKey = useMemo(() => {
     if (homeInstitutionId) return homeInstitutionId;

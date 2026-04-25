@@ -41,11 +41,15 @@ export function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me
   // doesn't depend on the visibility flags, so toggling "hide authors" or
   // hovering a paper doesn't re-seed the force sim. The renderer consumes
   // separate `hiddenIds` state to dim nodes in/out.
+  // The ego author isn't rendered as a node — the user's own papers stand
+  // in for "you." The id stays around in `rawEgoAuthorId` so co-author
+  // classification and focus-path logic still work.
   const projectedNodes = useMemo(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
-    // Institutions + journals aren't rendered as nodes.
-    return enriched.filter(n => n.group === 'author' || n.group === 'doi') as EnrichedSimNode[];
-  }, [projectedRaw, tagMeta]);
+    return enriched.filter(n =>
+      (n.group === 'author' || n.group === 'doi') && n.id !== rawEgoAuthorId,
+    ) as EnrichedSimNode[];
+  }, [projectedRaw, tagMeta, rawEgoAuthorId]);
 
   return { projectedNodes, coauthorIds, rawEgoAuthorId };
 }
