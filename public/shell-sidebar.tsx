@@ -69,7 +69,7 @@ export function Sidebar({ me, currentPath, roleSwitcher }: SidebarProps) {
           <React.Fragment key={section}>
             {section && <div className="nav-section-label">{section}</div>}
             {links.filter(l => (l.section || '') === section).map(l => {
-              const active = currentPath === l.href || (l.href === '/overview.html' && currentPath === '/');
+              const active = currentPath === l.href || (l.href === '/dashboard.html' && currentPath === '/');
               return (
                 <a key={l.href} href={l.href} className={`nav-item ${active ? 'active' : ''}`}>
                   {Ico[l.icon]} {l.label}

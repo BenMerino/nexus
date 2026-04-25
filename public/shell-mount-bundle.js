@@ -12877,7 +12877,7 @@ function Sidebar({ me, currentPath, roleSwitcher }) {
     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("nav", { className: "nav-list", children: sections.map((section) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_react.default.Fragment, { children: [
       section && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "nav-section-label", children: section }),
       links.filter((l) => (l.section || "") === section).map((l) => {
-        const active = currentPath === l.href || l.href === "/overview.html" && currentPath === "/";
+        const active = currentPath === l.href || l.href === "/dashboard.html" && currentPath === "/";
         return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("a", { href: l.href, className: `nav-item ${active ? "active" : ""}`, children: [
           Ico[l.icon],
           " ",
