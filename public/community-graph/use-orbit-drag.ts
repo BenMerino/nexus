@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 
-/** Drag-to-orbit: horizontal pointer delta maps to yaw, vertical delta to
- *  pitch. Both axes are unclamped — full 360° freedom in any direction.
+const MIN_PITCH = 0;
+const MAX_PITCH = Math.PI / 2 - 0.15; // stop just shy of straight-down
+
+/** Drag-to-orbit: horizontal pointer delta maps to yaw (free 360° spin),
+ *  vertical delta to pitch (clamped to [0, ~85°] so the scene never
+ *  inverts — up stays up).
  *
  *  Fully resets to the default pose when the parent signals the view has
  *  gone flat, so toggling back to 3D always starts from a clean pose. */
@@ -38,7 +42,7 @@ export function useOrbitDrag(
       const dYaw = (ev.clientX - startX) * 0.006;
       const dPitch = -(ev.clientY - startY) * 0.006;
       setYaw(startYaw + dYaw);
-      setPitch(startPitch + dPitch);
+      setPitch(Math.min(MAX_PITCH, Math.max(MIN_PITCH, startPitch + dPitch)));
     };
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
