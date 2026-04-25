@@ -64,13 +64,13 @@ export function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }
           </div>
         </button>
       </header>
-      {open && (
-        <>
+      <div className="gc-community-body" aria-hidden={!open}>
+        <div className="gc-community-body-inner">
           <NodeList label="Authors"  color={COLORS.author}  ns={b.authors}  onSelect={onSelect} onHover={onHover} />
           <NodeList label="Journals" color={COLORS.journal} ns={b.journals} onSelect={onSelect} onHover={onHover} />
           <NodeList label="Papers"   color="#888"           ns={b.papers}   onSelect={onSelect} onHover={onHover} />
-        </>
-      )}
+        </div>
+      </div>
     </section>
   );
 }

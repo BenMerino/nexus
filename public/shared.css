@@ -733,6 +733,16 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025));
 }
 .gc-community-metrics { display: flex; gap: 6px; font-size: 11px; margin-top: 2px; }
+.gc-community-body {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows 220ms ease, opacity 180ms ease, margin-top 220ms ease;
+  opacity: 0; margin-top: 0;
+}
+.gc-community-body-inner {
+  min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.gc-community.open .gc-community-body { grid-template-rows: 1fr; opacity: 1; margin-top: 4px; }
 .gc-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 .gc-count { font-size: 11px; }
 .gc-list { display: flex; flex-direction: column; gap: 4px; }

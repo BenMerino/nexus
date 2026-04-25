@@ -16205,11 +16205,11 @@ function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }) {
             }
           )
         ] }),
-        open && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "gc-community-body", "aria-hidden": !open, children: /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "gc-community-body-inner", children: [
           /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
           /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
           /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
-        ] })
+        ] }) })
       ]
     }
   );
