@@ -42,10 +42,6 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
   /** Tilt ∈ [0, 1] — 0 is flat top-down, 1 is the default 3D orbit pose.
    *  Drag then lets the user freely spin/tumble. */
   tilt?: number;
-  /** Ids to render invisible but keep in the sim. */
-  hiddenIds?: Set<string>;
-  /** When set, Links only draws edges directly on this node. */
-  edgesOnlyForId?: string | null;
   /** Externally-driven hull focus — e.g. hovering a row in the sidebar
    *  should highlight the matching community hull. Overrides internal
    *  pointer hull-hover when set. */
@@ -55,7 +51,7 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
 export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   nodes: inNodes, links: inLinks, adapter, primaryKey = null, width, height, selectedId,
   forceConfig, onNodeClick, pinDraggedNodes = false, viewTransform, zoomToId, zoomScale = 2,
-  externalHoverId, onHoverChange, onHullHoverChange, tilt: tiltTarget = 0, hiddenIds, edgesOnlyForId,
+  externalHoverId, onHoverChange, onHullHoverChange, tilt: tiltTarget = 0,
   externalHullKey,
 }: CommunityGraphProps<N, L>) {
   const config: ForceConfig = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
@@ -123,8 +119,6 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         camera={camera}
         rotatable={tiltTarget > 0}
         onBackgroundMouseDown={startOrbitDrag}
-        hiddenIds={hiddenIds}
-        edgesOnlyForId={edgesOnlyForId}
       />
     </div>
   );

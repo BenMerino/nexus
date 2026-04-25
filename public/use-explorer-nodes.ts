@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import type { RawNode, RawEdge, EnrichedSimNode, EnrichedTagNode } from './relationship-types';
-import type { NodeTypeFlags } from './graph-filters-sidebar';
 import type { CurrentUser } from './shell-helpers';
 import { enrichWithMeta, type TagMetaMap } from './enrich-meta';
 import { buildCoauthorSet } from './explorer-coauthors';
@@ -11,7 +10,6 @@ interface Args {
   rawNodes: RawNode[];
   rawEdges: RawEdge[];
   me: CurrentUser | null;
-  flags: NodeTypeFlags;
 }
 
 interface Result {
@@ -20,7 +18,7 @@ interface Result {
   rawEgoAuthorId: string | null;
 }
 
-export function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags }: Args): Result {
+export function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me }: Args): Result {
   const rawEgoAuthorId = useMemo(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
@@ -30,20 +28,9 @@ export function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me
 
   const coauthorIds = useMemo(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
 
-  const homeInstitutionId = useMemo(() => {
-    const ror = me?.profile.ror?.replace(/^https?:\/\/ror\.org\//, '') ?? null;
-    if (!ror) return null;
-    const hit = rawNodes.find(n => n.group === 'institution' && n.ext_id?.replace(/^https?:\/\/ror\.org\//, '') === ror);
-    return hit?.id ?? null;
-  }, [me, rawNodes]);
-
-  // Structural set: papers + every author that touches any paper. Stable —
-  // doesn't depend on the visibility flags, so toggling "hide authors" or
-  // hovering a paper doesn't re-seed the force sim. The renderer consumes
-  // separate `hiddenIds` state to dim nodes in/out.
   // The ego author isn't rendered as a node — the user's own papers stand
   // in for "you." The id stays around in `rawEgoAuthorId` so co-author
-  // classification and focus-path logic still work.
+  // classification still works.
   const projectedNodes = useMemo(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     return enriched.filter(n =>

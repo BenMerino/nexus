@@ -15,12 +15,9 @@ interface NodesProps<N> {
   onMouseDown: (e: React.MouseEvent, n: SimN<N>) => void;
   onClick: (n: SimN<N>) => void;
   camera: Camera;
-  /** Nodes to render invisible but keep in the sim. Used to hide authors
-   *  until the user hovers a paper they're on. */
-  hiddenIds?: Set<string>;
 }
 
-export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, camera, hiddenIds }: NodesProps<N>) {
+export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onClick, camera }: NodesProps<N>) {
   // Painter's algorithm: lower Z first so higher layers stack on top when tilted.
   const zSorted = [...nodes].sort((a, b) => a.z - b.z);
   const lift = pitchLift(camera);
@@ -32,7 +29,6 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
           {zSorted.map(n => {
             if (n.z <= 0) return null;
             const id = adapter.getId(n);
-            if (hiddenIds?.has(id)) return null;
             const r = adapter.getRadius(n);
             const dim = connected && !connected.has(id);
             const p = floorShadow(n.x, n.y, camera);
@@ -51,7 +47,6 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
       <g>
         {zSorted.map(n => {
           const id = adapter.getId(n);
-          const hidden = hiddenIds?.has(id) ?? false;
           const r0 = adapter.getRadius(n);
           const isHov = id === hoverId;
           const isSel = id === selectedId;
@@ -60,7 +55,7 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
           // Scale node radius by the perspective factor so far nodes shrink
           // and near nodes grow, matching the projected node positions.
           const r = r0 * p.scale;
-          const baseOpacity = hidden ? 0 : dim ? 0.25 : 1;
+          const baseOpacity = dim ? 0.25 : 1;
           return (
             <g key={id}
               transform={`translate(${p.x}, ${p.y})`}
@@ -68,7 +63,7 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
               onMouseLeave={onHoverEnd}
               onMouseDown={e => onMouseDown(e, n)}
               onClick={e => { e.stopPropagation(); e.preventDefault(); onClick(n); }}
-              style={{ cursor: hidden ? 'default' : 'pointer', opacity: baseOpacity, pointerEvents: hidden ? 'none' : 'auto', transition: 'opacity 0.2s' }}
+              style={{ cursor: 'pointer', opacity: baseOpacity, transition: 'opacity 0.2s' }}
             >
               {(isHov || isSel) && <circle r={r + 10 * p.scale} fill="url(#community-glow)" />}
               <circle r={r} fill={nodeColor(n)}

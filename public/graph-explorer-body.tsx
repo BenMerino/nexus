@@ -2,10 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { projectGraph } from './project-graph';
 import { NodeDetail, prefetchNodeDetail } from './node-detail';
 import { ExplorerCanvas } from './explorer-canvas';
-import { GraphSearch } from './graph-search';
 import { useGraphData } from './use-graph-data';
 import { useCurrentUser } from './shell-helpers';
-import { GraphFiltersSidebar, type NodeTypeFlags } from './graph-filters-sidebar';
 import { buildExplorerAffiliations } from './explorer-affiliations';
 import { useExplorerEgo } from './use-explorer-ego';
 import { useExplorerNodes } from './use-explorer-nodes';
@@ -13,11 +11,8 @@ import { GraphContents } from './graph-contents';
 import { explorerSelectedColor } from './explorer-selected-color';
 import { useSelectionStack } from './use-selection-stack';
 import { useYearRangeFilter } from './use-year-range-filter';
-import { useLayerOrder } from './use-layer-order';
+import { DEFAULT_LAYER_ORDER } from './explorer-layers';
 import { YearRangeSlider } from './year-range-slider';
-import { useHiddenAuthors } from './use-hidden-authors';
-
-const DEFAULT_FLAGS: NodeTypeFlags = { institution: false, author: false, coauthor: false, journal: false, paper: true };
 
 export function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
@@ -52,9 +47,7 @@ export function GraphExplorerBody() {
     if (prev.has(id)) return prev;
     const n = new Set(prev); n.add(id); return n;
   }), []);
-  const [flags, setFlags] = useState<NodeTypeFlags>(DEFAULT_FLAGS);
-  const setFlag = useCallback((k: keyof NodeTypeFlags, v: boolean) => setFlags(f => ({ ...f, [k]: v })), []);
-  const { layerOrder, reorderLayer } = useLayerOrder();
+  const layerOrder = DEFAULT_LAYER_ORDER;
   const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
   const highlightedIds = useMemo(() => {
     const o = new URLSearchParams(window.location.search).get('highlight');
@@ -76,14 +69,11 @@ export function GraphExplorerBody() {
     el.querySelectorAll<HTMLElement>('.node-detail-pane').forEach(p => { p.scrollTop = 0; });
   }, [selectedNodeId]);
 
-  // Always include paper edges in the projection; useExplorerNodes decides
-  // which paper nodes to keep based on flags.paper + any focused node's
-  // bridge papers.
   const { nodes: projectedRaw, edges: projectedEdgesAll } = useMemo(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, new Set(['institution', 'author', 'journal']), [], null, true),
     [filteredRaw]);
 
-  const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
+  const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me });
 
   const projectedEdges = useMemo(() => {
     const ids = new Set(projectedNodes.map(n => n.id));
@@ -100,10 +90,6 @@ export function GraphExplorerBody() {
   }, [rawNodes]);
 
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor: affiliations.institutionsByAuthor });
-  const hiddenIds = useHiddenAuthors(projectedNodes, projectedEdges, hoverId, coauthorIds, flags, egoAuthorId);
-  // Hovering a paper while authors are globally hidden → render only that
-  // paper's edges, so revealing its authors doesn't surface their other edges.
-  const edgesOnlyForId = !flags.author && !flags.coauthor && hoverId?.startsWith('doi:') ? hoverId : null;
 
   if (loading) return <div className="view"><div className="eyebrow">Loading graph data…</div></div>;
   if (!rawNodes.length) return <div className="view"><div className="eyebrow">No data.</div></div>;
@@ -114,11 +100,7 @@ export function GraphExplorerBody() {
 
         {projectedNodes.length === 0
           ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-          : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={1} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} hiddenIds={hiddenIds} edgesOnlyForId={edgesOnlyForId} externalHullKey={sidebarHullKey} />}
-
-        <aside className="graph-overlay graph-overlay-left">
-          <GraphFiltersSidebar flags={flags} setFlag={setFlag} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled />
-        </aside>
+          : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={1} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} externalHullKey={sidebarHullKey} />}
 
         {yearMax > yearMin && (
           <div className="graph-overlay graph-overlay-top">

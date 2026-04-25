@@ -32,8 +32,6 @@ interface Props {
   /** journalId → human name. Journals aren't nodes anymore but hulls still
    *  label communities with the journal name, so we need a separate lookup. */
   journalLabels?: Map<string, string>;
-  hiddenIds?: Set<string>;
-  edgesOnlyForId?: string | null;
   externalHullKey?: string | null;
 }
 
@@ -43,7 +41,7 @@ function baseRadius(n: EnrichedSimNode): number {
 
 const EMPTY_IDS: Set<string> = new Set();
 
-export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, journalLabels, hiddenIds, edgesOnlyForId, externalHullKey }: Props) {
+export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, journalLabels, externalHullKey }: Props) {
   const { placeholder } = useMemo(
     () => computeVisibility(nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds),
     [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds],
@@ -129,8 +127,6 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       onHoverChange={onHoverChange}
       onHullHoverChange={onHullHoverChange}
       tilt={tilt}
-      hiddenIds={hiddenIds}
-      edgesOnlyForId={edgesOnlyForId}
       externalHullKey={externalHullKey}
     />
   );
