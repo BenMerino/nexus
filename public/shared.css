@@ -374,9 +374,11 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .graph-overlay > * { flex: 1 1 auto; min-height: 0; min-width: 0; height: 100%; pointer-events: auto; }
 .graph-overlay .graph-filters { background: transparent; border: 0; padding: 0; height: 100%; box-sizing: border-box; }
 .graph-overlay .detail-panel { background: transparent; border: 0; height: 100%; }
-/* Drop the section headings ("Node types", "Year range") — the rows
- * carry their own labels and the headings just add panel-chrome noise. */
-.graph-overlay .filter-label { display: none; }
+/* Drop the section headings ("Node types", "Year range", "Graph contents")
+ * — the rows / bucket cards carry their own labels and the headings just
+ * add panel-chrome noise. */
+.graph-overlay .filter-label,
+.graph-overlay .graph-contents-head { display: none; }
 @media (max-width: 1200px) {
   .graph-overlay-left { width: 200px; }
   .graph-overlay-right { width: 260px; }
