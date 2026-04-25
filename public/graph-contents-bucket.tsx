@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { EnrichedSimNode } from './relationship-types';
 import { COLORS } from './relationship-types';
 import type { Bucket } from './graph-contents-buckets';
@@ -43,12 +43,11 @@ function NodeList({ label, color, ns, onSelect, onHover }: ListProps) {
   );
 }
 
-interface BucketProps { b: Bucket; onSelect: (id: string) => void; onHover?: (id: string | null) => void; onHullHover?: (key: string | null) => void }
+interface BucketProps { b: Bucket; open: boolean; onToggle: (key: string) => void; onSelect: (id: string) => void; onHover?: (id: string | null) => void; onHullHover?: (key: string | null) => void }
 
-export function BucketView({ b, onSelect, onHover, onHullHover }: BucketProps) {
+export function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }: BucketProps) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
-  const [open, setOpen] = useState(false);
   return (
     <section data-flip-key={b.key} className={`gc-community${b.emphasis ? ' emphasis' : ''}${open ? ' open' : ''}`}
       onMouseEnter={() => onHullHover?.(b.key)}
@@ -56,7 +55,7 @@ export function BucketView({ b, onSelect, onHover, onHullHover }: BucketProps) {
       <header className="gc-community-head">
         <span className="gc-swatch" style={{ background: b.color }} />
         <button type="button" className="gc-community-title"
-          onClick={() => setOpen(o => !o)}>
+          onClick={() => onToggle(b.key)}>
           <h4><RichLabel raw={b.label} /></h4>
           <div className="gc-community-metrics muted">
             <span>{b.papers.length} {b.papers.length === 1 ? 'paper' : 'papers'}</span>

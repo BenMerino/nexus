@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { EnrichedSimNode, ProjectedEdge } from './relationship-types';
 import type { ExplorerAffiliations } from './explorer-affiliations';
 import type { CommunityAdapter } from './community-graph';
@@ -75,6 +75,8 @@ export function GraphContents({ nodes, edges, allNodes, affiliations, homeInstit
   const buckets = useMemo(() => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
     [nodes, adapter, homeInstitutionId, labelById, focusKey]);
 
+  const [openKey, setOpenKey] = useState<string | null>(null);
+
   const listRef = useRef<HTMLDivElement>(null);
   useFlipReorder(listRef, buckets.map(b => b.key));
 
@@ -107,7 +109,7 @@ export function GraphContents({ nodes, edges, allNodes, affiliations, homeInstit
         />
       )}
       <div ref={listRef} className="graph-contents-list">
-        {buckets.map(b => <BucketView key={b.key} b={b} onSelect={onSelect} onHover={onRowHover} onHullHover={onHullHover} />)}
+        {buckets.map(b => <BucketView key={b.key} b={b} open={openKey === b.key} onToggle={k => setOpenKey(prev => prev === k ? null : k)} onSelect={onSelect} onHover={onRowHover} onHullHover={onHullHover} />)}
       </div>
     </div>
   );
