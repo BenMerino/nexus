@@ -50,8 +50,7 @@ export function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }
   if (total === 0 && b.institutions.length === 0) return null;
   return (
     <section data-flip-key={b.key} className={`gc-community${b.emphasis ? ' emphasis' : ''}${open ? ' open' : ''}`}
-      onMouseEnter={() => onHullHover?.(b.key)}
-      onMouseLeave={() => onHullHover?.(null)}>
+      onMouseEnter={() => onHullHover?.(b.key)}>
       <header className="gc-community-head">
         <span className="gc-swatch" style={{ background: b.color }} />
         <button type="button" className="gc-community-title"

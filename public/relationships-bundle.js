@@ -16176,7 +16176,6 @@ function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }) {
       "data-flip-key": b.key,
       className: `gc-community${b.emphasis ? " emphasis" : ""}${open ? " open" : ""}`,
       onMouseEnter: () => onHullHover?.(b.key),
-      onMouseLeave: () => onHullHover?.(null),
       children: [
         /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("header", { className: "gc-community-head", children: [
           /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
@@ -16292,24 +16291,37 @@ function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId
         coauthorIds
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => {
-      const isOpen = openKey === b.key || openKey === null && hoverKey === b.key;
-      return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
-        BucketView,
-        {
-          b,
-          open: isOpen,
-          onToggle: (k) => setOpenKey((prev) => prev === k ? null : k),
-          onSelect,
-          onHover: onRowHover,
-          onHullHover: (key) => {
-            setHoverKey(key);
-            onHullHover?.(key);
-          }
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+      "div",
+      {
+        ref: listRef,
+        className: "graph-contents-list",
+        onMouseLeave: () => {
+          setHoverKey(null);
+          onHullHover?.(null);
         },
-        b.key
-      );
-    }) })
+        children: buckets.map((b) => {
+          const isOpen = openKey === b.key || openKey === null && hoverKey === b.key;
+          return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+            BucketView,
+            {
+              b,
+              open: isOpen,
+              onToggle: (k) => setOpenKey((prev) => prev === k ? null : k),
+              onSelect,
+              onHover: onRowHover,
+              onHullHover: (key) => {
+                if (key) {
+                  setHoverKey(key);
+                  onHullHover?.(key);
+                }
+              }
+            },
+            b.key
+          );
+        })
+      }
+    )
   ] });
 }
 

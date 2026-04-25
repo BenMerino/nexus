@@ -109,14 +109,15 @@ export function GraphContents({ nodes, edges, allNodes, affiliations, homeInstit
           coauthorIds={coauthorIds}
         />
       )}
-      <div ref={listRef} className="graph-contents-list">
+      <div ref={listRef} className="graph-contents-list"
+        onMouseLeave={() => { setHoverKey(null); onHullHover?.(null); }}>
         {buckets.map(b => {
           const isOpen = openKey === b.key || (openKey === null && hoverKey === b.key);
           return (
             <BucketView key={b.key} b={b} open={isOpen}
               onToggle={k => setOpenKey(prev => prev === k ? null : k)}
               onSelect={onSelect} onHover={onRowHover}
-              onHullHover={key => { setHoverKey(key); onHullHover?.(key); }}
+              onHullHover={key => { if (key) { setHoverKey(key); onHullHover?.(key); } }}
             />
           );
         })}
