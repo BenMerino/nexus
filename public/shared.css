@@ -380,16 +380,18 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   flex-direction: row;
   pointer-events: none;
 }
-.graph-overlay.graph-overlay-bottom > * { height: auto; align-self: flex-end; }
-.graph-overlay.graph-overlay-bottom .graph-contents { width: 100%; }
+.graph-overlay.graph-overlay-bottom > * { height: auto; align-self: flex-end; pointer-events: none; }
+.graph-overlay.graph-overlay-bottom .graph-contents { width: 100%; pointer-events: none; }
 .graph-overlay.graph-overlay-bottom .graph-contents-list {
   flex-direction: row; align-items: flex-end; gap: 12px;
   overflow-x: auto; overflow-y: hidden;
   padding-bottom: 4px;
+  pointer-events: none;
 }
 .graph-overlay.graph-overlay-bottom .gc-community {
   flex: 0 0 auto; min-width: 200px; max-width: 320px;
   align-self: flex-end;
+  pointer-events: auto;
 }
 .graph-overlay > * { flex: 1 1 auto; min-height: 0; min-width: 0; height: 100%; pointer-events: auto; }
 .graph-overlay .graph-filters { background: transparent; border: 0; padding: 0; height: 100%; box-sizing: border-box; gap: 24px; }
