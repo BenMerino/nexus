@@ -389,6 +389,10 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
   border-color: rgba(255,255,255,0.16);
 }
+/* Filmstrip pane — the actual scrolling container that wraps GraphContents
+ * — also defaults to a solid bg-card. Strip it inside the overlay so only
+ * the inner cards/rows carry their own visuals against the graph. */
+.graph-overlay .node-detail-pane { background: transparent; }
 @media (max-width: 1200px) {
   .graph-overlay-left { width: 200px; }
   .graph-overlay-right { width: 260px; }
