@@ -11,6 +11,7 @@ const DEFAULT_LINKS: NavLink[] = [
   { href: '/explore.html',        label: 'Explore',        icon: 'search', section: 'Workspace' },
   { href: '/collaborators.html',  label: 'Collaborators',  icon: 'people', section: 'Workspace' },
   { href: '/submit.html',         label: 'Submit DOI',     icon: 'submit', section: 'Workspace' },
+  { href: '/claustro.html',       label: 'Claustro',       icon: 'people', section: 'Workspace' },
 ];
 const SUPERADMIN_LINKS: NavLink[] = [
   { href: '/admin.html',         label: 'Admin',         icon: 'build',  section: 'Admin' },

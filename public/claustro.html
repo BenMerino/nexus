@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Claustro — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+</head>
+<body class="shell-fixed">
+  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/claustro.html"></div>
+    <main class="main">
+      <style>
+        .claustro-tabs { display: flex; gap: 6px; margin: 14px 0 18px; border-bottom: 1px solid var(--border-soft); }
+        .claustro-tabs button {
+          background: transparent; border: 0; padding: 10px 16px; cursor: pointer;
+          font: inherit; color: var(--fg-dim); border-bottom: 2px solid transparent;
+        }
+        .claustro-tabs button.active { color: var(--fg); border-bottom-color: var(--accent); }
+        .claustro-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .claustro-table th, .claustro-table td {
+          padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-soft);
+          vertical-align: top;
+        }
+        .claustro-table th {
+          font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: 0.12em;
+          color: var(--fg-dim); font-family: var(--mono);
+        }
+        .chip {
+          display: inline-block; padding: 2px 8px; border-radius: 3px;
+          font-size: 10px; font-weight: 500; font-family: var(--mono);
+          letter-spacing: 0.06em; margin-right: 4px; cursor: help;
+        }
+        .chip-doc { background: oklch(0.28 0.05 145 / 0.5); color: oklch(0.82 0.10 145); }
+        .chip-mac { background: oklch(0.28 0.05 245 / 0.5); color: oklch(0.82 0.10 245); }
+        .chip-mpr { background: oklch(0.28 0.05 50  / 0.5); color: oklch(0.82 0.10 50); }
+        .chip-off { background: oklch(0.22 0 0 / 0.4); color: var(--fg-dim); }
+        .form-row { margin: 10px 0; }
+        .form-row label {
+          display: block; font-family: var(--mono); font-size: 10px;
+          text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.12em; color: var(--fg-dim);
+        }
+        .form-row input, .form-row select, .form-row textarea { width: 100%; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .inv-row { display: grid; grid-template-columns: 2fr 2fr 80px 30px; gap: 8px; margin-bottom: 6px; align-items: center; }
+        .inv-row button { background: transparent; border: 0; cursor: pointer; color: var(--fg-dim); font-size: 16px; }
+        .program-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
+        .program-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 4px; padding: 14px; }
+        .program-card h4 { font-family: var(--display); font-weight: 400; font-size: 16px; margin-bottom: 10px; }
+        .pgm-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border-soft); }
+        .pgm-row:last-child { border-bottom: 0; }
+        .pgm-banner { padding: 6px 10px; border-radius: 3px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 8px; text-align: center; }
+        .pgm-pass { background: oklch(0.28 0.05 145 / 0.6); color: oklch(0.85 0.12 145); }
+        .pgm-fail { background: oklch(0.28 0.05 25 / 0.6); color: oklch(0.85 0.12 25); }
+        .ok { color: oklch(0.82 0.10 145); }
+        .bad { color: oklch(0.82 0.10 25); }
+        .indices-row { display: flex; gap: 10px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
+        .indices-row label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); margin-right: 6px; }
+        .reasons-tt { font-size: 11px; color: var(--fg-dim); margin-top: 4px; }
+        #tab-proyectos[hidden], #tab-clasificacion[hidden] { display: none; }
+      </style>
+
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Acreditación CNA</div>
+            <h1 class="view-title">Claustro <em>académico</em>.</h1>
+            <div class="view-sub">Proyectos financiados y clasificación derivada por reglas CNA (Doctorado / Magíster Académico / Magíster Profesional).</div>
+          </div>
+        </header>
+
+        <div class="claustro-tabs">
+          <button id="btn-tab-clasificacion" class="active" data-tab="clasificacion">Clasificación</button>
+          <button id="btn-tab-proyectos" data-tab="proyectos">Proyectos</button>
+        </div>
+
+        <section id="tab-clasificacion">
+          <div class="card">
+            <div class="indices-row">
+              <label>Índices aceptados</label>
+              <div id="indices-checks"></div>
+              <button class="primary-btn" id="btn-save-indices" style="display:none;">Guardar</button>
+            </div>
+          </div>
+          <div class="program-cards" id="program-cards"></div>
+          <div class="card" style="margin-top:18px;">
+            <h3 style="font-family:var(--display);font-weight:400;font-size:18px;margin-bottom:10px;">Académicos del núcleo</h3>
+            <div id="claustro-table-wrap"></div>
+            <p class="reasons-tt">Tipo 3 (Magíster Profesional) evaluado por Alternativa A — publicaciones. Alternativa B (innovación, patentes, cargos directivos) no incluida en V1.</p>
+          </div>
+        </section>
+
+        <section id="tab-proyectos" hidden>
+          <div id="proyectos-no-access" class="card" style="display:none;">
+            <p>Solo roles administrativos del tenant pueden gestionar proyectos.</p>
+          </div>
+          <div id="proyectos-area" style="display:none;">
+            <div class="card">
+              <h3 style="font-family:var(--display);font-weight:400;font-size:18px;margin-bottom:10px;" id="proj-form-title">Nuevo proyecto</h3>
+              <div id="project-form"></div>
+              <div style="margin-top:14px;">
+                <button class="primary-btn" id="btn-save-project">Guardar</button>
+                <button class="secondary-btn" id="btn-cancel-project" style="display:none;">Cancelar</button>
+              </div>
+            </div>
+            <div class="card" style="margin-top:18px;">
+              <h3 style="font-family:var(--display);font-weight:400;font-size:18px;margin-bottom:10px;">Proyectos registrados</h3>
+              <div id="projects-list"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="/claustro-app.js"></script>
+  <script src="/claustro-form.js"></script>
+  <script src="/claustro-render.js"></script>
+  <script type="module" src="/shell-mount-bundle.js"></script>
+</body>
+</html>
