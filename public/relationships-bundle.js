@@ -15132,8 +15132,6 @@ function useCameraAnim(target) {
 
 // public/community-graph/use-orbit-drag.ts
 var import_react5 = __toESM(require_react());
-var MAX_PITCH = Math.PI / 2 - 0.15;
-var MIN_PITCH = 0;
 function useOrbitDrag(active, defaultPitch, onOrbitStart) {
   const [pitch, setPitch] = (0, import_react5.useState)(defaultPitch);
   const [yaw, setYaw] = (0, import_react5.useState)(0);
@@ -15160,7 +15158,7 @@ function useOrbitDrag(active, defaultPitch, onOrbitStart) {
       const dYaw = (ev.clientX - startX) * 6e-3;
       const dPitch = -(ev.clientY - startY) * 6e-3;
       setYaw(startYaw + dYaw);
-      setPitch(Math.min(MAX_PITCH, Math.max(MIN_PITCH, startPitch + dPitch)));
+      setPitch(startPitch + dPitch);
     };
     const onUp = () => {
       window.removeEventListener("mousemove", onMove);
