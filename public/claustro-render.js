@@ -58,32 +58,48 @@
   }
 
   function renderProjectsList(rows, editingId) {
-    if (!rows.length) { document.getElementById("projects-list").innerHTML = '<p style="color:var(--fg-dim);font-size:12px;">Sin proyectos.</p>'; return; }
-    var html = '<table class="claustro-table"><tr><th>Título</th><th>Fondo</th><th>Tipo</th><th>Vigencia</th><th>IR</th><th>Co</th><th></th></tr>';
+    var wrap = document.getElementById("projects-list");
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="proj-empty">Aún no hay proyectos registrados. Click en <strong>+ Nuevo proyecto</strong> para empezar.</div>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < rows.length; i++) html += window.claustroProjectCard.render(rows[i], editingId);
+    wrap.innerHTML = html;
+  }
+
+  function setProjectStats(rows) {
+    var total = rows.length;
+    var now = new Date();
+    var fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+    var active = 0; var funding = 0;
     for (var i = 0; i < rows.length; i++) {
       var p = rows[i];
-      var ir = (p.investigators || []).filter(function (x) { return x.rol === "IR"; }).map(function (x) { return x.full_name; }).join(", ");
-      var co = (p.investigators || []).filter(function (x) { return x.rol === "CO"; }).map(function (x) { return x.full_name; }).join(", ");
-      var tipo = (p.concursable ? "Concursable" : "No concursable") + (p.externo ? " ext" : " int");
-      var vig = (p.fecha_inicio || "—") + " → " + (p.fecha_fin || "—");
-      html += "<tr" + (editingId === p.id ? ' style="background:var(--bg-inset);"' : "") + ">";
-      html += "<td><strong>" + esc(p.titulo) + "</strong>";
-      if (p.codigo) html += ' <span style="font-family:var(--mono);font-size:10px;color:var(--fg-dim);">[' + esc(p.codigo) + "]</span>";
-      if (p.departamento) html += '<div style="font-size:11px;color:var(--fg-dim);">' + esc(p.departamento) + "</div>";
-      html += "</td><td>" + esc(p.fuente_financiamiento || "—");
-      if (p.monto) html += '<div style="font-size:10px;color:var(--fg-dim);">$' + esc(p.monto) + "</div>";
-      html += "</td><td>" + esc(tipo) + "</td><td>" + esc(vig) + "</td><td>" + esc(ir || "—") + "</td><td>" + esc(co || "—") + "</td>";
-      html += '<td><button class="link-btn" onclick="claustroEdit(' + p.id + ')">Editar</button> · <button class="link-btn" onclick="claustroDelete(' + p.id + ')">Borrar</button></td>';
-      html += "</tr>";
+      if (p.fecha_inicio && p.fecha_fin) {
+        var fi = new Date(p.fecha_inicio); var ff = new Date(p.fecha_fin);
+        if (fi <= now && ff >= fiveYearsAgo) active++;
+      }
+      if (p.monto) funding += Number(p.monto) || 0;
     }
-    html += "</table>";
-    document.getElementById("projects-list").innerHTML = html;
+    document.getElementById("stat-total").textContent = total;
+    document.getElementById("stat-active").textContent = active;
+    document.getElementById("stat-funding").textContent = fmtCurrency(funding);
+    document.getElementById("proj-count").textContent = total;
+  }
+
+  function fmtCurrency(n) {
+    if (!n) return "$0";
+    if (n >= 1e9) return "$" + (n / 1e9).toFixed(1) + "B";
+    if (n >= 1e6) return "$" + (n / 1e6).toFixed(1) + "M";
+    if (n >= 1e3) return "$" + (n / 1e3).toFixed(0) + "K";
+    return "$" + n;
   }
 
   window.claustroRender = {
     programCards: renderProgramCards,
     claustroTable: renderClaustroTable,
     projectsList: renderProjectsList,
+    setProjectStats: setProjectStats,
     projectForm: function (p) { return window.claustroForm.renderProjectForm(p); },
     collectForm: function () { return window.claustroForm.collectForm(); },
   };
