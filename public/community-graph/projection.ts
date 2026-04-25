@@ -30,10 +30,12 @@ export function project(n: { x: number; y: number; z: number }, cam: Camera): Pr
   const ry = dx * sy + dy * cy;
   const cp = Math.cos(cam.pitch);
   const sp = Math.sin(cam.pitch);
-  // Camera-space coords. The camera looks down the +viewAxis direction;
-  // viewAxis = ry*sin(pitch) - n.z*cos(pitch). Subtract from CAMERA_DISTANCE
-  // so closer-to-camera points get a smaller divisor → larger scale.
-  const camY = ry * cp - n.z * sp;
+  // Camera at (0, -D sin θ, D cos θ) looking at origin. World +y (back of
+  // scene) recedes toward the horizon (top of screen, smaller screen y);
+  // world -y (front) comes toward the bottom; world +z (above floor) lifts
+  // toward camera (closer = bigger). At pitch=0 we're straight-down; at
+  // pitch=π/2 we're side-on.
+  const camY = -ry * cp - n.z * sp;
   const viewAxis = ry * sp - n.z * cp;
   const denom = Math.max(50, CAMERA_DISTANCE + viewAxis);
   const scale = CAMERA_DISTANCE / denom;
@@ -52,12 +54,14 @@ export function unproject(p: Projected | { x: number; y: number }, z: number, ca
   // close enough that the cursor stays under the node.
   const cp = Math.cos(cam.pitch);
   const sp = Math.sin(cam.pitch);
+  // Approx scale at the node's z assuming ry≈0 — close enough for dragging.
   const approxViewAxis = -z * cp;
   const denom = Math.max(50, CAMERA_DISTANCE + approxViewAxis);
   const scale = CAMERA_DISTANCE / denom;
   const rx = (p.x - cam.cx) / scale;
   const camY = (p.y - cam.cy) / scale;
-  const ry = cp === 0 ? 0 : (camY + z * sp) / cp;
+  // Forward: camY = -ry*cp - z*sp  ⟹  ry = -(camY + z*sp) / cp
+  const ry = cp === 0 ? 0 : -(camY + z * sp) / cp;
   const cy = Math.cos(-cam.yaw);
   const sy = Math.sin(-cam.yaw);
   return { x: cam.cx + rx * cy - ry * sy, y: cam.cy + rx * sy + ry * cy };

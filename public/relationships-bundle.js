@@ -13488,7 +13488,7 @@ function project(n, cam) {
   const ry = dx * sy + dy * cy;
   const cp = Math.cos(cam.pitch);
   const sp = Math.sin(cam.pitch);
-  const camY = ry * cp - n.z * sp;
+  const camY = -ry * cp - n.z * sp;
   const viewAxis = ry * sp - n.z * cp;
   const denom = Math.max(50, CAMERA_DISTANCE + viewAxis);
   const scale = CAMERA_DISTANCE / denom;
@@ -13503,7 +13503,7 @@ function unproject(p, z, cam) {
   const scale = CAMERA_DISTANCE / denom;
   const rx = (p.x - cam.cx) / scale;
   const camY = (p.y - cam.cy) / scale;
-  const ry = cp === 0 ? 0 : (camY + z * sp) / cp;
+  const ry = cp === 0 ? 0 : -(camY + z * sp) / cp;
   const cy = Math.cos(-cam.yaw);
   const sy = Math.sin(-cam.yaw);
   return { x: cam.cx + rx * cy - ry * sy, y: cam.cy + rx * sy + ry * cy };
