@@ -1,18 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { Simulation } from 'd3-force';
+import React, { useMemo, useRef, useState } from 'react';
 import { buildCommunityColors, majorCommunities, effectiveKey } from './communities';
 import { startDrag } from './drag';
 import { GraphScene } from './scene';
-import {
-  initialNodes, initialLinks, buildAnchors, createSimulation, integrateZ,
-  type SimN, type SimL, type BaseLink,
-} from './forces';
+import { type SimN, type BaseLink } from './forces';
 import type { CommunityAdapter, ForceConfig } from './types';
 import { DEFAULT_FORCE_CONFIG } from './types';
 import { useViewTransform } from './use-view-transform';
 import { useCameraAnim } from './use-camera-anim';
 import { useOrbitDrag } from './use-orbit-drag';
 import { useLayerIntegration } from './use-layer-integration';
+import { useCommunitySim } from './use-community-sim';
 import { resolveNodeColor } from './node-color';
 import { buildFocusSet } from './focus-set';
 import type { Camera } from './projection';
@@ -49,16 +46,17 @@ export interface CommunityGraphProps<N, L extends BaseLink> {
   hiddenIds?: Set<string>;
   /** When set, Links only draws edges directly on this node. */
   edgesOnlyForId?: string | null;
+  /** Edges touching these ids are hidden unless the endpoint is in the focus set. */
+  mutedEdgeIds?: Set<string>;
 }
 
 export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   nodes: inNodes, links: inLinks, adapter, primaryKey = null, width, height, selectedId,
   forceConfig, onNodeClick, pinDraggedNodes = false, viewTransform, zoomToId, zoomScale = 2,
-  externalHoverId, onHoverChange, onHullHoverChange, tilt: tiltTarget = 0, hiddenIds, edgesOnlyForId,
+  externalHoverId, onHoverChange, onHullHoverChange, tilt: tiltTarget = 0, hiddenIds, edgesOnlyForId, mutedEdgeIds,
 }: CommunityGraphProps<N, L>) {
   const config: ForceConfig = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const simRef = useRef<Simulation<SimN<N>, SimL<L>> | null>(null);
   const [, tick] = useState(0);
   const [internalHoverId, setInternalHoverId] = useState<string | null>(null);
   const [hullHoverKey, setHullHoverKey] = useState<string | null>(null);
@@ -73,31 +71,10 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
     [inNodes, adapter, primaryKey, config.minCommunitySize],
   );
 
-  const { nodes, links } = useMemo(() => {
-    const ns = initialNodes(inNodes, adapter, width, height);
-    const ls = initialLinks(inLinks, ns, adapter);
-    return { nodes: ns, links: ls };
-    // Intentionally omit `adapter` from deps: only isEgo/getId are read here,
-    // and those are stable for a given node set. Re-running on every adapter
-    // identity change would reseed positions and cause visible jumps.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inNodes, inLinks, width, height]);
-
-  const anchors = useMemo(
-    () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nodes, primaryKey, width, height, config.minCommunitySize, config.orbitRadius],
-  );
-
-  useEffect(() => {
-    const sim = createSimulation({
-      nodes, links, anchors, adapter, primaryKey, width, height, config,
-      onTick: () => tick(v => v + 1),
-    });
-    simRef.current = sim;
-    return () => { sim.stop(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, links, anchors, primaryKey, width, height]);
+  const { nodes, links, simRef } = useCommunitySim<N, L>({
+    inNodes, inLinks, adapter, primaryKey, width, height, config,
+    onTick: () => tick(v => v + 1),
+  });
 
   useLayerIntegration(nodes, adapter, config.layerStrength, () => tick(v => v + 1));
 
@@ -143,6 +120,7 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
         onBackgroundMouseDown={startOrbitDrag}
         hiddenIds={hiddenIds}
         edgesOnlyForId={edgesOnlyForId}
+        mutedEdgeIds={mutedEdgeIds}
       />
     </div>
   );

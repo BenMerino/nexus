@@ -42,13 +42,17 @@ interface LinksProps<L extends BaseLink & { weight?: number }> {
    *  a-paper-reveal-its-authors flow so revealing an author doesn't also
    *  surface their other papers' edges. */
   onlyEdgesOfId?: string | null;
+  /** Ids whose edges are suppressed by default — they only appear when the
+   *  node is in the focus set (hover/select). Used to hide the dense
+   *  paper↔co-author web in graph explorer. */
+  mutedEdgeIds?: Set<string>;
 }
 
 /** Two passes: every base edge renders as a solid line (faintly dimmed
  *  when a focus is active so the accent overlay stands out). Edges in the
  *  focused subgraph get a dashed accent line drawn on top — the "path"
  *  highlight. Non-focused edges keep only their solid pass. */
-export function Links<L extends BaseLink & { weight?: number }>({ links, connected, camera, pathMode, hiddenIds, onlyEdgesOfId }: LinksProps<L>) {
+export function Links<L extends BaseLink & { weight?: number }>({ links, connected, camera, pathMode, hiddenIds, onlyEdgesOfId, mutedEdgeIds }: LinksProps<L>) {
   const hasFocus = !!connected;
   interface Edge { key: number; x1: number; y1: number; x2: number; y2: number; w: number; inFocus: boolean }
   const edges: Edge[] = [];
@@ -58,6 +62,10 @@ export function Links<L extends BaseLink & { weight?: number }>({ links, connect
     if (!s || !t) return;
     if (hiddenIds && (hiddenIds.has(s.id) || hiddenIds.has(t.id))) return;
     if (onlyEdgesOfId && s.id !== onlyEdgesOfId && t.id !== onlyEdgesOfId) return;
+    if (mutedEdgeIds && (mutedEdgeIds.has(s.id) || mutedEdgeIds.has(t.id))) {
+      const reveal = !!connected && (connected.has(s.id) || connected.has(t.id));
+      if (!reveal) return;
+    }
     const sz = (s as unknown as { z?: number }).z ?? 0;
     const tz = (t as unknown as { z?: number }).z ?? 0;
     const ps = project({ x: s.x, y: s.y, z: sz }, camera);

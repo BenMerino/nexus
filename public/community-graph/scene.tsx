@@ -38,12 +38,14 @@ interface Props<N, L extends BaseLink & { weight?: number }> {
   hiddenIds?: Set<string>;
   /** When set, Links only draws edges directly on this node. */
   edgesOnlyForId?: string | null;
+  /** Edges touching these ids are hidden unless the endpoint is in `connected`. */
+  mutedEdgeIds?: Set<string>;
 }
 
 export function GraphScene<N, L extends BaseLink & { weight?: number }>({
   svgRef, width, height, nodes, links, adapter, primaryKey, communityColors, minCommunitySize,
   focusKey, hoverId, selectedId, connected, nodeColor, onHoverStart, onHoverEnd, onMouseDown, onNodeClick,
-  transform, ego, hovered, showHover, onHullHover, camera, onBackgroundMouseDown, rotatable, hiddenIds, edgesOnlyForId,
+  transform, ego, hovered, showHover, onHullHover, camera, onBackgroundMouseDown, rotatable, hiddenIds, edgesOnlyForId, mutedEdgeIds,
 }: Props<N, L>) {
   const t = transform
     ? `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})`
@@ -63,6 +65,7 @@ export function GraphScene<N, L extends BaseLink & { weight?: number }>({
         <CommunityHulls nodes={nodes} adapter={adapter} primaryKey={primaryKey} colors={communityColors} minSize={minCommunitySize} focusKey={focusKey} onHoverKey={onHullHover} camera={camera} />
         <Links links={links} connected={connected} camera={camera} pathMode hiddenIds={hiddenIds}
           onlyEdgesOfId={edgesOnlyForId}
+          mutedEdgeIds={mutedEdgeIds}
         />
         <Nodes
           nodes={nodes} adapter={adapter}

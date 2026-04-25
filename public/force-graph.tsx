@@ -130,6 +130,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       tilt={tilt}
       hiddenIds={hiddenIds}
       edgesOnlyForId={edgesOnlyForId}
+      mutedEdgeIds={coauthorIds}
     />
   );
 }
