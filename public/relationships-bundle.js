@@ -16188,11 +16188,20 @@ function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }) {
               onClick: () => onToggle(b.key),
               children: [
                 /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(RichLabel, { raw: b.label }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "gc-community-metrics muted", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
-                  b.papers.length,
-                  " ",
-                  b.papers.length === 1 ? "paper" : "papers"
-                ] }) })
+                /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: "gc-community-metrics muted", children: [
+                  b.key.startsWith("journal:") && /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_jsx_runtime20.Fragment, { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { className: "mono", children: [
+                      "ISSN ",
+                      b.key.slice("journal:".length)
+                    ] }),
+                    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { "aria-hidden": "true", children: "\xB7" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { children: [
+                    b.papers.length,
+                    " ",
+                    b.papers.length === 1 ? "paper" : "papers"
+                  ] })
+                ] })
               ]
             }
           )

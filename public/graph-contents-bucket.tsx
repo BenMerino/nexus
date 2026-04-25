@@ -57,6 +57,12 @@ export function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }
           onClick={() => onToggle(b.key)}>
           <h4><RichLabel raw={b.label} /></h4>
           <div className="gc-community-metrics muted">
+            {b.key.startsWith('journal:') && (
+              <>
+                <span className="mono">ISSN {b.key.slice('journal:'.length)}</span>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
             <span>{b.papers.length} {b.papers.length === 1 ? 'paper' : 'papers'}</span>
           </div>
         </button>
