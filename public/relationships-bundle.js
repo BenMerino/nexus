@@ -16565,6 +16565,7 @@ function GraphExplorerBody() {
   const [hover, setHover] = (0, import_react27.useState)({ id: null, source: "canvas" });
   const hoverId = hover.id;
   const prefetchTimer = (0, import_react27.useRef)(null);
+  const releaseTimer = (0, import_react27.useRef)(null);
   const schedulePrefetch = (0, import_react27.useCallback)((id) => {
     if (prefetchTimer.current) {
       clearTimeout(prefetchTimer.current);
@@ -16573,8 +16574,16 @@ function GraphExplorerBody() {
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, []);
   const hoverFromCanvas = (0, import_react27.useCallback)((id) => {
-    setHover({ id, source: "canvas" });
-    schedulePrefetch(id);
+    if (releaseTimer.current) {
+      clearTimeout(releaseTimer.current);
+      releaseTimer.current = null;
+    }
+    if (id) {
+      setHover({ id, source: "canvas" });
+      schedulePrefetch(id);
+    } else {
+      releaseTimer.current = window.setTimeout(() => setHover({ id: null, source: "canvas" }), 250);
+    }
   }, [schedulePrefetch]);
   const hoverFromSidebar = (0, import_react27.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
   const [hullHoverKey, setHullHoverKey] = (0, import_react27.useState)(null);

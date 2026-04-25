@@ -26,13 +26,23 @@ export function GraphExplorerBody() {
   const [hover, setHover] = useState<{ id: string | null; source: 'canvas' | 'sidebar' }>({ id: null, source: 'canvas' });
   const hoverId = hover.id;
   const prefetchTimer = useRef<number | null>(null);
+  const releaseTimer = useRef<number | null>(null);
   const schedulePrefetch = useCallback((id: string | null) => {
     if (prefetchTimer.current) { clearTimeout(prefetchTimer.current); prefetchTimer.current = null; }
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, []);
+  // Canvas hover holds onto the last id briefly when leaving empty space, so
+  // the zoom transition doesn't release the moment the cursor falls off the
+  // shifting node. A new hover snaps immediately; null hover only commits
+  // after the debounce expires.
   const hoverFromCanvas = useCallback((id: string | null) => {
-    setHover({ id, source: 'canvas' });
-    schedulePrefetch(id);
+    if (releaseTimer.current) { clearTimeout(releaseTimer.current); releaseTimer.current = null; }
+    if (id) {
+      setHover({ id, source: 'canvas' });
+      schedulePrefetch(id);
+    } else {
+      releaseTimer.current = window.setTimeout(() => setHover({ id: null, source: 'canvas' }), 250);
+    }
   }, [schedulePrefetch]);
   const hoverFromSidebar = useCallback((id: string | null) => setHover({ id, source: 'sidebar' }), []);
   const [hullHoverKey, setHullHoverKey] = useState<string | null>(null);
