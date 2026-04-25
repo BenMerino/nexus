@@ -16263,6 +16263,7 @@ function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId
     [nodes, adapter, homeInstitutionId, labelById, focusKey]
   );
   const [openKey, setOpenKey] = (0, import_react19.useState)(null);
+  const [hoverKey, setHoverKey] = (0, import_react19.useState)(null);
   const listRef = (0, import_react19.useRef)(null);
   useFlipReorder(listRef, buckets.map((b) => b.key));
   const prefetchTimer = (0, import_react19.useRef)(null);
@@ -16291,7 +16292,24 @@ function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId
         coauthorIds
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(BucketView, { b, open: openKey === b.key, onToggle: (k) => setOpenKey((prev) => prev === k ? null : k), onSelect, onHover: onRowHover, onHullHover }, b.key)) })
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => {
+      const isOpen = openKey === b.key || openKey === null && hoverKey === b.key;
+      return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+        BucketView,
+        {
+          b,
+          open: isOpen,
+          onToggle: (k) => setOpenKey((prev) => prev === k ? null : k),
+          onSelect,
+          onHover: onRowHover,
+          onHullHover: (key) => {
+            setHoverKey(key);
+            onHullHover?.(key);
+          }
+        },
+        b.key
+      );
+    }) })
   ] });
 }
 

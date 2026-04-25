@@ -76,6 +76,7 @@ export function GraphContents({ nodes, edges, allNodes, affiliations, homeInstit
     [nodes, adapter, homeInstitutionId, labelById, focusKey]);
 
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [hoverKey, setHoverKey] = useState<string | null>(null);
 
   const listRef = useRef<HTMLDivElement>(null);
   useFlipReorder(listRef, buckets.map(b => b.key));
@@ -109,7 +110,16 @@ export function GraphContents({ nodes, edges, allNodes, affiliations, homeInstit
         />
       )}
       <div ref={listRef} className="graph-contents-list">
-        {buckets.map(b => <BucketView key={b.key} b={b} open={openKey === b.key} onToggle={k => setOpenKey(prev => prev === k ? null : k)} onSelect={onSelect} onHover={onRowHover} onHullHover={onHullHover} />)}
+        {buckets.map(b => {
+          const isOpen = openKey === b.key || (openKey === null && hoverKey === b.key);
+          return (
+            <BucketView key={b.key} b={b} open={isOpen}
+              onToggle={k => setOpenKey(prev => prev === k ? null : k)}
+              onSelect={onSelect} onHover={onRowHover}
+              onHullHover={key => { setHoverKey(key); onHullHover?.(key); }}
+            />
+          );
+        })}
       </div>
     </div>
   );
