@@ -40,7 +40,7 @@ export function HoverCard({ node, nodes, edges, egoAuthorId, homeInstitutionId, 
       )}
       {path && path.length > 1 && (
         <div className="hover-card-path">
-          <div className="hover-card-path-head">Path to you</div>
+          <div className="hover-card-path-head">Path</div>
           <ol>
             {path.map((id, i) => {
               const n = nodesById.get(id);
@@ -61,8 +61,7 @@ export function HoverCard({ node, nodes, edges, egoAuthorId, homeInstitutionId, 
   );
 }
 
-function tagFor(n: EnrichedSimNode, coauthorIds: Set<string>, egoAuthorId: string | null, homeInstitutionId: string | null): string {
-  if (n.id === egoAuthorId) return 'YOU';
+function tagFor(n: EnrichedSimNode, coauthorIds: Set<string>, _egoAuthorId: string | null, homeInstitutionId: string | null): string {
   if (n.id === homeInstitutionId) return 'YOUR INSTITUTION';
   if (n.group === 'institution') return 'INSTITUTION';
   if (n.group === 'journal') return 'JOURNAL';

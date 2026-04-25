@@ -16204,7 +16204,7 @@ function HoverCard({ node, nodes, edges, egoAuthorId, homeInstitutionId, coautho
       /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: "hover-card-count-label", children: c2.label })
     ] }, c2.label)) }),
     path && path.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "hover-card-path", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "hover-card-path-head", children: "Path to you" }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "hover-card-path-head", children: "Path" }),
       /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("ol", { children: path.map((id, i) => {
         const n = nodesById.get(id);
         if (!n) return null;
@@ -16218,8 +16218,7 @@ function HoverCard({ node, nodes, edges, egoAuthorId, homeInstitutionId, coautho
     ] })
   ] });
 }
-function tagFor(n, coauthorIds, egoAuthorId, homeInstitutionId) {
-  if (n.id === egoAuthorId) return "YOU";
+function tagFor(n, coauthorIds, _egoAuthorId, homeInstitutionId) {
   if (n.id === homeInstitutionId) return "YOUR INSTITUTION";
   if (n.group === "institution") return "INSTITUTION";
   if (n.group === "journal") return "JOURNAL";
