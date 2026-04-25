@@ -16290,42 +16290,49 @@ function BucketView({ b, onSelect, onHover, onHullHover }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
   const [open, setOpen] = (0, import_react21.useState)(false);
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}${open ? " open" : ""}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("header", { className: "gc-community-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
-        "button",
-        {
-          type: "button",
-          className: "gc-community-title",
-          onClick: () => setOpen((o) => !o),
-          onMouseEnter: () => onHullHover?.(b.key),
-          onMouseLeave: () => onHullHover?.(null),
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichLabel, { raw: b.label }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "gc-community-metrics muted", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { children: [
-                b.papers.length,
-                " ",
-                b.papers.length === 1 ? "paper" : "papers"
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "aria-hidden": "true", children: "\xB7" }),
-              /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { children: [
-                b.authors.length,
-                " ",
-                b.authors.length === 1 ? "author" : "authors"
-              ] })
-            ] })
-          ]
-        }
-      )
-    ] }),
-    open && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
-    ] })
-  ] });
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    "section",
+    {
+      "data-flip-key": b.key,
+      className: `gc-community${b.emphasis ? " emphasis" : ""}${open ? " open" : ""}`,
+      onMouseEnter: () => onHullHover?.(b.key),
+      onMouseLeave: () => onHullHover?.(null),
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("header", { className: "gc-community-head", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+            "button",
+            {
+              type: "button",
+              className: "gc-community-title",
+              onClick: () => setOpen((o) => !o),
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichLabel, { raw: b.label }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "gc-community-metrics muted", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { children: [
+                    b.papers.length,
+                    " ",
+                    b.papers.length === 1 ? "paper" : "papers"
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "aria-hidden": "true", children: "\xB7" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { children: [
+                    b.authors.length,
+                    " ",
+                    b.authors.length === 1 ? "author" : "authors"
+                  ] })
+                ] })
+              ]
+            }
+          )
+        ] }),
+        open && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Journals", color: COLORS.journal, ns: b.journals, onSelect, onHover }),
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Papers", color: "#888", ns: b.papers, onSelect, onHover })
+        ] })
+      ]
+    }
+  );
 }
 
 // public/graph-contents.tsx

@@ -50,13 +50,13 @@ export function BucketView({ b, onSelect, onHover, onHullHover }: BucketProps) {
   if (total === 0 && b.institutions.length === 0) return null;
   const [open, setOpen] = useState(false);
   return (
-    <section data-flip-key={b.key} className={`gc-community${b.emphasis ? ' emphasis' : ''}${open ? ' open' : ''}`}>
+    <section data-flip-key={b.key} className={`gc-community${b.emphasis ? ' emphasis' : ''}${open ? ' open' : ''}`}
+      onMouseEnter={() => onHullHover?.(b.key)}
+      onMouseLeave={() => onHullHover?.(null)}>
       <header className="gc-community-head">
         <span className="gc-swatch" style={{ background: b.color }} />
         <button type="button" className="gc-community-title"
-          onClick={() => setOpen(o => !o)}
-          onMouseEnter={() => onHullHover?.(b.key)}
-          onMouseLeave={() => onHullHover?.(null)}>
+          onClick={() => setOpen(o => !o)}>
           <h4><RichLabel raw={b.label} /></h4>
           <div className="gc-community-metrics muted">
             <span>{b.papers.length} {b.papers.length === 1 ? 'paper' : 'papers'}</span>
