@@ -12913,12 +12913,6 @@ function yearlyCounts(data) {
   }
   return [...byYear.entries()].sort(([a2], [b]) => a2.localeCompare(b)).slice(-6).map(([year, count]) => ({ year, count }));
 }
-function greeting() {
-  const h = (/* @__PURE__ */ new Date()).getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
-}
 function BarChart({ rows, title }) {
   const max = Math.max(...rows.map((r) => r.count), 1);
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "card card-chart", children: [
@@ -15752,8 +15746,6 @@ function DashboardLoading() {
   const isPersonal = !!me?.profile.orcid;
   const stats = isPersonal ? PERSONAL_STATS : INSTITUTIONAL_STATS;
   const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
-    greeting(),
-    ", ",
     /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: firstName }),
     "."
   ] }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
@@ -15860,8 +15852,6 @@ function DashboardContent({ data }) {
     { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
   const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
-    greeting(),
-    ", ",
     /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("em", { children: firstName }),
     "."
   ] }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [

@@ -78,7 +78,7 @@ a:hover { text-decoration: underline; }
 
 em {
   font-family: var(--display);
-  font-style: italic;
+  font-style: normal;
   font-weight: 400;
   letter-spacing: -0.005em;
 }
@@ -865,7 +865,7 @@ button.secondary { background: transparent; }
 /* Source blocks (submit.html, explore record details) */
 .source { border: 1px solid var(--border-soft); border-radius: 4px; padding: 12px; margin: 8px 0; background: var(--bg-card); }
 .source h3 { margin: 0 0 8px 0; font-size: 13px; font-family: var(--mono); color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.1em; }
-.source .not-found { color: var(--fg-dim); font-style: italic; }
+.source .not-found { color: var(--fg-dim); }
 .source table { margin: 0; }
 .source td { padding: 3px 10px 3px 0; font-size: 13px; }
 .source td:first-child { font-weight: 500; white-space: nowrap; color: var(--fg-muted); }

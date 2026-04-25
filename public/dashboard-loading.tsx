@@ -1,7 +1,6 @@
 import React from 'react';
 import { useCurrentUser } from './shell-helpers';
 import { StatSkeleton, Tag, SectionHead } from './ui-primitives';
-import { greeting } from './dashboard-panels';
 import { TopJournalsSkeleton, PartnerInstitutionsSkeleton, BarChartSkeleton, RecentlyIndexedSkeleton } from './dashboard-panels-skeletons';
 import { CoAuthorGraphPanelSkeleton } from './coauthor-graph-preview';
 import { VelocityPanelSkeleton } from './portfolio-velocity';
@@ -32,7 +31,7 @@ export function DashboardLoading() {
   const stats = isPersonal ? PERSONAL_STATS : INSTITUTIONAL_STATS;
 
   const title = isPersonal && firstName
-    ? <>{greeting()}, <em>{firstName}</em>.</>
+    ? <><em>{firstName}</em>.</>
     : <><em>{tenantName}</em>.</>;
   const sub = isPersonal
     ? `Your research, pulled from 4 scholarly sources. No forms.`

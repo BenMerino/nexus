@@ -13,13 +13,6 @@ export function yearlyCounts(data: DashboardData): { year: string; count: number
   return [...byYear.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-6).map(([year, count]) => ({ year, count }));
 }
 
-export function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
-}
-
 export function BarChart({ rows, title }: { rows: { year: string; count: number }[]; title: string }) {
   const max = Math.max(...rows.map(r => r.count), 1);
   return (
