@@ -16243,7 +16243,7 @@ function BucketView({ b, onSelect, onHover }) {
   return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}${open ? " open" : ""}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("header", { className: "gc-community-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
         "button",
         {
           type: "button",
@@ -16251,15 +16251,24 @@ function BucketView({ b, onSelect, onHover }) {
           onClick: () => setOpen((o) => !o),
           onMouseEnter: () => headInstId && onHover?.(headInstId),
           onMouseLeave: () => onHover?.(null),
-          children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichLabel, { raw: b.label }) })
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichLabel, { raw: b.label }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "gc-community-metrics muted", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { children: [
+                b.papers.length,
+                " ",
+                b.papers.length === 1 ? "paper" : "papers"
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "aria-hidden": "true", children: "\xB7" }),
+              /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { children: [
+                b.authors.length,
+                " ",
+                b.authors.length === 1 ? "author" : "authors"
+              ] })
+            ] })
+          ]
         }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { className: "mono muted gc-count", children: [
-        b.papers.length,
-        "p \xB7 ",
-        b.authors.length,
-        "a"
-      ] })
+      )
     ] }),
     open && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(NodeList, { label: "Authors", color: COLORS.author, ns: b.authors, onSelect, onHover }),

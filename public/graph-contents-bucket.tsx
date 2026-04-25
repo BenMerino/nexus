@@ -59,8 +59,12 @@ export function BucketView({ b, onSelect, onHover }: BucketProps) {
           onMouseEnter={() => headInstId && onHover?.(headInstId)}
           onMouseLeave={() => onHover?.(null)}>
           <h4><RichLabel raw={b.label} /></h4>
+          <div className="gc-community-metrics muted">
+            <span>{b.papers.length} {b.papers.length === 1 ? 'paper' : 'papers'}</span>
+            <span aria-hidden="true">·</span>
+            <span>{b.authors.length} {b.authors.length === 1 ? 'author' : 'authors'}</span>
+          </div>
         </button>
-        <span className="mono muted gc-count">{b.papers.length}p · {b.authors.length}a</span>
       </header>
       {open && (
         <>
