@@ -374,7 +374,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 /* Inside the overlay glass panel the inner components shouldn't paint
  * their own opaque background — let the overlay's gradient show through —
  * but they still own their layout (filmstrip panes, scroll, padding). */
-.graph-overlay .graph-filters { background: transparent; border: 0; }
+.graph-overlay .graph-filters { background: transparent; border: 0; height: 100%; box-sizing: border-box; }
 .graph-overlay .detail-panel { background: transparent; border: 0; height: 100%; }
 @media (max-width: 1200px) {
   .graph-overlay-left { width: 200px; }
