@@ -14065,26 +14065,46 @@ function easeOutCubic(t) {
 function lerp2(a2, b, t) {
   return a2 + (b - a2) * t;
 }
-function targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera) {
-  if (!zoomToId) return IDENTITY;
-  const target = nodes.find((n) => adapter.getId(n) === zoomToId);
-  if (!target) return null;
-  const p = project(target, camera);
-  return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
+function targetFor(zoomToId, zoomToCommunityKey, nodes, adapter, zoomScale, width, height, camera) {
+  if (zoomToId) {
+    const target = nodes.find((n) => adapter.getId(n) === zoomToId);
+    if (!target) return null;
+    const p = project(target, camera);
+    return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
+  }
+  if (zoomToCommunityKey) {
+    let sx = 0;
+    let sy = 0;
+    let count = 0;
+    for (const n of nodes) {
+      if (adapter.getCommunityKey(n) !== zoomToCommunityKey) continue;
+      const p = project(n, camera);
+      sx += p.x;
+      sy += p.y;
+      count++;
+    }
+    if (count === 0) return null;
+    const cx = sx / count;
+    const cy = sy / count;
+    const scale = Math.max(1, zoomScale * 0.6);
+    return { tx: width / 2 - cx * scale, ty: height / 2 - cy * scale, scale };
+  }
+  return IDENTITY;
 }
-function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height, camera }) {
+function useViewTransform({ override, zoomToId, zoomToCommunityKey, zoomScale, nodes, adapter, width, height, camera }) {
   const [, bump] = (0, import_react3.useState)(0);
   const startRef = (0, import_react3.useRef)(IDENTITY);
   const endRef = (0, import_react3.useRef)(IDENTITY);
   const startTimeRef = (0, import_react3.useRef)(0);
   const currentRef = (0, import_react3.useRef)(IDENTITY);
-  const lastZoomIdRef = (0, import_react3.useRef)(null);
-  const liveRef = (0, import_react3.useRef)({ zoomToId, zoomScale, nodes, adapter, width, height, camera });
-  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height, camera };
-  if (lastZoomIdRef.current !== zoomToId) {
-    lastZoomIdRef.current = zoomToId;
+  const lastTargetRef = (0, import_react3.useRef)("");
+  const liveRef = (0, import_react3.useRef)({ zoomToId, zoomToCommunityKey, zoomScale, nodes, adapter, width, height, camera });
+  liveRef.current = { zoomToId, zoomToCommunityKey, zoomScale, nodes, adapter, width, height, camera };
+  const targetKey = `${zoomToId ?? ""}|${zoomToCommunityKey ?? ""}`;
+  if (lastTargetRef.current !== targetKey) {
+    lastTargetRef.current = targetKey;
     startRef.current = { ...currentRef.current };
-    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera);
+    endRef.current = targetFor(zoomToId, zoomToCommunityKey, nodes, adapter, zoomScale, width, height, camera);
     startTimeRef.current = typeof performance !== "undefined" ? performance.now() : 0;
   }
   (0, import_react3.useEffect)(() => {
@@ -14104,7 +14124,7 @@ function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width
       };
       if (p >= 1) {
         const l = liveRef.current;
-        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
+        const live = targetFor(l.zoomToId, l.zoomToCommunityKey, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
         if (live) {
           endRef.current = live;
           currentRef.current = live;
@@ -15386,6 +15406,7 @@ function CommunityGraph({
   const { t: effectiveTransform } = useViewTransform({
     override: viewTransform,
     zoomToId,
+    zoomToCommunityKey: externalHullKey,
     zoomScale,
     nodes,
     adapter,

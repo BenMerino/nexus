@@ -101,7 +101,8 @@ export function CommunityGraph<N, L extends BaseLink & { weight?: number }>({
   };
 
   const { t: effectiveTransform } = useViewTransform({
-    override: viewTransform, zoomToId, zoomScale, nodes, adapter, width, height, camera,
+    override: viewTransform, zoomToId, zoomToCommunityKey: externalHullKey,
+    zoomScale, nodes, adapter, width, height, camera,
   });
 
   return (
