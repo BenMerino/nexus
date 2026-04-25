@@ -30,12 +30,13 @@ interface Props {
   coauthorIds: Set<string>;
   onSelect: (id: string) => void;
   onHover?: (id: string | null) => void;
+  onHullHover?: (key: string | null) => void;
   hoveredId?: string | null;
   hoveredHullKey?: string | null;
   onSearchSelect?: (id: string) => void;
 }
 
-export function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }: Props) {
+export function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, onHullHover, hoveredId, hoveredHullKey, onSearchSelect }: Props) {
   const hoveredNode = useMemo(() => hoveredId ? nodes.find(n => n.id === hoveredId) ?? null : null, [hoveredId, nodes]);
 
   const labelById = useMemo(() => {
@@ -106,7 +107,7 @@ export function GraphContents({ nodes, edges, allNodes, affiliations, homeInstit
         />
       )}
       <div ref={listRef} className="graph-contents-list">
-        {buckets.map(b => <BucketView key={b.key} b={b} onSelect={onSelect} onHover={onRowHover} />)}
+        {buckets.map(b => <BucketView key={b.key} b={b} onSelect={onSelect} onHover={onRowHover} onHullHover={onHullHover} />)}
       </div>
     </div>
   );

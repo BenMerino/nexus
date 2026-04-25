@@ -46,6 +46,7 @@ export function GraphExplorerBody() {
   }, [schedulePrefetch]);
   const hoverFromSidebar = useCallback((id: string | null) => setHover({ id, source: 'sidebar' }), []);
   const [hullHoverKey, setHullHoverKey] = useState<string | null>(null);
+  const [sidebarHullKey, setSidebarHullKey] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const expand = useCallback((id: string) => setExpandedIds(prev => {
     if (prev.has(id)) return prev;
@@ -113,7 +114,7 @@ export function GraphExplorerBody() {
 
         {projectedNodes.length === 0
           ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-          : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={1} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} hiddenIds={hiddenIds} edgesOnlyForId={edgesOnlyForId} />}
+          : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={1} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} hiddenIds={hiddenIds} edgesOnlyForId={edgesOnlyForId} externalHullKey={sidebarHullKey} />}
 
         <aside className="graph-overlay graph-overlay-left">
           <GraphFiltersSidebar flags={flags} setFlag={setFlag} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled />
@@ -132,7 +133,7 @@ export function GraphExplorerBody() {
             onBack={selectionStack.length >= 1 ? popSelection : undefined}
             accentColor={explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId)}
             navDir={navDir}
-            empty={<GraphContents nodes={projectedNodes} edges={projectedEdges} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} coauthorIds={coauthorIds} onSelect={id => { pushSelection(id); expand(id); }} onHover={hoverFromSidebar} hoveredId={hover.source === 'canvas' ? hoverId : null} hoveredHullKey={hullHoverKey} onSearchSelect={id => pushSelection(id)} />}
+            empty={<GraphContents nodes={projectedNodes} edges={projectedEdges} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} coauthorIds={coauthorIds} onSelect={id => { pushSelection(id); expand(id); }} onHover={hoverFromSidebar} onHullHover={setSidebarHullKey} hoveredId={hover.source === 'canvas' ? hoverId : null} hoveredHullKey={hullHoverKey} onSearchSelect={id => pushSelection(id)} />}
           />
         </aside>
       </div>

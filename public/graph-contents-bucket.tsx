@@ -43,12 +43,11 @@ function NodeList({ label, color, ns, onSelect, onHover }: ListProps) {
   );
 }
 
-interface BucketProps { b: Bucket; onSelect: (id: string) => void; onHover?: (id: string | null) => void }
+interface BucketProps { b: Bucket; onSelect: (id: string) => void; onHover?: (id: string | null) => void; onHullHover?: (key: string | null) => void }
 
-export function BucketView({ b, onSelect, onHover }: BucketProps) {
+export function BucketView({ b, onSelect, onHover, onHullHover }: BucketProps) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
-  const headInstId = b.institutions[0]?.id;
   const [open, setOpen] = useState(false);
   return (
     <section data-flip-key={b.key} className={`gc-community${b.emphasis ? ' emphasis' : ''}${open ? ' open' : ''}`}>
@@ -56,8 +55,8 @@ export function BucketView({ b, onSelect, onHover }: BucketProps) {
         <span className="gc-swatch" style={{ background: b.color }} />
         <button type="button" className="gc-community-title"
           onClick={() => setOpen(o => !o)}
-          onMouseEnter={() => headInstId && onHover?.(headInstId)}
-          onMouseLeave={() => onHover?.(null)}>
+          onMouseEnter={() => onHullHover?.(b.key)}
+          onMouseLeave={() => onHullHover?.(null)}>
           <h4><RichLabel raw={b.label} /></h4>
           <div className="gc-community-metrics muted">
             <span>{b.papers.length} {b.papers.length === 1 ? 'paper' : 'papers'}</span>

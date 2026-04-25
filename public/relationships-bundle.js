@@ -12750,7 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react28 = __toESM(require_react());
+var import_react29 = __toESM(require_react());
 
 // public/node-classify.ts
 function percentile(sorted, p) {
@@ -13412,10 +13412,10 @@ function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }) {
 }
 
 // public/explorer-canvas.tsx
-var import_react10 = __toESM(require_react());
+var import_react11 = __toESM(require_react());
 
 // public/force-graph.tsx
-var import_react9 = __toESM(require_react());
+var import_react10 = __toESM(require_react());
 
 // public/relationship-types.ts
 var COLORS = {
@@ -13431,7 +13431,7 @@ function nodeRadius(weight, role) {
 }
 
 // public/community-graph/CommunityGraph.tsx
-var import_react7 = __toESM(require_react());
+var import_react8 = __toESM(require_react());
 
 // public/community-graph/communities.ts
 var COMMUNITY_PALETTE = ["#6ba4d6", "#b57ad1", "#8fcb9b", "#d68a6b", "#d1c57a", "#c67ad1", "#6bd6c5", "#d66b8a", "#7a8ed1"];
@@ -14041,6 +14041,164 @@ function GraphScene({
     ] })
   ] });
 }
+
+// public/community-graph/types.ts
+var DEFAULT_FORCE_CONFIG = {
+  linkDistance: 25,
+  linkStrength: 0.1,
+  charge: -40,
+  clusterStrengthX: 0.4,
+  clusterStrengthY: 0.45,
+  collidePad: 3,
+  minCommunitySize: 3,
+  orbitRadius: 0.38,
+  layerStrength: 0.12
+};
+
+// public/community-graph/use-view-transform.ts
+var import_react3 = __toESM(require_react());
+var EASE_MS = 400;
+var IDENTITY = { tx: 0, ty: 0, scale: 1 };
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+function lerp2(a2, b, t) {
+  return a2 + (b - a2) * t;
+}
+function targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera) {
+  if (!zoomToId) return IDENTITY;
+  const target = nodes.find((n) => adapter.getId(n) === zoomToId);
+  if (!target) return null;
+  const p = project(target, camera);
+  return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
+}
+function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height, camera }) {
+  const [, bump] = (0, import_react3.useState)(0);
+  const startRef = (0, import_react3.useRef)(IDENTITY);
+  const endRef = (0, import_react3.useRef)(IDENTITY);
+  const startTimeRef = (0, import_react3.useRef)(0);
+  const currentRef = (0, import_react3.useRef)(IDENTITY);
+  const lastZoomIdRef = (0, import_react3.useRef)(null);
+  const liveRef = (0, import_react3.useRef)({ zoomToId, zoomScale, nodes, adapter, width, height, camera });
+  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height, camera };
+  if (lastZoomIdRef.current !== zoomToId) {
+    lastZoomIdRef.current = zoomToId;
+    startRef.current = { ...currentRef.current };
+    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera);
+    startTimeRef.current = typeof performance !== "undefined" ? performance.now() : 0;
+  }
+  (0, import_react3.useEffect)(() => {
+    let cancelled = false;
+    let raf = 0;
+    const tick = (now2) => {
+      if (cancelled) return;
+      const end = endRef.current;
+      if (!end) return;
+      const elapsed = now2 - startTimeRef.current;
+      const p = Math.min(1, elapsed / EASE_MS);
+      const e = easeOutCubic(p);
+      currentRef.current = {
+        tx: lerp2(startRef.current.tx, end.tx, e),
+        ty: lerp2(startRef.current.ty, end.ty, e),
+        scale: lerp2(startRef.current.scale, end.scale, e)
+      };
+      if (p >= 1) {
+        const l = liveRef.current;
+        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
+        if (live) {
+          endRef.current = live;
+          currentRef.current = live;
+        }
+      }
+      bump((v) => (v + 1) % 1e9);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+  if (override) return { t: override };
+  return { t: currentRef.current };
+}
+
+// public/community-graph/use-camera-anim.ts
+var import_react4 = __toESM(require_react());
+function useCameraAnim(target) {
+  const [camera, setCamera] = (0, import_react4.useState)(target);
+  const cameraRef = (0, import_react4.useRef)(target);
+  (0, import_react4.useEffect)(() => {
+    let raf = 0;
+    const step = () => {
+      const cur = cameraRef.current;
+      const next = {
+        pitch: cur.pitch + (target.pitch - cur.pitch) * 0.2,
+        yaw: cur.yaw + (target.yaw - cur.yaw) * 0.25,
+        cx: target.cx,
+        cy: target.cy
+      };
+      const settled = Math.abs(next.pitch - target.pitch) < 1e-3 && Math.abs(next.yaw - target.yaw) < 1e-3;
+      if (settled) {
+        cameraRef.current = target;
+        setCamera(target);
+        return;
+      }
+      cameraRef.current = next;
+      setCamera(next);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target.pitch, target.yaw, target.cx, target.cy]);
+  return { camera, cameraRef };
+}
+
+// public/community-graph/use-orbit-drag.ts
+var import_react5 = __toESM(require_react());
+var MIN_PITCH = 0;
+var MAX_PITCH = Math.PI / 2 - 0.15;
+function useOrbitDrag(active, defaultPitch, onOrbitStart) {
+  const [pitch, setPitch] = (0, import_react5.useState)(defaultPitch);
+  const [yaw, setYaw] = (0, import_react5.useState)(0);
+  const [isOrbiting, setIsOrbiting] = (0, import_react5.useState)(false);
+  (0, import_react5.useEffect)(() => {
+    if (!active) {
+      setPitch(0);
+      setYaw(0);
+      return;
+    }
+    setPitch(defaultPitch);
+    setYaw(0);
+  }, [active, defaultPitch]);
+  const startOrbitDrag = (e) => {
+    if (!active) return;
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startYaw = yaw;
+    const startPitch = pitch;
+    setIsOrbiting(true);
+    onOrbitStart?.();
+    const onMove = (ev) => {
+      const dYaw = (ev.clientX - startX) * 6e-3;
+      const dPitch = -(ev.clientY - startY) * 6e-3;
+      setYaw(startYaw + dYaw);
+      setPitch(Math.min(MAX_PITCH, Math.max(MIN_PITCH, startPitch + dPitch)));
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      setIsOrbiting(false);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+  return { pitch, yaw, isOrbiting, startOrbitDrag };
+}
+
+// public/community-graph/use-layer-integration.ts
+var import_react6 = __toESM(require_react());
 
 // node_modules/d3-quadtree/src/add.js
 function add_default(d) {
@@ -15018,163 +15176,7 @@ function clampToViewport(nodes, adapter, width, height) {
   }
 }
 
-// public/community-graph/types.ts
-var DEFAULT_FORCE_CONFIG = {
-  linkDistance: 25,
-  linkStrength: 0.1,
-  charge: -40,
-  clusterStrengthX: 0.4,
-  clusterStrengthY: 0.45,
-  collidePad: 3,
-  minCommunitySize: 3,
-  orbitRadius: 0.38,
-  layerStrength: 0.12
-};
-
-// public/community-graph/use-view-transform.ts
-var import_react3 = __toESM(require_react());
-var EASE_MS = 400;
-var IDENTITY = { tx: 0, ty: 0, scale: 1 };
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-function lerp2(a2, b, t) {
-  return a2 + (b - a2) * t;
-}
-function targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera) {
-  if (!zoomToId) return IDENTITY;
-  const target = nodes.find((n) => adapter.getId(n) === zoomToId);
-  if (!target) return null;
-  const p = project(target, camera);
-  return { tx: width / 2 - p.x * zoomScale, ty: height / 2 - p.y * zoomScale, scale: zoomScale };
-}
-function useViewTransform({ override, zoomToId, zoomScale, nodes, adapter, width, height, camera }) {
-  const [, bump] = (0, import_react3.useState)(0);
-  const startRef = (0, import_react3.useRef)(IDENTITY);
-  const endRef = (0, import_react3.useRef)(IDENTITY);
-  const startTimeRef = (0, import_react3.useRef)(0);
-  const currentRef = (0, import_react3.useRef)(IDENTITY);
-  const lastZoomIdRef = (0, import_react3.useRef)(null);
-  const liveRef = (0, import_react3.useRef)({ zoomToId, zoomScale, nodes, adapter, width, height, camera });
-  liveRef.current = { zoomToId, zoomScale, nodes, adapter, width, height, camera };
-  if (lastZoomIdRef.current !== zoomToId) {
-    lastZoomIdRef.current = zoomToId;
-    startRef.current = { ...currentRef.current };
-    endRef.current = targetFor(zoomToId, nodes, adapter, zoomScale, width, height, camera);
-    startTimeRef.current = typeof performance !== "undefined" ? performance.now() : 0;
-  }
-  (0, import_react3.useEffect)(() => {
-    let cancelled = false;
-    let raf = 0;
-    const tick = (now2) => {
-      if (cancelled) return;
-      const end = endRef.current;
-      if (!end) return;
-      const elapsed = now2 - startTimeRef.current;
-      const p = Math.min(1, elapsed / EASE_MS);
-      const e = easeOutCubic(p);
-      currentRef.current = {
-        tx: lerp2(startRef.current.tx, end.tx, e),
-        ty: lerp2(startRef.current.ty, end.ty, e),
-        scale: lerp2(startRef.current.scale, end.scale, e)
-      };
-      if (p >= 1) {
-        const l = liveRef.current;
-        const live = targetFor(l.zoomToId, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
-        if (live) {
-          endRef.current = live;
-          currentRef.current = live;
-        }
-      }
-      bump((v) => (v + 1) % 1e9);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-  if (override) return { t: override };
-  return { t: currentRef.current };
-}
-
-// public/community-graph/use-camera-anim.ts
-var import_react4 = __toESM(require_react());
-function useCameraAnim(target) {
-  const [camera, setCamera] = (0, import_react4.useState)(target);
-  const cameraRef = (0, import_react4.useRef)(target);
-  (0, import_react4.useEffect)(() => {
-    let raf = 0;
-    const step = () => {
-      const cur = cameraRef.current;
-      const next = {
-        pitch: cur.pitch + (target.pitch - cur.pitch) * 0.2,
-        yaw: cur.yaw + (target.yaw - cur.yaw) * 0.25,
-        cx: target.cx,
-        cy: target.cy
-      };
-      const settled = Math.abs(next.pitch - target.pitch) < 1e-3 && Math.abs(next.yaw - target.yaw) < 1e-3;
-      if (settled) {
-        cameraRef.current = target;
-        setCamera(target);
-        return;
-      }
-      cameraRef.current = next;
-      setCamera(next);
-      raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [target.pitch, target.yaw, target.cx, target.cy]);
-  return { camera, cameraRef };
-}
-
-// public/community-graph/use-orbit-drag.ts
-var import_react5 = __toESM(require_react());
-var MIN_PITCH = 0;
-var MAX_PITCH = Math.PI / 2 - 0.15;
-function useOrbitDrag(active, defaultPitch, onOrbitStart) {
-  const [pitch, setPitch] = (0, import_react5.useState)(defaultPitch);
-  const [yaw, setYaw] = (0, import_react5.useState)(0);
-  const [isOrbiting, setIsOrbiting] = (0, import_react5.useState)(false);
-  (0, import_react5.useEffect)(() => {
-    if (!active) {
-      setPitch(0);
-      setYaw(0);
-      return;
-    }
-    setPitch(defaultPitch);
-    setYaw(0);
-  }, [active, defaultPitch]);
-  const startOrbitDrag = (e) => {
-    if (!active) return;
-    e.preventDefault();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startYaw = yaw;
-    const startPitch = pitch;
-    setIsOrbiting(true);
-    onOrbitStart?.();
-    const onMove = (ev) => {
-      const dYaw = (ev.clientX - startX) * 6e-3;
-      const dPitch = -(ev.clientY - startY) * 6e-3;
-      setYaw(startYaw + dYaw);
-      setPitch(Math.min(MAX_PITCH, Math.max(MIN_PITCH, startPitch + dPitch)));
-    };
-    const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      setIsOrbiting(false);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  };
-  return { pitch, yaw, isOrbiting, startOrbitDrag };
-}
-
 // public/community-graph/use-layer-integration.ts
-var import_react6 = __toESM(require_react());
 var EPS = 0.05;
 function useLayerIntegration(nodes, adapter, strength, onTick) {
   const adapterRef = (0, import_react6.useRef)(adapter);
@@ -15195,6 +15197,49 @@ function useLayerIntegration(nodes, adapter, strength, onTick) {
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [nodes, adapter, strength, onTick]);
+}
+
+// public/community-graph/use-community-sim.ts
+var import_react7 = __toESM(require_react());
+function useCommunitySim({
+  inNodes,
+  inLinks,
+  adapter,
+  primaryKey,
+  width,
+  height,
+  config,
+  onTick
+}) {
+  const simRef = (0, import_react7.useRef)(null);
+  const { nodes, links } = (0, import_react7.useMemo)(() => {
+    const ns = initialNodes(inNodes, adapter, width, height);
+    const ls = initialLinks(inLinks, ns, adapter);
+    return { nodes: ns, links: ls };
+  }, [inNodes, inLinks, width, height]);
+  const anchors = (0, import_react7.useMemo)(
+    () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [nodes, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
+  );
+  (0, import_react7.useEffect)(() => {
+    const sim = createSimulation({
+      nodes,
+      links,
+      anchors,
+      adapter,
+      primaryKey,
+      width,
+      height,
+      config,
+      onTick
+    });
+    simRef.current = sim;
+    return () => {
+      sim.stop();
+    };
+  }, [nodes, links, anchors, primaryKey, width, height]);
+  return { nodes, links, simRef };
 }
 
 // public/community-graph/node-color.ts
@@ -15295,58 +15340,41 @@ function CommunityGraph({
   onHullHoverChange,
   tilt: tiltTarget = 0,
   hiddenIds,
-  edgesOnlyForId
+  edgesOnlyForId,
+  externalHullKey
 }) {
   const config = { ...DEFAULT_FORCE_CONFIG, ...forceConfig };
-  const svgRef = (0, import_react7.useRef)(null);
-  const simRef = (0, import_react7.useRef)(null);
-  const [, tick] = (0, import_react7.useState)(0);
-  const [internalHoverId, setInternalHoverId] = (0, import_react7.useState)(null);
-  const [hullHoverKey, setHullHoverKey] = (0, import_react7.useState)(null);
+  const svgRef = (0, import_react8.useRef)(null);
+  const [, tick] = (0, import_react8.useState)(0);
+  const [internalHoverId, setInternalHoverId] = (0, import_react8.useState)(null);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react8.useState)(null);
   const hoverId = externalHoverId ?? internalHoverId;
-  const communityColors = (0, import_react7.useMemo)(
+  const communityColors = (0, import_react8.useMemo)(
     () => buildCommunityColors(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const major = (0, import_react7.useMemo)(
+  const major = (0, import_react8.useMemo)(
     () => majorCommunities(inNodes, adapter, primaryKey, config.minCommunitySize),
     [inNodes, adapter, primaryKey, config.minCommunitySize]
   );
-  const { nodes, links } = (0, import_react7.useMemo)(() => {
-    const ns = initialNodes(inNodes, adapter, width, height);
-    const ls = initialLinks(inLinks, ns, adapter);
-    return { nodes: ns, links: ls };
-  }, [inNodes, inLinks, width, height]);
-  const anchors = (0, import_react7.useMemo)(
-    () => buildAnchors(nodes, adapter, primaryKey, width, height, config.minCommunitySize, config.orbitRadius),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nodes, primaryKey, width, height, config.minCommunitySize, config.orbitRadius]
-  );
-  (0, import_react7.useEffect)(() => {
-    const sim = createSimulation({
-      nodes,
-      links,
-      anchors,
-      adapter,
-      primaryKey,
-      width,
-      height,
-      config,
-      onTick: () => tick((v) => v + 1)
-    });
-    simRef.current = sim;
-    return () => {
-      sim.stop();
-    };
-  }, [nodes, links, anchors, primaryKey, width, height]);
+  const { nodes, links, simRef } = useCommunitySim({
+    inNodes,
+    inLinks,
+    adapter,
+    primaryKey,
+    width,
+    height,
+    config,
+    onTick: () => tick((v) => v + 1)
+  });
   useLayerIntegration(nodes, adapter, config.layerStrength, () => tick((v) => v + 1));
   const nodeColor = (n) => resolveNodeColor(n, adapter, communityColors, major);
   const ego = nodes.find((n) => adapter.isEgo(n));
   const egoId = ego ? adapter.getId(ego) : null;
-  const connected = (0, import_react7.useMemo)(() => buildFocusSet(hoverId, selectedId, egoId, links), [hoverId, selectedId, egoId, links]);
+  const connected = (0, import_react8.useMemo)(() => buildFocusSet(hoverId, selectedId, egoId, links), [hoverId, selectedId, egoId, links]);
   const hovered = hoverId ? nodes.find((n) => adapter.getId(n) === hoverId) : null;
   const showHover = hovered && !adapter.isEgo(hovered);
-  const focusKey = hovered ? effectiveKey(hovered, adapter, major) : hullHoverKey;
+  const focusKey = hovered ? effectiveKey(hovered, adapter, major) : externalHullKey ?? hullHoverKey;
   const defaultPitch = tiltTarget * 0.75;
   const { pitch, yaw, startOrbitDrag } = useOrbitDrag(tiltTarget > 0, defaultPitch);
   const target = { pitch, yaw, cx: width / 2, cy: height / 2 };
@@ -15410,7 +15438,7 @@ function CommunityGraph({
 }
 
 // public/community-graph/legend.tsx
-var import_react8 = __toESM(require_react());
+var import_react9 = __toESM(require_react());
 var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 
 // public/explorer-visibility.ts
@@ -15510,12 +15538,12 @@ function baseRadius(n) {
   return nodeRadius(n.weight || 1, n.role);
 }
 var EMPTY_IDS = /* @__PURE__ */ new Set();
-function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, journalLabels, hiddenIds, edgesOnlyForId }) {
-  const { placeholder } = (0, import_react9.useMemo)(
+function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, journalLabels, hiddenIds, edgesOnlyForId, externalHullKey }) {
+  const { placeholder } = (0, import_react10.useMemo)(
     () => computeVisibility(nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds),
     [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds]
   );
-  const adapter = (0, import_react9.useMemo)(() => ({
+  const adapter = (0, import_react10.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: (n) => placeholder.has(n.id) ? PLACEHOLDER_RADIUS : baseRadius(n),
@@ -15554,7 +15582,7 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       return null;
     }
   }), [affiliations, journalLabels, egoAuthorId, homeInstitutionId, placeholder, layerOrder, coauthorIds]);
-  const forceConfig = (0, import_react9.useMemo)(() => {
+  const forceConfig = (0, import_react10.useMemo)(() => {
     const area = Math.max(width * height, 1);
     const perNode = Math.sqrt(area / Math.max(nodes.length, 1));
     const linkDistance = Math.max(24, Math.min(140, perNode * 0.8));
@@ -15595,17 +15623,18 @@ function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affi
       onHullHoverChange,
       tilt,
       hiddenIds,
-      edgesOnlyForId
+      edgesOnlyForId,
+      externalHullKey
     }
   );
 }
 
 // public/explorer-canvas.tsx
 var import_jsx_runtime17 = __toESM(require_jsx_runtime());
-function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId }) {
-  const ref = (0, import_react10.useRef)(null);
-  const [size, setSize] = (0, import_react10.useState)(null);
-  (0, import_react10.useEffect)(() => {
+function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId, externalHullKey }) {
+  const ref = (0, import_react11.useRef)(null);
+  const [size, setSize] = (0, import_react11.useState)(null);
+  (0, import_react11.useEffect)(() => {
     const el = ref.current;
     if (!el) return;
     const measure = () => {
@@ -15639,21 +15668,22 @@ function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuth
       coauthorIds,
       journalLabels,
       hiddenIds,
-      edgesOnlyForId
+      edgesOnlyForId,
+      externalHullKey
     }
   ) });
 }
 
 // public/use-graph-data.ts
-var import_react11 = __toESM(require_react());
+var import_react12 = __toESM(require_react());
 var EMPTY_AFFS = { byAuthor: {} };
 function useGraphData() {
-  const [rawNodes, setRawNodes] = (0, import_react11.useState)([]);
-  const [rawEdges, setRawEdges] = (0, import_react11.useState)([]);
-  const [affiliations, setAffiliations] = (0, import_react11.useState)(EMPTY_AFFS);
-  const [tagMeta, setTagMeta] = (0, import_react11.useState)({});
-  const [loading, setLoading] = (0, import_react11.useState)(true);
-  (0, import_react11.useEffect)(() => {
+  const [rawNodes, setRawNodes] = (0, import_react12.useState)([]);
+  const [rawEdges, setRawEdges] = (0, import_react12.useState)([]);
+  const [affiliations, setAffiliations] = (0, import_react12.useState)(EMPTY_AFFS);
+  const [tagMeta, setTagMeta] = (0, import_react12.useState)({});
+  const [loading, setLoading] = (0, import_react12.useState)(true);
+  (0, import_react12.useEffect)(() => {
     fetch("/api/graph").then((r) => r.json()).then((d) => {
       setRawNodes(d.nodes);
       setRawEdges(d.edges);
@@ -15667,10 +15697,10 @@ function useGraphData() {
 }
 
 // public/shell-helpers.ts
-var import_react12 = __toESM(require_react());
+var import_react13 = __toESM(require_react());
 var CACHE_KEY = "nexus.me";
 function useCurrentUser() {
-  const [me, setMe] = (0, import_react12.useState)(() => {
+  const [me, setMe] = (0, import_react13.useState)(() => {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -15678,9 +15708,9 @@ function useCurrentUser() {
       return null;
     }
   });
-  const [loading, setLoading] = (0, import_react12.useState)(!me);
-  const [error, setError] = (0, import_react12.useState)(null);
-  (0, import_react12.useEffect)(() => {
+  const [loading, setLoading] = (0, import_react13.useState)(!me);
+  const [error, setError] = (0, import_react13.useState)(null);
+  (0, import_react13.useEffect)(() => {
     let cancelled = false;
     fetch("/api/auth?action=me").then((r) => r.status === 401 ? null : r.json()).then((d) => {
       if (cancelled) return;
@@ -15708,18 +15738,18 @@ function applyTheme(me) {
 }
 
 // public/graph-filters-sidebar.tsx
-var import_react14 = __toESM(require_react());
+var import_react15 = __toESM(require_react());
 
 // public/layer-stack.tsx
-var import_react13 = __toESM(require_react());
+var import_react14 = __toESM(require_react());
 var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 function LayerStack({ rows, order, onReorder, enabled }) {
-  const [dragIdx, setDragIdx] = (0, import_react13.useState)(null);
-  const [overIdx, setOverIdx] = (0, import_react13.useState)(null);
-  const rowRefs = (0, import_react13.useRef)([]);
-  const dragStateRef = (0, import_react13.useRef)(null);
+  const [dragIdx, setDragIdx] = (0, import_react14.useState)(null);
+  const [overIdx, setOverIdx] = (0, import_react14.useState)(null);
+  const rowRefs = (0, import_react14.useRef)([]);
+  const dragStateRef = (0, import_react14.useRef)(null);
   const entries = order.map((layer) => ({ layer, row: rows.find((r) => r.layer === layer) })).filter((e) => !!e.row);
-  const pickRow = (0, import_react13.useCallback)((clientY) => {
+  const pickRow = (0, import_react14.useCallback)((clientY) => {
     const rects = rowRefs.current.map((el) => el?.getBoundingClientRect());
     for (let i = 0; i < rects.length; i++) {
       const r = rects[i];
@@ -15729,7 +15759,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
     if (first && clientY < first.top) return 0;
     return rects.length - 1;
   }, []);
-  const startDrag2 = (0, import_react13.useCallback)((e, fromIdx) => {
+  const startDrag2 = (0, import_react14.useCallback)((e, fromIdx) => {
     if (!enabled) return;
     e.preventDefault();
     setDragIdx(fromIdx);
@@ -15751,7 +15781,7 @@ function LayerStack({ rows, order, onReorder, enabled }) {
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   }, [enabled, onReorder, pickRow]);
-  (0, import_react13.useEffect)(() => {
+  (0, import_react14.useEffect)(() => {
     rowRefs.current = rowRefs.current.slice(0, entries.length);
   }, [entries.length]);
   return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "layer-stack", "data-enabled": enabled ? "1" : "0", children: entries.map(({ layer, row }, i) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
@@ -15797,7 +15827,7 @@ function buildLayerRows(flags, setFlag) {
 // public/graph-filters-sidebar.tsx
 var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 function GraphFiltersSidebar({ flags, setFlag, layerOrder, onReorderLayer, layersEnabled }) {
-  const layerRows = (0, import_react14.useMemo)(() => buildLayerRows(flags, setFlag), [flags, setFlag]);
+  const layerRows = (0, import_react15.useMemo)(() => buildLayerRows(flags, setFlag), [flags, setFlag]);
   return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("aside", { className: "graph-filters", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "filter-group", children: [
     /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "filter-label", children: [
       "Node types",
@@ -15862,22 +15892,22 @@ function buildExplorerAffiliations(rawNodes, rawEdges, authoritative) {
 }
 
 // public/use-explorer-ego.ts
-var import_react15 = __toESM(require_react());
+var import_react16 = __toESM(require_react());
 var bareRor = (r) => r ? r.replace(/^https?:\/\/ror\.org\//, "") : null;
 function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) {
-  const homeInstitutionId = (0, import_react15.useMemo)(() => {
+  const homeInstitutionId = (0, import_react16.useMemo)(() => {
     const ror = bareRor(me?.profile.ror);
     if (!ror) return null;
     const hit = rawNodes.find((n) => n.group === "institution" && bareRor(n.ext_id) === ror);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const egoAuthorId = (0, import_react15.useMemo)(() => {
+  const egoAuthorId = (0, import_react16.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = rawNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const effectiveHomeKey = (0, import_react15.useMemo)(() => {
+  const effectiveHomeKey = (0, import_react16.useMemo)(() => {
     if (homeInstitutionId) return homeInstitutionId;
     if (!egoAuthorId) return null;
     const insts = institutionsByAuthor.get(egoAuthorId);
@@ -15888,7 +15918,7 @@ function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }) 
 }
 
 // public/use-explorer-nodes.ts
-var import_react16 = __toESM(require_react());
+var import_react17 = __toESM(require_react());
 
 // public/enrich-meta.ts
 function enrichWithMeta(nodes, tagMeta) {
@@ -15923,20 +15953,20 @@ function buildCoauthorSet(rawEdges, egoAuthorId) {
 
 // public/use-explorer-nodes.ts
 function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags }) {
-  const rawEgoAuthorId = (0, import_react16.useMemo)(() => {
+  const rawEgoAuthorId = (0, import_react17.useMemo)(() => {
     const orcid = me?.profile.orcid;
     if (!orcid) return null;
     const hit = rawNodes.find((n) => n.group === "author" && n.ext_id === orcid);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const coauthorIds = (0, import_react16.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
-  const homeInstitutionId = (0, import_react16.useMemo)(() => {
+  const coauthorIds = (0, import_react17.useMemo)(() => buildCoauthorSet(rawEdges, rawEgoAuthorId), [rawEdges, rawEgoAuthorId]);
+  const homeInstitutionId = (0, import_react17.useMemo)(() => {
     const ror = me?.profile.ror?.replace(/^https?:\/\/ror\.org\//, "") ?? null;
     if (!ror) return null;
     const hit = rawNodes.find((n) => n.group === "institution" && n.ext_id?.replace(/^https?:\/\/ror\.org\//, "") === ror);
     return hit?.id ?? null;
   }, [me, rawNodes]);
-  const projectedNodes = (0, import_react16.useMemo)(() => {
+  const projectedNodes = (0, import_react17.useMemo)(() => {
     const enriched = enrichWithMeta(projectedRaw, tagMeta);
     return enriched.filter(
       (n) => (n.group === "author" || n.group === "doi") && n.id !== rawEgoAuthorId
@@ -15946,7 +15976,7 @@ function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags
 }
 
 // public/graph-contents.tsx
-var import_react21 = __toESM(require_react());
+var import_react22 = __toESM(require_react());
 
 // public/graph-contents-buckets.ts
 function sortByWeightThenLabel(a2, b) {
@@ -16005,10 +16035,10 @@ function buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey = n
 }
 
 // public/use-flip-reorder.ts
-var import_react17 = __toESM(require_react());
+var import_react18 = __toESM(require_react());
 function useFlipReorder(container, keys, durationMs = 260) {
-  const prevTops = (0, import_react17.useRef)(/* @__PURE__ */ new Map());
-  (0, import_react17.useLayoutEffect)(() => {
+  const prevTops = (0, import_react18.useRef)(/* @__PURE__ */ new Map());
+  (0, import_react18.useLayoutEffect)(() => {
     const el = container.current;
     if (!el) return;
     const children = Array.from(el.querySelectorAll("[data-flip-key]"));
@@ -16034,12 +16064,12 @@ function useFlipReorder(container, keys, durationMs = 260) {
 }
 
 // public/graph-search.tsx
-var import_react18 = __toESM(require_react());
+var import_react19 = __toESM(require_react());
 var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 function GraphSearch({ nodes, onSelect }) {
-  const [query, setQuery] = (0, import_react18.useState)("");
-  const [open, setOpen] = (0, import_react18.useState)(false);
-  const matches = (0, import_react18.useMemo)(() => {
+  const [query, setQuery] = (0, import_react19.useState)("");
+  const [open, setOpen] = (0, import_react19.useState)(false);
+  const matches = (0, import_react19.useMemo)(() => {
     if (!query || query.length < 2) return [];
     const q = query.toLowerCase();
     return nodes.filter((n) => n.group !== "doi" && n.label.toLowerCase().includes(q)).slice(0, 8);
@@ -16115,14 +16145,14 @@ function GraphSearch({ nodes, onSelect }) {
 }
 
 // public/hover-card.tsx
-var import_react19 = __toESM(require_react());
+var import_react20 = __toESM(require_react());
 var import_jsx_runtime21 = __toESM(require_jsx_runtime());
 function HoverCard({ node, nodes, edges, egoAuthorId, homeInstitutionId, coauthorIds }) {
-  const nodesById = (0, import_react19.useMemo)(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
-  const typeTag = (0, import_react19.useMemo)(() => tagFor(node, coauthorIds, egoAuthorId, homeInstitutionId), [node, coauthorIds, egoAuthorId, homeInstitutionId]);
-  const subtitle = (0, import_react19.useMemo)(() => subtitleFor(node, edges, nodesById), [node, edges, nodesById]);
-  const neighborCounts = (0, import_react19.useMemo)(() => countNeighborsByType(node.id, edges, nodesById), [node.id, edges, nodesById]);
-  const path = (0, import_react19.useMemo)(() => buildPath(node.id, egoAuthorId, edges, nodesById), [node.id, egoAuthorId, edges, nodesById]);
+  const nodesById = (0, import_react20.useMemo)(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
+  const typeTag = (0, import_react20.useMemo)(() => tagFor(node, coauthorIds, egoAuthorId, homeInstitutionId), [node, coauthorIds, egoAuthorId, homeInstitutionId]);
+  const subtitle = (0, import_react20.useMemo)(() => subtitleFor(node, edges, nodesById), [node, edges, nodesById]);
+  const neighborCounts = (0, import_react20.useMemo)(() => countNeighborsByType(node.id, edges, nodesById), [node.id, edges, nodesById]);
+  const path = (0, import_react20.useMemo)(() => buildPath(node.id, egoAuthorId, edges, nodesById), [node.id, egoAuthorId, edges, nodesById]);
   return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "hover-card", children: [
     /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "hover-card-tag", children: typeTag }),
     /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "hover-card-name", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(RichHtml, { raw: node.label }) }),
@@ -16203,7 +16233,7 @@ function buildPath(fromId, egoId, edges, nodesById) {
 }
 
 // public/graph-contents-bucket.tsx
-var import_react20 = __toESM(require_react());
+var import_react21 = __toESM(require_react());
 var import_jsx_runtime22 = __toESM(require_jsx_runtime());
 var ORCID_RE = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
 function displayLabel(n) {
@@ -16235,11 +16265,10 @@ function NodeList({ label, color, ns, onSelect, onHover }) {
     ) }, n.id)) })
   ] });
 }
-function BucketView({ b, onSelect, onHover }) {
+function BucketView({ b, onSelect, onHover, onHullHover }) {
   const total = b.authors.length + b.journals.length + b.papers.length;
   if (total === 0 && b.institutions.length === 0) return null;
-  const headInstId = b.institutions[0]?.id;
-  const [open, setOpen] = (0, import_react20.useState)(false);
+  const [open, setOpen] = (0, import_react21.useState)(false);
   return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("section", { "data-flip-key": b.key, className: `gc-community${b.emphasis ? " emphasis" : ""}${open ? " open" : ""}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("header", { className: "gc-community-head", children: [
       /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { className: "gc-swatch", style: { background: b.color } }),
@@ -16249,8 +16278,8 @@ function BucketView({ b, onSelect, onHover }) {
           type: "button",
           className: "gc-community-title",
           onClick: () => setOpen((o) => !o),
-          onMouseEnter: () => headInstId && onHover?.(headInstId),
-          onMouseLeave: () => onHover?.(null),
+          onMouseEnter: () => onHullHover?.(b.key),
+          onMouseLeave: () => onHullHover?.(null),
           children: [
             /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("h4", { children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RichLabel, { raw: b.label }) }),
             /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "gc-community-metrics muted", children: [
@@ -16285,14 +16314,14 @@ function prettyFallback(key) {
   const m2 = bare.match(/\/([^/]+)\/?$/);
   return m2 ? m2[1] : bare;
 }
-function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, hoveredId, hoveredHullKey, onSearchSelect }) {
-  const hoveredNode = (0, import_react21.useMemo)(() => hoveredId ? nodes.find((n) => n.id === hoveredId) ?? null : null, [hoveredId, nodes]);
-  const labelById = (0, import_react21.useMemo)(() => {
+function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId, egoAuthorId, coauthorIds, onSelect, onHover, onHullHover, hoveredId, hoveredHullKey, onSearchSelect }) {
+  const hoveredNode = (0, import_react22.useMemo)(() => hoveredId ? nodes.find((n) => n.id === hoveredId) ?? null : null, [hoveredId, nodes]);
+  const labelById = (0, import_react22.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of allNodes) if (n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [allNodes]);
-  const adapter = (0, import_react21.useMemo)(() => ({
+  const adapter = (0, import_react22.useMemo)(() => ({
     getId: (n) => n.id,
     getLabel: (n) => n.label,
     getRadius: () => 0,
@@ -16314,21 +16343,21 @@ function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId
     isEgo: (n) => !!egoAuthorId && n.id === egoAuthorId,
     getCommunityLabel: (key) => labelById.get(key) || prettyFallback(key)
   }), [affiliations, egoAuthorId, labelById]);
-  const focusKey = (0, import_react21.useMemo)(() => {
+  const focusKey = (0, import_react22.useMemo)(() => {
     if (hoveredId) {
       const hovered = nodes.find((n) => n.id === hoveredId);
       if (hovered) return adapter.getCommunityKey(hovered);
     }
     return hoveredHullKey ?? null;
   }, [hoveredId, hoveredHullKey, nodes, adapter]);
-  const buckets = (0, import_react21.useMemo)(
+  const buckets = (0, import_react22.useMemo)(
     () => buildBuckets(nodes, adapter, homeInstitutionId, labelById, focusKey),
     [nodes, adapter, homeInstitutionId, labelById, focusKey]
   );
-  const listRef = (0, import_react21.useRef)(null);
+  const listRef = (0, import_react22.useRef)(null);
   useFlipReorder(listRef, buckets.map((b) => b.key));
-  const prefetchTimer = (0, import_react21.useRef)(null);
-  const onRowHover = (0, import_react21.useCallback)((id) => {
+  const prefetchTimer = (0, import_react22.useRef)(null);
+  const onRowHover = (0, import_react22.useCallback)((id) => {
     onHover?.(id);
     if (prefetchTimer.current) {
       clearTimeout(prefetchTimer.current);
@@ -16353,7 +16382,7 @@ function GraphContents({ nodes, edges, allNodes, affiliations, homeInstitutionId
         coauthorIds
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(BucketView, { b, onSelect, onHover: onRowHover }, b.key)) })
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { ref: listRef, className: "graph-contents-list", children: buckets.map((b) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(BucketView, { b, onSelect, onHover: onRowHover, onHullHover }, b.key)) })
   ] });
 }
 
@@ -16394,12 +16423,12 @@ function communityKeyFor(n, affiliations) {
 }
 
 // public/use-selection-stack.ts
-var import_react22 = __toESM(require_react());
+var import_react23 = __toESM(require_react());
 function useSelectionStack() {
-  const [selectionStack, setSelectionStack] = (0, import_react22.useState)([]);
-  const [navDir, setNavDir] = (0, import_react22.useState)("forward");
+  const [selectionStack, setSelectionStack] = (0, import_react23.useState)([]);
+  const [navDir, setNavDir] = (0, import_react23.useState)("forward");
   const selectedNodeId = selectionStack.length ? selectionStack[selectionStack.length - 1] : null;
-  const pushSelection = (0, import_react22.useCallback)((id) => setSelectionStack((prev) => {
+  const pushSelection = (0, import_react23.useCallback)((id) => setSelectionStack((prev) => {
     if (id === null) {
       setNavDir("back");
       return [];
@@ -16408,7 +16437,7 @@ function useSelectionStack() {
     setNavDir("forward");
     return [...prev, id];
   }), []);
-  const popSelection = (0, import_react22.useCallback)(() => setSelectionStack((prev) => {
+  const popSelection = (0, import_react23.useCallback)(() => setSelectionStack((prev) => {
     if (!prev.length) return prev;
     setNavDir("back");
     return prev.slice(0, -1);
@@ -16417,10 +16446,10 @@ function useSelectionStack() {
 }
 
 // public/use-year-range-filter.ts
-var import_react24 = __toESM(require_react());
+var import_react25 = __toESM(require_react());
 
 // public/time-slider.tsx
-var import_react23 = __toESM(require_react());
+var import_react24 = __toESM(require_react());
 var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 function yearOf(n) {
   if (n.group !== "doi" || !n.published) return 0;
@@ -16428,7 +16457,7 @@ function yearOf(n) {
   return y3 > 1900 ? y3 : 0;
 }
 function useTimeRange(nodes) {
-  return (0, import_react23.useMemo)(() => {
+  return (0, import_react24.useMemo)(() => {
     let min = 9999, max = 0;
     for (const n of nodes) {
       const y3 = yearOf(n);
@@ -16449,13 +16478,13 @@ function yearOf2(n) {
 }
 function useYearRangeFilter(rawNodes, rawEdges) {
   const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  const [range, setRange] = (0, import_react24.useState)(null);
-  (0, import_react24.useEffect)(() => {
+  const [range, setRange] = (0, import_react25.useState)(null);
+  (0, import_react25.useEffect)(() => {
     if (yearMin && yearMax && !range) setRange([yearMin, yearMax]);
   }, [yearMin, yearMax, range]);
   const yearFrom = range ? range[0] : yearMin;
   const yearTo = range ? range[1] : yearMax;
-  const filteredRaw = (0, import_react24.useMemo)(() => {
+  const filteredRaw = (0, import_react25.useMemo)(() => {
     const fullSpan = yearFrom <= yearMin && yearTo >= yearMax;
     if (fullSpan) return { nodes: rawNodes, edges: rawEdges };
     const keep = /* @__PURE__ */ new Set();
@@ -16473,7 +16502,7 @@ function useYearRangeFilter(rawNodes, rawEdges) {
 }
 
 // public/use-layer-order.ts
-var import_react25 = __toESM(require_react());
+var import_react26 = __toESM(require_react());
 var STORAGE_KEY = "graph-layer-order-v7";
 function load() {
   try {
@@ -16488,8 +16517,8 @@ function load() {
   }
 }
 function useLayerOrder() {
-  const [layerOrder, setLayerOrder] = (0, import_react25.useState)(load);
-  const reorderLayer = (0, import_react25.useCallback)((from, to) => {
+  const [layerOrder, setLayerOrder] = (0, import_react26.useState)(load);
+  const reorderLayer = (0, import_react26.useCallback)((from, to) => {
     setLayerOrder((prev) => {
       const next = [...prev];
       const [moved] = next.splice(from, 1);
@@ -16505,17 +16534,17 @@ function useLayerOrder() {
 }
 
 // public/year-range-slider.tsx
-var import_react26 = __toESM(require_react());
+var import_react27 = __toESM(require_react());
 var import_jsx_runtime25 = __toESM(require_jsx_runtime());
 function YearRangeSlider({ min, max, from, to, onChange }) {
   const span = max - min || 1;
   const leftPct = (from - min) / span * 100;
   const rightPct = (to - min) / span * 100;
-  const onFrom = (0, import_react26.useCallback)((e) => {
+  const onFrom = (0, import_react27.useCallback)((e) => {
     const v = Math.min(parseInt(e.target.value), to);
     onChange(v, to);
   }, [to, onChange]);
-  const onTo = (0, import_react26.useCallback)((e) => {
+  const onTo = (0, import_react27.useCallback)((e) => {
     const v = Math.max(parseInt(e.target.value), from);
     onChange(from, v);
   }, [from, onChange]);
@@ -16559,9 +16588,9 @@ function YearRangeSlider({ min, max, from, to, onChange }) {
 }
 
 // public/use-hidden-authors.ts
-var import_react27 = __toESM(require_react());
+var import_react28 = __toESM(require_react());
 function useHiddenAuthors(projectedNodes, projectedEdges, hoverId, coauthorIds, flags, egoAuthorId) {
-  return (0, import_react27.useMemo)(() => {
+  return (0, import_react28.useMemo)(() => {
     const hidden = /* @__PURE__ */ new Set();
     const revealed = /* @__PURE__ */ new Set();
     if (hoverId) {
@@ -16592,19 +16621,19 @@ var DEFAULT_FLAGS = { institution: false, author: false, coauthor: false, journa
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
   const { selectionStack, selectedNodeId, navDir, pushSelection, popSelection } = useSelectionStack();
-  const detailPanelRef = (0, import_react28.useRef)(null);
-  const [hover, setHover] = (0, import_react28.useState)({ id: null, source: "canvas" });
+  const detailPanelRef = (0, import_react29.useRef)(null);
+  const [hover, setHover] = (0, import_react29.useState)({ id: null, source: "canvas" });
   const hoverId = hover.id;
-  const prefetchTimer = (0, import_react28.useRef)(null);
-  const releaseTimer = (0, import_react28.useRef)(null);
-  const schedulePrefetch = (0, import_react28.useCallback)((id) => {
+  const prefetchTimer = (0, import_react29.useRef)(null);
+  const releaseTimer = (0, import_react29.useRef)(null);
+  const schedulePrefetch = (0, import_react29.useCallback)((id) => {
     if (prefetchTimer.current) {
       clearTimeout(prefetchTimer.current);
       prefetchTimer.current = null;
     }
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, []);
-  const hoverFromCanvas = (0, import_react28.useCallback)((id) => {
+  const hoverFromCanvas = (0, import_react29.useCallback)((id) => {
     if (releaseTimer.current) {
       clearTimeout(releaseTimer.current);
       releaseTimer.current = null;
@@ -16616,47 +16645,48 @@ function GraphExplorerBody() {
       releaseTimer.current = window.setTimeout(() => setHover({ id: null, source: "canvas" }), 250);
     }
   }, [schedulePrefetch]);
-  const hoverFromSidebar = (0, import_react28.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
-  const [hullHoverKey, setHullHoverKey] = (0, import_react28.useState)(null);
-  const [expandedIds, setExpandedIds] = (0, import_react28.useState)(/* @__PURE__ */ new Set());
-  const expand = (0, import_react28.useCallback)((id) => setExpandedIds((prev) => {
+  const hoverFromSidebar = (0, import_react29.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react29.useState)(null);
+  const [sidebarHullKey, setSidebarHullKey] = (0, import_react29.useState)(null);
+  const [expandedIds, setExpandedIds] = (0, import_react29.useState)(/* @__PURE__ */ new Set());
+  const expand = (0, import_react29.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
     const n = new Set(prev);
     n.add(id);
     return n;
   }), []);
-  const [flags, setFlags] = (0, import_react28.useState)(DEFAULT_FLAGS);
-  const setFlag = (0, import_react28.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
+  const [flags, setFlags] = (0, import_react29.useState)(DEFAULT_FLAGS);
+  const setFlag = (0, import_react29.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
   const { layerOrder, reorderLayer } = useLayerOrder();
   const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
-  const highlightedIds = (0, import_react28.useMemo)(() => {
+  const highlightedIds = (0, import_react29.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  (0, import_react28.useEffect)(() => {
+  (0, import_react29.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) pushSelection(f);
   }, [rawNodes, highlightedIds]);
-  (0, import_react28.useEffect)(() => {
+  (0, import_react29.useEffect)(() => {
     const el = detailPanelRef.current;
     if (!el) return;
     el.querySelectorAll(".node-detail-pane").forEach((p) => {
       p.scrollTop = 0;
     });
   }, [selectedNodeId]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react28.useMemo)(
+  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react29.useMemo)(
     () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, true),
     [filteredRaw]
   );
   const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me, flags });
-  const projectedEdges = (0, import_react28.useMemo)(() => {
+  const projectedEdges = (0, import_react29.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const affiliations = (0, import_react28.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
-  const journalLabels = (0, import_react28.useMemo)(() => {
+  const affiliations = (0, import_react29.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
+  const journalLabels = (0, import_react29.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of rawNodes) if (n.group === "journal") m2.set(n.id, n.label);
     return m2;
@@ -16667,7 +16697,7 @@ function GraphExplorerBody() {
   if (loading) return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
   if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "eyebrow", children: "No data." }) });
   return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "graph-view fullbleed", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "graph-canvas fullbleed", children: [
-    projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: 1, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId }),
+    projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: 1, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId, externalHullKey: sidebarHullKey }),
     /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("aside", { className: "graph-overlay graph-overlay-left", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphFiltersSidebar, { flags, setFlag, layerOrder, onReorderLayer: reorderLayer, layersEnabled: true }) }),
     yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "graph-overlay graph-overlay-top", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: (f, t) => setRange([f, t]) }) }),
     /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("aside", { className: "graph-overlay graph-overlay-right", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
@@ -16681,7 +16711,7 @@ function GraphExplorerBody() {
         empty: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphContents, { nodes: projectedNodes, edges: projectedEdges, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, coauthorIds, onSelect: (id) => {
           pushSelection(id);
           expand(id);
-        }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })
+        }, onHover: hoverFromSidebar, onHullHover: setSidebarHullKey, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })
       }
     ) })
   ] }) });
