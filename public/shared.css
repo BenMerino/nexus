@@ -379,6 +379,16 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
  * add panel-chrome noise. */
 .graph-overlay .filter-label,
 .graph-overlay .graph-contents-head { display: none; }
+/* Bucket cards inside the overlay drop their solid base layer so only the
+ * thin glass gradient remains; the graph behind shows through. */
+.graph-overlay .gc-community {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+  border-color: rgba(255,255,255,0.08);
+}
+.graph-overlay .gc-community.emphasis {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border-color: rgba(255,255,255,0.16);
+}
 @media (max-width: 1200px) {
   .graph-overlay-left { width: 200px; }
   .graph-overlay-right { width: 260px; }
