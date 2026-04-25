@@ -23,9 +23,12 @@ interface Props {
   coauthorIds?: Set<string>;
   journalLabels?: Map<string, string>;
   externalHullKey?: string | null;
+  /** When true, hovering doesn't drive the camera (the highlight still
+   *  appears, but no zoom-to-node). Used while a sidebar bucket is open. */
+  suppressHoverZoom?: boolean;
 }
 
-export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds, journalLabels, externalHullKey }: Props) {
+export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, egoAuthorId, selectedId, onNodeClick, expandedIds, onExpand, hoverId, onHoverChange, onHullHoverChange, minHeight = 480, tilt = 0, layerOrder, coauthorIds, journalLabels, externalHullKey, suppressHoverZoom }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
 
@@ -65,6 +68,7 @@ export function ExplorerCanvas({ nodes, links, affiliations, homeInstitutionId, 
           coauthorIds={coauthorIds}
           journalLabels={journalLabels}
           externalHullKey={externalHullKey}
+          suppressHoverZoom={suppressHoverZoom}
         />
       )}
     </div>

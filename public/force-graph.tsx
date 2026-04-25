@@ -33,6 +33,7 @@ interface Props {
    *  label communities with the journal name, so we need a separate lookup. */
   journalLabels?: Map<string, string>;
   externalHullKey?: string | null;
+  suppressHoverZoom?: boolean;
 }
 
 function baseRadius(n: EnrichedSimNode): number {
@@ -41,7 +42,7 @@ function baseRadius(n: EnrichedSimNode): number {
 
 const EMPTY_IDS: Set<string> = new Set();
 
-export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, journalLabels, externalHullKey }: Props) {
+export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClick, affiliations, homeInstitutionId = null, egoAuthorId = null, expandedIds, onExpand, externalHoverId, onHoverChange, onHullHoverChange, tilt = 0, layerOrder = DEFAULT_LAYER_ORDER, coauthorIds = EMPTY_IDS, journalLabels, externalHullKey, suppressHoverZoom = false }: Props) {
   const { placeholder } = useMemo(
     () => computeVisibility(nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds),
     [nodes, links, affiliations, egoAuthorId, homeInstitutionId, expandedIds],
@@ -121,7 +122,7 @@ export function ForceGraph({ nodes, links, width, height, selectedId, onNodeClic
       selectedId={selectedId ?? null}
       onNodeClick={handleClick}
       forceConfig={forceConfig}
-      zoomToId={selectedId ?? externalHoverId ?? null}
+      zoomToId={selectedId ?? (suppressHoverZoom ? null : externalHoverId) ?? null}
       zoomScale={ZOOM_SCALE}
       externalHoverId={externalHoverId ?? null}
       onHoverChange={onHoverChange}
