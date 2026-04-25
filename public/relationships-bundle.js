@@ -16534,41 +16534,6 @@ function useLayerOrder() {
   return { layerOrder, reorderLayer };
 }
 
-// public/graph-canvas-corners.tsx
-var import_jsx_runtime26 = __toESM(require_jsx_runtime());
-function GraphCanvasCorners({ tenant, role, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt }) {
-  const scope = yearFrom > yearMin || yearTo < yearMax ? `${yearFrom}\u2013${yearTo}` : "all years";
-  return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(import_jsx_runtime26.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "canvas-corner-tl", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { children: [
-        "tenant \xB7 ",
-        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("em", { children: tenant || "\u2014" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { children: [
-        "role \xB7 ",
-        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("em", { children: role || "\u2014" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { children: [
-        "scope \xB7 ",
-        scope
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "canvas-corner-tr", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(
-      "button",
-      {
-        className: "tilt-toggle",
-        "data-on": tilted ? "1" : "0",
-        onClick: onToggleTilt,
-        title: tilted ? "Switch to top-down view" : "Tilt into 3D layered view",
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { className: "tilt-glyph" }),
-          tilted ? "3D" : "2D"
-        ]
-      }
-    ) })
-  ] });
-}
-
 // public/use-hidden-authors.ts
 var import_react26 = __toESM(require_react());
 function useHiddenAuthors(projectedNodes, projectedEdges, hoverId, coauthorIds, flags, egoAuthorId) {
@@ -16594,7 +16559,7 @@ function useHiddenAuthors(projectedNodes, projectedEdges, hoverId, coauthorIds, 
 }
 
 // public/graph-explorer-body.tsx
-var import_jsx_runtime27 = __toESM(require_jsx_runtime());
+var import_jsx_runtime26 = __toESM(require_jsx_runtime());
 var DEFAULT_FLAGS = { institution: false, author: false, coauthor: false, journal: false, paper: true };
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
@@ -16625,23 +16590,6 @@ function GraphExplorerBody() {
   }), []);
   const [flags, setFlags] = (0, import_react27.useState)(DEFAULT_FLAGS);
   const setFlag = (0, import_react27.useCallback)((k, v) => setFlags((f) => ({ ...f, [k]: v })), []);
-  const [tilted, setTilted] = (0, import_react27.useState)(() => {
-    try {
-      return localStorage.getItem("graph-tilted") === "1";
-    } catch {
-      return false;
-    }
-  });
-  const toggleTilt = (0, import_react27.useCallback)(() => {
-    setTilted((v) => {
-      const next = !v;
-      try {
-        localStorage.setItem("graph-tilted", next ? "1" : "0");
-      } catch {
-      }
-      return next;
-    });
-  }, []);
   const { layerOrder, reorderLayer } = useLayerOrder();
   const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
   const highlightedIds = (0, import_react27.useMemo)(() => {
@@ -16679,13 +16627,12 @@ function GraphExplorerBody() {
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor: affiliations.institutionsByAuthor });
   const hiddenIds = useHiddenAuthors(projectedNodes, projectedEdges, hoverId, coauthorIds, flags, egoAuthorId);
   const edgesOnlyForId = !flags.author && !flags.coauthor && hoverId?.startsWith("doi:") ? hoverId : null;
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
-  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "graph-view fullbleed", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "graph-canvas fullbleed", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
-    projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId }),
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("aside", { className: "graph-overlay graph-overlay-left", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("aside", { className: "graph-overlay graph-overlay-right", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
+  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
+  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "eyebrow", children: "No data." }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { className: "graph-view fullbleed", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className: "graph-canvas fullbleed", children: [
+    projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: 1, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId }),
+    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("aside", { className: "graph-overlay graph-overlay-left", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: true }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("aside", { className: "graph-overlay graph-overlay-right", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
       NodeDetail,
       {
         nodeId: selectedNodeId,
@@ -16693,7 +16640,7 @@ function GraphExplorerBody() {
         onBack: selectionStack.length >= 1 ? popSelection : void 0,
         accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
         navDir,
-        empty: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphContents, { nodes: projectedNodes, edges: projectedEdges, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, coauthorIds, onSelect: (id) => {
+        empty: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(GraphContents, { nodes: projectedNodes, edges: projectedEdges, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, coauthorIds, onSelect: (id) => {
           pushSelection(id);
           expand(id);
         }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })
@@ -16703,14 +16650,14 @@ function GraphExplorerBody() {
 }
 
 // public/relationships.tsx
-var import_jsx_runtime28 = __toESM(require_jsx_runtime());
+var import_jsx_runtime27 = __toESM(require_jsx_runtime());
 var root = null;
 function mount() {
   const el = document.getElementById("relationships-root");
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime28.jsx)(GraphExplorerBody, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphExplorerBody, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/relationships-bundle.js"] = mount;

@@ -14,7 +14,6 @@ import { explorerSelectedColor } from './explorer-selected-color';
 import { useSelectionStack } from './use-selection-stack';
 import { useYearRangeFilter } from './use-year-range-filter';
 import { useLayerOrder } from './use-layer-order';
-import { GraphCanvasCorners } from './graph-canvas-corners';
 import { useHiddenAuthors } from './use-hidden-authors';
 
 const DEFAULT_FLAGS: NodeTypeFlags = { institution: false, author: false, coauthor: false, journal: false, paper: true };
@@ -43,16 +42,6 @@ export function GraphExplorerBody() {
   }), []);
   const [flags, setFlags] = useState<NodeTypeFlags>(DEFAULT_FLAGS);
   const setFlag = useCallback((k: keyof NodeTypeFlags, v: boolean) => setFlags(f => ({ ...f, [k]: v })), []);
-  const [tilted, setTilted] = useState<boolean>(() => {
-    try { return localStorage.getItem('graph-tilted') === '1'; } catch { return false; }
-  });
-  const toggleTilt = useCallback(() => {
-    setTilted(v => {
-      const next = !v;
-      try { localStorage.setItem('graph-tilted', next ? '1' : '0'); } catch {}
-      return next;
-    });
-  }, []);
   const { layerOrder, reorderLayer } = useLayerOrder();
   const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
   const highlightedIds = useMemo(() => {
@@ -110,14 +99,13 @@ export function GraphExplorerBody() {
   return (
     <div className="graph-view fullbleed">
       <div className="graph-canvas fullbleed">
-        <GraphCanvasCorners tenant={me?.tenant ?? null} role={me?.role ?? null} yearFrom={yearFrom} yearTo={yearTo} yearMin={yearMin} yearMax={yearMax} tilted={tilted} onToggleTilt={toggleTilt} />
 
         {projectedNodes.length === 0
           ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-          : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={tilted ? 1 : 0} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} hiddenIds={hiddenIds} edgesOnlyForId={edgesOnlyForId} />}
+          : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={1} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} hiddenIds={hiddenIds} edgesOnlyForId={edgesOnlyForId} />}
 
         <aside className="graph-overlay graph-overlay-left">
-          <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFrom={yearFrom} yearTo={yearTo} onYearRangeChange={(f, t) => setRange([f, t])} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled={tilted} />
+          <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFrom={yearFrom} yearTo={yearTo} onYearRangeChange={(f, t) => setRange([f, t])} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled />
         </aside>
 
         <aside className="graph-overlay graph-overlay-right" ref={detailPanelRef}>

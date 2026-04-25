@@ -364,7 +364,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
  * (LayerStack rows are bare; bucket cards in Graph contents already
  * carry the gradient look themselves). */
 .graph-overlay {
-  position: absolute; top: 90px; bottom: 24px;
+  position: absolute; top: 18px; bottom: 18px;
   width: 280px; z-index: 4;
   display: flex; flex-direction: column;
   pointer-events: none;
