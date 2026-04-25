@@ -52,11 +52,14 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
         {zSorted.map(n => {
           const id = adapter.getId(n);
           const hidden = hiddenIds?.has(id) ?? false;
-          const r = adapter.getRadius(n);
+          const r0 = adapter.getRadius(n);
           const isHov = id === hoverId;
           const isSel = id === selectedId;
           const dim = connected && !connected.has(id);
           const p = project(n, camera);
+          // Scale node radius by the perspective factor so far nodes shrink
+          // and near nodes grow, matching the projected node positions.
+          const r = r0 * p.scale;
           const baseOpacity = hidden ? 0 : dim ? 0.25 : 1;
           return (
             <g key={id}
@@ -67,10 +70,10 @@ export function Nodes<N>({ nodes, adapter, hoverId, selectedId, connected, nodeC
               onClick={e => { e.stopPropagation(); e.preventDefault(); onClick(n); }}
               style={{ cursor: hidden ? 'default' : 'pointer', opacity: baseOpacity, pointerEvents: hidden ? 'none' : 'auto', transition: 'opacity 0.2s' }}
             >
-              {(isHov || isSel) && <circle r={r + 10} fill="url(#community-glow)" />}
+              {(isHov || isSel) && <circle r={r + 10 * p.scale} fill="url(#community-glow)" />}
               <circle r={r} fill={nodeColor(n)}
                 stroke={isHov || isSel ? '#fff' : 'rgba(255,255,255,0.2)'}
-                strokeWidth={isHov || isSel ? 2 : 1}
+                strokeWidth={(isHov || isSel ? 2 : 1) * p.scale}
               />
             </g>
           );

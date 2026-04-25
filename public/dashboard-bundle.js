@@ -13106,8 +13106,9 @@ function buildCommunityColors(nodes, adapter, primaryKey, minSize) {
 
 // public/community-graph/projection.ts
 var FLAT = { pitch: 0, yaw: 0, cx: 0, cy: 0 };
+var CAMERA_DISTANCE = 900;
 function project(n, cam) {
-  if (cam.pitch === 0 && cam.yaw === 0) return { x: n.x, y: n.y };
+  if (cam.pitch === 0 && cam.yaw === 0) return { x: n.x, y: n.y, scale: 1 };
   const dx = n.x - cam.cx;
   const dy = n.y - cam.cy;
   const cy = Math.cos(cam.yaw);
@@ -13116,13 +13117,22 @@ function project(n, cam) {
   const ry = dx * sy + dy * cy;
   const cp = Math.cos(cam.pitch);
   const sp = Math.sin(cam.pitch);
-  return { x: cam.cx + rx, y: cam.cy + ry * cp - n.z * sp };
+  const camY = ry * cp - n.z * sp;
+  const viewAxis = ry * sp - n.z * cp;
+  const denom = Math.max(50, CAMERA_DISTANCE + viewAxis);
+  const scale = CAMERA_DISTANCE / denom;
+  return { x: cam.cx + rx * scale, y: cam.cy + camY * scale, scale };
 }
 function unproject(p, z, cam) {
   if (cam.pitch === 0 && cam.yaw === 0) return { x: p.x, y: p.y };
   const cp = Math.cos(cam.pitch);
-  const rx = p.x - cam.cx;
-  const ry = cp === 0 ? 0 : (p.y - cam.cy + z * Math.sin(cam.pitch)) / cp;
+  const sp = Math.sin(cam.pitch);
+  const approxViewAxis = -z * cp;
+  const denom = Math.max(50, CAMERA_DISTANCE + approxViewAxis);
+  const scale = CAMERA_DISTANCE / denom;
+  const rx = (p.x - cam.cx) / scale;
+  const camY = (p.y - cam.cy) / scale;
+  const ry = cp === 0 ? 0 : (camY + z * sp) / cp;
   const cy = Math.cos(-cam.yaw);
   const sy = Math.sin(-cam.yaw);
   return { x: cam.cx + rx * cy - ry * sy, y: cam.cy + rx * sy + ry * cy };
@@ -13196,11 +13206,12 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
     /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("g", { children: zSorted.map((n) => {
       const id = adapter.getId(n);
       const hidden = hiddenIds?.has(id) ?? false;
-      const r = adapter.getRadius(n);
+      const r0 = adapter.getRadius(n);
       const isHov = id === hoverId;
       const isSel = id === selectedId;
       const dim = connected && !connected.has(id);
       const p = project(n, camera);
+      const r = r0 * p.scale;
       const baseOpacity = hidden ? 0 : dim ? 0.25 : 1;
       return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
         "g",
@@ -13216,14 +13227,14 @@ function Nodes({ nodes, adapter, hoverId, selectedId, connected, nodeColor, onHo
           },
           style: { cursor: hidden ? "default" : "pointer", opacity: baseOpacity, pointerEvents: hidden ? "none" : "auto", transition: "opacity 0.2s" },
           children: [
-            (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { r: r + 10, fill: "url(#community-glow)" }),
+            (isHov || isSel) && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { r: r + 10 * p.scale, fill: "url(#community-glow)" }),
             /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
               "circle",
               {
                 r,
                 fill: nodeColor(n),
                 stroke: isHov || isSel ? "#fff" : "rgba(255,255,255,0.2)",
-                strokeWidth: isHov || isSel ? 2 : 1
+                strokeWidth: (isHov || isSel ? 2 : 1) * p.scale
               }
             )
           ]
