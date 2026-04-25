@@ -12935,9 +12935,6 @@ var Ico = {
 
 // public/ui-primitives.tsx
 var import_jsx_runtime2 = __toESM(require_jsx_runtime());
-function Tag({ children, tone = "default", mono = false }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: `tag tag-${tone} ${mono ? "mono" : ""}`, children });
-}
 function Check({ checked, onChange, label, color }) {
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("label", { className: "check", children: [
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: `check-box ${checked ? "on" : ""}`, style: checked && color ? { background: color, borderColor: color } : void 0, children: checked && Ico.check }),
@@ -16684,49 +16681,25 @@ function GraphExplorerBody() {
   const edgesOnlyForId = !flags.author && !flags.coauthor && hoverId?.startsWith("doi:") ? hoverId : null;
   if (loading) return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
   if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "view graph-view", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("header", { className: "view-head compact", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "eyebrow", children: "Graph explorer" }),
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("h1", { className: "view-title tight", children: [
-          "The institution as a ",
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("em", { children: "network" }),
-          "."
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(Tag, { mono: true, children: [
-          projectedNodes.length,
-          " NODES"
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(Tag, { mono: true, tone: "muted", children: [
-          projectedEdges.length,
-          " EDGES"
-        ] })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "graph-layout", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }),
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "graph-canvas", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
-        projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("aside", { className: "detail-panel", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
-        NodeDetail,
-        {
-          nodeId: selectedNodeId,
-          onClose: () => pushSelection(null),
-          onBack: selectionStack.length >= 1 ? popSelection : void 0,
-          accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
-          navDir,
-          empty: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphContents, { nodes: projectedNodes, edges: projectedEdges, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, coauthorIds, onSelect: (id) => {
-            pushSelection(id);
-            expand(id);
-          }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })
-        }
-      ) })
-    ] })
-  ] });
+  return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className: "graph-view fullbleed", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className: "graph-canvas fullbleed", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphCanvasCorners, { tenant: me?.tenant ?? null, role: me?.role ?? null, yearFrom, yearTo, yearMin, yearMax, tilted, onToggleTilt: toggleTilt }),
+    projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: tilted ? 1 : 0, layerOrder, coauthorIds, journalLabels, hiddenIds, edgesOnlyForId }),
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("aside", { className: "graph-overlay graph-overlay-left", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphFiltersSidebar, { flags, setFlag, yearMin, yearMax, yearFrom, yearTo, onYearRangeChange: (f, t) => setRange([f, t]), layerOrder, onReorderLayer: reorderLayer, layersEnabled: tilted }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("aside", { className: "graph-overlay graph-overlay-right", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
+      NodeDetail,
+      {
+        nodeId: selectedNodeId,
+        onClose: () => pushSelection(null),
+        onBack: selectionStack.length >= 1 ? popSelection : void 0,
+        accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
+        navDir,
+        empty: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(GraphContents, { nodes: projectedNodes, edges: projectedEdges, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, coauthorIds, onSelect: (id) => {
+          pushSelection(id);
+          expand(id);
+        }, onHover: hoverFromSidebar, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })
+      }
+    ) })
+  ] }) });
 }
 
 // public/relationships.tsx

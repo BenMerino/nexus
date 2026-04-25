@@ -182,6 +182,9 @@ em {
   overflow-y: auto; overflow-x: hidden;
   background: var(--bg);
 }
+/* Full-bleed variant for views that want to occupy the whole main area
+ * with their own internal layout (graph explorer). No scroll, no padding. */
+.main-fullbleed { overflow: hidden; }
 .main::-webkit-scrollbar { width: 10px; }
 .main::-webkit-scrollbar-track { background: transparent; }
 .main::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 5px; }
@@ -344,6 +347,33 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 @media (max-width: 1200px) {
   .graph-layout { grid-template-columns: 160px minmax(0, 1fr) 240px; gap: 10px; }
+}
+
+/* Full-bleed mode: graph fills the entire main area; sidebar (filters) and
+ * detail/contents panel float over it as translucent overlay panels. */
+.graph-view.fullbleed { padding: 0; height: 100%; }
+.graph-canvas.fullbleed {
+  position: relative; width: 100%; height: 100%;
+  border-radius: 0; border: 0; flex: 1 1 auto;
+}
+.graph-overlay {
+  position: absolute; top: 14px; bottom: 14px;
+  width: 280px; z-index: 4;
+  display: flex; flex-direction: column;
+  background: linear-gradient(180deg, rgba(20, 22, 26, 0.78), rgba(20, 22, 26, 0.62));
+  border: 1px solid var(--border-soft); border-radius: var(--radius);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+.graph-overlay-left { left: 14px; width: 220px; }
+.graph-overlay-right { right: 14px; }
+.graph-overlay > * { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 14px; }
+.graph-overlay .graph-filters { background: transparent; border: 0; padding: 14px; }
+.graph-overlay .detail-panel,
+.graph-overlay .graph-contents { background: transparent; border: 0; }
+@media (max-width: 1200px) {
+  .graph-overlay-left { width: 200px; }
+  .graph-overlay-right { width: 260px; }
 }
 .graph-filters {
   background: var(--bg-card); border: 1px solid var(--border-soft);

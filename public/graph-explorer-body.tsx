@@ -5,7 +5,6 @@ import { ExplorerCanvas } from './explorer-canvas';
 import { GraphSearch } from './graph-search';
 import { useGraphData } from './use-graph-data';
 import { useCurrentUser } from './shell-helpers';
-import { Tag } from './ui-primitives';
 import { GraphFiltersSidebar, type NodeTypeFlags } from './graph-filters-sidebar';
 import { buildExplorerAffiliations } from './explorer-affiliations';
 import { useExplorerEgo } from './use-explorer-ego';
@@ -109,29 +108,19 @@ export function GraphExplorerBody() {
   if (!rawNodes.length) return <div className="view"><div className="eyebrow">No data.</div></div>;
 
   return (
-    <div className="view graph-view">
-      <header className="view-head compact">
-        <div>
-          <div className="eyebrow">Graph explorer</div>
-          <h1 className="view-title tight">The institution as a <em>network</em>.</h1>
-        </div>
-        <div className="view-meta">
-          <Tag mono>{projectedNodes.length} NODES</Tag>
-          <Tag mono tone="muted">{projectedEdges.length} EDGES</Tag>
-        </div>
-      </header>
+    <div className="graph-view fullbleed">
+      <div className="graph-canvas fullbleed">
+        <GraphCanvasCorners tenant={me?.tenant ?? null} role={me?.role ?? null} yearFrom={yearFrom} yearTo={yearTo} yearMin={yearMin} yearMax={yearMax} tilted={tilted} onToggleTilt={toggleTilt} />
 
-      <div className="graph-layout">
-        <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFrom={yearFrom} yearTo={yearTo} onYearRangeChange={(f, t) => setRange([f, t])} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled={tilted} />
+        {projectedNodes.length === 0
+          ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
+          : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={tilted ? 1 : 0} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} hiddenIds={hiddenIds} edgesOnlyForId={edgesOnlyForId} />}
 
-        <div className="graph-canvas">
-          <GraphCanvasCorners tenant={me?.tenant ?? null} role={me?.role ?? null} yearFrom={yearFrom} yearTo={yearTo} yearMin={yearMin} yearMax={yearMax} tilted={tilted} onToggleTilt={toggleTilt} />
-          {projectedNodes.length === 0
-            ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
-            : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={tilted ? 1 : 0} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} hiddenIds={hiddenIds} edgesOnlyForId={edgesOnlyForId} />}
-        </div>
+        <aside className="graph-overlay graph-overlay-left">
+          <GraphFiltersSidebar flags={flags} setFlag={setFlag} yearMin={yearMin} yearMax={yearMax} yearFrom={yearFrom} yearTo={yearTo} onYearRangeChange={(f, t) => setRange([f, t])} layerOrder={layerOrder} onReorderLayer={reorderLayer} layersEnabled={tilted} />
+        </aside>
 
-        <aside className="detail-panel" ref={detailPanelRef}>
+        <aside className="graph-overlay graph-overlay-right" ref={detailPanelRef}>
           <NodeDetail
             nodeId={selectedNodeId}
             onClose={() => pushSelection(null)}
