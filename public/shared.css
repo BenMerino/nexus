@@ -371,17 +371,27 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .graph-overlay-left { left: 18px; width: 240px; }
 .graph-overlay-right { right: 18px; }
-/* Centered top overlay — used for the year-range slider. Doesn't span the
- * full height like the side overlays; sits as a small horizontal glass
- * card centered above the canvas. */
-.graph-overlay.graph-overlay-top {
-  top: 18px; bottom: auto;
-  left: 50%; transform: translateX(-50%);
-  width: 360px; padding: 12px 16px;
-  background: linear-gradient(180deg, rgba(20, 22, 26, 0.78), rgba(20, 22, 26, 0.62));
+/* Bottom horizontal overlay — used for graph contents. Spans the canvas
+ * width with a glass background; cards inside flow horizontally with
+ * x-axis scroll. */
+.graph-overlay.graph-overlay-bottom {
+  top: auto; bottom: 18px; left: 18px; right: 18px;
+  width: auto; height: auto; max-height: 30%;
+  flex-direction: row; padding: 12px 16px;
+  background: linear-gradient(180deg, rgba(20, 22, 26, 0.62), rgba(20, 22, 26, 0.78));
   border: 1px solid var(--border-soft); border-radius: var(--radius);
   backdrop-filter: blur(10px);
   pointer-events: auto;
+}
+.graph-overlay.graph-overlay-bottom > * { height: auto; }
+.graph-overlay.graph-overlay-bottom .graph-contents { width: 100%; }
+.graph-overlay.graph-overlay-bottom .graph-contents-list {
+  flex-direction: row; gap: 12px;
+  overflow-x: auto; overflow-y: hidden;
+  padding-bottom: 4px;
+}
+.graph-overlay.graph-overlay-bottom .gc-community {
+  flex: 0 0 auto; min-width: 200px; max-width: 320px;
 }
 .graph-overlay > * { flex: 1 1 auto; min-height: 0; min-width: 0; height: 100%; pointer-events: auto; }
 .graph-overlay .graph-filters { background: transparent; border: 0; padding: 0; height: 100%; box-sizing: border-box; gap: 24px; }

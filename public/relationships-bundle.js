@@ -766,7 +766,7 @@ var require_react = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React13 = require_react();
+    var React11 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React13.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React11.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React13 = require_react();
+    var React11 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React13.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React11.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React13.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React11.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12750,7 +12750,7 @@ var require_jsx_runtime = __commonJS({
 var import_client = __toESM(require_client());
 
 // public/graph-explorer-body.tsx
-var import_react24 = __toESM(require_react());
+var import_react21 = __toESM(require_react());
 
 // public/node-classify.ts
 function percentile(sorted, p) {
@@ -16354,134 +16354,24 @@ function useSelectionStack() {
   return { selectionStack, selectedNodeId, navDir, pushSelection, popSelection };
 }
 
-// public/use-year-range-filter.ts
-var import_react22 = __toESM(require_react());
-
-// public/time-slider.tsx
-var import_react21 = __toESM(require_react());
-var import_jsx_runtime22 = __toESM(require_jsx_runtime());
-function yearOf(n) {
-  if (n.group !== "doi" || !n.published) return 0;
-  const y3 = parseInt(n.published.substring(0, 4));
-  return y3 > 1900 ? y3 : 0;
-}
-function useTimeRange(nodes) {
-  return (0, import_react21.useMemo)(() => {
-    let min = 9999, max = 0;
-    for (const n of nodes) {
-      const y3 = yearOf(n);
-      if (y3) {
-        min = Math.min(min, y3);
-        max = Math.max(max, y3);
-      }
-    }
-    return { min: min > max ? 0 : min, max };
-  }, [nodes]);
-}
-
-// public/use-year-range-filter.ts
-function yearOf2(n) {
-  if (n.group !== "doi" || !n.published) return 0;
-  const y3 = parseInt(n.published.substring(0, 4));
-  return y3 > 1900 ? y3 : 0;
-}
-function useYearRangeFilter(rawNodes, rawEdges) {
-  const { min: yearMin, max: yearMax } = useTimeRange(rawNodes);
-  const [range, setRange] = (0, import_react22.useState)(null);
-  (0, import_react22.useEffect)(() => {
-    if (yearMin && yearMax && !range) setRange([yearMin, yearMax]);
-  }, [yearMin, yearMax, range]);
-  const yearFrom = range ? range[0] : yearMin;
-  const yearTo = range ? range[1] : yearMax;
-  const filteredRaw = (0, import_react22.useMemo)(() => {
-    const fullSpan = yearFrom <= yearMin && yearTo >= yearMax;
-    if (fullSpan) return { nodes: rawNodes, edges: rawEdges };
-    const keep = /* @__PURE__ */ new Set();
-    const nodes = rawNodes.filter((n) => {
-      if (n.group !== "doi") return true;
-      const y3 = yearOf2(n);
-      const ok = !y3 || y3 >= yearFrom && y3 <= yearTo;
-      if (ok) keep.add(n.id);
-      return ok;
-    });
-    const edges = rawEdges.filter((e) => !e.source.startsWith("doi:") || keep.has(e.source));
-    return { nodes, edges };
-  }, [rawNodes, rawEdges, yearFrom, yearTo, yearMin, yearMax]);
-  return { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw };
-}
-
-// public/year-range-slider.tsx
-var import_react23 = __toESM(require_react());
-var import_jsx_runtime23 = __toESM(require_jsx_runtime());
-function YearRangeSlider({ min, max, from, to, onChange }) {
-  const span = max - min || 1;
-  const leftPct = (from - min) / span * 100;
-  const rightPct = (to - min) / span * 100;
-  const onFrom = (0, import_react23.useCallback)((e) => {
-    const v = Math.min(parseInt(e.target.value), to);
-    onChange(v, to);
-  }, [to, onChange]);
-  const onTo = (0, import_react23.useCallback)((e) => {
-    const v = Math.max(parseInt(e.target.value), from);
-    onChange(from, v);
-  }, [from, onChange]);
-  const fillStyle = {
-    left: `${leftPct}%`,
-    width: `${Math.max(rightPct - leftPct, 0)}%`
-  };
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "year-range", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "year-range-track", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "year-range-fill", style: fillStyle }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
-        "input",
-        {
-          type: "range",
-          min,
-          max,
-          value: from,
-          onChange: onFrom,
-          className: "year-range-input year-range-from",
-          style: from >= to ? { zIndex: 4 } : void 0
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
-        "input",
-        {
-          type: "range",
-          min,
-          max,
-          value: to,
-          onChange: onTo,
-          className: "year-range-input year-range-to"
-        }
-      )
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "year-range-readout mono", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { children: from }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "muted", children: "\u2013" }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { children: to })
-    ] })
-  ] });
-}
-
 // public/graph-explorer-body.tsx
-var import_jsx_runtime24 = __toESM(require_jsx_runtime());
+var import_jsx_runtime22 = __toESM(require_jsx_runtime());
 function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
   const { selectionStack, selectedNodeId, navDir, pushSelection, popSelection } = useSelectionStack();
-  const detailPanelRef = (0, import_react24.useRef)(null);
-  const [hover, setHover] = (0, import_react24.useState)({ id: null, source: "canvas" });
+  const detailPanelRef = (0, import_react21.useRef)(null);
+  const [hover, setHover] = (0, import_react21.useState)({ id: null, source: "canvas" });
   const hoverId = hover.id;
-  const prefetchTimer = (0, import_react24.useRef)(null);
-  const releaseTimer = (0, import_react24.useRef)(null);
-  const schedulePrefetch = (0, import_react24.useCallback)((id) => {
+  const prefetchTimer = (0, import_react21.useRef)(null);
+  const releaseTimer = (0, import_react21.useRef)(null);
+  const schedulePrefetch = (0, import_react21.useCallback)((id) => {
     if (prefetchTimer.current) {
       clearTimeout(prefetchTimer.current);
       prefetchTimer.current = null;
     }
     if (id) prefetchTimer.current = window.setTimeout(() => prefetchNodeDetail(id), 120);
   }, []);
-  const hoverFromCanvas = (0, import_react24.useCallback)((id) => {
+  const hoverFromCanvas = (0, import_react21.useCallback)((id) => {
     if (releaseTimer.current) {
       clearTimeout(releaseTimer.current);
       releaseTimer.current = null;
@@ -16493,82 +16383,80 @@ function GraphExplorerBody() {
       releaseTimer.current = window.setTimeout(() => setHover({ id: null, source: "canvas" }), 250);
     }
   }, [schedulePrefetch]);
-  const hoverFromSidebar = (0, import_react24.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
-  const [hullHoverKey, setHullHoverKey] = (0, import_react24.useState)(null);
-  const [sidebarHullKey, setSidebarHullKey] = (0, import_react24.useState)(null);
-  const [expandedIds, setExpandedIds] = (0, import_react24.useState)(/* @__PURE__ */ new Set());
-  const expand = (0, import_react24.useCallback)((id) => setExpandedIds((prev) => {
+  const hoverFromSidebar = (0, import_react21.useCallback)((id) => setHover({ id, source: "sidebar" }), []);
+  const [hullHoverKey, setHullHoverKey] = (0, import_react21.useState)(null);
+  const [sidebarHullKey, setSidebarHullKey] = (0, import_react21.useState)(null);
+  const [expandedIds, setExpandedIds] = (0, import_react21.useState)(/* @__PURE__ */ new Set());
+  const expand = (0, import_react21.useCallback)((id) => setExpandedIds((prev) => {
     if (prev.has(id)) return prev;
     const n = new Set(prev);
     n.add(id);
     return n;
   }), []);
   const layerOrder = DEFAULT_LAYER_ORDER;
-  const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
-  const highlightedIds = (0, import_react24.useMemo)(() => {
+  const highlightedIds = (0, import_react21.useMemo)(() => {
     const o = new URLSearchParams(window.location.search).get("highlight");
     return o ? /* @__PURE__ */ new Set([`author:${o}`]) : /* @__PURE__ */ new Set();
   }, []);
   const { me } = useCurrentUser();
-  (0, import_react24.useEffect)(() => {
+  (0, import_react21.useEffect)(() => {
     if (!rawNodes.length) return;
     const f = highlightedIds.values().next().value;
     if (f && rawNodes.some((n) => n.id === f)) pushSelection(f);
   }, [rawNodes, highlightedIds]);
-  (0, import_react24.useEffect)(() => {
+  (0, import_react21.useEffect)(() => {
     const el = detailPanelRef.current;
     if (!el) return;
     el.querySelectorAll(".node-detail-pane").forEach((p) => {
       p.scrollTop = 0;
     });
   }, [selectedNodeId]);
-  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react24.useMemo)(
-    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, true),
-    [filteredRaw]
+  const { nodes: projectedRaw, edges: projectedEdgesAll } = (0, import_react21.useMemo)(
+    () => projectGraph(rawNodes, rawEdges, /* @__PURE__ */ new Set(["institution", "author", "journal"]), [], null, true),
+    [rawNodes, rawEdges]
   );
   const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me });
-  const projectedEdges = (0, import_react24.useMemo)(() => {
+  const projectedEdges = (0, import_react21.useMemo)(() => {
     const ids = new Set(projectedNodes.map((n) => n.id));
     return projectedEdgesAll.filter((e) => ids.has(e.source) && ids.has(e.target));
   }, [projectedEdgesAll, projectedNodes]);
-  const affiliations = (0, import_react24.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
-  const journalLabels = (0, import_react24.useMemo)(() => {
+  const affiliations = (0, import_react21.useMemo)(() => buildExplorerAffiliations(rawNodes, rawEdges, authoritativeAffs), [rawNodes, rawEdges, authoritativeAffs]);
+  const journalLabels = (0, import_react21.useMemo)(() => {
     const m2 = /* @__PURE__ */ new Map();
     for (const n of rawNodes) if (n.group === "journal") m2.set(n.id, n.label);
     return m2;
   }, [rawNodes]);
   const { egoAuthorId, effectiveHomeKey } = useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor: affiliations.institutionsByAuthor });
-  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
-  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "eyebrow", children: "No data." }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "graph-view fullbleed", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "graph-canvas fullbleed", children: [
-    projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: 1, layerOrder, coauthorIds, journalLabels, externalHullKey: sidebarHullKey }),
-    yearMax > yearMin && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "graph-overlay graph-overlay-top", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(YearRangeSlider, { min: yearMin, max: yearMax, from: yearFrom, to: yearTo, onChange: (f, t) => setRange([f, t]) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("aside", { className: "graph-overlay graph-overlay-right", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+  if (loading) return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "eyebrow", children: "Loading graph data\u2026" }) });
+  if (!rawNodes.length) return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "eyebrow", children: "No data." }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "graph-view fullbleed", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className: "graph-canvas fullbleed", children: [
+    projectedNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { padding: 40, textAlign: "center", position: "relative", zIndex: 1 }, className: "muted", children: "No nodes match the current filters." }) : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(ExplorerCanvas, { nodes: projectedNodes, links: projectedEdges, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, selectedId: selectedNodeId, onNodeClick: (n) => pushSelection(n.id), expandedIds, onExpand: expand, hoverId, onHoverChange: hoverFromCanvas, onHullHoverChange: setHullHoverKey, tilt: 1, layerOrder, coauthorIds, journalLabels, externalHullKey: sidebarHullKey }),
+    selectedNodeId && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("aside", { className: "graph-overlay graph-overlay-right", ref: detailPanelRef, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
       NodeDetail,
       {
         nodeId: selectedNodeId,
         onClose: () => pushSelection(null),
         onBack: selectionStack.length >= 1 ? popSelection : void 0,
         accentColor: explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId),
-        navDir,
-        empty: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(GraphContents, { nodes: projectedNodes, edges: projectedEdges, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, coauthorIds, onSelect: (id) => {
-          pushSelection(id);
-          expand(id);
-        }, onHover: hoverFromSidebar, onHullHover: setSidebarHullKey, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) })
+        navDir
       }
-    ) })
+    ) }),
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "graph-overlay graph-overlay-bottom", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(GraphContents, { nodes: projectedNodes, edges: projectedEdges, allNodes: rawNodes, affiliations, homeInstitutionId: effectiveHomeKey, egoAuthorId, coauthorIds, onSelect: (id) => {
+      pushSelection(id);
+      expand(id);
+    }, onHover: hoverFromSidebar, onHullHover: setSidebarHullKey, hoveredId: hover.source === "canvas" ? hoverId : null, hoveredHullKey: hullHoverKey, onSearchSelect: (id) => pushSelection(id) }) })
   ] }) });
 }
 
 // public/relationships.tsx
-var import_jsx_runtime25 = __toESM(require_jsx_runtime());
+var import_jsx_runtime23 = __toESM(require_jsx_runtime());
 var root = null;
 function mount() {
   const el = document.getElementById("relationships-root");
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime25.jsx)(GraphExplorerBody, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GraphExplorerBody, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/relationships-bundle.js"] = mount;

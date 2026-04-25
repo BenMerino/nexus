@@ -10,9 +10,7 @@ import { useExplorerNodes } from './use-explorer-nodes';
 import { GraphContents } from './graph-contents';
 import { explorerSelectedColor } from './explorer-selected-color';
 import { useSelectionStack } from './use-selection-stack';
-import { useYearRangeFilter } from './use-year-range-filter';
 import { DEFAULT_LAYER_ORDER } from './explorer-layers';
-import { YearRangeSlider } from './year-range-slider';
 
 export function GraphExplorerBody() {
   const { rawNodes, rawEdges, affiliations: authoritativeAffs, tagMeta, loading } = useGraphData();
@@ -48,7 +46,6 @@ export function GraphExplorerBody() {
     const n = new Set(prev); n.add(id); return n;
   }), []);
   const layerOrder = DEFAULT_LAYER_ORDER;
-  const { yearMin, yearMax, yearFrom, yearTo, setRange, filteredRaw } = useYearRangeFilter(rawNodes, rawEdges);
   const highlightedIds = useMemo(() => {
     const o = new URLSearchParams(window.location.search).get('highlight');
     return o ? new Set([`author:${o}`]) : new Set<string>();
@@ -70,8 +67,8 @@ export function GraphExplorerBody() {
   }, [selectedNodeId]);
 
   const { nodes: projectedRaw, edges: projectedEdgesAll } = useMemo(
-    () => projectGraph(filteredRaw.nodes, filteredRaw.edges, new Set(['institution', 'author', 'journal']), [], null, true),
-    [filteredRaw]);
+    () => projectGraph(rawNodes, rawEdges, new Set(['institution', 'author', 'journal']), [], null, true),
+    [rawNodes, rawEdges]);
 
   const { projectedNodes, coauthorIds } = useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me });
 
@@ -102,22 +99,21 @@ export function GraphExplorerBody() {
           ? <div style={{ padding: 40, textAlign: 'center', position: 'relative', zIndex: 1 }} className="muted">No nodes match the current filters.</div>
           : <ExplorerCanvas nodes={projectedNodes} links={projectedEdges} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} selectedId={selectedNodeId} onNodeClick={n => pushSelection(n.id)} expandedIds={expandedIds} onExpand={expand} hoverId={hoverId} onHoverChange={hoverFromCanvas} onHullHoverChange={setHullHoverKey} tilt={1} layerOrder={layerOrder} coauthorIds={coauthorIds} journalLabels={journalLabels} externalHullKey={sidebarHullKey} />}
 
-        {yearMax > yearMin && (
-          <div className="graph-overlay graph-overlay-top">
-            <YearRangeSlider min={yearMin} max={yearMax} from={yearFrom} to={yearTo} onChange={(f, t) => setRange([f, t])} />
-          </div>
+        {selectedNodeId && (
+          <aside className="graph-overlay graph-overlay-right" ref={detailPanelRef}>
+            <NodeDetail
+              nodeId={selectedNodeId}
+              onClose={() => pushSelection(null)}
+              onBack={selectionStack.length >= 1 ? popSelection : undefined}
+              accentColor={explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId)}
+              navDir={navDir}
+            />
+          </aside>
         )}
 
-        <aside className="graph-overlay graph-overlay-right" ref={detailPanelRef}>
-          <NodeDetail
-            nodeId={selectedNodeId}
-            onClose={() => pushSelection(null)}
-            onBack={selectionStack.length >= 1 ? popSelection : undefined}
-            accentColor={explorerSelectedColor(selectedNodeId, projectedNodes, affiliations, effectiveHomeKey, egoAuthorId)}
-            navDir={navDir}
-            empty={<GraphContents nodes={projectedNodes} edges={projectedEdges} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} coauthorIds={coauthorIds} onSelect={id => { pushSelection(id); expand(id); }} onHover={hoverFromSidebar} onHullHover={setSidebarHullKey} hoveredId={hover.source === 'canvas' ? hoverId : null} hoveredHullKey={hullHoverKey} onSearchSelect={id => pushSelection(id)} />}
-          />
-        </aside>
+        <div className="graph-overlay graph-overlay-bottom">
+          <GraphContents nodes={projectedNodes} edges={projectedEdges} allNodes={rawNodes} affiliations={affiliations} homeInstitutionId={effectiveHomeKey} egoAuthorId={egoAuthorId} coauthorIds={coauthorIds} onSelect={id => { pushSelection(id); expand(id); }} onHover={hoverFromSidebar} onHullHover={setSidebarHullKey} hoveredId={hover.source === 'canvas' ? hoverId : null} hoveredHullKey={hullHoverKey} onSearchSelect={id => pushSelection(id)} />
+        </div>
       </div>
     </div>
   );
