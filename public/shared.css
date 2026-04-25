@@ -711,7 +711,8 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .gc-community-head { display: flex; align-items: center; gap: 8px; }
 .gc-community-head h4 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 16px; letter-spacing: -0.01em; }
-.gc-community-title { background: transparent; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; flex: 1; transition: color 0.12s; }
+.gc-community-title,
+.gc-community-title:hover { background: transparent; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; flex: 1; transition: color 0.12s; }
 .gc-community-title:hover { color: var(--accent); }
 .gc-community-title:focus { outline: none; background: transparent; }
 .gc-community-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
@@ -737,7 +738,8 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .gc-list li {
   animation: gc-fade 180ms ease-out both;
 }
-.gc-list li button {
+.gc-list li button,
+.gc-list li button:hover {
   background: transparent; border: 0; padding: 4px 0;
   color: var(--fg); font: inherit; text-align: left; cursor: pointer;
   width: 100%; transition: color 0.12s;
