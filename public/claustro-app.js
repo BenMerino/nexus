@@ -1,5 +1,9 @@
 (function () {
-  var state = { me: null, claustro: null, programs: null, projects: [], allIndices: ["WoS","Scopus","SciELO","DOAJ"], indices: [], editingId: null };
+  var state = {
+    me: null, claustro: null, programs: null, projects: [],
+    allIndices: ["WoS","Scopus","SciELO","DOAJ"], indices: [],
+    editingId: null, formOpen: false, deptFilter: "all",
+  };
   var EDITOR = ["secretary","director","admin","superadmin"];
   var PROGRAM_LABELS = {
     doctorado: "Doctorado",
@@ -12,28 +16,27 @@
   function isEditor() { return state.me && EDITOR.indexOf(state.me.role) !== -1; }
 
   function init() {
-    document.getElementById("btn-tab-clasificacion").addEventListener("click", function () { switchTab("clasificacion"); });
     document.getElementById("btn-tab-proyectos").addEventListener("click", function () { switchTab("proyectos"); });
+    document.getElementById("btn-tab-clasificacion").addEventListener("click", function () { switchTab("clasificacion"); });
     document.getElementById("btn-save-indices").addEventListener("click", saveIndices);
+    document.getElementById("btn-toggle-form").addEventListener("click", function () {
+      if (state.formOpen) window.claustroProjectsUI.closeForm(state);
+      else window.claustroProjectsUI.openNewForm(state);
+    });
     document.getElementById("btn-save-project").addEventListener("click", saveProject);
-    document.getElementById("btn-cancel-project").addEventListener("click", closeForm);
-    document.getElementById("btn-new-project").addEventListener("click", openNewForm);
+    document.getElementById("btn-cancel-project").addEventListener("click", function () { window.claustroProjectsUI.closeForm(state); });
     fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
       state.me = d;
       gateProyectos();
       loadIndices().then(loadClaustro);
-      if (isEditor()) { loadProjects(); switchTab("proyectos"); }
+      if (isEditor()) loadProjects();
     });
   }
   function switchTab(name) {
-    var btnC = document.getElementById("btn-tab-clasificacion");
-    var btnP = document.getElementById("btn-tab-proyectos");
-    var tabC = document.getElementById("tab-clasificacion");
-    var tabP = document.getElementById("tab-proyectos");
-    btnC.classList.toggle("active", name === "clasificacion");
-    btnP.classList.toggle("active", name === "proyectos");
-    tabC.hidden = name !== "clasificacion";
-    tabP.hidden = name !== "proyectos";
+    document.getElementById("btn-tab-proyectos").classList.toggle("active", name === "proyectos");
+    document.getElementById("btn-tab-clasificacion").classList.toggle("active", name === "clasificacion");
+    document.getElementById("tab-proyectos").hidden = name !== "proyectos";
+    document.getElementById("tab-clasificacion").hidden = name !== "clasificacion";
   }
   function gateProyectos() {
     document.getElementById("proyectos-area").style.display = isEditor() ? "block" : "none";
@@ -78,25 +81,11 @@
   function loadProjects() {
     fetch("/api/projects?action=list").then(function (r) { return r.json(); }).then(function (rows) {
       state.projects = rows || [];
-      window.claustroRender.projectsList(state.projects, state.editingId);
-      window.claustroRender.setProjectStats(state.projects);
+      window.claustroProjectsUI.renderFilters(state);
+      window.claustroProjectsUI.renderListAndStats(state);
     });
   }
 
-  function openNewForm() {
-    state.editingId = null;
-    document.getElementById("proj-form-title").textContent = "Nuevo proyecto";
-    document.getElementById("proj-form-badge").textContent = "Nuevo";
-    document.getElementById("form-pane").style.display = "block";
-    window.claustroRender.projectForm(null);
-    window.claustroRender.projectsList(state.projects, null);
-    document.getElementById("form-pane").scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-  function closeForm() {
-    state.editingId = null;
-    document.getElementById("form-pane").style.display = "none";
-    window.claustroRender.projectsList(state.projects, null);
-  }
   function saveProject() {
     var body = window.claustroRender.collectForm();
     if (!body.titulo) { alert("Título requerido"); return; }
@@ -107,27 +96,23 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d.error) { alert(d.error); return; }
-        closeForm();
-        loadProjects();
-        loadClaustro();
+        window.claustroProjectsUI.closeForm(state);
+        loadProjects(); loadClaustro();
       });
   }
   window.claustroEdit = function (id) {
     fetch("/api/projects?action=get&id=" + id).then(function (r) { return r.json(); }).then(function (p) {
-      state.editingId = id;
-      document.getElementById("proj-form-title").textContent = "Editar proyecto";
-      document.getElementById("proj-form-badge").textContent = "#" + id;
-      document.getElementById("form-pane").style.display = "block";
-      window.claustroRender.projectForm(p);
-      window.claustroRender.projectsList(state.projects, id);
-      document.getElementById("form-pane").scrollIntoView({ behavior: "smooth", block: "start" });
+      window.claustroProjectsUI.openEditForm(state, p);
     });
   };
   window.claustroDelete = function (id) {
     if (!confirm("¿Eliminar proyecto #" + id + "?")) return;
     fetch("/api/projects?action=delete&id=" + id, { method: "DELETE" })
       .then(function (r) { return r.json(); })
-      .then(function () { if (state.editingId === id) closeForm(); loadProjects(); loadClaustro(); });
+      .then(function () {
+        if (state.editingId === id) window.claustroProjectsUI.closeForm(state);
+        loadProjects(); loadClaustro();
+      });
   };
   window.claustroProgramLabel = function (k) { return PROGRAM_LABELS[k] || k; };
   window.claustroEsc = esc;

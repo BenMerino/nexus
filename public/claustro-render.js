@@ -1,6 +1,7 @@
 (function () {
   var esc = function (s) { return window.claustroEsc(s); };
   var label = function (k) { return window.claustroProgramLabel(k); };
+  var fmtCLP = function (n) { return window.fmtCLP(n); };
 
   function fmtPct(p) { return (Math.round(p * 1000) / 10) + "%"; }
   function fmtHours(h) { return (Math.round(h * 10) / 10) + "h"; }
@@ -36,70 +37,95 @@
     }
     var html = '<table class="claustro-table"><tr><th>Académico</th><th>Grado</th><th>Horas</th><th>Pubs 5a</th><th>Proy IR ext</th><th>Proy total</th><th>Clasificación</th></tr>';
     for (var i = 0; i < rows.length; i++) {
-      var r = rows[i];
-      var u = r.user || {};
-      var c = r.classification || {};
-      var rs = r.reasons || {};
-      var ev = r.evidence || {};
+      var r = rows[i]; var u = r.user || {}; var c = r.classification || {}; var rs = r.reasons || {}; var ev = r.evidence || {};
       html += "<tr><td><strong>" + esc(u.full_name || u.username || "—") + "</strong>";
       if (u.position || u.faculty) html += '<div style="font-size:11px;color:var(--fg-dim);">' + esc([u.position, u.faculty].filter(Boolean).join(" · ")) + "</div>";
       if (u.orcid) html += '<div style="font-size:10px;color:var(--fg-dim);font-family:var(--mono);">' + esc(u.orcid) + "</div>";
       html += "</td><td>" + esc(u.grado_academico || "—") + "</td>";
       html += "<td>" + (u.horas_permanencia != null ? esc(u.horas_permanencia) + "h" : "—") + "</td>";
       html += "<td>" + (ev.pubCount || 0) + "</td><td>" + (ev.irExterno || 0) + "</td><td>" + (ev.concursableAny || 0) + "</td>";
-      html += "<td>";
-      html += chip(c.doctorado, "chip-doc", "Doctorado", rs.doctorado);
+      html += "<td>" + chip(c.doctorado, "chip-doc", "Doctorado", rs.doctorado);
       html += chip(c.magister_academico, "chip-mac", "Mag. Acad.", rs.magister_academico);
       html += chip(c.magister_profesional, "chip-mpr", "Mag. Prof.", rs.magister_profesional);
       html += "</td></tr>";
     }
-    html += "</table>";
-    document.getElementById("claustro-table-wrap").innerHTML = html;
+    document.getElementById("claustro-table-wrap").innerHTML = html + "</table>";
+  }
+
+  function renderProjectCard(p, editingId) {
+    var fundingName = (p.fuente_financiamiento || "Otro");
+    var ir = (p.investigators || []).filter(function (x) { return x.rol === "IR"; });
+    var others = (p.investigators || []).filter(function (x) { return x.rol !== "IR"; });
+    var html = '<article class="project-card' + (editingId === p.id ? " editing" : "") + '">';
+    html += '<div class="project-card-top">';
+    html += '<div class="project-funding mono">' + esc(fundingName) + "</div>";
+    html += '<div class="project-flags">';
+    if (p.concursable) html += '<span class="tag mono">CONCURSABLE</span>';
+    if (p.externo) html += '<span class="tag mono tag-muted">EXTERNO</span>';
+    html += '<div class="project-actions">';
+    html += '<button class="project-action-btn" onclick="claustroEdit(' + p.id + ')">Editar</button>';
+    html += '<button class="project-action-btn danger" onclick="claustroDelete(' + p.id + ')">Eliminar</button>';
+    html += "</div></div></div>";
+    html += '<h3 class="project-title">' + esc(p.titulo) + "</h3>";
+    html += '<div class="project-meta">';
+    html += '<div><span>Código</span><span class="mono">' + esc(p.codigo || "—") + "</span></div>";
+    html += '<div><span>Monto</span><span class="mono" style="color:var(--accent);">' + esc(fmtCLP(p.monto)) + "</span></div>";
+    html += '<div><span>Depto.</span><span>' + esc(p.departamento || "—") + "</span></div>";
+    html += '<div><span>Periodo</span><span class="mono">' + esc((p.fecha_inicio || "?").slice(0, 10)) + " → " + esc((p.fecha_fin || "?").slice(0, 10)) + "</span></div>";
+    html += "</div>";
+    if (p.notas) html += '<div class="project-notes">' + esc(p.notas) + "</div>";
+    html += '<div class="project-investigators">';
+    for (var i = 0; i < ir.length; i++) html += renderInvLine(ir[i], "IR");
+    for (var j = 0; j < others.length; j++) html += renderInvLine(others[j], "CO");
+    html += "</div></article>";
+    return html;
+  }
+
+  function renderInvLine(inv, rol) {
+    var coClass = rol === "CO" ? " inv-co" : "";
+    var roleClass = rol === "CO" ? " inv-role-co" : "";
+    var unmatched = !inv.user_id ? '<span class="inv-unmatched" title="Sin match con un usuario del tenant">SIN MATCH</span>' : "";
+    return '<div class="inv-line' + coClass + '">' +
+      '<span class="inv-role-badge' + roleClass + '">' + rol + "</span>" +
+      '<span class="inv-name">' + esc(inv.full_name) + "</span>" +
+      (inv.orcid ? '<span class="inv-orcid">' + esc(inv.orcid) + "</span>" : "") +
+      unmatched + "</div>";
   }
 
   function renderProjectsList(rows, editingId) {
     var wrap = document.getElementById("projects-list");
-    if (!rows.length) {
-      wrap.innerHTML = '<div class="proj-empty">Aún no hay proyectos registrados. Click en <strong>+ Nuevo proyecto</strong> para empezar.</div>';
+    if (!rows || !rows.length) {
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-glyph">∅</div><div class="empty-head">Sin proyectos.</div><div class="empty-sub">Aún no se han registrado proyectos en este filtro.</div></div>';
       return;
     }
-    var html = "";
-    for (var i = 0; i < rows.length; i++) html += window.claustroProjectCard.render(rows[i], editingId);
-    wrap.innerHTML = html;
+    var html = '<div class="project-grid">';
+    for (var i = 0; i < rows.length; i++) html += renderProjectCard(rows[i], editingId);
+    wrap.innerHTML = html + "</div>";
   }
 
-  function setProjectStats(rows) {
+  function renderStats(rows) {
     var total = rows.length;
-    var now = new Date();
-    var fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
-    var active = 0; var funding = 0;
+    var amount = 0; var conc = 0; var ext = 0;
     for (var i = 0; i < rows.length; i++) {
-      var p = rows[i];
-      if (p.fecha_inicio && p.fecha_fin) {
-        var fi = new Date(p.fecha_inicio); var ff = new Date(p.fecha_fin);
-        if (fi <= now && ff >= fiveYearsAgo) active++;
-      }
-      if (p.monto) funding += Number(p.monto) || 0;
+      if (rows[i].monto) amount += Number(rows[i].monto) || 0;
+      if (rows[i].concursable) conc++;
+      if (rows[i].externo) ext++;
     }
-    document.getElementById("stat-total").textContent = total;
-    document.getElementById("stat-active").textContent = active;
-    document.getElementById("stat-funding").textContent = fmtCurrency(funding);
+    document.getElementById("stat-total-val").textContent = total;
+    document.getElementById("stat-amount-val").textContent = window.fmtCLP(amount);
+    document.getElementById("stat-conc-val").textContent = conc;
+    document.getElementById("stat-conc-sub").textContent = "de " + total + " proyectos";
+    document.getElementById("stat-ext-val").textContent = ext;
+    document.getElementById("tag-count").textContent = total + " PROYECTOS";
+    document.getElementById("tag-amount").textContent = window.fmtCLP(amount);
     document.getElementById("proj-count").textContent = total;
-  }
-
-  function fmtCurrency(n) {
-    if (!n) return "$0";
-    if (n >= 1e9) return "$" + (n / 1e9).toFixed(1) + "B";
-    if (n >= 1e6) return "$" + (n / 1e6).toFixed(1) + "M";
-    if (n >= 1e3) return "$" + (n / 1e3).toFixed(0) + "K";
-    return "$" + n;
   }
 
   window.claustroRender = {
     programCards: renderProgramCards,
     claustroTable: renderClaustroTable,
     projectsList: renderProjectsList,
-    setProjectStats: setProjectStats,
+    stats: renderStats,
     projectForm: function (p) { return window.claustroForm.renderProjectForm(p); },
     collectForm: function () { return window.claustroForm.collectForm(); },
   };

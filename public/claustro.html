@@ -11,21 +11,80 @@
   <div class="app">
     <div id="sidebar-mount" data-path="/claustro.html"></div>
     <main class="main">
-      <div class="view">
+      <div class="view claustro-view">
         <header class="view-head">
           <div>
-            <div class="eyebrow">Acreditación CNA</div>
-            <h1 class="view-title">Claustro <em>académico</em>.</h1>
-            <div class="view-sub">Proyectos financiados y clasificación derivada por reglas CNA (Doctorado / Magíster Académico / Magíster Profesional).</div>
+            <div class="eyebrow">Claustro académico</div>
+            <h1 class="view-title">Proyectos financiados, <em>insumo</em> del claustro.</h1>
+            <div class="view-sub">Registro centralizado de proyectos. Cada uno alimenta los antecedentes que CNA usará después al asignar perfil al investigador (claustro de doctorado, magíster, individual o grupal) — pero esa asignación corresponde a la persona, no al proyecto.</div>
+          </div>
+          <div class="view-meta">
+            <span class="tag mono" id="tag-count">0 PROYECTOS</span>
+            <span class="tag mono tag-muted" id="tag-amount">$0</span>
           </div>
         </header>
 
         <div class="claustro-tabs">
-          <button id="btn-tab-clasificacion" class="active" data-tab="clasificacion">Clasificación</button>
-          <button id="btn-tab-proyectos" data-tab="proyectos">Proyectos<span class="count" id="proj-count">0</span></button>
+          <button id="btn-tab-proyectos" class="active" data-tab="proyectos">Proyectos<span class="count" id="proj-count">0</span></button>
+          <button id="btn-tab-clasificacion" data-tab="clasificacion">Clasificación</button>
         </div>
 
-        <section id="tab-clasificacion">
+        <section id="tab-proyectos">
+          <div id="proyectos-no-access" class="card" style="display:none;">
+            <p>Solo roles administrativos del tenant pueden gestionar proyectos.</p>
+          </div>
+          <div id="proyectos-area" style="display:none;">
+            <div class="stat-row">
+              <div class="stat">
+                <div class="stat-label">Proyectos vigentes</div>
+                <div class="stat-value" id="stat-total-val">0</div>
+                <div class="stat-sub">todos los departamentos</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Monto total</div>
+                <div class="stat-value" id="stat-amount-val" style="color: var(--accent);">$0</div>
+                <div class="stat-sub">comprometido</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Concursables</div>
+                <div class="stat-value" id="stat-conc-val">0</div>
+                <div class="stat-sub" id="stat-conc-sub">de 0 proyectos</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Externos</div>
+                <div class="stat-value" id="stat-ext-val">0</div>
+                <div class="stat-sub">financiamiento externo</div>
+              </div>
+            </div>
+
+            <div class="claustro-actions">
+              <div class="filter-pills" id="filter-pills"></div>
+              <button class="primary-btn" id="btn-toggle-form">+ Nuevo proyecto</button>
+            </div>
+
+            <section class="card project-form" id="project-form-card" style="display:none;">
+              <div class="eyebrow" id="proj-form-eyebrow">Nuevo proyecto</div>
+              <div id="project-form"></div>
+              <div class="form-actions">
+                <button class="secondary-btn" id="btn-cancel-project">Cancelar</button>
+                <button class="primary-btn" id="btn-save-project">Guardar</button>
+              </div>
+            </section>
+
+            <section class="claustro-list">
+              <div class="section-head">
+                <div>
+                  <div class="eyebrow">Proyectos registrados</div>
+                  <h2 class="section-title" id="list-title">Todos los proyectos</h2>
+                </div>
+                <span class="tag mono" id="list-count">0 resultados</span>
+              </div>
+              <div id="projects-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="tab-clasificacion" hidden>
           <div class="card">
             <div class="indices-row">
               <label>Índices aceptados</label>
@@ -40,45 +99,14 @@
             <p class="reasons-tt">Tipo 3 (Magíster Profesional) evaluado por Alternativa A — publicaciones. Alternativa B (innovación, patentes, cargos directivos) no incluida en V1.</p>
           </div>
         </section>
-
-        <section id="tab-proyectos" hidden>
-          <div id="proyectos-no-access" class="card" style="display:none;">
-            <p>Solo roles administrativos del tenant pueden gestionar proyectos.</p>
-          </div>
-          <div id="proyectos-area" style="display:none;">
-            <div class="proyectos-head">
-              <div class="stats-inline">
-                <span><strong id="stat-total">0</strong> proyectos</span>
-                <span><strong id="stat-active">0</strong> vigentes (5 años)</span>
-                <span><strong id="stat-funding">$0</strong> total</span>
-              </div>
-              <button class="primary-btn" id="btn-new-project">+ Nuevo proyecto</button>
-            </div>
-
-            <div class="proyectos-split" id="proyectos-split">
-              <div class="list-pane">
-                <div id="projects-list" class="proj-list"></div>
-              </div>
-              <aside class="form-pane" id="form-pane" style="display:none;">
-                <div class="form-pane-head">
-                  <h3 id="proj-form-title">Nuevo proyecto</h3>
-                  <span class="badge" id="proj-form-badge">Nuevo</span>
-                </div>
-                <div id="project-form"></div>
-                <div class="form-actions">
-                  <button class="primary-btn" id="btn-save-project">Guardar</button>
-                  <button class="secondary" id="btn-cancel-project">Cancelar</button>
-                </div>
-              </aside>
-            </div>
-          </div>
-        </section>
       </div>
     </main>
   </div>
+  <script src="/claustro-funding.js"></script>
   <script src="/claustro-app.js"></script>
+  <script src="/claustro-projects-ui.js"></script>
+  <script src="/claustro-form-bind.js"></script>
   <script src="/claustro-form.js"></script>
-  <script src="/claustro-project-card.js"></script>
   <script src="/claustro-render.js"></script>
   <script type="module" src="/shell-mount-bundle.js"></script>
 </body>
