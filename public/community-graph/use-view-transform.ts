@@ -114,11 +114,18 @@ export function useViewTransform<N>({ override, zoomToId, zoomToCommunityKey, zo
         ty: lerp(startRef.current.ty, end.ty, e),
         scale: lerp(startRef.current.scale, end.scale, e),
       };
-      // After the ease lands, keep the view locked on the live target position.
+      // After the ease lands, keep the view locked on the live target.
+      // Single-node zooms re-resolve every frame so the camera follows the
+      // node as the sim drifts. Bbox-fit zooms (community / node + neighbors)
+      // are computed once at retarget and then frozen — re-fitting per frame
+      // means iterating every node, which adds up on big graphs.
       if (p >= 1) {
         const l = liveRef.current;
-        const live = targetFor(l.zoomToId, l.zoomToCommunityKey, l.zoomToIdRelated, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
-        if (live) { endRef.current = live; currentRef.current = live; }
+        const isBboxFit = !!l.zoomToCommunityKey || (!!l.zoomToId && !!l.zoomToIdRelated && l.zoomToIdRelated.size > 1);
+        if (!isBboxFit) {
+          const live = targetFor(l.zoomToId, l.zoomToCommunityKey, l.zoomToIdRelated, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
+          if (live) { endRef.current = live; currentRef.current = live; }
+        }
       }
       bump(v => (v + 1) % 1e9);
       raf = requestAnimationFrame(tick);

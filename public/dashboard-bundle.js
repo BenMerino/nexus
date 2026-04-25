@@ -13890,10 +13890,13 @@ function useViewTransform({ override, zoomToId, zoomToCommunityKey, zoomToIdRela
       };
       if (p >= 1) {
         const l = liveRef.current;
-        const live = targetFor(l.zoomToId, l.zoomToCommunityKey, l.zoomToIdRelated, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
-        if (live) {
-          endRef.current = live;
-          currentRef.current = live;
+        const isBboxFit = !!l.zoomToCommunityKey || !!l.zoomToId && !!l.zoomToIdRelated && l.zoomToIdRelated.size > 1;
+        if (!isBboxFit) {
+          const live = targetFor(l.zoomToId, l.zoomToCommunityKey, l.zoomToIdRelated, l.nodes, l.adapter, l.zoomScale, l.width, l.height, l.camera);
+          if (live) {
+            endRef.current = live;
+            currentRef.current = live;
+          }
         }
       }
       bump((v) => (v + 1) % 1e9);
