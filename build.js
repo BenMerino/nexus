@@ -126,16 +126,9 @@ const bundles = [
   };
   walk(SRC);
 
-  // 7. For each logical name, emit a shim that reloads the page once —
-  //    so a stale-HTML browser fetching the unhashed URL converges instead
-  //    of seeing 404s. Hashed names already exist; never shadow them.
-  const reloadJs = `(function(){try{sessionStorage.getItem("nx-reload-once")||(sessionStorage.setItem("nx-reload-once","1"),location.reload())}catch(e){location.reload()}})();`;
-  for (const logical of Object.keys(manifest)) {
-    const dst = path.join(OUT, logical);
-    if (fs.existsSync(dst)) continue;
-    fs.writeFileSync(dst, logical.endsWith(".css") ? "/* obsolete */" : reloadJs);
-  }
-
+  // 7. Stale-cache antidote is centralized in /api/asset-shim. Any *.js or
+  //    *.css that doesn't exist in dist/ is rewritten there, returning a
+  //    one-shot reload shim. No need to emit per-asset shim files here.
   fs.writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2));
 
   const bundleCount = bundles.length;

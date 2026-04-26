@@ -30,6 +30,7 @@
       return r.json();
     }).then(function (d) {
       if (!d) return;
+      if (!d.role) { window.location.href = "/login.html"; return; }
       state.me = d;
       gateProyectos();
       loadIndices().then(loadClaustro);
