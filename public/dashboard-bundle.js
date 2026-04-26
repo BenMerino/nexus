@@ -15913,16 +15913,13 @@ function ProjectsGanttPanel({ filterOrcid }) {
           const e = parseDate(p.fecha_fin).getTime();
           const left = (s - range.start.getTime()) / totalMs * 100;
           const width = Math.max((e - s) / totalMs * 100, 0.5);
-          const ir = (p.investigators || []).find((i) => i.rol === "IR");
           const cls = !p.concursable ? "gantt-bar gantt-bar-noconc" : p.externo ? "gantt-bar gantt-bar-ext" : "gantt-bar gantt-bar-int";
+          const fundLabel = p.fuente_financiamiento || "Otro";
           return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-row", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-row-label", title: p.titulo, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-title", children: p.titulo }),
-              ir && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-ir", children: ir.full_name })
-            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-row-label", title: fundLabel, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-title", children: fundLabel }) }),
             /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-track", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: cls, style: { left: left + "%", width: width + "%" }, title: `${p.titulo}
 ${p.fecha_inicio?.slice(0, 10)} \u2192 ${p.fecha_fin?.slice(0, 10)}
-${fmtCLP(p.monto)}`, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-bar-label", children: p.codigo || p.fuente_financiamiento || "" }) }) })
+${fmtCLP(p.monto)}`, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-bar-label", children: p.titulo }) }) })
           ] }, p.id);
         })
       ] })

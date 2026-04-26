@@ -105,18 +105,17 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
             const e = parseDate(p.fecha_fin)!.getTime();
             const left = ((s - range!.start.getTime()) / totalMs) * 100;
             const width = Math.max(((e - s) / totalMs) * 100, 0.5);
-            const ir = (p.investigators || []).find(i => i.rol === 'IR');
             const cls = !p.concursable ? 'gantt-bar gantt-bar-noconc'
               : p.externo ? 'gantt-bar gantt-bar-ext' : 'gantt-bar gantt-bar-int';
+            const fundLabel = p.fuente_financiamiento || 'Otro';
             return (
               <div key={p.id} className="gantt-row">
-                <div className="gantt-row-label" title={p.titulo}>
-                  <span className="gantt-title">{p.titulo}</span>
-                  {ir && <span className="gantt-ir">{ir.full_name}</span>}
+                <div className="gantt-row-label" title={fundLabel}>
+                  <span className="gantt-title">{fundLabel}</span>
                 </div>
                 <div className="gantt-track">
                   <div className={cls} style={{ left: left + '%', width: width + '%' }} title={`${p.titulo}\n${p.fecha_inicio?.slice(0,10)} → ${p.fecha_fin?.slice(0,10)}\n${fmtCLP(p.monto)}`}>
-                    <span className="gantt-bar-label">{p.codigo || p.fuente_financiamiento || ''}</span>
+                    <span className="gantt-bar-label">{p.titulo}</span>
                   </div>
                 </div>
               </div>
