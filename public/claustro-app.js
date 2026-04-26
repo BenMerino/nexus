@@ -122,5 +122,6 @@
   window.claustroProgramLabel = function (k) { return PROGRAM_LABELS[k] || k; };
   window.claustroEsc = esc;
   window.claustroState = state;
-  window.addEventListener("DOMContentLoaded", init);
+  if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", init);
+  else init();
 })();
