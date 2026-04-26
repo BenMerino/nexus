@@ -67,16 +67,21 @@ Promise.all([
   .then(() => {
     const fs = require("fs");
     const ts = String(Date.now());
-    // Write version file for live reload polling
     fs.writeFileSync("public/build-version.txt", ts);
-    // Auto-bump cache buster in HTML files
-    for (const f of ["public/overview.html", "public/explore.html"]) {
-      try {
-        const html = fs.readFileSync(f, "utf8");
-        const updated = html.replace(/relationships-bundle\.js\?v=\d+/, `relationships-bundle.js?v=${ts}`);
-        if (updated !== html) fs.writeFileSync(f, updated);
-      } catch {}
+    // Stamp ?v=<ts> on every local <script src> and <link href> in every HTML
+    // so the browser can never pair a stale HTML with a fresh JS (or vice-versa):
+    // both move to the new ?v together, mismatched caches refetch.
+    // Matcher accepts one-or-more closing quotes (\2+) so it self-heals files
+    // that an earlier buggy build left with duplicated quotes.
+    const scriptRe = /(<script[^>]*\s)src=(["'])((?:\/|\.\/)[^"'?]+\.js)(?:\?[^"']*)?\2+/g;
+    const linkRe   = /(<link[^>]*\s)href=(["'])((?:\/|\.\/)[^"'?]+\.css)(?:\?[^"']*)?\2+/g;
+    const stamp = (attr) => (_m, pre, q, url) => `${pre}${attr}=${q}${url}?v=${ts}${q}`;
+    for (const f of fs.readdirSync("public").filter(n => n.endsWith(".html"))) {
+      const p = `public/${f}`;
+      const before = fs.readFileSync(p, "utf8");
+      const after = before.replace(scriptRe, stamp("src")).replace(linkRe, stamp("href"));
+      if (after !== before) fs.writeFileSync(p, after);
     }
-    console.log("Build complete: charts-bundle.js, relationships-bundle.js, dashboard-bundle.js, tenant-bundle.js, shell-mount-bundle.js, collaborators-bundle.js");
+    console.log(`Build complete (v=${ts}): bundles + HTML cache-stamped`);
   })
   .catch(() => process.exit(1));
