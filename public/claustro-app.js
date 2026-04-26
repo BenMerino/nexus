@@ -15,16 +15,21 @@
   }); }
   function isEditor() { return state.me && EDITOR.indexOf(state.me.role) !== -1; }
 
+  function bind(id, evt, fn) {
+    var el = document.getElementById(id);
+    if (!el) { console.warn("[claustro] missing #" + id + " — stale HTML cache?"); return; }
+    el.addEventListener(evt, fn);
+  }
   function init() {
-    document.getElementById("btn-tab-proyectos").addEventListener("click", function () { switchTab("proyectos"); });
-    document.getElementById("btn-tab-clasificacion").addEventListener("click", function () { switchTab("clasificacion"); });
-    document.getElementById("btn-save-indices").addEventListener("click", saveIndices);
-    document.getElementById("btn-toggle-form").addEventListener("click", function () {
+    bind("btn-tab-proyectos", "click", function () { switchTab("proyectos"); });
+    bind("btn-tab-clasificacion", "click", function () { switchTab("clasificacion"); });
+    bind("btn-save-indices", "click", saveIndices);
+    bind("btn-toggle-form", "click", function () {
       if (state.formOpen) window.claustroProjectsUI.closeForm(state);
       else window.claustroProjectsUI.openNewForm(state);
     });
-    document.getElementById("btn-save-project").addEventListener("click", saveProject);
-    document.getElementById("btn-cancel-project").addEventListener("click", function () { window.claustroProjectsUI.closeForm(state); });
+    bind("btn-save-project", "click", saveProject);
+    bind("btn-cancel-project", "click", function () { window.claustroProjectsUI.closeForm(state); });
     fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
       state.me = d;
       gateProyectos();
@@ -39,9 +44,13 @@
     document.getElementById("tab-clasificacion").hidden = name !== "clasificacion";
   }
   function gateProyectos() {
-    document.getElementById("proyectos-area").style.display = isEditor() ? "block" : "none";
-    document.getElementById("proyectos-no-access").style.display = isEditor() ? "none" : "block";
-    document.getElementById("btn-save-indices").style.display = isEditor() ? "inline-block" : "none";
+    var ed = isEditor();
+    var area = document.getElementById("proyectos-area");
+    var noac = document.getElementById("proyectos-no-access");
+    var save = document.getElementById("btn-save-indices");
+    if (area) area.style.display = ed ? "block" : "none";
+    if (noac) noac.style.display = ed ? "none" : "block";
+    if (save) save.style.display = ed ? "inline-block" : "none";
   }
 
   function loadIndices() {

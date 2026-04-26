@@ -4,5 +4,13 @@
   "rewrites": [
     { "source": "/api/records/:id", "destination": "/api/records/[id]" },
     { "source": "/t/:slug", "destination": "/tenant.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*\\.html)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    }
   ]
 }
