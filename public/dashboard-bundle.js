@@ -15961,19 +15961,13 @@ function DashboardContent({ data }) {
     { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
   const title = isPersonal && displayName ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_jsx_runtime24.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: displayName }) }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_jsx_runtime24.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: tenantName }) });
-  const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
+  const sub = isPersonal ? "" : `A living map of ${tenantName}'s scholarly output.`;
   return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "view dashboard", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("h1", { className: "view-title", children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "view-sub", children: sub })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
-      ] })
-    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("header", { className: "view-head", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("h1", { className: "view-title", children: title }),
+      sub && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "view-sub", children: sub })
+    ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Stat, { ...s }, i)) }),
     /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("section", { className: "card card-chart", children: [

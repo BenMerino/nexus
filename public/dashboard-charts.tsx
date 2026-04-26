@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { useCurrentUser } from './shell-helpers';
-import { Stat, Tag, SectionHead } from './ui-primitives';
+import { Stat, SectionHead } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders.js';
 import { yearlyCounts, BarChart, TopJournals, PartnerInstitutions, RecentlyIndexed } from './dashboard-panels';
 import { ClaimPaperPanel } from './claim-paper-panel';
@@ -41,9 +41,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
   const title = isPersonal && displayName
     ? <><em>{displayName}</em></>
     : <><em>{tenantName}</em></>;
-  const sub = isPersonal
-    ? `Your research, pulled from 4 scholarly sources. No forms.`
-    : `A living map of ${tenantName}'s scholarly output.`;
+  const sub = isPersonal ? '' : `A living map of ${tenantName}'s scholarly output.`;
 
   return (
     <div className="view dashboard">
@@ -51,11 +49,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
         <div>
           <div className="eyebrow">{isPersonal ? 'Researcher' : 'Institutional overview'}</div>
           <h1 className="view-title">{title}</h1>
-          <div className="view-sub">{sub}</div>
-        </div>
-        <div className="view-meta">
-          <Tag mono>LAST SYNC · LIVE</Tag>
-          <Tag mono tone="muted">OPENALEX · CROSSREF · S2 · DATACITE</Tag>
+          {sub && <div className="view-sub">{sub}</div>}
         </div>
       </header>
 
