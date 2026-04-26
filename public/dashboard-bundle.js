@@ -15964,7 +15964,7 @@ function DashboardContent({ data }) {
   const sub = isPersonal ? [me?.profile.position, me?.profile.faculty].filter(Boolean).join(" \xB7 ") : `A living map of ${tenantName}'s scholarly output.`;
   return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "view dashboard", children: [
     /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("header", { className: "view-head", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
+      !isPersonal && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "eyebrow", children: "Institutional overview" }),
       /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("h1", { className: "view-title", children: title }),
       sub && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "view-sub", children: sub })
     ] }) }),

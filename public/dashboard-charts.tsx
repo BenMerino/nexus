@@ -49,7 +49,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
     <div className="view dashboard">
       <header className="view-head">
         <div>
-          <div className="eyebrow">{isPersonal ? 'Researcher' : 'Institutional overview'}</div>
+          {!isPersonal && <div className="eyebrow">Institutional overview</div>}
           <h1 className="view-title">{title}</h1>
           {sub && <div className="view-sub">{sub}</div>}
         </div>
