@@ -105,8 +105,12 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
             const e = parseDate(p.fecha_fin)!.getTime();
             const left = ((s - range!.start.getTime()) / totalMs) * 100;
             const width = Math.max(((e - s) / totalMs) * 100, 0.5);
-            const cls = !p.concursable ? 'gantt-bar gantt-bar-noconc'
-              : p.externo ? 'gantt-bar gantt-bar-ext' : 'gantt-bar gantt-bar-int';
+            const meIsIR = filterOrcid
+              ? (p.investigators || []).some(i => i.rol === 'IR' && i.orcid === filterOrcid)
+              : false;
+            const cls = filterOrcid
+              ? (meIsIR ? 'gantt-bar gantt-bar-ir' : 'gantt-bar gantt-bar-co')
+              : 'gantt-bar gantt-bar-neutral';
             const fundLabel = p.fuente_financiamiento || 'Otro';
             return (
               <div key={p.id} className="gantt-row">
@@ -124,9 +128,14 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
         </div>
       </div>
       <div className="gantt-legend">
-        <span><i className="legend-dot ext" />Concursable externo</span>
-        <span><i className="legend-dot int" />Concursable interno</span>
-        <span><i className="legend-dot noconc" />No concursable</span>
+        {filterOrcid ? (
+          <>
+            <span><i className="legend-dot ir" />Investigador responsable</span>
+            <span><i className="legend-dot co" />Co-investigador</span>
+          </>
+        ) : (
+          <span><i className="legend-dot neutral" />Proyecto</span>
+        )}
         <span><i className="legend-line" />Hoy</span>
       </div>
     </section>

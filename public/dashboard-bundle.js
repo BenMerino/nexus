@@ -15913,7 +15913,8 @@ function ProjectsGanttPanel({ filterOrcid }) {
           const e = parseDate(p.fecha_fin).getTime();
           const left = (s - range.start.getTime()) / totalMs * 100;
           const width = Math.max((e - s) / totalMs * 100, 0.5);
-          const cls = !p.concursable ? "gantt-bar gantt-bar-noconc" : p.externo ? "gantt-bar gantt-bar-ext" : "gantt-bar gantt-bar-int";
+          const meIsIR = filterOrcid ? (p.investigators || []).some((i) => i.rol === "IR" && i.orcid === filterOrcid) : false;
+          const cls = filterOrcid ? meIsIR ? "gantt-bar gantt-bar-ir" : "gantt-bar gantt-bar-co" : "gantt-bar gantt-bar-neutral";
           const fundLabel = p.fuente_financiamiento || "Otro";
           return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-row", children: [
             /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-row-label", title: fundLabel, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-title", children: fundLabel }) }),
@@ -15925,17 +15926,18 @@ ${fmtCLP(p.monto)}`, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("sp
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-legend", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-dot ext" }),
-        "Concursable externo"
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-dot int" }),
-        "Concursable interno"
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-dot noconc" }),
-        "No concursable"
+      filterOrcid ? /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-dot ir" }),
+          "Investigador responsable"
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-dot co" }),
+          "Co-investigador"
+        ] })
+      ] }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-dot neutral" }),
+        "Proyecto"
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-line" }),
