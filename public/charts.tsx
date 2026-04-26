@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { GraphRender } from '../graph-engine/index.js';
-import { buildCharts } from './chart-builders.js';
-import type { DoiRecord } from './chart-builders.js';
+import { GraphRender } from '../graph-engine/index';
+import { buildCharts } from './chart-builders';
+import type { DoiRecord } from './chart-builders';
 
 function App() {
   const [records, setRecords] = useState<DoiRecord[]>([]);

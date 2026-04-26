@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Ico } from './ui-primitives';
 import { CoAuthorSim } from './coauthor-graph-sim';
 import { CommunityLegend, type CommunityAdapter } from './community-graph';
-import type { CoauthorGraph, CoauthorNode } from './dashboard-builders.js';
+import type { CoauthorGraph, CoauthorNode } from './dashboard-builders';
 
 export function CoAuthorGraphPanel({ graph }: { graph?: CoauthorGraph }) {
   const ref = useRef<HTMLDivElement>(null);

@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
-import { arcScale, arcPath, donutArc } from './scales.js';
-import { cs, seriesColor, FALLBACK_SERIES, useTooltip, TooltipOverlay, fmtValue } from './svg-parts.js';
-import { BaseText } from '../primitives/BaseText.js';
-import type { GraphDirective } from '../../architect/graph-composer.types.js';
+import { arcScale, arcPath, donutArc } from './scales';
+import { cs, seriesColor, FALLBACK_SERIES, useTooltip, TooltipOverlay, fmtValue } from './svg-parts';
+import { BaseText } from '../primitives/BaseText';
+import type { GraphDirective } from '../architect/graph-composer.types.js';
 
 /* ── Radial Render ───────────────────────────────────────────
  * One <svg> for: pie, donut, gauge, progress-ring.

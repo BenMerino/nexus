@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { BaseBox } from '../primitives/BaseBox.js';
-import { BaseText } from '../primitives/BaseText.js';
-import { linearScale, niceDomain, ticks as genTicks } from './scales.js';
-import type { GraphThreshold } from '../../architect/graph-composer.types.js';
-export { cs, seriesColor, FALLBACK_SERIES } from './svg-color-schemes.js';
+import { BaseBox } from '../primitives/BaseBox';
+import { BaseText } from '../primitives/BaseText';
+import { linearScale, niceDomain, ticks as genTicks } from './scales';
+import type { GraphThreshold } from '../architect/graph-composer.types.js';
+export { cs, seriesColor, FALLBACK_SERIES } from './svg-color-schemes';
 
 /* ── Shared SVG Parts ────────────────────────────────────────
  * Axes, grid, tooltip, crosshairs, thresholds.

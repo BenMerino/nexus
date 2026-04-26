@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { CartesianRender } from '../graph-engine/cartesian-render.js';
-import { RadialRender } from '../graph-engine/radial-render.js';
-import type { GraphDirective } from '../architect/graph-composer.types.js';
+import { CartesianRender } from '../graph-engine/cartesian-render';
+import { RadialRender } from '../graph-engine/radial-render';
+import type { GraphDirective } from '../architect/graph-composer.types';
 import type { TagNode, DoiRecord } from './relationship-types';
 import { TAG_CATEGORIES, COLORS } from './relationship-types';
 import { FilteredPaperList } from './filtered-paper-list';

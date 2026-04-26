@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { cs, FALLBACK_SERIES, fmtValue } from './svg-parts.js';
-import { defaultInteraction } from '../../architect/graph-composer.types.js';
-import type { GraphDirective } from '../../architect/graph-composer.types.js';
-import { rampColor } from './color-ramp.js';
+import { cs, FALLBACK_SERIES, fmtValue } from './svg-parts';
+import { defaultInteraction } from '../architect/graph-composer.types.js';
+import type { GraphDirective } from '../architect/graph-composer.types.js';
+import { rampColor } from './color-ramp';
 
 /* ── Grid Render ─────────────────────────────────────────────
  * SVG-based: heatmap, treemap, funnel.

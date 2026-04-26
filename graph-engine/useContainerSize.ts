@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { ContainerDimensions } from './graph-spatial.types.js';
+import type { ContainerDimensions } from './graph-spatial.types';
 
 /* ── useContainerSize ────────────────────────────────────────
  * Spatial Awareness Engine: tracks container WIDTH only via

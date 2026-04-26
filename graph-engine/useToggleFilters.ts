@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
-import { cs, seriesColor } from './svg-parts.js';
-import type { GraphDirective } from '../../architect/graph-composer.types.js';
-import type { ToggleFilter } from './graph-spatial.types.js';
+import { cs, seriesColor } from './svg-parts';
+import type { GraphDirective } from '../architect/graph-composer.types.js';
+import type { ToggleFilter } from './graph-spatial.types';
 
 /* ── useToggleFilters ────────────────────────────────────────
  * State-Integrated Toggles: manages per-series visibility.

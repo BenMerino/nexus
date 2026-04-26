@@ -1,4 +1,4 @@
-import type { GraphDirective } from '../architect/graph-composer.types.js';
+import type { GraphDirective } from '../architect/graph-composer.types';
 
 export interface YearSourceRow { year: string; source: string; count: string; }
 export interface CollabRow { value: string; count: string; }

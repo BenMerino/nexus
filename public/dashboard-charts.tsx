@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { useCurrentUser } from './shell-helpers';
 import { Stat, SectionHead } from './ui-primitives';
-import type { DashboardData } from './dashboard-builders.js';
+import type { DashboardData } from './dashboard-builders';
 import { yearlyCounts, BarChart, TopJournals, PartnerInstitutions, RecentlyIndexed } from './dashboard-panels';
 import { ClaimPaperPanel } from './claim-paper-panel';
 import { CoAuthorGraphPanel } from './coauthor-graph-preview';

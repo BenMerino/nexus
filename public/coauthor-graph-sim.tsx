@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { CoauthorGraph, CoauthorNode, CoauthorEdge } from './dashboard-builders.js';
+import type { CoauthorGraph, CoauthorNode, CoauthorEdge } from './dashboard-builders';
 import { CommunityGraph, type CommunityAdapter } from './community-graph';
 
 function radius(n: CoauthorNode) {

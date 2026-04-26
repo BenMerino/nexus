@@ -1,4 +1,4 @@
-import type { GraphDirective } from '../architect/graph-composer.types.js';
+import type { GraphDirective } from '../architect/graph-composer.types';
 import type { Velocity } from './portfolio-velocity';
 import type { Cadence } from './portfolio-cadence';
 import type { TopCitedItem } from './portfolio-topcited';

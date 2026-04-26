@@ -1,5 +1,5 @@
-import type { GraphDirective } from '../architect/graph-composer.types.js';
-import { TYPE_DISPLAY_LABELS } from './type-labels.js';
+import type { GraphDirective } from '../architect/graph-composer.types';
+import { TYPE_DISPLAY_LABELS } from './type-labels';
 
 interface DoiRecord {
   doi: string;

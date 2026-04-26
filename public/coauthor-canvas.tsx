@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CoAuthorSim } from './coauthor-graph-sim';
-import type { CoauthorGraph, CoauthorNode } from './dashboard-builders.js';
+import type { CoauthorGraph, CoauthorNode } from './dashboard-builders';
 
 interface Props {
   graph: CoauthorGraph;

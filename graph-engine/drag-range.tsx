@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { BaseBox } from '../primitives/BaseBox.js';
-import { BaseText } from '../primitives/BaseText.js';
-import { fmtValue } from './svg-parts.js';
+import { BaseBox } from '../primitives/BaseBox';
+import { BaseText } from '../primitives/BaseText';
+import { fmtValue } from './svg-parts';
 
 /* ── Drag Range ──────────────────────────────────────────────
  * Click-drag on a cartesian chart to select a range of data
