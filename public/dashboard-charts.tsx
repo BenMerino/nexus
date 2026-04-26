@@ -12,6 +12,7 @@ import { TopCitedPanel } from './portfolio-topcited';
 import { ConceptsPanel } from './portfolio-concepts';
 import { DashboardLoading } from './dashboard-loading';
 import { HIndexBreakdown } from './h-index-breakdown';
+import { ProjectsGanttPanel } from './projects-gantt';
 
 function DashboardContent({ data }: { data: DashboardData }) {
   const { me } = useCurrentUser();
@@ -85,6 +86,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
             </section>
             <TopJournals data={data} />
             <PartnerInstitutions data={data} />
+            <ProjectsGanttPanel filterOrcid={me?.profile.orcid || null} />
             <ClaimPaperPanel onClaimed={() => window.location.reload()} />
           </>
         ) : (
@@ -93,6 +95,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
             <CoAuthorGraphPanel graph={p?.coauthorGraph} />
             <TopJournals data={data} />
             <PartnerInstitutions data={data} />
+            <ProjectsGanttPanel />
             <RecentlyIndexed data={data} />
           </>
         )}

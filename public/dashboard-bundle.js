@@ -766,7 +766,7 @@ var require_scheduler = __commonJS({
 var require_react_dom_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
-    var React10 = require_react();
+    var React11 = require_react();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
       if (1 < arguments.length) {
@@ -806,7 +806,7 @@ var require_react_dom_production = __commonJS({
         implementation
       };
     }
-    var ReactSharedInternals = React10.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React11.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     function getCrossOriginStringAs(as, input) {
       if ("font" === as) return "";
       if ("string" === typeof input)
@@ -942,7 +942,7 @@ var require_react_dom_client_production = __commonJS({
   "node_modules/react-dom/cjs/react-dom-client.production.js"(exports) {
     "use strict";
     var Scheduler = require_scheduler();
-    var React10 = require_react();
+    var React11 = require_react();
     var ReactDOM = require_react_dom();
     function formatProdErrorMessage(code) {
       var url = "https://react.dev/errors/" + code;
@@ -1133,7 +1133,7 @@ var require_react_dom_client_production = __commonJS({
       return null;
     }
     var isArrayImpl = Array.isArray;
-    var ReactSharedInternals = React10.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    var ReactSharedInternals = React11.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
     var sharedNotPendingObject = {
       pending: false,
@@ -12579,7 +12579,7 @@ var require_react_dom_client_production = __commonJS({
         0 === i && attemptExplicitHydrationTarget(target);
       }
     };
-    var isomorphicReactPackageVersion$jscomp$inline_1840 = React10.version;
+    var isomorphicReactPackageVersion$jscomp$inline_1840 = React11.version;
     if ("19.2.4" !== isomorphicReactPackageVersion$jscomp$inline_1840)
       throw Error(
         formatProdErrorMessage(
@@ -12747,7 +12747,7 @@ var require_jsx_runtime = __commonJS({
 });
 
 // public/dashboard-charts.tsx
-var import_react15 = __toESM(require_react());
+var import_react16 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
 // public/shell-helpers.ts
@@ -15819,8 +15819,137 @@ function HIndexBreakdown({ byType }) {
   ] }, e.label)) });
 }
 
-// public/dashboard-charts.tsx
+// public/projects-gantt.tsx
+var import_react15 = __toESM(require_react());
 var import_jsx_runtime23 = __toESM(require_jsx_runtime());
+function parseDate(s) {
+  if (!s) return null;
+  const d = new Date(String(s).slice(0, 10));
+  return isNaN(d.getTime()) ? null : d;
+}
+function fmtMonth(d) {
+  return d.toLocaleDateString("es-CL", { month: "short", year: "2-digit" });
+}
+function fmtCLP(n) {
+  if (!n) return "$0";
+  return "$" + Number(n).toLocaleString("es-CL");
+}
+function ProjectsGanttPanel({ filterOrcid }) {
+  const [projects, setProjects] = (0, import_react15.useState)(null);
+  const [err, setErr] = (0, import_react15.useState)(null);
+  (0, import_react15.useEffect)(() => {
+    fetch("/api/projects?action=list").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setProjects).catch((e) => setErr(String(e)));
+  }, []);
+  const filtered = (0, import_react15.useMemo)(() => {
+    if (!projects) return [];
+    let rows = projects.filter((p) => parseDate(p.fecha_inicio) && parseDate(p.fecha_fin));
+    if (filterOrcid) {
+      rows = rows.filter((p) => (p.investigators || []).some((i) => i.orcid === filterOrcid));
+    }
+    return rows.sort((a2, b) => {
+      const ai = parseDate(a2.fecha_inicio).getTime();
+      const bi = parseDate(b.fecha_inicio).getTime();
+      return ai - bi;
+    });
+  }, [projects, filterOrcid]);
+  const range = (0, import_react15.useMemo)(() => {
+    if (!filtered.length) return null;
+    let min = Infinity, max = -Infinity;
+    for (const p of filtered) {
+      const s = parseDate(p.fecha_inicio).getTime();
+      const e = parseDate(p.fecha_fin).getTime();
+      if (s < min) min = s;
+      if (e > max) max = e;
+    }
+    const start = new Date(min);
+    start.setDate(1);
+    const end = new Date(max);
+    end.setMonth(end.getMonth() + 1, 1);
+    return { start, end };
+  }, [filtered]);
+  if (err) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Proyectos", title: "Carta Gantt" }),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "muted", children: [
+      "Error: ",
+      err
+    ] })
+  ] });
+  if (!projects) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Proyectos", title: "Carta Gantt" }),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted skel", style: { height: 200 } })
+  ] });
+  if (!filtered.length) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Proyectos", title: "Carta Gantt" }),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted", children: "Sin proyectos con fechas registradas." })
+  ] });
+  const totalMs = range.end.getTime() - range.start.getTime();
+  const todayMs = Date.now();
+  const todayPct = totalMs > 0 ? (todayMs - range.start.getTime()) / totalMs * 100 : -1;
+  const ticks = [];
+  const cursor = new Date(range.start);
+  while (cursor < range.end) {
+    const pct = (cursor.getTime() - range.start.getTime()) / totalMs * 100;
+    ticks.push({ pct, label: fmtMonth(cursor) });
+    cursor.setMonth(cursor.getMonth() + 3);
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-2 gantt-card", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      SectionHead,
+      {
+        eyebrow: "Proyectos",
+        title: "Carta Gantt",
+        right: /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(Tag, { mono: true, children: [
+          filtered.length,
+          " con fechas"
+        ] })
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-wrap", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-axis", children: ticks.map((t, i) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-tick", style: { left: t.pct + "%" }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-tick-label", children: t.label }) }, i)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-rows", children: [
+        todayPct >= 0 && todayPct <= 100 && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-today", style: { left: todayPct + "%" }, title: "Hoy" }),
+        filtered.map((p) => {
+          const s = parseDate(p.fecha_inicio).getTime();
+          const e = parseDate(p.fecha_fin).getTime();
+          const left = (s - range.start.getTime()) / totalMs * 100;
+          const width = Math.max((e - s) / totalMs * 100, 0.5);
+          const ir = (p.investigators || []).find((i) => i.rol === "IR");
+          const cls = !p.concursable ? "gantt-bar gantt-bar-noconc" : p.externo ? "gantt-bar gantt-bar-ext" : "gantt-bar gantt-bar-int";
+          return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-row", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-row-label", title: p.titulo, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-title", children: p.titulo }),
+              ir && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-ir", children: ir.full_name })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-track", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: cls, style: { left: left + "%", width: width + "%" }, title: `${p.titulo}
+${p.fecha_inicio?.slice(0, 10)} \u2192 ${p.fecha_fin?.slice(0, 10)}
+${fmtCLP(p.monto)}`, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-bar-label", children: p.codigo || p.fuente_financiamiento || "" }) }) })
+          ] }, p.id);
+        })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-legend", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-dot ext" }),
+        "Concursable externo"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-dot int" }),
+        "Concursable interno"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-dot noconc" }),
+        "No concursable"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("i", { className: "legend-line" }),
+        "Hoy"
+      ] })
+    ] })
+  ] });
+}
+
+// public/dashboard-charts.tsx
+var import_jsx_runtime24 = __toESM(require_jsx_runtime());
 function DashboardContent({ data }) {
   const { me } = useCurrentUser();
   const years = yearlyCounts(data);
@@ -15835,7 +15964,7 @@ function DashboardContent({ data }) {
   const heroStats = isPersonal ? [
     { label: "Publications", value: pubCount.toLocaleString(), sub: "indexed via ORCID" },
     { label: "Total citations", value: totalCit.toLocaleString(), sub: "OpenAlex \xB7 last sync" },
-    { label: "h-index", value: me?.hIndex ?? "\u2014", sub: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(HIndexBreakdown, { byType: me?.hIndexByType }), accent: true },
+    { label: "h-index", value: me?.hIndex ?? "\u2014", sub: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(HIndexBreakdown, { byType: me?.hIndexByType }), accent: true },
     { label: "Collaborators", value: collabCount.toLocaleString(), sub: "unique, all years" }
   ] : [
     { label: "Publications", value: data.totalPubs.toLocaleString(), sub: "indexed records" },
@@ -15843,71 +15972,73 @@ function DashboardContent({ data }) {
     { label: "Open access", value: data.totalPubs > 0 ? `${Math.round(data.oaCount / data.totalPubs * 100)}%` : "\u2014", sub: "of total output", accent: true },
     { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
-  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("em", { children: firstName }),
+  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: firstName }),
     "."
-  ] }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("em", { children: tenantName }),
+  ] }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: tenantName }),
     "."
   ] });
   const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "view dashboard", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("h1", { className: "view-title", children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "view-sub", children: sub })
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "view dashboard", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("header", { className: "view-head", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("h1", { className: "view-title", children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "view-sub", children: sub })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "view-meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(Stat, { ...s }, i)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(VelocityPanel, { velocity: p.velocity })
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Stat, { ...s }, i)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(VelocityPanel, { velocity: p.velocity })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
-        p.cadence && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(CadencePanel, { cadence: p.cadence })
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("section", { className: "card card-chart", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
+        p.cadence && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(CadencePanel, { cadence: p.cadence })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(TopCitedPanel, { items: p.topCited || [] })
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("section", { className: "card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(TopCitedPanel, { items: p.topCited || [] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(ConceptsPanel, { concepts: p.concepts || [] })
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("section", { className: "card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Field", title: "What you're known for" }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ConceptsPanel, { concepts: p.concepts || [] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(TopJournals, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(PartnerInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(ClaimPaperPanel, { onClaimed: () => window.location.reload() })
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
-      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted", children: "No year data." }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(TopJournals, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(PartnerInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(RecentlyIndexed, { data })
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ProjectsGanttPanel, { filterOrcid: me?.profile.orcid || null }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ClaimPaperPanel, { onClaimed: () => window.location.reload() })
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
+      years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "muted", children: "No year data." }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(TopJournals, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(PartnerInstitutions, { data }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ProjectsGanttPanel, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(RecentlyIndexed, { data })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { id: "import-slot" })
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { id: "import-slot" })
   ] });
 }
 function App() {
-  const [data, setData] = (0, import_react15.useState)(null);
-  const [err, setErr] = (0, import_react15.useState)(null);
-  (0, import_react15.useEffect)(() => {
+  const [data, setData] = (0, import_react16.useState)(null);
+  const [err, setErr] = (0, import_react16.useState)(null);
+  (0, import_react16.useEffect)(() => {
     fetch("/api/dashboard?action=stats").then((r) => r.ok ? r.json() : Promise.reject(r.statusText)).then(setData).catch((e) => setErr(String(e)));
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
-    err && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "status error", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
+    err && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "view", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "status error", children: [
       "Error: ",
       err
     ] }) }),
-    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(DashboardLoading, {}),
-    data && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(DashboardContent, { data })
+    !data && !err && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(DashboardLoading, {}),
+    data && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(DashboardContent, { data })
   ] });
 }
 var root = null;
@@ -15916,7 +16047,7 @@ function mount() {
   if (!el) return;
   if (root) root.unmount();
   root = (0, import_client.createRoot)(el);
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime23.jsx)(App, {}));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime24.jsx)(App, {}));
 }
 window.__nexusMounts = window.__nexusMounts || {};
 window.__nexusMounts["/dashboard-bundle.js"] = mount;
