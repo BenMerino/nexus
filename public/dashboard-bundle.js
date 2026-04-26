@@ -15399,6 +15399,16 @@ function VelocityPanel({ velocity }) {
           ] })
         ] }, i);
       })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", gap: 14, marginTop: 8, fontSize: 11, color: "var(--fg-dim)", fontFamily: "var(--mono)", letterSpacing: "0.04em" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("svg", { width: 18, height: 6, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("line", { x1: 0, y1: 3, x2: 18, y2: 3, stroke: "var(--accent)", strokeWidth: 2 }) }),
+        "Citas reales"
+      ] }),
+      fcSource.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("svg", { width: 18, height: 6, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("line", { x1: 0, y1: 3, x2: 18, y2: 3, stroke: "var(--accent)", strokeWidth: 2, strokeDasharray: "3 3", opacity: 0.6 }) }),
+        "Proyecci\xF3n"
+      ] })
     ] })
   ] });
 }
