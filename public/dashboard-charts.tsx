@@ -41,7 +41,9 @@ function DashboardContent({ data }: { data: DashboardData }) {
   const title = isPersonal && displayName
     ? <><em>{displayName}</em></>
     : <><em>{tenantName}</em></>;
-  const sub = isPersonal ? '' : `A living map of ${tenantName}'s scholarly output.`;
+  const sub = isPersonal
+    ? [me?.profile.position, me?.profile.faculty].filter(Boolean).join(' · ')
+    : `A living map of ${tenantName}'s scholarly output.`;
 
   return (
     <div className="view dashboard">

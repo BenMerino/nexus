@@ -15961,7 +15961,7 @@ function DashboardContent({ data }) {
     { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
   const title = isPersonal && displayName ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_jsx_runtime24.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: displayName }) }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_jsx_runtime24.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: tenantName }) });
-  const sub = isPersonal ? "" : `A living map of ${tenantName}'s scholarly output.`;
+  const sub = isPersonal ? [me?.profile.position, me?.profile.faculty].filter(Boolean).join(" \xB7 ") : `A living map of ${tenantName}'s scholarly output.`;
   return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "view dashboard", children: [
     /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("header", { className: "view-head", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
