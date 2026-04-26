@@ -30,11 +30,20 @@
     });
     bind("btn-save-project", "click", saveProject);
     bind("btn-cancel-project", "click", function () { window.claustroProjectsUI.closeForm(state); });
-    fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
+    fetch("/api/auth?action=me").then(function (r) {
+      if (r.status === 401) { window.location.href = "/login.html"; return null; }
+      if (!r.ok) throw new Error("auth failed: " + r.status);
+      return r.json();
+    }).then(function (d) {
+      if (!d) return;
       state.me = d;
       gateProyectos();
       loadIndices().then(loadClaustro);
       if (isEditor()) loadProjects();
+    }).catch(function (e) {
+      console.error("[claustro] auth/me failed:", e);
+      var noac = document.getElementById("proyectos-no-access");
+      if (noac) { noac.style.display = "block"; noac.textContent = "Error de sesión. Recarga la página."; }
     });
   }
   function switchTab(name) {
