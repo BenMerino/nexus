@@ -3,7 +3,9 @@
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/api/records/:id", "destination": "/api/records/[id]" },
-    { "source": "/t/:slug", "destination": "/tenant.html" }
+    { "source": "/t/:slug", "destination": "/tenant.html" },
+    { "source": "/(.+\\.js)", "destination": "/api/asset-shim?ext=js&name=$1" },
+    { "source": "/(.+\\.css)", "destination": "/api/asset-shim?ext=css&name=$1" }
   ],
   "headers": [
     {
