@@ -25,7 +25,11 @@
     });
     document.getElementById("btn-save-project").addEventListener("click", saveProject);
     document.getElementById("btn-cancel-project").addEventListener("click", function () { window.claustroProjectsUI.closeForm(state); });
-    fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
+    fetch("/api/auth?action=me").then(function (r) {
+      if (r.status === 401) { window.location.href = "/login.html"; return null; }
+      return r.json();
+    }).then(function (d) {
+      if (!d) return;
       state.me = d;
       gateProyectos();
       loadIndices().then(loadClaustro);
