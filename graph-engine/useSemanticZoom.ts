@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { MARGIN } from './svg-parts.js';
-import { isCartesian } from './cartesian-render.js';
-import { isRadial } from './radial-render.js';
-import { isPolar } from './polar-render.js';
-import type { GraphDirective } from '../../architect/graph-composer.types.js';
-import type { ContainerDimensions, FamilyConstraints, ZoomLevel, ZoomState, LegibilityStatus, ToggleFilter } from './graph-spatial.types.js';
+import { MARGIN } from './svg-parts';
+import { isCartesian } from './cartesian-render';
+import { isRadial } from './radial-render';
+import { isPolar } from './polar-render';
+import type { GraphDirective } from '../architect/graph-composer.types.js';
+import type { ContainerDimensions, FamilyConstraints, ZoomLevel, ZoomState, LegibilityStatus, ToggleFilter } from './graph-spatial.types';
 
 /* ── Semantic Zoom Engine ────────────────────────────────────
  * Computes DPR (data-to-pixel ratio), zoom level, and

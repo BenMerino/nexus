@@ -1,4 +1,4 @@
-import type { ColorScheme } from '../../architect/graph-composer.types.js';
+import type { ColorScheme } from '../architect/graph-composer.types.js';
 
 /* ── Color Scheme Resolution ─────────────────────────────────
  * Default palettes and series-color helpers for chart rendering.

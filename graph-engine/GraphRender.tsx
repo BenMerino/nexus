@@ -1,18 +1,18 @@
 import React, { useRef, useMemo, useState } from 'react';
-import { BaseBox } from '../primitives/BaseBox.js';
-import { BaseText } from '../primitives/BaseText.js';
-import { BaseAction } from '../primitives/BaseAction.js';
-import { isCartesian, CartesianRender } from './cartesian-render.js';
-import { isRadial, RadialRender } from './radial-render.js';
-import { isPolar, PolarRender } from './polar-render.js';
-import { isGrid, GridRender } from './grid-render.js';
-import { useContainerSize } from './useContainerSize.js';
-import { useSemanticZoom } from './useSemanticZoom.js';
-import { useToggleFilters } from './useToggleFilters.js';
-import { compressForFamily } from './compress-data.js';
-import { LegibilityAlert } from './LegibilityAlert.js';
-import { ToggleBar } from './ToggleBar.js';
-import type { GraphDirective, ChartData } from '../../architect/graph-composer.types.js';
+import { BaseBox } from '../primitives/BaseBox';
+import { BaseText } from '../primitives/BaseText';
+import { BaseAction } from '../primitives/BaseAction';
+import { isCartesian, CartesianRender } from './cartesian-render';
+import { isRadial, RadialRender } from './radial-render';
+import { isPolar, PolarRender } from './polar-render';
+import { isGrid, GridRender } from './grid-render';
+import { useContainerSize } from './useContainerSize';
+import { useSemanticZoom } from './useSemanticZoom';
+import { useToggleFilters } from './useToggleFilters';
+import { compressForFamily } from './compress-data';
+import { LegibilityAlert } from './LegibilityAlert';
+import { ToggleBar } from './ToggleBar';
+import type { GraphDirective, ChartData } from '../architect/graph-composer.types.js';
 
 /* ── GraphRender ─────────────────────────────────────────────
  * Universal orchestrator with spatial awareness.

@@ -112,13 +112,13 @@
         function escHtml(s) { if (!s) return ""; return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
         function escAttr(s) { return escHtml(s).replace(/'/g, "&#39;"); }
       </script>
-      <script src="/type-labels-browser.js"></script>
-      <script src="/explore-records.js"></script>
-      <script src="/explore-search.js"></script>
-      <script src="/explore-tags.js"></script>
+      <script type="module" src="/type-labels-browser.js"></script>
+      <script type="module" src="/explore-records.js"></script>
+      <script type="module" src="/explore-search.js"></script>
+      <script type="module" src="/explore-tags.js"></script>
     </main>
   </div>
-  <script type="module" src="/shell-mount-bundle.js"></script>
-  <script src="/spa-router.js"></script>
+  <script type="module" src="/shell-mount.tsx"></script>
+  <script type="module" src="/spa-router.js"></script>
 </body>
 </html>

@@ -1,11 +1,11 @@
 import React, { useRef } from 'react';
-import { linearScale, bandScale, niceDomain } from './scales.js';
-import { MARGIN, XAxisBand, YAxis, GridLines, ThresholdLines, Crosshairs, cs, seriesColor, useTooltip, TooltipOverlay } from './svg-parts.js';
-import { ScatterSvg, WaterfallSvg } from './cartesian-special.js';
-import { useDragRange, RangeHighlight, RangeBadge } from './drag-range.js';
-import { defaultInteraction } from '../../architect/graph-composer.types.js';
-import type { GraphDirective } from '../../architect/graph-composer.types.js';
-import { renderSeries } from './cartesian-series.js';
+import { linearScale, bandScale, niceDomain } from './scales';
+import { MARGIN, XAxisBand, YAxis, GridLines, ThresholdLines, Crosshairs, cs, seriesColor, useTooltip, TooltipOverlay } from './svg-parts';
+import { ScatterSvg, WaterfallSvg } from './cartesian-special';
+import { useDragRange, RangeHighlight, RangeBadge } from './drag-range';
+import { defaultInteraction } from '../architect/graph-composer.types.js';
+import type { GraphDirective } from '../architect/graph-composer.types.js';
+import { renderSeries } from './cartesian-series';
 
 /* ── Cartesian Render ────────────────────────────────────────
  * One <svg> for: bar, stacked-bar, area, stacked-area, line,

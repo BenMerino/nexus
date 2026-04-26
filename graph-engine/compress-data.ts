@@ -1,5 +1,5 @@
-import type { GraphDirective, GraphDataPoint, StackedGraphDataPoint, ChartData } from '../../architect/graph-composer.types.js';
-import type { ZoomState, ZoomLevel } from './graph-spatial.types.js';
+import type { GraphDirective, GraphDataPoint, StackedGraphDataPoint, ChartData } from '../architect/graph-composer.types.js';
+import type { ZoomState, ZoomLevel } from './graph-spatial.types';
 
 /* ── Client-Side Data Compression ────────────────────────────
  * Pixel-aware compression: reduces data points to fit the

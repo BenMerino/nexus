@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tag, SectionHead, Ico } from './ui-primitives';
-import type { DashboardData } from './dashboard-builders.js';
-import { TYPE_DISPLAY_LABELS } from './type-labels.js';
+import type { DashboardData } from './dashboard-builders';
+import { TYPE_DISPLAY_LABELS } from './type-labels';
 
 export function yearlyCounts(data: DashboardData): { year: string; count: number }[] {
   const byYear = new Map<string, number>();

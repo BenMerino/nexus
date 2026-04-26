@@ -1,8 +1,8 @@
 import React from 'react';
-import { BaseBox } from '../primitives/BaseBox.js';
-import { BaseAction } from '../primitives/BaseAction.js';
-import { BaseText } from '../primitives/BaseText.js';
-import type { ToggleFilter } from './graph-spatial.types.js';
+import { BaseBox } from '../primitives/BaseBox';
+import { BaseAction } from '../primitives/BaseAction';
+import { BaseText } from '../primitives/BaseText';
+import type { ToggleFilter } from './graph-spatial.types';
 
 /* ── Toggle Bar ──────────────────────────────────────────────
  * State-Integrated Toggles: row of filter pills for series

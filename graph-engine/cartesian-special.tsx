@@ -1,7 +1,7 @@
 import React from 'react';
-import { linearScale, bandScale, niceDomain } from './scales.js';
-import { MARGIN, XAxisBand, XAxisLinear, YAxis, GridLines } from './svg-parts.js';
-import type { GraphDirective } from '../../architect/graph-composer.types.js';
+import { linearScale, bandScale, niceDomain } from './scales';
+import { MARGIN, XAxisBand, XAxisLinear, YAxis, GridLines } from './svg-parts';
+import type { GraphDirective } from '../architect/graph-composer.types.js';
 
 /* ── Scatter / Bubble / Waterfall ────────────────────────────
  * Specialized cartesian charts with unique data mappings.

@@ -1,7 +1,7 @@
 import React from 'react';
-import { cs, seriesColor } from './svg-parts.js';
-import { linePath } from './scales.js';
-import type { GraphDirective } from '../../architect/graph-composer.types.js';
+import { cs, seriesColor } from './svg-parts';
+import { linePath } from './scales';
+import type { GraphDirective } from '../architect/graph-composer.types.js';
 
 /* ── Polar Render ────────────────────────────────────────────
  * Radar chart: concentric rings + axis spokes + polygon per series.

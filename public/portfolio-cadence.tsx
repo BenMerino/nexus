@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { TYPE_DISPLAY_LABELS } from './type-labels.js';
-import { typeColor, typeRank } from './type-metals.js';
+import { TYPE_DISPLAY_LABELS } from './type-labels';
+import { typeColor, typeRank } from './type-metals';
 
 export type CadenceSegment = { type: string; count: number };
 export type CadencePoint = { year: number; count: number; segments: CadenceSegment[] };

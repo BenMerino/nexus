@@ -1,7 +1,7 @@
 import React from 'react';
-import { BaseBox } from '../primitives/BaseBox.js';
-import { BaseText } from '../primitives/BaseText.js';
-import type { GraphDirective, GraphDataPoint } from '../../architect/graph-composer.types.js';
+import { BaseBox } from '../primitives/BaseBox';
+import { BaseText } from '../primitives/BaseText';
+import type { GraphDirective, GraphDataPoint } from '../architect/graph-composer.types.js';
 
 /* ── Legibility Alert ────────────────────────────────────────
  * Compact fallback shown when the container is too small to

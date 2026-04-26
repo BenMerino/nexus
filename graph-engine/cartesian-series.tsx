@@ -1,7 +1,7 @@
 import React from 'react';
-import { linePath, areaPath } from './scales.js';
-import { seriesColor, cs } from './svg-parts.js';
-import type { GraphDirective } from '../../architect/graph-composer.types.js';
+import { linePath, areaPath } from './scales';
+import { seriesColor, cs } from './svg-parts';
+import type { GraphDirective } from '../architect/graph-composer.types.js';
 
 /* ── renderSeries ───────────────────────────────────────────
  * Draws the data layer for bar, area, line, multi-line,

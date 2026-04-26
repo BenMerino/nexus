@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { CoauthorGraph } from './dashboard-builders.js';
+import type { CoauthorGraph } from './dashboard-builders';
 
 /** Fetch the logged-in user's co-author graph from the dashboard stats API.
  *  Same data the dashboard's "Your co-author graph" panel uses. */
