@@ -68,20 +68,25 @@ Promise.all([
     const fs = require("fs");
     const ts = String(Date.now());
     fs.writeFileSync("public/build-version.txt", ts);
-    // Stamp ?v=<ts> on every local <script src> and <link href> in every HTML
-    // so the browser can never pair a stale HTML with a fresh JS (or vice-versa):
-    // both move to the new ?v together, mismatched caches refetch.
-    // Matcher accepts one-or-more closing quotes (\2+) so it self-heals files
-    // that an earlier buggy build left with duplicated quotes.
     const scriptRe = /(<script[^>]*\s)src=(["'])((?:\/|\.\/)[^"'?]+\.js)(?:\?[^"']*)?\2+/g;
     const linkRe   = /(<link[^>]*\s)href=(["'])((?:\/|\.\/)[^"'?]+\.css)(?:\?[^"']*)?\2+/g;
     const stamp = (attr) => (_m, pre, q, url) => `${pre}${attr}=${q}${url}?v=${ts}${q}`;
+    // Self-healing inline guard: if the HTML in the browser is stale
+    // (build-version on server differs from the one baked in here), force a
+    // hard reload once. sessionStorage prevents reload loops if the fetch
+    // itself fails. Marker comments let us replace the block on every build.
+    const guardMarker = "<!--CLAUSTRO-VERSION-GUARD-->";
+    const guard = `${guardMarker}<script>(function(){var V="${ts}";try{fetch("/build-version.txt?_="+Date.now(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){t=t.trim();if(t&&t!==V&&sessionStorage.getItem("nx-reload")!==t){sessionStorage.setItem("nx-reload",t);location.replace(location.pathname+"?fresh="+t)}})}catch(e){}})();</script>${guardMarker}`;
+    const guardRe = new RegExp(guardMarker + "[\\s\\S]*?" + guardMarker, "g");
     for (const f of fs.readdirSync("public").filter(n => n.endsWith(".html"))) {
       const p = `public/${f}`;
       const before = fs.readFileSync(p, "utf8");
-      const after = before.replace(scriptRe, stamp("src")).replace(linkRe, stamp("href"));
+      let after = before.replace(scriptRe, stamp("src")).replace(linkRe, stamp("href"));
+      // Strip any previous guard, then inject fresh one right after <head>.
+      after = after.replace(guardRe, "");
+      after = after.replace(/<head>/, "<head>" + guard);
       if (after !== before) fs.writeFileSync(p, after);
     }
-    console.log(`Build complete (v=${ts}): bundles + HTML cache-stamped`);
+    console.log(`Build complete (v=${ts}): bundles + HTML stamped + version guard`);
   })
   .catch(() => process.exit(1));
