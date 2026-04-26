@@ -15944,7 +15944,6 @@ function DashboardContent({ data }) {
   const years = yearlyCounts(data);
   const tenantName = me?.tenant || "Institution";
   const displayName = me?.profile.name || me?.user || "";
-  const firstName = displayName.split(" ")[0];
   const isPersonal = !!me?.profile.orcid;
   const p = data.portfolio;
   const pubCount = p?.works.length ?? data.totalPubs;
@@ -15961,8 +15960,8 @@ function DashboardContent({ data }) {
     { label: "Open access", value: data.totalPubs > 0 ? `${Math.round(data.oaCount / data.totalPubs * 100)}%` : "\u2014", sub: "of total output", accent: true },
     { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
-  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: firstName }),
+  const title = isPersonal && displayName ? /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: displayName }),
     "."
   ] }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: tenantName }),

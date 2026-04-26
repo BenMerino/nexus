@@ -19,7 +19,6 @@ function DashboardContent({ data }: { data: DashboardData }) {
   const years = yearlyCounts(data);
   const tenantName = me?.tenant || 'Institution';
   const displayName = me?.profile.name || me?.user || '';
-  const firstName = displayName.split(' ')[0];
   const isPersonal = !!me?.profile.orcid;
 
   const p = data.portfolio;
@@ -39,8 +38,8 @@ function DashboardContent({ data }: { data: DashboardData }) {
     { label: 'Authors indexed', value: data.authorCount.toLocaleString(), sub: 'ORCID-verified' },
   ];
 
-  const title = isPersonal && firstName
-    ? <><em>{firstName}</em>.</>
+  const title = isPersonal && displayName
+    ? <><em>{displayName}</em>.</>
     : <><em>{tenantName}</em>.</>;
   const sub = isPersonal
     ? `Your research, pulled from 4 scholarly sources. No forms.`
