@@ -63,11 +63,34 @@
 
     oldMain.replaceWith(newMain);
     runScripts(newMain);
+    runHeadEntryScripts(doc);
 
     if (push) history.pushState(null, '', href);
     window.dispatchEvent(new CustomEvent('nexus:navigated', {
       detail: { path: new URL(href, location.href).pathname },
     }));
+  }
+
+  // Vite emits each page's entry as <script type="module" src="/assets/<page>-<hash>.js">
+  // in <head>. swapInto only re-executes scripts inside <main>, so the new
+  // page's entry never runs and the page renders with the previous page's bundle.
+  // Re-import any head-level module entry that hasn't been loaded yet.
+  var loadedEntries = Object.create(null);
+  // Seed with the current page's entries — they're already executing.
+  (function seedCurrentEntries() {
+    var heads = document.querySelectorAll('head script[type="module"][src]');
+    for (var i = 0; i < heads.length; i++) {
+      loadedEntries[new URL(heads[i].src, location.href).href] = true;
+    }
+  })();
+  function runHeadEntryScripts(doc) {
+    var heads = doc.querySelectorAll('head script[type="module"][src]');
+    for (var i = 0; i < heads.length; i++) {
+      var src = new URL(heads[i].src, location.href).href;
+      if (loadedEntries[src]) continue;
+      loadedEntries[src] = true;
+      import(/* @vite-ignore */ src).catch(function (e) { console.error('entry import failed', src, e); });
+    }
   }
 
   function runScripts(root) {
