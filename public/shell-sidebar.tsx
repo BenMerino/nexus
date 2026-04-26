@@ -1,6 +1,7 @@
 import React from 'react';
 import { Ico } from './shell-icons';
 import { Tag } from './ui-primitives';
+import { SidebarSearch } from './shell-search';
 import type { CurrentUser } from './shell-helpers';
 
 export interface NavLink { href: string; label: string; icon: keyof typeof Ico; section?: string; }
@@ -63,6 +64,8 @@ export function Sidebar({ me, currentPath, roleSwitcher }: SidebarProps) {
       </div>
 
       {roleSwitcher}
+
+      <SidebarSearch />
 
       <nav className="nav-list">
         {sections.map(section => (

@@ -145,6 +145,35 @@ em {
 .role-btn-who { font-size: 11px; color: var(--fg-dim); font-family: var(--mono); letter-spacing: 0.04em; }
 .role-btn.active .role-btn-who { color: var(--accent); }
 
+.sidebar-search { position: relative; padding: 12px 14px 6px; }
+.sidebar-search-input {
+  width: 100%; box-sizing: border-box;
+  background: var(--bg-card); border: 1px solid var(--border-soft);
+  color: var(--fg); font: inherit; font-size: 13px;
+  padding: 7px 10px; border-radius: var(--radius-sm);
+  transition: border-color 0.15s;
+}
+.sidebar-search-input::placeholder { color: var(--fg-dim); }
+.sidebar-search-input:focus { outline: none; border-color: var(--accent); }
+.sidebar-search-results {
+  position: absolute; left: 14px; right: 14px; top: calc(100% - 2px);
+  background: var(--bg-inset); border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm); z-index: 50;
+  max-height: 320px; overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.sidebar-search-empty { padding: 10px 12px; font-size: 12px; color: var(--fg-dim); font-family: var(--mono); }
+.sidebar-search-hit {
+  display: block; width: 100%; text-align: left;
+  background: transparent; border: 0; cursor: pointer; font: inherit;
+  padding: 8px 12px; border-bottom: 1px solid var(--border-soft);
+  color: var(--fg);
+}
+.sidebar-search-hit:last-child { border-bottom: 0; }
+.sidebar-search-hit:hover { background: var(--bg-card); }
+.sidebar-search-hit-name { font-size: 13px; }
+.sidebar-search-hit-meta { font-size: 11px; color: var(--fg-dim); font-family: var(--mono); margin-top: 2px; }
+
 .nav-list { padding: 14px 14px; flex: 1; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
 .nav-item {
   display: flex; align-items: center; gap: 10px;

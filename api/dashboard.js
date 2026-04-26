@@ -1,3 +1,4 @@
+const { sql } = require("@vercel/postgres");
 const { requireRole } = require("../lib/auth");
 const { ensureSchema } = require("../lib/db");
 const { requireScope, isPersonalScope } = require("../lib/scope");
@@ -6,6 +7,14 @@ const { fetchInstitutionWorks, fetchInstitutionInfo } = require("../lib/fetchers
 const { importWorksBatch } = require("../lib/store-openalex");
 const { getResearcherPortfolio } = require("../lib/portfolio");
 
+async function resolveTargetOrcid(scope, viewOrcid) {
+  if (!viewOrcid) return null;
+  const r = await sql`SELECT orcid FROM users
+    WHERE tenant_id = ${scope.tenantId} AND active = TRUE AND orcid = ${viewOrcid}
+    LIMIT 1`;
+  return r.rows[0]?.orcid || null;
+}
+
 module.exports = async function handler(req, res) {
   await ensureSchema();
   const scope = await requireScope(req, res);
@@ -13,13 +22,21 @@ module.exports = async function handler(req, res) {
   const action = req.query.action || "stats";
 
   if (action === "stats") {
+    const targetOrcid = await resolveTargetOrcid(scope, req.query.orcid);
+    if (req.query.orcid && !targetOrcid) {
+      return res.status(404).json({ error: "Researcher not found in your tenant" });
+    }
+    const personalOrcid = targetOrcid || (isPersonalScope(scope) ? scope.orcid : null);
+    const effectiveScope = targetOrcid
+      ? { ...scope, orcid: targetOrcid, role: "user" }
+      : scope;
     const [totals, yearSource, collabs, countries, topJournals, recentPapers] = await Promise.all([
-      getSummary(scope), getByYearAndSource(scope), getCollaborations(scope), getCountries(scope),
-      getTopJournals(scope), getRecentPapers(scope),
+      getSummary(effectiveScope), getByYearAndSource(effectiveScope), getCollaborations(effectiveScope),
+      getCountries(effectiveScope), getTopJournals(effectiveScope), getRecentPapers(effectiveScope),
     ]);
     const base = { ...totals, yearSource, collabs, countries, topJournals, recentPapers };
-    if (isPersonalScope(scope) && scope.orcid) {
-      const portfolio = await getResearcherPortfolio(scope.orcid, scope.tenantId);
+    if (personalOrcid) {
+      const portfolio = await getResearcherPortfolio(personalOrcid, scope.tenantId);
       return res.json({ ...base, portfolio });
     }
     return res.json(base);

@@ -104,7 +104,11 @@ function App() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
-    fetch('/api/dashboard?action=stats')
+    const viewOrcid = new URLSearchParams(window.location.search).get('orcid');
+    const url = viewOrcid
+      ? `/api/dashboard?action=stats&orcid=${encodeURIComponent(viewOrcid)}`
+      : '/api/dashboard?action=stats';
+    fetch(url)
       .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
       .then(setData)
       .catch(e => setErr(String(e)));
