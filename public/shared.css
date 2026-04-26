@@ -244,6 +244,7 @@ em {
 .card-chart { grid-column: span 2; }
 .card-graph-preview { grid-column: span 2; min-height: 320px; position: relative; overflow: hidden; cursor: pointer; }
 .card-span-2 { grid-column: span 2; }
+.card-span-4 { grid-column: 1 / -1; }
 
 /* ═══ STATS ═══ */
 .stat-row {

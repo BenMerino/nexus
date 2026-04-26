@@ -15867,18 +15867,18 @@ function ProjectsGanttPanel({ filterOrcid }) {
     end.setFullYear(end.getFullYear() + 1, 0, 1);
     return { start, end };
   }, [filtered]);
-  if (err) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-2", children: [
+  if (err) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4", children: [
     /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Proyectos", title: "Carta Gantt" }),
     /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "muted", children: [
       "Error: ",
       err
     ] })
   ] });
-  if (!projects) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-2", children: [
+  if (!projects) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4", children: [
     /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Proyectos", title: "Carta Gantt" }),
     /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted skel", style: { height: 200 } })
   ] });
-  if (!filtered.length) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-2", children: [
+  if (!filtered.length) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4", children: [
     /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Proyectos", title: "Carta Gantt" }),
     /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted", children: "Sin proyectos con fechas registradas." })
   ] });
@@ -15892,7 +15892,7 @@ function ProjectsGanttPanel({ filterOrcid }) {
     ticks.push({ pct, label: fmtYear(cursor) });
     cursor.setFullYear(cursor.getFullYear() + 1);
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-2 gantt-card", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4 gantt-card", children: [
     /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
       SectionHead,
       {
