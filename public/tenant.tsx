@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { GraphRender } from '../graph-engine/index';
 import { AuthorsTable, type AuthorRow } from './tenant-authors';
 import { TenantGraph, type PublicGraphNode, type PublicGraphEdge } from './tenant-graph';
@@ -129,5 +129,14 @@ function App() {
   );
 }
 
-const el = document.getElementById('tenant-root');
-if (el) createRoot(el).render(<App />);
+let tenantRoot: Root | null = null;
+function mount() {
+  const el = document.getElementById('tenant-root');
+  if (!el) return;
+  if (tenantRoot) tenantRoot.unmount();
+  tenantRoot = createRoot(el);
+  tenantRoot.render(<App />);
+}
+(window as any).__nexusMounts = (window as any).__nexusMounts || {};
+(window as any).__nexusMounts[new URL(import.meta.url).pathname] = mount;
+mount();

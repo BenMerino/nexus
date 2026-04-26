@@ -11,5 +11,5 @@ function mount() {
   root.render(<GraphExplorerBody />);
 }
 (window as any).__nexusMounts = (window as any).__nexusMounts || {};
-(window as any).__nexusMounts['/relationships-bundle.js'] = mount;
+(window as any).__nexusMounts[new URL(import.meta.url).pathname] = mount;
 mount();

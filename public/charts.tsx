@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { GraphRender } from '../graph-engine/index';
 import { buildCharts } from './chart-builders';
 import type { DoiRecord } from './chart-builders';
@@ -31,5 +31,14 @@ function App() {
   );
 }
 
-const root = createRoot(document.getElementById('chart-root')!);
-root.render(<App />);
+let chartsRoot: Root | null = null;
+function mount() {
+  const el = document.getElementById('chart-root');
+  if (!el) return;
+  if (chartsRoot) chartsRoot.unmount();
+  chartsRoot = createRoot(el);
+  chartsRoot.render(<App />);
+}
+(window as any).__nexusMounts = (window as any).__nexusMounts || {};
+(window as any).__nexusMounts[new URL(import.meta.url).pathname] = mount;
+mount();

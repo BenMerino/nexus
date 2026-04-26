@@ -44,5 +44,5 @@ function mount() {
   root.render(<App />);
 }
 (window as any).__nexusMounts = (window as any).__nexusMounts || {};
-(window as any).__nexusMounts['/collaborators-bundle.js'] = mount;
+(window as any).__nexusMounts[new URL(import.meta.url).pathname] = mount;
 mount();

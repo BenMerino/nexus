@@ -98,10 +98,17 @@
   }
   function runHeadEntryScripts(doc) {
     doc.querySelectorAll('head script[type="module"][src]').forEach(function (s) {
-      var src = new URL(s.src, location.href).href;
-      if (loaded.entry[src]) return;
-      loaded.entry[src] = true;
-      import(/* @vite-ignore */ src).catch(function (e) { console.error('entry import failed', src, e); });
+      var url = new URL(s.src, location.href);
+      var key = url.pathname;
+      var mounts = window.__nexusMounts || {};
+      // Already loaded once: just call its registered remount hook (if any).
+      // ESM caches the module, so re-importing won't re-run the top-level body.
+      if (loaded.entry[url.href]) {
+        if (mounts[key]) { try { mounts[key](); } catch (e) { console.error('remount failed', key, e); } }
+        return;
+      }
+      loaded.entry[url.href] = true;
+      import(/* @vite-ignore */ url.href).catch(function (e) { console.error('entry import failed', url.href, e); });
     });
   }
 
