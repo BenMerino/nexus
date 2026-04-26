@@ -63,6 +63,7 @@
 
     oldMain.replaceWith(newMain);
     runScripts(newMain);
+    addHeadStylesheets(doc);
     runHeadEntryScripts(doc);
 
     if (push) history.pushState(null, '', href);
@@ -71,26 +72,37 @@
     }));
   }
 
-  // Vite emits each page's entry as <script type="module" src="/assets/<page>-<hash>.js">
-  // in <head>. swapInto only re-executes scripts inside <main>, so the new
-  // page's entry never runs and the page renders with the previous page's bundle.
-  // Re-import any head-level module entry that hasn't been loaded yet.
-  var loadedEntries = Object.create(null);
-  // Seed with the current page's entries — they're already executing.
-  (function seedCurrentEntries() {
-    var heads = document.querySelectorAll('head script[type="module"][src]');
-    for (var i = 0; i < heads.length; i++) {
-      loadedEntries[new URL(heads[i].src, location.href).href] = true;
-    }
+  // Vite hoists each page's entry script and stylesheet into <head>.
+  // swapInto only re-runs scripts inside <main>, so we replicate the head:
+  // dynamic-import any new module script, link-tag any new stylesheet.
+  // Both sets are seeded with what's already loaded so we never duplicate.
+  var loaded = { entry: Object.create(null), css: Object.create(null) };
+  (function seed() {
+    document.querySelectorAll('head script[type="module"][src]').forEach(function (s) {
+      loaded.entry[new URL(s.src, location.href).href] = true;
+    });
+    document.querySelectorAll('head link[rel="stylesheet"][href]').forEach(function (l) {
+      loaded.css[new URL(l.href, location.href).href] = true;
+    });
   })();
+  function addHeadStylesheets(doc) {
+    doc.querySelectorAll('head link[rel="stylesheet"][href]').forEach(function (l) {
+      var href = new URL(l.href, location.href).href;
+      if (loaded.css[href]) return;
+      loaded.css[href] = true;
+      var n = document.createElement('link');
+      n.rel = 'stylesheet'; n.href = href;
+      if (l.crossOrigin) n.crossOrigin = l.crossOrigin;
+      document.head.appendChild(n);
+    });
+  }
   function runHeadEntryScripts(doc) {
-    var heads = doc.querySelectorAll('head script[type="module"][src]');
-    for (var i = 0; i < heads.length; i++) {
-      var src = new URL(heads[i].src, location.href).href;
-      if (loadedEntries[src]) continue;
-      loadedEntries[src] = true;
+    doc.querySelectorAll('head script[type="module"][src]').forEach(function (s) {
+      var src = new URL(s.src, location.href).href;
+      if (loaded.entry[src]) return;
+      loaded.entry[src] = true;
       import(/* @vite-ignore */ src).catch(function (e) { console.error('entry import failed', src, e); });
-    }
+    });
   }
 
   function runScripts(root) {
