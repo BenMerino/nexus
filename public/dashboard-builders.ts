@@ -26,6 +26,20 @@ export interface Portfolio {
   coauthorGraph?: CoauthorGraph;
 }
 
+export interface ViewedUser {
+  user: string;
+  profile: {
+    name?: string;
+    researcherName?: string;
+    orcid?: string;
+    position?: string;
+    faculty?: string;
+    titles?: string[];
+  };
+  hIndex: number | null;
+  hIndexByType: Record<string, number> | null;
+}
+
 interface DashboardData {
   totalPubs: number;
   totalCitations: number;
@@ -37,6 +51,7 @@ interface DashboardData {
   topJournals?: TopJournal[];
   recentPapers?: RecentPaper[];
   portfolio?: Portfolio;
+  viewedUser?: ViewedUser | null;
 }
 
 function buildYearSourceChart(data: DashboardData): GraphDirective | null {

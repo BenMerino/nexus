@@ -23,18 +23,24 @@ const INSTITUTIONAL_STATS = [
 
 export function DashboardLoading() {
   const { me } = useCurrentUser();
+  const viewingOther = typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('orcid');
   const tenantName = me?.tenant || 'Institution';
-  const displayName = me?.profile.researcherName || me?.profile.name || me?.user || '';
-  const isPersonal = !!me?.profile.orcid;
+  const displayName = viewingOther ? '' : (me?.profile.researcherName || me?.profile.name || me?.user || '');
+  const isPersonal = viewingOther || !!me?.profile.orcid;
 
   const stats = isPersonal ? PERSONAL_STATS : INSTITUTIONAL_STATS;
 
   const title = isPersonal && displayName
     ? <><em>{displayName}</em></>
-    : <><em>{tenantName}</em></>;
-  const sub = isPersonal
+    : isPersonal
+      ? <><em>Loading…</em></>
+      : <><em>{tenantName}</em></>;
+  const sub = isPersonal && !viewingOther
     ? [me?.profile.position, me?.profile.faculty].filter(Boolean).join(' · ')
-    : `A living map of ${tenantName}'s scholarly output.`;
+    : !isPersonal
+      ? `A living map of ${tenantName}'s scholarly output.`
+      : '';
 
   return (
     <div className="view dashboard" aria-busy="true" aria-live="polite">

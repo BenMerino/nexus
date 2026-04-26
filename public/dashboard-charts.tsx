@@ -16,10 +16,16 @@ import { ProjectsGanttPanel } from './projects-gantt';
 
 function DashboardContent({ data }: { data: DashboardData }) {
   const { me } = useCurrentUser();
+  const viewed = data.viewedUser || null;
   const years = yearlyCounts(data);
   const tenantName = me?.tenant || 'Institution';
-  const displayName = me?.profile.researcherName || me?.profile.name || me?.user || '';
-  const isPersonal = !!me?.profile.orcid;
+  const subject = viewed
+    ? { profile: viewed.profile, user: viewed.user, hIndex: viewed.hIndex, hIndexByType: viewed.hIndexByType }
+    : { profile: me?.profile, user: me?.user, hIndex: me?.hIndex ?? null, hIndexByType: me?.hIndexByType ?? null };
+  const displayName = subject.profile?.researcherName || subject.profile?.name || subject.user || '';
+  const isPersonal = !!subject.profile?.orcid;
+  const subjectOrcid = subject.profile?.orcid || null;
+  const isOwnDashboard = !viewed;
 
   const p = data.portfolio;
   const pubCount = p?.works.length ?? data.totalPubs;
@@ -29,7 +35,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
   const heroStats = isPersonal ? [
     { label: 'Publications',   value: pubCount.toLocaleString(), sub: 'indexed via ORCID' },
     { label: 'Total citations', value: totalCit.toLocaleString(), sub: 'OpenAlex · last sync' },
-    { label: 'h-index',        value: me?.hIndex ?? '—', sub: <HIndexBreakdown byType={me?.hIndexByType} />, accent: true },
+    { label: 'h-index',        value: subject.hIndex ?? '—', sub: <HIndexBreakdown byType={subject.hIndexByType} />, accent: true },
     { label: 'Collaborators',  value: collabCount.toLocaleString(), sub: 'unique, all years' },
   ] : [
     { label: 'Publications',    value: data.totalPubs.toLocaleString(), sub: 'indexed records' },
@@ -42,7 +48,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
     ? <><em>{displayName}</em></>
     : <><em>{tenantName}</em></>;
   const sub = isPersonal
-    ? [me?.profile.position, me?.profile.faculty].filter(Boolean).join(' · ')
+    ? [subject.profile?.position, subject.profile?.faculty].filter(Boolean).join(' · ')
     : `A living map of ${tenantName}'s scholarly output.`;
 
   return (
@@ -70,7 +76,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
               <SectionHead title="Publication cadence" />
               {p.cadence && <CadencePanel cadence={p.cadence} />}
             </section>
-            <ProjectsGanttPanel filterOrcid={me?.profile.orcid || null} />
+            <ProjectsGanttPanel filterOrcid={subjectOrcid} />
             <CoAuthorGraphPanel graph={p?.coauthorGraph} />
             <section className="card">
               <SectionHead eyebrow="Impact" title="Most cited" />
@@ -82,7 +88,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
             </section>
             <TopJournals data={data} />
             <PartnerInstitutions data={data} />
-            <ClaimPaperPanel onClaimed={() => window.location.reload()} />
+            {isOwnDashboard && <ClaimPaperPanel onClaimed={() => window.location.reload()} />}
           </>
         ) : (
           <>
