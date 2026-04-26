@@ -15733,30 +15733,17 @@ var INSTITUTIONAL_STATS = [
 function DashboardLoading() {
   const { me } = useCurrentUser();
   const tenantName = me?.tenant || "Institution";
-  const displayName = me?.profile.name || me?.user || "";
-  const firstName = displayName.split(" ")[0];
+  const displayName = me?.profile.researcherName || me?.profile.name || me?.user || "";
   const isPersonal = !!me?.profile.orcid;
   const stats = isPersonal ? PERSONAL_STATS : INSTITUTIONAL_STATS;
-  const title = isPersonal && firstName ? /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: firstName }),
-    "."
-  ] }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: tenantName }),
-    "."
-  ] });
-  const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
+  const title = isPersonal && displayName ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(import_jsx_runtime21.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: displayName }) }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(import_jsx_runtime21.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("em", { children: tenantName }) });
+  const sub = isPersonal ? [me?.profile.position, me?.profile.faculty].filter(Boolean).join(" \xB7 ") : `A living map of ${tenantName}'s scholarly output.`;
   return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "view dashboard", "aria-busy": "true", "aria-live": "polite", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("header", { className: "view-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "eyebrow", children: isPersonal ? "Researcher" : "Institutional overview" }),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("h1", { className: "view-title", children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "view-sub", children: sub })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "view-meta", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(Tag, { mono: true, children: "LAST SYNC \xB7 LIVE" }),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(Tag, { mono: true, tone: "muted", children: "OPENALEX \xB7 CROSSREF \xB7 S2 \xB7 DATACITE" })
-      ] })
-    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("header", { className: "view-head", children: /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+      !isPersonal && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "eyebrow", children: "Institutional overview" }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("h1", { className: "view-title", children: title }),
+      sub && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "view-sub", children: sub })
+    ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "stat-row", children: stats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(StatSkeleton, { label: s.label, sub: s.sub }, i)) }),
     /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "dash-grid", children: isPersonal ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(PersonalCards, {}) : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(InstitutionalCards, {}) })
   ] });
@@ -15764,11 +15751,11 @@ function DashboardLoading() {
 function PersonalCards() {
   return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("section", { className: "card card-chart", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(SectionHead, { title: "Citation velocity" }),
       /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(VelocityPanelSkeleton, {})
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("section", { className: "card card-chart", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(SectionHead, { title: "Publication cadence" }),
       /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(CadencePanelSkeleton, {})
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(CoAuthorGraphPanelSkeleton, {}),

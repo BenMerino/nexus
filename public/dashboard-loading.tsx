@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCurrentUser } from './shell-helpers';
-import { StatSkeleton, Tag, SectionHead } from './ui-primitives';
+import { StatSkeleton, SectionHead } from './ui-primitives';
 import { TopJournalsSkeleton, PartnerInstitutionsSkeleton, BarChartSkeleton, RecentlyIndexedSkeleton } from './dashboard-panels-skeletons';
 import { CoAuthorGraphPanelSkeleton } from './coauthor-graph-preview';
 import { VelocityPanelSkeleton } from './portfolio-velocity';
@@ -24,30 +24,25 @@ const INSTITUTIONAL_STATS = [
 export function DashboardLoading() {
   const { me } = useCurrentUser();
   const tenantName = me?.tenant || 'Institution';
-  const displayName = me?.profile.name || me?.user || '';
-  const firstName = displayName.split(' ')[0];
+  const displayName = me?.profile.researcherName || me?.profile.name || me?.user || '';
   const isPersonal = !!me?.profile.orcid;
 
   const stats = isPersonal ? PERSONAL_STATS : INSTITUTIONAL_STATS;
 
-  const title = isPersonal && firstName
-    ? <><em>{firstName}</em>.</>
-    : <><em>{tenantName}</em>.</>;
+  const title = isPersonal && displayName
+    ? <><em>{displayName}</em></>
+    : <><em>{tenantName}</em></>;
   const sub = isPersonal
-    ? `Your research, pulled from 4 scholarly sources. No forms.`
+    ? [me?.profile.position, me?.profile.faculty].filter(Boolean).join(' · ')
     : `A living map of ${tenantName}'s scholarly output.`;
 
   return (
     <div className="view dashboard" aria-busy="true" aria-live="polite">
       <header className="view-head">
         <div>
-          <div className="eyebrow">{isPersonal ? 'Researcher' : 'Institutional overview'}</div>
+          {!isPersonal && <div className="eyebrow">Institutional overview</div>}
           <h1 className="view-title">{title}</h1>
-          <div className="view-sub">{sub}</div>
-        </div>
-        <div className="view-meta">
-          <Tag mono>LAST SYNC · LIVE</Tag>
-          <Tag mono tone="muted">OPENALEX · CROSSREF · S2 · DATACITE</Tag>
+          {sub && <div className="view-sub">{sub}</div>}
         </div>
       </header>
 
@@ -66,11 +61,11 @@ function PersonalCards() {
   return (
     <>
       <section className="card card-chart">
-        <SectionHead eyebrow="Trajectory" title="Citation velocity" />
+        <SectionHead title="Citation velocity" />
         <VelocityPanelSkeleton />
       </section>
       <section className="card card-chart">
-        <SectionHead eyebrow="Output" title="Publication cadence" />
+        <SectionHead title="Publication cadence" />
         <CadencePanelSkeleton />
       </section>
       <CoAuthorGraphPanelSkeleton />
