@@ -15995,11 +15995,11 @@ function DashboardContent({ data }) {
         /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
         /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(VelocityPanel, { velocity: p.velocity })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ProjectsGanttPanel, { filterOrcid: me?.profile.orcid || null }),
       /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("section", { className: "card card-chart", children: [
         /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
         p.cadence && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(CadencePanel, { cadence: p.cadence })
       ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ProjectsGanttPanel, { filterOrcid: me?.profile.orcid || null }),
       /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(CoAuthorGraphPanel, { graph: p?.coauthorGraph }),
       /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("section", { className: "card", children: [
         /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Impact", title: "Most cited" }),

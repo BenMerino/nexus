@@ -71,11 +71,11 @@ function DashboardContent({ data }: { data: DashboardData }) {
               <SectionHead eyebrow="Trajectory" title="Citation velocity" />
               <VelocityPanel velocity={p.velocity} />
             </section>
-            <ProjectsGanttPanel filterOrcid={me?.profile.orcid || null} />
             <section className="card card-chart">
               <SectionHead eyebrow="Output" title="Publication cadence" />
               {p.cadence && <CadencePanel cadence={p.cadence} />}
             </section>
+            <ProjectsGanttPanel filterOrcid={me?.profile.orcid || null} />
             <CoAuthorGraphPanel graph={p?.coauthorGraph} />
             <section className="card">
               <SectionHead eyebrow="Impact" title="Most cited" />
