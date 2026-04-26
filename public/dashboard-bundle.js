@@ -15399,8 +15399,7 @@ function VelocityPanel({ velocity }) {
           ] })
         ] }, i);
       })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
+    ] })
   ] });
 }
 function VelocityPanelSkeleton() {
@@ -15412,8 +15411,7 @@ function VelocityPanelSkeleton() {
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "skel", style: { display: "inline-block", fontSize: 16, fontFamily: "var(--mono)" }, children: "\u25B2 rising" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.5 } }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Solid: actual citations. Dashed: linear projection from your trend." })
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: { height: 140, position: "relative" }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "skel-fill skel", style: { opacity: 0.5 } }) })
   ] });
 }
 
@@ -15506,14 +15504,7 @@ function CadencePanel({ cadence }) {
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: [...types].sort((a2, b) => typeRank(a2) - typeRank(b)).map((t) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { width: 10, height: 10, background: typeColor(t), borderRadius: 2, display: "inline-block" } }),
       typeLabel(t)
-    ] }, t)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: [
-      "Publications per year (",
-      series[0].year,
-      "\u2013",
-      series[series.length - 1].year,
-      "), stacked by type. Dashed line: average."
-    ] })
+    ] }, t)) })
   ] });
 }
 function CadencePanelSkeleton() {
@@ -15527,8 +15518,7 @@ function CadencePanelSkeleton() {
     /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px 12px", marginTop: 10, fontSize: 11 }, children: legendPlaceholders.map((label, i) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, color: "var(--fg-dim)" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { width: 10, height: 10, background: "var(--bg-inset)", borderRadius: 2, display: "inline-block" } }),
       /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "skel", style: { display: "inline-block" }, children: label })
-    ] }, i)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { fontSize: 11, color: "var(--fg-dim)", marginTop: 8 }, children: "Publications per year, stacked by type. Dashed line: average." })
+    ] }, i)) })
   ] });
 }
 
@@ -15868,18 +15858,18 @@ function ProjectsGanttPanel({ filterOrcid }) {
     return { start, end };
   }, [filtered]);
   if (err) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Proyectos", title: "Carta Gantt" }),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { title: "Carta Gantt" }),
     /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "muted", children: [
       "Error: ",
       err
     ] })
   ] });
   if (!projects) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Proyectos", title: "Carta Gantt" }),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { title: "Carta Gantt" }),
     /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted skel", style: { height: 200 } })
   ] });
   if (!filtered.length) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Proyectos", title: "Carta Gantt" }),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { title: "Carta Gantt" }),
     /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted", children: "Sin proyectos con fechas registradas." })
   ] });
   const totalMs = range.end.getTime() - range.start.getTime();
@@ -15994,11 +15984,11 @@ function DashboardContent({ data }) {
     /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "stat-row", children: heroStats.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Stat, { ...s }, i)) }),
     /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "dash-grid", children: isPersonal && p ? /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("section", { className: "card card-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { title: "Citation velocity" }),
         /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(VelocityPanel, { velocity: p.velocity })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("section", { className: "card card-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { title: "Publication cadence" }),
         p.cadence && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(CadencePanel, { cadence: p.cadence })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ProjectsGanttPanel, { filterOrcid: me?.profile.orcid || null }),

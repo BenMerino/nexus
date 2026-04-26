@@ -68,11 +68,11 @@ function DashboardContent({ data }: { data: DashboardData }) {
         {isPersonal && p ? (
           <>
             <section className="card card-chart">
-              <SectionHead eyebrow="Trajectory" title="Citation velocity" />
+              <SectionHead title="Citation velocity" />
               <VelocityPanel velocity={p.velocity} />
             </section>
             <section className="card card-chart">
-              <SectionHead eyebrow="Output" title="Publication cadence" />
+              <SectionHead title="Publication cadence" />
               {p.cadence && <CadencePanel cadence={p.cadence} />}
             </section>
             <ProjectsGanttPanel filterOrcid={me?.profile.orcid || null} />

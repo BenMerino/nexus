@@ -76,9 +76,6 @@ export function VelocityPanel({ velocity }: { velocity: Velocity }) {
           );
         })}
       </svg>
-      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 8 }}>
-        Solid: actual citations. Dashed: linear projection from your trend.
-      </div>
     </div>
   );
 }
@@ -95,9 +92,6 @@ export function VelocityPanelSkeleton() {
       </div>
       <div style={{ height: 140, position: 'relative' }}>
         <div className="skel-fill skel" style={{ opacity: 0.5 }} />
-      </div>
-      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 8 }}>
-        Solid: actual citations. Dashed: linear projection from your trend.
       </div>
     </div>
   );

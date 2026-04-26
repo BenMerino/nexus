@@ -102,9 +102,6 @@ export function CadencePanel({ cadence }: { cadence: Cadence }) {
         ))}
       </div>
 
-      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 8 }}>
-        Publications per year ({series[0].year}–{series[series.length - 1].year}), stacked by type. Dashed line: average.
-      </div>
     </div>
   );
 }
@@ -131,9 +128,6 @@ export function CadencePanelSkeleton() {
             <span className="skel" style={{ display: 'inline-block' }}>{label}</span>
           </span>
         ))}
-      </div>
-      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 8 }}>
-        Publications per year, stacked by type. Dashed line: average.
       </div>
     </div>
   );
