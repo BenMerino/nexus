@@ -18,7 +18,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
   const { me } = useCurrentUser();
   const years = yearlyCounts(data);
   const tenantName = me?.tenant || 'Institution';
-  const displayName = me?.profile.name || me?.user || '';
+  const displayName = me?.profile.researcherName || me?.profile.name || me?.user || '';
   const isPersonal = !!me?.profile.orcid;
 
   const p = data.portfolio;
@@ -39,8 +39,8 @@ function DashboardContent({ data }: { data: DashboardData }) {
   ];
 
   const title = isPersonal && displayName
-    ? <><em>{displayName}</em>.</>
-    : <><em>{tenantName}</em>.</>;
+    ? <><em>{displayName}</em></>
+    : <><em>{tenantName}</em></>;
   const sub = isPersonal
     ? `Your research, pulled from 4 scholarly sources. No forms.`
     : `A living map of ${tenantName}'s scholarly output.`;

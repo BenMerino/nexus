@@ -10,6 +10,7 @@ export interface CurrentUser {
   secondaryColor: string | null;
   profile: {
     name?: string;
+    researcherName?: string;
     orcid?: string;
     position?: string;
     faculty?: string;

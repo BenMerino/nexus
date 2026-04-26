@@ -2,7 +2,7 @@ const { ensureSchema, getAllRecords } = require("../lib/db");
 const { getUser, requireRole, makeSessionCookie } = require("../lib/auth");
 const { getUserByUsername, getUserById, listTenants, listSubtenants, listUsers, createUser, updateUser, updateTenant, createTenant } = require("../lib/db-users");
 const { seedUsers } = require("../lib/seed-users");
-const { buildProfile, computeHIndex, countPapersByOrcid, countPapersByRor } = require("../lib/auth-helpers");
+const { buildProfile, computeHIndex, countPapersByOrcid, countPapersByRor, researcherNameByOrcid } = require("../lib/auth-helpers");
 const { getScope } = require("../lib/scope");
 
 module.exports = async function handler(req, res) {
@@ -18,17 +18,20 @@ module.exports = async function handler(req, res) {
     const isSuperadmin = user.role === "superadmin";
     const tid = user.tenant_id || 1;
     const scope = !isSuperadmin ? await getScope(req) : null;
-    const [tenants, hIndexResult, userPapers] = await Promise.all([
+    const [tenants, hIndexResult, userPapers, researcherName] = await Promise.all([
       listTenants(),
       (!isSuperadmin && user.full_name && scope) ? getAllRecords(scope).then(r => computeHIndex(user, r)) : null,
       countPapersByOrcid(user.orcid, tid),
+      researcherNameByOrcid(user.orcid, tid),
     ]);
     const tenant = tenants.find(t => t.id === user.tenant_id);
     const tenantPapers = await countPapersByRor(tenant?.ror_id, tid);
+    const profile = buildProfile(user, tenant);
+    if (researcherName) profile.researcherName = researcherName;
     return res.json({
       user: user.username, tenant: tenant?.name,
       logo: isSuperadmin ? null : tenant?.logo_url,
-      profile: buildProfile(user, tenant),
+      profile,
       hIndex: hIndexResult?.hIndex ?? null,
       hIndexByType: hIndexResult?.byType ?? null,
       userPapers, tenantPapers,

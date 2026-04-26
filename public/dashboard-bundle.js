@@ -15943,7 +15943,7 @@ function DashboardContent({ data }) {
   const { me } = useCurrentUser();
   const years = yearlyCounts(data);
   const tenantName = me?.tenant || "Institution";
-  const displayName = me?.profile.name || me?.user || "";
+  const displayName = me?.profile.researcherName || me?.profile.name || me?.user || "";
   const isPersonal = !!me?.profile.orcid;
   const p = data.portfolio;
   const pubCount = p?.works.length ?? data.totalPubs;
@@ -15960,13 +15960,7 @@ function DashboardContent({ data }) {
     { label: "Open access", value: data.totalPubs > 0 ? `${Math.round(data.oaCount / data.totalPubs * 100)}%` : "\u2014", sub: "of total output", accent: true },
     { label: "Authors indexed", value: data.authorCount.toLocaleString(), sub: "ORCID-verified" }
   ];
-  const title = isPersonal && displayName ? /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: displayName }),
-    "."
-  ] }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: tenantName }),
-    "."
-  ] });
+  const title = isPersonal && displayName ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_jsx_runtime24.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: displayName }) }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_jsx_runtime24.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("em", { children: tenantName }) });
   const sub = isPersonal ? `Your research, pulled from 4 scholarly sources. No forms.` : `A living map of ${tenantName}'s scholarly output.`;
   return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: "view dashboard", children: [
     /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("header", { className: "view-head", children: [
