@@ -14,6 +14,10 @@
     "Facultad de Psicología",
     "Facultad de Ciencias de la Salud",
     "Facultad de Tecnologías Industriales",
+    "Instituto de Matemáticas",
+    "Instituto de Química de Recursos Naturales",
+    "Instituto de Ciencias Biológicas",
+    "Instituto de Estudios Humanísticos Juan Ignacio Molina",
   ];
 
   function fundingOptions(selected) {
