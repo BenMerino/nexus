@@ -110,19 +110,15 @@ const bundles = [
     fs.writeFileSync(path.join(OUT, f), html);
   }
 
-  // ── 6. Copy through any other static assets (images, fonts, etc.) ────
-  // Skip source-only files: .ts, .tsx, .map.
-  const SKIP_EXT = new Set([".ts", ".tsx", ".map"]);
-  const SKIP_NAME = new Set();
+  // 6. Copy other static assets (images, fonts) through. Skip source-only
+  //    extensions and any .html/.js/.css (already produced above).
+  const SKIP_EXT = new Set([".ts", ".tsx", ".map", ".html", ".js", ".css"]);
   const walk = (dir, rel = "") => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const r = path.join(rel, entry.name);
       const abs = path.join(dir, entry.name);
       if (entry.isDirectory()) { walk(abs, r); continue; }
-      if (entry.name.endsWith(".html")) continue;     // already handled
-      if (entry.name.endsWith(".js") || entry.name.endsWith(".css")) continue; // hashed above (or unreferenced source)
       if (SKIP_EXT.has(path.extname(entry.name))) continue;
-      if (SKIP_NAME.has(entry.name)) continue;
       const dst = path.join(OUT, r);
       fs.mkdirSync(path.dirname(dst), { recursive: true });
       fs.copyFileSync(abs, dst);
@@ -130,7 +126,16 @@ const bundles = [
   };
   walk(SRC);
 
-  // ── 7. Write manifest for debugging / future tooling ─────────────────
+  // 7. For each logical name, emit a shim that reloads the page once —
+  //    so a stale-HTML browser fetching the unhashed URL converges instead
+  //    of seeing 404s. Hashed names already exist; never shadow them.
+  const reloadJs = `(function(){try{sessionStorage.getItem("nx-reload-once")||(sessionStorage.setItem("nx-reload-once","1"),location.reload())}catch(e){location.reload()}})();`;
+  for (const logical of Object.keys(manifest)) {
+    const dst = path.join(OUT, logical);
+    if (fs.existsSync(dst)) continue;
+    fs.writeFileSync(dst, logical.endsWith(".css") ? "/* obsolete */" : reloadJs);
+  }
+
   fs.writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2));
 
   const bundleCount = bundles.length;
