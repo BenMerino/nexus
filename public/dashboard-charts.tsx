@@ -71,6 +71,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
               <SectionHead eyebrow="Trajectory" title="Citation velocity" />
               <VelocityPanel velocity={p.velocity} />
             </section>
+            <ProjectsGanttPanel filterOrcid={me?.profile.orcid || null} />
             <section className="card card-chart">
               <SectionHead eyebrow="Output" title="Publication cadence" />
               {p.cadence && <CadencePanel cadence={p.cadence} />}
@@ -86,7 +87,6 @@ function DashboardContent({ data }: { data: DashboardData }) {
             </section>
             <TopJournals data={data} />
             <PartnerInstitutions data={data} />
-            <ProjectsGanttPanel filterOrcid={me?.profile.orcid || null} />
             <ClaimPaperPanel onClaimed={() => window.location.reload()} />
           </>
         ) : (

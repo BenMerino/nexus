@@ -15998,6 +15998,7 @@ function DashboardContent({ data }) {
         /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Trajectory", title: "Citation velocity" }),
         /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(VelocityPanel, { velocity: p.velocity })
       ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ProjectsGanttPanel, { filterOrcid: me?.profile.orcid || null }),
       /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("section", { className: "card card-chart", children: [
         /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SectionHead, { eyebrow: "Output", title: "Publication cadence" }),
         p.cadence && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(CadencePanel, { cadence: p.cadence })
@@ -16013,7 +16014,6 @@ function DashboardContent({ data }) {
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(TopJournals, { data }),
       /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(PartnerInstitutions, { data }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ProjectsGanttPanel, { filterOrcid: me?.profile.orcid || null }),
       /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ClaimPaperPanel, { onClaimed: () => window.location.reload() })
     ] }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
       years.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(BarChart, { rows: years, title: "Publications per year" }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "card card-chart", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: "muted", children: "No year data." }) }),
