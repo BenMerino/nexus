@@ -15,34 +15,21 @@
   }); }
   function isEditor() { return state.me && EDITOR.indexOf(state.me.role) !== -1; }
 
-  function bind(id, evt, fn) {
-    var el = document.getElementById(id);
-    if (!el) { console.warn("[claustro] missing #" + id + " — stale HTML cache?"); return; }
-    el.addEventListener(evt, fn);
-  }
-  var showError = function (m) { return window.claustroErr.showError(m); };
-  var safeFetch = function (u, o) { return window.claustroErr.safeFetch(u, o); };
   function init() {
-    bind("btn-tab-proyectos", "click", function () { switchTab("proyectos"); });
-    bind("btn-tab-clasificacion", "click", function () { switchTab("clasificacion"); });
-    bind("btn-save-indices", "click", saveIndices);
-    bind("btn-toggle-form", "click", function () {
+    document.getElementById("btn-tab-proyectos").addEventListener("click", function () { switchTab("proyectos"); });
+    document.getElementById("btn-tab-clasificacion").addEventListener("click", function () { switchTab("clasificacion"); });
+    document.getElementById("btn-save-indices").addEventListener("click", saveIndices);
+    document.getElementById("btn-toggle-form").addEventListener("click", function () {
       if (state.formOpen) window.claustroProjectsUI.closeForm(state);
       else window.claustroProjectsUI.openNewForm(state);
     });
-    bind("btn-save-project", "click", saveProject);
-    bind("btn-cancel-project", "click", function () { window.claustroProjectsUI.closeForm(state); });
-    // Optimistic load: assume editor, fire all fetches in parallel. If /me
-    // confirms non-editor, hide the area then. If anything 401s, redirect.
-    loadProjects();
-    safeFetch("/api/auth?action=me").then(function (d) {
+    document.getElementById("btn-save-project").addEventListener("click", saveProject);
+    document.getElementById("btn-cancel-project").addEventListener("click", function () { window.claustroProjectsUI.closeForm(state); });
+    fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
       state.me = d;
       gateProyectos();
       loadIndices().then(loadClaustro);
-    }).catch(function (e) {
-      if (String(e.message) === "401") return;
-      console.error("[claustro] auth/me failed:", e);
-      showError("Error de sesión: " + e.message + ". Recarga la página.");
+      if (isEditor()) loadProjects();
     });
   }
   function switchTab(name) {
@@ -52,21 +39,16 @@
     document.getElementById("tab-clasificacion").hidden = name !== "clasificacion";
   }
   function gateProyectos() {
-    var ed = isEditor();
-    var area = document.getElementById("proyectos-area");
-    var noac = document.getElementById("proyectos-no-access");
-    var save = document.getElementById("btn-save-indices");
-    if (area) area.style.display = ed ? "block" : "none";
-    if (noac) noac.style.display = ed ? "none" : "block";
-    if (save) save.style.display = ed ? "inline-block" : "none";
+    document.getElementById("proyectos-area").style.display = isEditor() ? "block" : "none";
+    document.getElementById("proyectos-no-access").style.display = isEditor() ? "none" : "block";
+    document.getElementById("btn-save-indices").style.display = isEditor() ? "inline-block" : "none";
   }
-  var logFetchErr = function (l) { return window.claustroErr.logFetchErr(l); };
 
   function loadIndices() {
-    return safeFetch("/api/claustro?action=indices").then(function (d) {
+    return fetch("/api/claustro?action=indices").then(function (r) { return r.json(); }).then(function (d) {
       state.indices = (d && d.indices) || [];
       renderIndicesChecks();
-    }).catch(logFetchErr("indices"));
+    });
   }
   function renderIndicesChecks() {
     var html = "";
@@ -89,19 +71,19 @@
   }
 
   function loadClaustro() {
-    safeFetch("/api/claustro?action=validate-all").then(function (d) {
+    fetch("/api/claustro?action=validate-all").then(function (r) { return r.json(); }).then(function (d) {
       state.claustro = d.claustro || [];
       state.programs = d.programs || {};
       window.claustroRender.programCards(state.programs);
       window.claustroRender.claustroTable(state.claustro);
-    }).catch(logFetchErr("validate-all"));
+    });
   }
   function loadProjects() {
-    safeFetch("/api/projects?action=list").then(function (rows) {
+    fetch("/api/projects?action=list").then(function (r) { return r.json(); }).then(function (rows) {
       state.projects = rows || [];
       window.claustroProjectsUI.renderFilters(state);
       window.claustroProjectsUI.renderListAndStats(state);
-    }).catch(logFetchErr("projects"));
+    });
   }
 
   function saveProject() {
@@ -135,16 +117,5 @@
   window.claustroProgramLabel = function (k) { return PROGRAM_LABELS[k] || k; };
   window.claustroEsc = esc;
   window.claustroState = state;
-  var booted = false;
-  function boot() { if (booted) return; booted = true; init(); }
-  if (document.readyState === "loading") {
-    window.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
-  // bfcache restore: page comes back without DOMContentLoaded firing.
-  // Re-fetch fresh data so the UI matches current server state.
-  window.addEventListener("pageshow", function (e) {
-    if (e.persisted) { booted = true; loadProjects(); loadClaustro(); }
-  });
+  window.addEventListener("DOMContentLoaded", init);
 })();

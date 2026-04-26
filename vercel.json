@@ -1,6 +1,6 @@
 {
   "buildCommand": "node build.js",
-  "outputDirectory": "public",
+  "outputDirectory": "dist",
   "rewrites": [
     { "source": "/api/records/:id", "destination": "/api/records/[id]" },
     { "source": "/t/:slug", "destination": "/tenant.html" }
@@ -10,6 +10,12 @@
       "source": "/(.*\\.html)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(.*-[A-Z0-9]{8}\\.(?:js|css))",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     }
   ]
