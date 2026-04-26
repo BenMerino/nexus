@@ -15883,17 +15883,7 @@ function ProjectsGanttPanel({ filterOrcid }) {
     cursor.setFullYear(cursor.getFullYear() + 1);
   }
   return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4 gantt-card", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
-      SectionHead,
-      {
-        eyebrow: "Proyectos",
-        title: "",
-        right: /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(Tag, { mono: true, children: [
-          filtered.length,
-          " con fechas"
-        ] })
-      }
-    ),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { eyebrow: "Proyectos", title: "" }),
     /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-wrap", children: [
       /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-axis", children: ticks.map((t, i) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-tick", style: { left: t.pct + "%" }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-tick-label", children: t.label }) }, i)) }),
       /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-rows", children: [

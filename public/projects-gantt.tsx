@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { SectionHead, Tag } from './ui-primitives';
+import { SectionHead } from './ui-primitives';
 
 interface Investigator { rol: string; full_name: string; orcid?: string | null; user_id?: number | null; }
 interface Project {
@@ -83,11 +83,7 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
 
   return (
     <section className="card card-span-4 gantt-card">
-      <SectionHead
-        eyebrow="Proyectos"
-        title=""
-        right={<Tag mono>{filtered.length} con fechas</Tag>}
-      />
+      <SectionHead eyebrow="Proyectos" title="" />
       <div className="gantt-wrap">
         <div className="gantt-axis">
           {ticks.map((t, i) => (
