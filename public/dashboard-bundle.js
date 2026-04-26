@@ -15827,8 +15827,8 @@ function parseDate(s) {
   const d = new Date(String(s).slice(0, 10));
   return isNaN(d.getTime()) ? null : d;
 }
-function fmtMonth(d) {
-  return d.toLocaleDateString("es-CL", { month: "short", year: "2-digit" });
+function fmtYear(d) {
+  return String(d.getFullYear());
 }
 function fmtCLP(n) {
   if (!n) return "$0";
@@ -15862,9 +15862,9 @@ function ProjectsGanttPanel({ filterOrcid }) {
       if (e > max) max = e;
     }
     const start = new Date(min);
-    start.setDate(1);
+    start.setMonth(0, 1);
     const end = new Date(max);
-    end.setMonth(end.getMonth() + 1, 1);
+    end.setFullYear(end.getFullYear() + 1, 0, 1);
     return { start, end };
   }, [filtered]);
   if (err) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-2", children: [
@@ -15889,8 +15889,8 @@ function ProjectsGanttPanel({ filterOrcid }) {
   const cursor = new Date(range.start);
   while (cursor < range.end) {
     const pct = (cursor.getTime() - range.start.getTime()) / totalMs * 100;
-    ticks.push({ pct, label: fmtMonth(cursor) });
-    cursor.setMonth(cursor.getMonth() + 3);
+    ticks.push({ pct, label: fmtYear(cursor) });
+    cursor.setFullYear(cursor.getFullYear() + 1);
   }
   return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-2 gantt-card", children: [
     /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(

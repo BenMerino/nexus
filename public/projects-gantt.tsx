@@ -18,8 +18,8 @@ function parseDate(s: string | null | undefined): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function fmtMonth(d: Date): string {
-  return d.toLocaleDateString('es-CL', { month: 'short', year: '2-digit' });
+function fmtYear(d: Date): string {
+  return String(d.getFullYear());
 }
 
 function fmtCLP(n: number | null | undefined): string {
@@ -60,8 +60,8 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
       if (s < min) min = s;
       if (e > max) max = e;
     }
-    const start = new Date(min); start.setDate(1);
-    const end = new Date(max); end.setMonth(end.getMonth() + 1, 1);
+    const start = new Date(min); start.setMonth(0, 1);
+    const end = new Date(max); end.setFullYear(end.getFullYear() + 1, 0, 1);
     return { start, end };
   }, [filtered]);
 
@@ -77,8 +77,8 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
   const cursor = new Date(range!.start);
   while (cursor < range!.end) {
     const pct = ((cursor.getTime() - range!.start.getTime()) / totalMs) * 100;
-    ticks.push({ pct, label: fmtMonth(cursor) });
-    cursor.setMonth(cursor.getMonth() + 3);
+    ticks.push({ pct, label: fmtYear(cursor) });
+    cursor.setFullYear(cursor.getFullYear() + 1);
   }
 
   return (
