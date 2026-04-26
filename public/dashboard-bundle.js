@@ -15857,21 +15857,12 @@ function ProjectsGanttPanel({ filterOrcid }) {
     end.setFullYear(end.getFullYear() + 1, 0, 1);
     return { start, end };
   }, [filtered]);
-  if (err) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { title: "Carta Gantt" }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "muted", children: [
-      "Error: ",
-      err
-    ] })
-  ] });
-  if (!projects) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { title: "Carta Gantt" }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted skel", style: { height: 200 } })
-  ] });
-  if (!filtered.length) return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SectionHead, { title: "Carta Gantt" }),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted", children: "Sin proyectos con fechas registradas." })
-  ] });
+  if (err) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("section", { className: "card card-span-4", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "muted", children: [
+    "Error: ",
+    err
+  ] }) });
+  if (!projects) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("section", { className: "card card-span-4", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted skel", style: { height: 200 } }) });
+  if (!filtered.length) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("section", { className: "card card-span-4", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "muted", children: "Sin proyectos con fechas registradas." }) });
   const totalMs = range.end.getTime() - range.start.getTime();
   const todayMs = Date.now();
   const todayPct = totalMs > 0 ? (todayMs - range.start.getTime()) / totalMs * 100 : -1;
@@ -15883,17 +15874,10 @@ function ProjectsGanttPanel({ filterOrcid }) {
     cursor.setFullYear(cursor.getFullYear() + 1);
   }
   return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("section", { className: "card card-span-4 gantt-card", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
-      SectionHead,
-      {
-        eyebrow: "Proyectos",
-        title: "Carta Gantt",
-        right: /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(Tag, { mono: true, children: [
-          filtered.length,
-          " con fechas"
-        ] })
-      }
-    ),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(Tag, { mono: true, children: [
+      filtered.length,
+      " con fechas"
+    ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-wrap", children: [
       /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-axis", children: ticks.map((t, i) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { className: "gantt-tick", style: { left: t.pct + "%" }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { className: "gantt-tick-label", children: t.label }) }, i)) }),
       /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className: "gantt-rows", children: [

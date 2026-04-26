@@ -65,9 +65,9 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
     return { start, end };
   }, [filtered]);
 
-  if (err) return <section className="card card-span-4"><SectionHead title="Carta Gantt" /><div className="muted">Error: {err}</div></section>;
-  if (!projects) return <section className="card card-span-4"><SectionHead title="Carta Gantt" /><div className="muted skel" style={{ height: 200 }} /></section>;
-  if (!filtered.length) return <section className="card card-span-4"><SectionHead title="Carta Gantt" /><div className="muted">Sin proyectos con fechas registradas.</div></section>;
+  if (err) return <section className="card card-span-4"><div className="muted">Error: {err}</div></section>;
+  if (!projects) return <section className="card card-span-4"><div className="muted skel" style={{ height: 200 }} /></section>;
+  if (!filtered.length) return <section className="card card-span-4"><div className="muted">Sin proyectos con fechas registradas.</div></section>;
 
   const totalMs = range!.end.getTime() - range!.start.getTime();
   const todayMs = Date.now();
@@ -83,11 +83,9 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
 
   return (
     <section className="card card-span-4 gantt-card">
-      <SectionHead
-        eyebrow="Proyectos"
-        title="Carta Gantt"
-        right={<Tag mono>{filtered.length} con fechas</Tag>}
-      />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <Tag mono>{filtered.length} con fechas</Tag>
+      </div>
       <div className="gantt-wrap">
         <div className="gantt-axis">
           {ticks.map((t, i) => (
