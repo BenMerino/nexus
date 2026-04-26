@@ -135,5 +135,16 @@
   window.claustroProgramLabel = function (k) { return PROGRAM_LABELS[k] || k; };
   window.claustroEsc = esc;
   window.claustroState = state;
-  window.addEventListener("DOMContentLoaded", init);
+  var booted = false;
+  function boot() { if (booted) return; booted = true; init(); }
+  if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+  // bfcache restore: page comes back without DOMContentLoaded firing.
+  // Re-fetch fresh data so the UI matches current server state.
+  window.addEventListener("pageshow", function (e) {
+    if (e.persisted) { booted = true; loadProjects(); loadClaustro(); }
+  });
 })();
