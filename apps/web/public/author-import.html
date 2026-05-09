@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Author Import — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+</head>
+<body class="shell-fixed">
+  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/author-import.html"></div>
+    <main class="main">
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Admin · author intake</div>
+            <h1 class="view-title">Find researchers by <em>name</em>.</h1>
+            <div class="view-sub">Search OpenAlex for matches, pick the right ORCID, import their full publication history.</div>
+          </div>
+        </header>
+
+        <div class="card">
+          <label class="form-label">Author name</label>
+          <div class="flex gap-8">
+            <input id="author-search" class="doi-input" type="text" placeholder="e.g. Albert Einstein" style="flex: 1;">
+            <button class="primary-btn" onclick="searchAuthor()">Search</button>
+          </div>
+        </div>
+
+        <div id="suggestions" class="mt-16"></div>
+        <div id="status" class="mt-8"></div>
+        <div id="results" class="mt-16"></div>
+      </div>
+      <script type="module" src="/author-import.js"></script>
+    </main>
+  </div>
+  <script type="module" src="/shell-mount.tsx"></script>
+  <script type="module" src="/spa-router.js"></script>
+</body>
+</html>

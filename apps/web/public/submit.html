@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Submit DOI — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+</head>
+<body class="shell-fixed">
+  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/submit.html"></div>
+    <main class="main">
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Ingestion</div>
+            <h1 class="view-title">Submit a <em>DOI</em>.</h1>
+            <div class="view-sub">Fetched in parallel from CrossRef, OpenAlex, Semantic Scholar, and DataCite. Deduped, tagged, stored.</div>
+          </div>
+          <div class="view-meta">
+            <span class="tag mono">CROSSREF · OPENALEX · S2 · DATACITE</span>
+          </div>
+        </header>
+
+        <div class="card">
+          <label class="form-label">DOI</label>
+          <div class="doi-input-row" style="display: flex; gap: 10px;">
+            <input id="doi-input" class="doi-input" type="text" placeholder="e.g. 10.1038/nature12373" style="flex: 1;">
+            <button class="primary-btn" onclick="submit()">Check DOI</button>
+          </div>
+        </div>
+
+        <div id="status" class="mt-16"></div>
+        <div id="results" class="mt-16"></div>
+      </div>
+      <script>
+      (() => {
+    document.getElementById("doi-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submit();
+    });
+
+    async function submit() {
+      const doi = document.getElementById("doi-input").value.trim();
+      if (!doi) { alert("Enter a DOI"); return; }
+
+      const status = document.getElementById("status");
+      const results = document.getElementById("results");
+      status.className = "status loading";
+      status.textContent = "Checking DOI across CrossRef, OpenAlex, Semantic Scholar, DataCite…";
+      results.innerHTML = "";
+
+      try {
+        const resp = await fetch("/api/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ doi }),
+        });
+        if (resp.status === 401) { window.location.href = "/login.html"; return; }
+        const data = await resp.json();
+        if (data.error) {
+          status.className = "status error";
+          status.textContent = "Error: " + data.error;
+          return;
+        }
+        status.className = "status success";
+        status.textContent = "Done. Record stored in database.";
+        results.innerHTML = renderNormalized(data.record) + renderTags(data.tags) + renderSources(data.sources);
+      } catch (err) {
+        status.className = "status error";
+        status.textContent = "Error: " + err.message;
+      }
+    }
+
+    function renderNormalized(r) {
+      const fields = [
+        ["doi", r.doi], ["title", r.title], ["authors", r.authors?.map(a => a.name || a).join(", ")],
+        ["published", r.published], ["journal", r.journal], ["publisher", r.publisher],
+        ["type", r.type], ["citations", r.citationCount], ["openAccess", r.openAccess],
+        ["openAccessUrl", r.openAccessUrl], ["venue", r.venue], ["url", r.url],
+      ];
+      const rows = fields.filter(([, v]) => v != null && v !== "").map(([k, v]) => {
+        let val = v;
+        if (typeof val === "string" && val.startsWith("http")) val = `<a href="${val}" target="_blank">${val}</a>`;
+        if (typeof val === "boolean") val = val ? "Yes" : "No";
+        return `<tr><td>${k}</td><td>${val}</td></tr>`;
+      }).join("");
+      return `<div class="normalized"><h3>Normalized record</h3><table>${rows}</table></div>`;
+    }
+
+    function renderTags(tags) {
+      return '<div class="card mt-16"><h3>Extracted tags</h3><div class="mt-8">'
+        + tags.map(t => `<span class="tag ${t.category}">${t.category}: ${t.value}</span>`).join(" ")
+        + '</div></div>';
+    }
+
+    function renderSources(sources) {
+      const names = ["crossref", "openalex", "semanticScholar", "datacite"];
+      let html = '<h2 class="mt-16" style="font-family: var(--display); font-weight: 400; margin-top: 24px;">Raw API responses</h2>';
+      html += names.map(s => {
+        const d = sources[s];
+        if (!d || !d.found) return `<div class="source"><h3>${s}</h3><span class="not-found">Not found</span></div>`;
+        const rows = Object.entries(d).filter(([k, v]) => k !== "found" && v != null && v !== "").map(([k, v]) => {
+          let val = Array.isArray(v) ? v.join(", ") : v;
+          if (typeof val === "string" && val.startsWith("http")) val = `<a href="${val}" target="_blank">${val}</a>`;
+          if (typeof val === "boolean") val = val ? "Yes" : "No";
+          return `<tr><td>${k}</td><td>${val}</td></tr>`;
+        }).join("");
+        return `<div class="source"><h3>${s}</h3><table>${rows}</table></div>`;
+      }).join("");
+      return html;
+    }
+
+    window.submit = submit;
+      })();
+      </script>
+    </main>
+  </div>
+  <script type="module" src="/shell-mount.tsx"></script>
+  <script type="module" src="/spa-router.js"></script>
+</body>
+</html>

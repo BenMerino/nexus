@@ -1,0 +1,31 @@
+.claude/
+.git/
+.vscode/
+.cursor/
+.aider*
+*.log
+.DS_Store
+
+# Never upload local node_modules — Railway runs npm ci fresh
+node_modules/
+apps/*/node_modules/
+packages/*/node_modules/
+
+# Local build artifacts
+apps/*/dist/
+apps/*/.vite/
+dist/
+
+# Pre-monorepo files moved to legacy/ and not part of the deploy
+legacy/
+
+# Local env (Railway provides via dashboard / variables)
+.env
+.env.local
+.env.*.local
+.vercel/
+
+# Editor scratch
+*.swp
+.claude-browser-chat.jsonl
+.claude-browser-events.jsonl

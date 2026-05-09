@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Login — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+</head>
+<body>
+  <nav>
+    <span class="logo">Nexus</span>
+  </nav>
+
+  <div class="page">
+    <h1>Login</h1>
+
+    <div class="card">
+      <div style="display: flex; flex-direction: column; gap: 12px; max-width: 360px;">
+        <div>
+          <label style="display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: bold;">Username</label>
+          <input id="user-input" type="text" placeholder="Username" style="width: 100%;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: bold;">Password</label>
+          <input id="pass-input" type="password" placeholder="Password" style="width: 100%;">
+        </div>
+        <div><button onclick="doLogin()">Login</button></div>
+      </div>
+    </div>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    // If already logged in, redirect to home
+    if (document.cookie.includes("nexus_logged_in=1")) {
+      window.location.href = "/";
+    }
+
+    document.getElementById("pass-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doLogin();
+    });
+
+    async function doLogin() {
+      const user = document.getElementById("user-input").value.trim();
+      const pass = document.getElementById("pass-input").value;
+      const status = document.getElementById("status");
+
+      if (!user || !pass) { alert("Enter both username and password"); return; }
+
+      try {
+        const resp = await fetch("/api/auth?action=login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user, pass }),
+        });
+        const data = await resp.json();
+        if (data.error) {
+          status.className = "status error";
+          status.textContent = data.error;
+          return;
+        }
+        window.location.href = "/";
+      } catch (err) {
+        status.className = "status error";
+        status.textContent = "Error: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

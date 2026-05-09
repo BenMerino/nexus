@@ -11,3 +11,5 @@ dist/
 .claude/
 Nexus.zip
 nexus.zip
+
+.claude-browser-*.jsonl

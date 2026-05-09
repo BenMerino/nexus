@@ -1,0 +1,24 @@
+{
+  "name": "@nexus/web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --port=9000 --host=0.0.0.0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^9.6.0",
+    "d3-force": "^3.0.0",
+    "d3-hierarchy": "^3.1.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "three": "^0.184.0",
+    "three-stdlib": "^2.36.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.1",
+    "vite": "^8.0.10"
+  }
+}

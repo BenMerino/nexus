@@ -1,31 +1,18 @@
 {
-  "name": "hector",
+  "name": "nexus",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "vite build",
-    "dev": "vite",
-    "preview": "vite preview"
+    "dev:api": "npm run dev --workspace=@nexus/api",
+    "dev:web": "npm run dev --workspace=@nexus/web",
+    "build:web": "npm run build --workspace=@nexus/web",
+    "start:api": "npm run start --workspace=@nexus/api"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@react-three/fiber": "^9.6.0",
-    "@vercel/postgres": "^0.10.0",
-    "d3-force": "^3.0.0",
-    "d3-hierarchy": "^3.1.2",
-    "esbuild": "^0.28.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "three": "^0.184.0",
-    "three-stdlib": "^2.36.1"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^6.0.1",
-    "dotenv": "^17.4.2",
-    "pg": "^8.20.0",
-    "vite": "^8.0.10"
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

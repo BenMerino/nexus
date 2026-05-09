@@ -1,0 +1,59 @@
+# Caddyfile for Nexus on Railway. Same shape as Zincro's: one file, both
+# frontend services (none yet, just nexus-web today) parameterize routing
+# via env vars set per-service by scripts/railway-bootstrap.sh.
+#
+# - /api/* → reverse_proxy to the API service over Railway's internal
+#   network. {$API_INTERNAL_URL} is e.g. nexus.railway.internal:8080.
+# - /(.+\.js) and /(.+\.css) at the root → asset-shim, which serves a
+#   one-shot reload payload to clients on stale cached HTML referencing
+#   asset filenames from a previous build. Mirrors the vercel.json rewrite
+#   that ran on Vercel; without it, those clients see 404s and can't
+#   self-recover.
+# - /t/:slug → tenant.html (mirrors the Vercel rewrite).
+# - Everything else → static SPA: serve {$RAILPACK_SPA_OUTPUT_DIR},
+#   fall back to /dashboard.html (root index) for unknown paths.
+
+{
+	auto_https off
+	admin off
+}
+
+:{$PORT} {
+	encode gzip
+
+	handle /api/* {
+		reverse_proxy {$API_INTERNAL_URL}
+	}
+
+	# Tenant slug rewrite (was a Vercel rewrite to /tenant.html).
+	@tenant path_regexp tenant ^/t/[^/]+$
+	rewrite @tenant /tenant.html
+
+	# Asset-shim catch-all for stale-HTML clients. Matches *.js / *.css at
+	# the root that didn't hit the static file_server. Forwards to the API
+	# which serves a tiny reload payload from /api/asset-shim.
+	@stale_js path_regexp js ^/[^/]+\.js$
+	handle @stale_js {
+		reverse_proxy {$API_INTERNAL_URL} {
+			rewrite /api/asset-shim?ext=js&name={uri}
+		}
+	}
+	@stale_css path_regexp css ^/[^/]+\.css$
+	handle @stale_css {
+		reverse_proxy {$API_INTERNAL_URL} {
+			rewrite /api/asset-shim?ext=css&name={uri}
+		}
+	}
+
+	# Long-cache hashed assets, no-cache HTML.
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	@html path *.html
+	header @html Cache-Control "no-store, no-cache, must-revalidate"
+
+	handle {
+		root * {$RAILPACK_SPA_OUTPUT_DIR}
+		try_files {path} /dashboard.html
+		file_server
+	}
+}

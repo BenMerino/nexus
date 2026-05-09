@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+</head>
+<body class="shell-fixed">
+  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/admin.html"></div>
+    <main class="main">
+      <style>
+        #tenant-detail { display: none; }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+        .back-btn { cursor: pointer; font-size: 13px; color: var(--accent); background: transparent; border: 0; padding: 0; margin-bottom: 14px; font: inherit; }
+        .back-btn:hover { filter: brightness(1.15); }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .admin-table th, .admin-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-soft); }
+        .admin-table th { font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: 0.12em; color: var(--fg-dim); font-family: var(--mono); }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 500; font-family: var(--mono); letter-spacing: 0.06em; }
+        .badge-superadmin { background: oklch(0.28 0.05 300 / 0.5); color: oklch(0.82 0.10 300); }
+        .badge-director   { background: oklch(0.28 0.05 245 / 0.5); color: oklch(0.82 0.10 245); }
+        .badge-secretary  { background: oklch(0.28 0.05 50  / 0.5); color: oklch(0.82 0.10 50); }
+        .badge-academic   { background: oklch(0.28 0.05 145 / 0.5); color: oklch(0.82 0.10 145); }
+        .color-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+        .color-row label { width: 130px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
+        .color-row input[type="color"] { width: 40px; height: 30px; border: 1px solid var(--border); cursor: pointer; background: transparent; border-radius: 3px; padding: 0; }
+        .form-row { margin: 10px 0; }
+        .form-row label { display: block; font-family: var(--mono); font-size: 10px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.12em; color: var(--fg-dim); }
+        .form-row input, .form-row select { width: 100%; }
+        .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start; }
+        .logo-box { width: 80px; height: 80px; border: 1px dashed var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; background: var(--bg-inset); }
+        .logo-box:hover { border-color: var(--accent); }
+        .logo-box img { max-width: 80px; max-height: 80px; object-fit: contain; }
+        .tm-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 4px; padding: 14px; margin-bottom: 10px; }
+        .tm-vals { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+        .tm-vals .tag { cursor: pointer; border: 2px solid transparent; }
+        .tm-vals .tag.selected { border-color: var(--accent); font-weight: 500; }
+        .synonym-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 12px; }
+        .card h3 { font-family: var(--display); font-weight: 400; font-size: 18px; margin-bottom: 10px; }
+        .card p { font-size: 12px; color: var(--fg-muted); margin-bottom: 10px; }
+      </style>
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Platform</div>
+            <h1 class="view-title">Superadmin <em>console</em>.</h1>
+            <div class="view-sub">Tenants, users, indexation sources, and OpenAlex imports — everything that shapes a CRIS.</div>
+          </div>
+        </header>
+
+        <div id="no-access" style="display:none;" class="card"><p>Superadmin access required.</p></div>
+
+        <div id="tenant-overview" style="display:none;">
+          <div class="card" id="tenants-grid"></div>
+          <button class="primary-btn" style="margin-top:18px;" id="btn-new-tenant">+ New tenant</button>
+          <div class="card" id="new-tenant-card" style="display:none;margin-top:18px;"></div>
+
+          <div class="card" id="theme-tokens-card" style="margin-top:18px;">
+            <h3>Chart color tokens</h3>
+            <p>Override the heatmap gradient. Stops interpolate from <em>From</em> (lowest values) to <em>To</em> (highest). Changes apply on next page load.</p>
+            <div id="theme-tokens-rows"></div>
+            <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+              <button class="primary-btn" onclick="themeTokensSave()">Save</button>
+              <button onclick="themeTokensReset()">Reset to defaults</button>
+              <span id="theme-tokens-status" style="font-size:12px;color:var(--fg-muted);"></span>
+            </div>
+          </div>
+
+          <div class="card" id="indexation-card" style="margin-top:18px;">
+            <h3>Journal indexation (source of truth)</h3>
+            <p>One row per indexing source. Auto sources fetch fresh data on click; manual sources take a CSV upload. Every seed replaces the source's list and re-tags every matching paper.</p>
+            <div id="indexation-table"></div>
+            <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <button class="primary-btn" onclick="idxSeedOpenAlex()">Seed WoS + DOAJ from OpenAlex</button>
+              <button class="primary-btn" onclick="idxReconcile()" style="background:var(--bg-muted);">Reconcile all indexed_in tags</button>
+              <span style="font-size:12px;color:var(--fg-muted);">OpenAlex is_core + is_in_doaj drive WoS/DOAJ. SciELO has its own button (articlemeta, more reliable).</span>
+            </div>
+            <div id="idx-status" style="margin-top:10px;font-size:12px;"></div>
+          </div>
+        </div>
+
+        <div id="tenant-detail">
+          <button class="back-btn" id="btn-back">← Back to all tenants</button>
+          <h2 id="detail-title" style="font-family: var(--display); font-weight: 400; font-size: 32px; margin-bottom: 14px;"></h2>
+
+          <div class="card" style="margin-bottom:18px;">
+            <h3>Subtenants</h3>
+            <div id="subtenants-list"></div>
+            <div style="display:flex;gap:10px;align-items:end;margin-top:12px;">
+              <div class="form-row" style="margin:0;flex:1;"><label>Name</label><input id="st-name" placeholder="e.g. Faculty of Engineering"></div>
+              <div class="form-row" style="margin:0;flex:1;"><label>ROR ID</label><input id="st-ror" placeholder="Optional"></div>
+              <button class="primary-btn" onclick="addSubtenant()">Add</button>
+            </div>
+          </div>
+
+          <div class="detail-grid">
+            <div class="card"><h3>Users</h3><div id="users-list"></div></div>
+            <div class="card"><h3>Add user</h3><div id="user-form"></div></div>
+          </div>
+
+          <div class="card" style="margin-top:18px;">
+            <h3>Tag manager</h3>
+            <p>Detect and merge duplicate tags. Click a tag to pick the canonical name.</p>
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+              <select id="tm-category">
+                <option value="">All</option>
+                <option value="author">Author</option>
+                <option value="institution">Institution</option>
+                <option value="journal">Journal</option>
+                <option value="publisher">Publisher</option>
+                <option value="venue">Venue</option>
+              </select>
+              <button class="primary-btn" onclick="tmScan()">Scan</button>
+              <button onclick="tmRorResolve()">Auto-resolve institutions (ROR)</button>
+              <button class="secondary" onclick="tmShowSynonyms()">Active synonyms</button>
+              <span id="tm-status" style="font-size:12px;color:var(--fg-muted);"></span>
+            </div>
+            <div id="tm-content"></div>
+          </div>
+
+          <div class="card" style="margin-top:18px;">
+            <h3>Submit DOI</h3>
+            <div style="display:flex;gap:10px;align-items:end;">
+              <div class="form-row" style="margin:0;flex:1;"><label>DOI</label><input id="doi-input" type="text" placeholder="e.g. 10.1038/nature12373"></div>
+              <button class="primary-btn" onclick="submitDoi()">Submit</button>
+            </div>
+            <div id="doi-status" style="margin-top:10px;"></div>
+            <div id="doi-results" style="margin-top:10px;"></div>
+          </div>
+
+          <div class="detail-grid" style="margin-top:18px;">
+            <div class="card"><h3>Edit tenant</h3><div id="tenant-form"></div></div>
+            <div class="card">
+              <h3>OpenAlex import</h3>
+              <p>Fetch all affiliated academics, ORCIDs, and DOIs for this institution via its ROR.</p>
+              <button class="primary-btn" id="btn-institution-import">Import from OpenAlex</button>
+              <div id="import-status" style="margin-top:10px;"></div>
+              <div id="import-results" style="margin-top:10px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script type="module" src="/color-extract.js"></script>
+      <script type="module" src="/admin-tenant-form.js"></script>
+      <script type="module" src="/admin-users.js"></script>
+      <script type="module" src="/admin-tag-manager.js"></script>
+      <script type="module" src="/admin-author-import.js"></script>
+      <script type="module" src="/admin-indexation.js"></script>
+      <script type="module" src="/admin-theme-tokens.js"></script>
+      <script type="module" src="/admin-app.js"></script>
+    </main>
+  </div>
+  <script type="module" src="/shell-mount.tsx"></script>
+  <script type="module" src="/spa-router.js"></script>
+</body>
+</html>
