@@ -1,0 +1,11 @@
+-- Baseline marker. The production schema (tenants, users, submissions,
+-- doi_records, tags, doi_concepts, doi_citations_by_year, indexed_journals,
+-- projects, project_investigators, settings, tag_dismissed_pairs,
+-- tag_synonyms, theme_tokens) was created by lib/db-schema.js's
+-- ensureSchema() during the @vercel/postgres era and migrated wholesale
+-- from Neon to Railway in 2026-05.
+--
+-- This file is intentionally empty so the migration runner can record
+-- "baseline" as applied in _migrations without re-running the original
+-- DDL. Future schema changes go in 001_*.sql, 002_*.sql, etc.
+SELECT 1;
