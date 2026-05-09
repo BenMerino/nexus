@@ -44,6 +44,29 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    if (req.query.paginated === "1") {
+      const { paginatedQuery } = require("../src/db/list");
+      const { envelope } = require("../src/lib/pagination");
+      const page = await paginatedQuery({
+        baseSql: `
+          SELECT t.category,
+            MAX(COALESCE(s.canonical, t.value)) AS value,
+            COALESCE(t.ext_id, COALESCE(s.canonical, t.value)) AS group_key,
+            MAX(t.ext_id) AS ext_id,
+            COUNT(*) as count
+          FROM tags t
+          JOIN doi_records d ON d.id = t.doi_record_id
+          LEFT JOIN tag_synonyms s ON s.category = t.category AND s.variant = t.value AND s.tenant_id = $1
+          WHERE d.tenant_id = $1
+          GROUP BY t.category, COALESCE(t.ext_id, COALESCE(s.canonical, t.value))
+        `,
+        baseParams: [tenantId],
+        orderBy: "count DESC",
+        query: req.query,
+      });
+      return res.json(envelope(page));
+    }
+
     const { rows } = await sql`
       SELECT t.category,
         MAX(COALESCE(s.canonical, t.value)) AS value,
