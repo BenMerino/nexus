@@ -53,7 +53,17 @@
 
 	handle {
 		root * {$RAILPACK_SPA_OUTPUT_DIR}
-		try_files {path} /dashboard.html
+		# try_files order:
+		#   1. {path}            — exact file (incl. legacy .html files like
+		#                          /dashboard.html, /claustro.html during the
+		#                          phased migration).
+		#   2. {path}.html       — clean URLs that match a legacy .html file
+		#                          (e.g. /admin → /admin.html). Removed once
+		#                          every page is on React Router.
+		#   3. /index.html       — React Router catch-all. Routes registered
+		#                          in spa-main.tsx (currently /login) render
+		#                          here; everything else 404s in React Router.
+		try_files {path} {path}.html /index.html
 		file_server
 	}
 }
