@@ -67,6 +67,15 @@ async function sql(strings, ...values) {
   return { rows: r.rows, rowCount: r.rowCount, command: r.command, fields: r.fields };
 }
 
+// `sql.query(text, params?)` — `@vercel/postgres` exposes this on the same
+// object as the tagged template. Used for queries built dynamically (e.g.
+// SQL with variable IN-list expansion) where template literals don't fit.
+sql.query = async function (text, params) {
+  if (!pool) throw new Error("sql.query: no DATABASE_URL configured");
+  const r = await pool.query(text, params);
+  return { rows: r.rows, rowCount: r.rowCount, command: r.command, fields: r.fields };
+};
+
 const db = {
   async query(text, params) {
     if (!pool) throw new Error("db.query: no DATABASE_URL configured");
