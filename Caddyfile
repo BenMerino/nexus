@@ -56,14 +56,15 @@
 		# try_files order:
 		#   1. {path}            — exact file (incl. legacy .html files like
 		#                          /dashboard.html, /claustro.html during the
-		#                          phased migration).
-		#   2. {path}.html       — clean URLs that match a legacy .html file
-		#                          (e.g. /admin → /admin.html). Removed once
-		#                          every page is on React Router.
-		#   3. /index.html       — React Router catch-all. Routes registered
-		#                          in spa-main.tsx (currently /login) render
-		#                          here; everything else 404s in React Router.
-		try_files {path} {path}.html /index.html
+		#                          phased migration; legacy nav still links to
+		#                          these explicitly).
+		#   2. /index.html       — React Router catch-all. Migrated routes
+		#                          (e.g. /dashboard, /login) render here.
+		#                          A {path}.html step would be wrong: it would
+		#                          rewrite /dashboard → dashboard.html, which
+		#                          is a redirect file pointing back at
+		#                          /dashboard, producing a redirect loop.
+		try_files {path} /index.html
 		file_server
 	}
 }
