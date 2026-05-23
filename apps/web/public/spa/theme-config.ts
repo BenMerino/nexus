@@ -42,6 +42,27 @@ export const key = (mode: Mode, token: string) => `theme-${mode}-${token}`;
 
 export const HEX = /^#[0-9a-fA-F]{6}$/;
 
+// Just the token slugs (no labels), in the same order. Used by the runtime
+// applier in shell-mount. Kept here, in this side-effect-free module, so
+// shell-mount and the configurator can share it without either importing
+// the other (importing shell-mount runs its mount() side effect).
+export const SURFACE_TOKEN_KEYS = TOKENS.map(t => t.token);
+
+export function activeThemeMode(): Mode {
+  return localStorage.getItem('nexus-theme') === 'light' ? 'light' : 'dark';
+}
+
+// Apply one mode's surface palette from a tokens map onto :root, and set
+// data-theme so mode-specific CSS can hook in.
+export function applyThemeMode(mode: Mode, tokens: Record<string, string>) {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', mode);
+  for (const t of SURFACE_TOKEN_KEYS) {
+    const v = tokens[key(mode, t)];
+    if (v) root.style.setProperty('--' + t, v);
+  }
+}
+
 // PUT only the surface keys (the API ignores unknown keys, but sending the
 // minimal set keeps the request honest). Returns the count the API reports.
 export async function saveTokens(values: Record<string, string>): Promise<number> {

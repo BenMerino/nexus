@@ -6,8 +6,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useCurrentUser } from '../shell-helpers';
-import { applyThemeMode, activeThemeMode } from '../shell-mount';
-import { TOKENS, DEFAULTS, key, HEX, saveTokens, type Mode } from './theme-config';
+import { TOKENS, DEFAULTS, key, HEX, saveTokens, applyThemeMode, activeThemeMode, type Mode } from './theme-config';
 
 export function ThemeConfigPage() {
   const { me, loading } = useCurrentUser();

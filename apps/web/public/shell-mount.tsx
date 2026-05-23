@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Sidebar } from './shell-sidebar';
 import { RoleSwitcher } from './shell-tweaks';
 import { useCurrentUser } from './shell-helpers';
+import { applyThemeMode, activeThemeMode } from './spa/theme-config';
 
 function SidebarApp({ initialPath }: { initialPath: string }) {
   const { me } = useCurrentUser();
@@ -16,27 +17,6 @@ function SidebarApp({ initialPath }: { initialPath: string }) {
     return () => window.removeEventListener('nexus:navigated', onNav);
   }, []);
   return <Sidebar me={me} currentPath={currentPath} roleSwitcher={<RoleSwitcher me={me} />} />;
-}
-
-// Core surface tokens the palette configurator owns. Stored keys are
-// per-mode (theme-<mode>-<token>); we map the active mode's values onto the
-// real --<token> vars that shared.css and the whole app consume.
-const SURFACE_TOKENS = ['bg', 'bg-elev', 'bg-card', 'border', 'fg', 'fg-muted', 'accent'];
-
-export function activeThemeMode(): 'light' | 'dark' {
-  return localStorage.getItem('nexus-theme') === 'light' ? 'light' : 'dark';
-}
-
-// Apply one mode's surface palette from a tokens map onto :root, and set
-// data-theme so mode-specific CSS can hook in. Exported so the configurator
-// can preview a mode without a server round-trip.
-export function applyThemeMode(mode: 'light' | 'dark', tokens: Record<string, string>) {
-  const root = document.documentElement;
-  root.setAttribute('data-theme', mode);
-  for (const t of SURFACE_TOKENS) {
-    const v = tokens['theme-' + mode + '-' + t];
-    if (v) root.style.setProperty('--' + t, v);
-  }
 }
 
 function loadThemeTokens() {
