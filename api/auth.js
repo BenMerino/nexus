@@ -103,5 +103,19 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  if (action === "users-import") {
+    const sa = await requireRole(req, "superadmin");
+    if (!sa) return res.status(403).json({ error: "Superadmin required" });
+    if (req.method === "POST") {
+      const { csv, tenant_id } = req.body;
+      const tid = tenant_id || (req.query.tenantId ? parseInt(req.query.tenantId) : null);
+      if (!csv || !tid) return res.status(400).json({ error: "csv and tenant_id are required" });
+      const { parseRoster, importRoster } = require("../lib/roster-import");
+      const rows = parseRoster(csv);
+      const result = await importRoster(rows, tid);
+      return res.json({ ok: true, parsed: rows.length, ...result });
+    }
+  }
+
   res.status(404).json({ error: "Unknown action" });
 };
