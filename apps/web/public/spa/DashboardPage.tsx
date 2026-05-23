@@ -29,17 +29,9 @@ const importStyles = `
 
 export function DashboardPage() {
   useEffect(() => {
-    // Load the page-specific stylesheet that dashboard.html had via
-    // <link rel="stylesheet">. We append it to <head> on mount and leave
-    // it there — it's small, all dashboard sub-routes share it, and
-    // duplicate-injection is guarded by id.
-    if (!document.getElementById("projects-gantt-css")) {
-      const link = document.createElement("link");
-      link.id = "projects-gantt-css";
-      link.rel = "stylesheet";
-      link.href = "/projects-gantt.css";
-      document.head.appendChild(link);
-    }
+    // projects-gantt.css is imported by projects-gantt.tsx, so Vite bundles
+    // it and injects the <link> at build time — no runtime injection needed.
+    //
     // Side-effect imports: dashboard-charts mounts into #dashboard-root,
     // dashboard-import wires the superadmin import button. Both are
     // idempotent (dashboard-charts unmounts the prior root before

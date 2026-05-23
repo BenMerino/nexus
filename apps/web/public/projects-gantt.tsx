@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { SectionHead } from './ui-primitives';
+import './projects-gantt.css';
 
 interface Investigator { rol: string; full_name: string; orcid?: string | null; user_id?: number | null; }
 interface Project {
