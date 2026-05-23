@@ -7,6 +7,7 @@
 @import "./dna.css";
 
 :root {
+  color-scheme: dark;
   --bg:         oklch(0.16 0.012 260);
   --bg-elev:    oklch(0.20 0.013 260);
   --bg-card:    oklch(0.22 0.013 258);
@@ -78,6 +79,7 @@
    fallback if the API hasn't been populated.
    ─────────────────────────────────────────────────────────── */
 :root[data-theme="light"] {
+  color-scheme: light;
   --bg:         oklch(0.97 0.004 90);
   --bg-elev:    oklch(1.00 0 0);
   --bg-card:    oklch(1.00 0 0);
