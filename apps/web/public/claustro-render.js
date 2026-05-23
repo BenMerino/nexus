@@ -13,6 +13,8 @@
   }
 
   function renderProgramCards(programs) {
+    var target = document.getElementById("program-cards");
+    if (!target) return;
     var html = "";
     var keys = ["doctorado", "magister_academico", "magister_profesional"];
     for (var i = 0; i < keys.length; i++) {
@@ -27,7 +29,7 @@
       html += '<div class="pgm-banner ' + (p.pass ? "pgm-pass" : "pgm-fail") + '">' + (p.pass ? "Cumple" : "No cumple") + "</div>";
       html += "</div>";
     }
-    document.getElementById("program-cards").innerHTML = html;
+    target.innerHTML = html;
   }
 
   function renderClaustroTable(rows) {

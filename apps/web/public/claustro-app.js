@@ -53,7 +53,7 @@
     return fetch("/api/claustro?action=indices").then(function (r) { return r.json(); }).then(function (d) {
       state.indices = (d && d.indices) || [];
       renderIndicesChecks();
-    });
+    }).catch(function (e) { console.error("loadIndices failed", e); });
   }
   function renderIndicesChecks() {
     var html = "";
@@ -76,19 +76,19 @@
   }
 
   function loadClaustro() {
-    fetch("/api/claustro?action=validate-all").then(function (r) { return r.json(); }).then(function (d) {
+    return fetch("/api/claustro?action=validate-all").then(function (r) { return r.json(); }).then(function (d) {
       state.claustro = d.claustro || [];
       state.programs = d.programs || {};
       window.claustroRender.programCards(state.programs);
       window.claustroRender.claustroTable(state.claustro);
-    });
+    }).catch(function (e) { console.error("loadClaustro failed", e); });
   }
   function loadProjects() {
-    fetch("/api/projects?action=list").then(function (r) { return r.json(); }).then(function (rows) {
+    return fetch("/api/projects?action=list").then(function (r) { return r.json(); }).then(function (rows) {
       state.projects = rows || [];
       window.claustroProjectsUI.renderFilters(state);
       window.claustroProjectsUI.renderListAndStats(state);
-    });
+    }).catch(function (e) { console.error("loadProjects failed", e); });
   }
 
   function saveProject() {
@@ -122,6 +122,9 @@
   window.claustroProgramLabel = function (k) { return PROGRAM_LABELS[k] || k; };
   window.claustroEsc = esc;
   window.claustroState = state;
-  if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", init);
-  else init();
+  // Wait for full load (not just DOMContentLoaded). Under some network/HTTP2
+  // conditions the body wasn't fully in the DOM when fetches resolved, leading
+  // to getElementById('program-cards') returning null mid-render.
+  if (document.readyState === "complete") init();
+  else window.addEventListener("load", init);
 })();
