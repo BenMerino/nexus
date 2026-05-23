@@ -1,8 +1,9 @@
 // Theme palette configurator (/theme). Superadmin-only editor for the
 // core light/dark surface tokens. Edits preview live on the page via
 // applyThemeMode; Save persists to /api/theme-tokens (superadmin-gated
-// on the server too). The chosen mode is remembered in localStorage as
-// nexus-theme and read back by shell-mount.tsx on every page load.
+// on the server too). The mode toggle here is preview-only — a normal
+// user's light/dark mode follows their OS prefers-color-scheme, applied
+// by shell-mount.tsx on load.
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useCurrentUser } from '../shell-helpers';
@@ -38,9 +39,10 @@ export function ThemeConfigPage() {
     setValues(v => ({ ...v, [key(mode, token)]: hex }));
   }
 
+  // Preview-only: pick which mode's palette to edit/preview. Users' actual
+  // mode follows their OS setting, so this doesn't persist a choice.
   function selectMode(m: Mode) {
     setMode(m);
-    localStorage.setItem('nexus-theme', m);
   }
 
   async function save() {
@@ -72,7 +74,8 @@ export function ThemeConfigPage() {
     <div className="page">
       <h1>Theme palette</h1>
       <p style={{ color: 'var(--fg-muted)', marginBottom: 16 }}>
-        Core surface colors for each mode. Changes preview live; Save persists them for everyone.
+        Core surface colors for each mode. Users see light or dark to match their system setting.
+        The toggle below is a preview; Save persists the palette for everyone.
       </p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>

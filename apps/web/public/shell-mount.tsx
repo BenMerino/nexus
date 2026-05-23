@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Sidebar } from './shell-sidebar';
 import { RoleSwitcher } from './shell-tweaks';
 import { useCurrentUser } from './shell-helpers';
-import { applyThemeMode, activeThemeMode } from './spa/theme-config';
+import { applyThemeMode, activeThemeMode, onSystemThemeChange } from './spa/theme-config';
 
 function SidebarApp({ initialPath }: { initialPath: string }) {
   const { me } = useCurrentUser();
@@ -25,6 +25,9 @@ function loadThemeTokens() {
     const root = document.documentElement;
     for (const k in tokens) root.style.setProperty('--' + k, tokens[k]);
     applyThemeMode(activeThemeMode(), tokens);
+    // Track the OS setting so the palette swaps live if the user flips
+    // their system light/dark mode without reloading.
+    onSystemThemeChange(mode => applyThemeMode(mode, tokens));
     window.dispatchEvent(new CustomEvent('nexus:theme-tokens', { detail: tokens }));
   }).catch(() => {});
 }

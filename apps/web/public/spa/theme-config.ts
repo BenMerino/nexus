@@ -48,8 +48,20 @@ export const HEX = /^#[0-9a-fA-F]{6}$/;
 // the other (importing shell-mount runs its mount() side effect).
 export const SURFACE_TOKEN_KEYS = TOKENS.map(t => t.token);
 
+// The active mode mirrors the OS setting (prefers-color-scheme). There is no
+// per-user override: the /theme toggle previews a palette but doesn't change
+// which mode a normal user sees.
 export function activeThemeMode(): Mode {
-  return localStorage.getItem('nexus-theme') === 'light' ? 'light' : 'dark';
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+// Re-run cb whenever the OS light/dark setting changes while the app is open.
+// Returns an unsubscribe fn. Caller decides what to re-apply.
+export function onSystemThemeChange(cb: (mode: Mode) => void): () => void {
+  const mq = window.matchMedia('(prefers-color-scheme: light)');
+  const handler = (e: MediaQueryListEvent) => cb(e.matches ? 'light' : 'dark');
+  mq.addEventListener('change', handler);
+  return () => mq.removeEventListener('change', handler);
 }
 
 // Apply one mode's surface palette from a tokens map onto :root, and set
