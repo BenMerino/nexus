@@ -92,8 +92,8 @@ module.exports = async function handler(req, res) {
     const tid = req.query.tenantId ? parseInt(req.query.tenantId) : null;
     if (req.method === "GET") return res.json(await listUsers(tid));
     if (req.method === "POST") {
-      const { username, password, full_name, email, role, tenant_id, position, faculty, titles, orcid } = req.body;
-      const id = await createUser(username, password, full_name, email, role, tenant_id || tid, position, faculty, titles, orcid);
+      const { username, password, full_name, email, role, tenant_id, position, faculty, titles, orcid, department, profile_category } = req.body;
+      const id = await createUser(username, password, full_name, email, role, tenant_id || tid, position, faculty, titles, orcid, department, profile_category);
       return res.json({ ok: true, id });
     }
     if (req.method === "PUT") {
