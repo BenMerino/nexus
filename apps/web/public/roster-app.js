@@ -9,8 +9,10 @@
     var allowed = d.tenantAdmin === true || d.role === "superadmin";
     document.getElementById(allowed ? "roster-card" : "roster-noaccess").style.display = "";
     if (allowed) {
+      document.getElementById("overview-card").style.display = "";
       document.getElementById("ingest-card").style.display = "";
       document.getElementById("resolve-card").style.display = "";
+      if (window.rosterOverview) window.rosterOverview.load();
     }
   });
 
@@ -82,6 +84,7 @@
         if (!res.ok) { status.textContent = res.j.error || "Import failed."; return; }
         status.textContent = "Done.";
         showResult(res.j);
+        if (window.rosterOverview) window.rosterOverview.load();
       })
       .catch(function (err) { status.textContent = "Error: " + err.message; });
   }

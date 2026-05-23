@@ -27,6 +27,22 @@
           </div>
         </header>
 
+        <div class="card" id="overview-card" style="display:none;">
+          <div style="display:flex; align-items:baseline; gap:24px; margin-bottom:14px;">
+            <div class="roster-stat"><b id="ov-total">0</b><span>academics</span></div>
+            <div class="roster-stat"><b id="ov-orcid">0</b><span>with ORCID</span></div>
+            <div class="roster-stat"><b id="ov-papers">0</b><span>with papers</span></div>
+            <input type="text" id="ov-filter" placeholder="filter by name / faculty / department" style="margin-left:auto; font-size:12px; padding:6px 10px; width:280px; border:1px solid var(--border); border-radius:4px; background:var(--bg-inset); color:var(--fg);">
+          </div>
+          <div style="max-height:420px; overflow:auto;">
+            <table class="admin-table" id="overview-table">
+              <thead><tr><th>Name</th><th>Department</th><th>Faculty</th><th>ORCID</th><th>Papers</th></tr></thead>
+              <tbody id="overview-tbody"></tbody>
+            </table>
+          </div>
+          <div id="overview-empty" class="text-muted text-small" style="display:none; padding:14px;">No academics yet — import a roster below to populate.</div>
+        </div>
+
         <div class="card" id="roster-card" style="display:none;">
           <div class="roster-drop">
             <input type="file" id="roster-file" accept=".csv,text/csv,text/plain" class="mb-8">
@@ -76,6 +92,7 @@
           <p>Tenant admin access required.</p>
         </div>
       </div>
+      <script type="module" src="/roster-overview.js"></script>
       <script type="module" src="/roster-app.js"></script>
       <script type="module" src="/roster-resolve-ui.js"></script>
     </main>

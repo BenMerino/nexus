@@ -12,10 +12,20 @@ function authorize(scope, tid) {
 
 async function handleRosterAction(req, res) {
   const action = req.query.action;
-  const ACTIONS = ["users-import", "roster-suggest", "roster-save-orcids", "roster-ingest"];
+  const ACTIONS = ["users-import", "roster-list", "roster-suggest", "roster-save-orcids", "roster-ingest"];
   if (!ACTIONS.includes(action)) return false;
   const scope = await getScope(req);
   if (!scope) { res.status(401).json({ error: "Not authenticated" }); return true; }
+
+  // roster-list is a GET; everything else is a POST.
+  if (action === "roster-list") {
+    const tid = req.query.tenantId ? parseInt(req.query.tenantId) : scope.tenantId;
+    if (!authorize(scope, tid)) { res.status(403).json({ error: "Requires superadmin, or tenant admin of the target tenant" }); return true; }
+    const { listRoster } = require("../src/lib/roster-resolve");
+    res.json({ ok: true, academics: await listRoster(tid) });
+    return true;
+  }
+
   if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return true; }
 
   if (action === "users-import") {

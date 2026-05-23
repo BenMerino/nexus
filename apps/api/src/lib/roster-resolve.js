@@ -58,4 +58,22 @@ async function saveOrcids(tenantId, assignments) {
   return result;
 }
 
-module.exports = { suggestOrcids, saveOrcids, normalizeOrcid, searchQuery };
+// List the tenant's academics for the roster overview table. Returns the
+// paper count per ORCID-linked academic so the admin sees ingest coverage.
+async function listRoster(tenantId) {
+  const { rows } = await sql`
+    SELECT u.full_name, u.department, u.faculty, u.profile_category, u.orcid,
+           COALESCE(p.n, 0)::int AS paper_count
+    FROM users u
+    LEFT JOIN (
+      SELECT t.ext_id, COUNT(DISTINCT t.doi_record_id) AS n
+      FROM tags t JOIN doi_records d ON t.doi_record_id = d.id
+      WHERE t.category = 'author' AND d.tenant_id = ${tenantId}
+      GROUP BY t.ext_id
+    ) p ON p.ext_id = u.orcid
+    WHERE u.tenant_id = ${tenantId} AND u.role = 'academic'
+    ORDER BY u.full_name`;
+  return rows;
+}
+
+module.exports = { suggestOrcids, saveOrcids, listRoster, normalizeOrcid, searchQuery };
