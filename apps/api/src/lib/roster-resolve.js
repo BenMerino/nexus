@@ -72,6 +72,7 @@ async function listRoster(tenantId) {
       GROUP BY t.ext_id
     ) p ON p.ext_id = u.orcid
     WHERE u.tenant_id = ${tenantId} AND u.role = 'academic'
+      AND u.faculty IS NOT NULL
     ORDER BY u.full_name`;
   return rows;
 }
