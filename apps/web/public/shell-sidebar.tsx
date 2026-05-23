@@ -23,10 +23,17 @@ const SUPERADMIN_LINKS: NavLink[] = [
 const TENANT_LINKS: NavLink[] = [
   { href: '/settings.html', label: 'Settings', icon: 'gear', section: 'Tenant' },
 ];
+const ROSTER_LINK: NavLink = { href: '/roster.html', label: 'Roster', icon: 'people', section: 'Tenant' };
 
-function linksFor(role: string): NavLink[] {
-  if (role === 'superadmin') return [...DEFAULT_LINKS, ...SUPERADMIN_LINKS, ...TENANT_LINKS];
-  return [...DEFAULT_LINKS, ...TENANT_LINKS];
+function linksFor(me: CurrentUser | null): NavLink[] {
+  const role = me?.role ?? '';
+  // tenant_admin (capability, separate from role) unlocks roster import for
+  // the user's own tenant — superadmins always have it.
+  const tenantLinks = (me?.tenantAdmin || role === 'superadmin')
+    ? [ROSTER_LINK, ...TENANT_LINKS]
+    : TENANT_LINKS;
+  if (role === 'superadmin') return [...DEFAULT_LINKS, ...SUPERADMIN_LINKS, ...tenantLinks];
+  return [...DEFAULT_LINKS, ...tenantLinks];
 }
 
 function initials(name: string): string {
@@ -41,7 +48,7 @@ interface SidebarProps {
 
 export function Sidebar({ me, currentPath, roleSwitcher }: SidebarProps) {
   const role = me?.role ?? '';
-  const links = linksFor(role);
+  const links = linksFor(me);
   const sections = Array.from(new Set(links.map(l => l.section || '')));
   const tenantName = me?.tenant || (role === 'superadmin' ? 'Superadmin' : 'Nexus');
 

@@ -36,6 +36,7 @@ module.exports = async function handler(req, res) {
       hIndexByType: hIndexResult?.byType ?? null,
       userPapers, tenantPapers,
       role: user.role, tenantId: user.tenant_id,
+      tenantAdmin: user.tenant_admin === true,
       primaryColor: isSuperadmin ? null : tenant?.primary_color,
       secondaryColor: isSuperadmin ? null : tenant?.secondary_color,
     });

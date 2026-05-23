@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Roster — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+</head>
+<body class="shell-fixed">
+  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/roster.html"></div>
+    <main class="main">
+      <style>
+        .roster-drop { border: 1px dashed var(--border); border-radius: var(--radius); padding: 18px; background: var(--bg-inset); }
+        .roster-drop textarea { width: 100%; min-height: 160px; font-family: var(--mono); font-size: 11px; background: transparent; color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 10px; resize: vertical; }
+        .roster-stat { display: inline-block; margin-right: 24px; }
+        .roster-stat b { font-size: 22px; font-family: var(--display); font-weight: 400; }
+        .roster-stat span { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
+        .roster-err { color: var(--danger, #d66); font-size: 11px; font-family: var(--mono); }
+      </style>
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Tenant</div>
+            <h1 class="view-title">Academic <em>roster</em>.</h1>
+            <div class="view-sub">Import academics from a semicolon-delimited roster export (Nombre; Categoría; Departamento; Facultad). Each becomes an academic user under your tenant. Re-importing updates org fields without duplicating.</div>
+          </div>
+        </header>
+
+        <div class="card" id="roster-card" style="display:none;">
+          <div class="roster-drop">
+            <input type="file" id="roster-file" accept=".csv,text/csv,text/plain" class="mb-8">
+            <textarea id="roster-text" placeholder="…or paste the CSV contents here"></textarea>
+            <div style="margin-top:12px;">
+              <button class="primary-btn" id="roster-import-btn">Import roster</button>
+              <span id="roster-status" class="text-small" style="margin-left:10px;"></span>
+            </div>
+          </div>
+
+          <div id="roster-result" style="display:none; margin-top:20px;">
+            <div class="roster-stat"><b id="stat-parsed">0</b><span>parsed</span></div>
+            <div class="roster-stat"><b id="stat-created">0</b><span>created</span></div>
+            <div class="roster-stat"><b id="stat-updated">0</b><span>updated</span></div>
+            <div class="roster-stat"><b id="stat-errors">0</b><span>errors</span></div>
+            <div id="roster-creds" style="margin-top:16px;"></div>
+            <div id="roster-errlist" class="roster-err" style="margin-top:12px;"></div>
+          </div>
+        </div>
+
+        <div class="card" id="roster-noaccess" style="display:none;">
+          <p>Tenant admin access required.</p>
+        </div>
+      </div>
+      <script type="module" src="/roster-app.js"></script>
+    </main>
+  </div>
+  <script type="module" src="/shell-mount.tsx"></script>
+  <script type="module" src="/spa-router.js"></script>
+</body>
+</html>

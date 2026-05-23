@@ -6,6 +6,7 @@ export interface CurrentUser {
   logo: string | null;
   role: 'superadmin' | 'director' | 'secretary' | 'academic' | 'researcher' | string;
   tenantId: number;
+  tenantAdmin?: boolean;
   primaryColor: string | null;
   secondaryColor: string | null;
   profile: {
