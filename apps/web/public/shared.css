@@ -2,6 +2,10 @@
    NEXUS — Shared styles · dark CRIS foundation
    ═══════════════════════════════════════════════════════════ */
 
+/* Canonical token scales (spacing, radius roles, shadow, z-index,
+   motion, type scale). Must precede all rules — see dna.css. */
+@import "./dna.css";
+
 :root {
   --bg:         oklch(0.16 0.012 260);
   --bg-elev:    oklch(0.20 0.013 260);
