@@ -13,6 +13,10 @@ async function _doSeed() {
   const renames = [
     ["hquinteros", "hectorquinteros@utalca.cl"],
     ["secretaria.utalca", "secretaria@utalca.cl"],
+    // Old superadmin login retired in favor of superadmin@dev. Carry the
+    // existing row over (and reset its password) so there's a single
+    // superadmin account, not two.
+    ["superadmin", "superadmin@dev"],
   ];
   for (const [old, nu] of renames) {
     const existing = await getUserByUsername(old);
@@ -20,10 +24,11 @@ async function _doSeed() {
       await sql`UPDATE users SET username = ${nu} WHERE username = ${old}`;
     }
   }
+  await sql`UPDATE users SET password = 'dev' WHERE username = 'superadmin@dev'`;
 
   const seeds = [
     {
-      username: "superadmin", password: "nexus2026super",
+      username: "superadmin@dev", password: "dev",
       fullName: "Super Admin", role: "superadmin", tenantId: null,
       position: "Platform Administrator", faculty: null, titles: null,
     },

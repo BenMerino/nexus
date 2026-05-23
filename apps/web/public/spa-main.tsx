@@ -15,6 +15,7 @@ import { Layout } from "./spa/Layout";
 import { AuthLayout } from "./spa/AuthLayout";
 import { LoginPage } from "./spa/LoginPage";
 import { DashboardPage } from "./spa/DashboardPage";
+import { ThemeConfigPage } from "./spa/ThemeConfigPage";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         {/* Authenticated routes — cookie gate + sidebar + theme tokens. */}
         <Route element={<AuthLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/theme" element={<ThemeConfigPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
