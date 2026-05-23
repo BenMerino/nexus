@@ -3,6 +3,12 @@ function esc(s) {
   if (!s) return "";
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+// This file is a <script type="module">, so esc is module-scoped, not a
+// global. The sibling admin modules (admin-app, admin-users,
+// admin-tag-manager, admin-author-import) reference a bare `esc` and threw
+// "esc is not defined". Expose it once here (loads first) as the shared
+// helper for all of them — mirrors claustro-app's window.claustroEsc.
+window.esc = esc;
 
 window.adminTenantForm = {
   renderForm: function (t) {
