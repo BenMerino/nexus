@@ -26,6 +26,26 @@ async function fetchAuthorWorks(authorId, page = 1) {
   return { dois, totalCount, page, hasMore };
 }
 
+// Search OpenAlex authors by name, restricted to one institution's ROR.
+// Used by the ORCID helper: surfaces candidate profiles (with works_count,
+// the key human signal) for an academic the roster left without an ORCID.
+async function searchAuthorsAtInstitution(query, rorId, perPage = 5) {
+  const ror = rorId.replace("https://ror.org/", "");
+  const url = `${BASE}/authors?search=${encodeURIComponent(query)}&filter=affiliations.institution.ror:https://ror.org/${ror}&per_page=${perPage}&select=id,display_name,orcid,works_count,cited_by_count`;
+  const resp = await fetch(url);
+  if (!resp.ok) return [];
+  const data = await resp.json();
+  return (data.results || [])
+    .map(a => ({
+      id: a.id?.replace("https://openalex.org/", ""),
+      name: a.display_name,
+      orcid: a.orcid?.replace("https://orcid.org/", "") || null,
+      worksCount: a.works_count || 0,
+      citedByCount: a.cited_by_count || 0,
+    }))
+    .filter(a => a.orcid); // only candidates we can actually link
+}
+
 async function fetchWorksByOrcid(orcid, page = 1) {
   const url = `${BASE}/works?filter=author.orcid:${orcid}&per_page=50&page=${page}&select=doi`;
   const resp = await fetch(url);
@@ -67,4 +87,4 @@ async function lookupInstitution(query) {
   }));
 }
 
-module.exports = { searchAuthors, fetchAuthorWorks, fetchWorksByOrcid, fetchInstitutionAuthors, lookupInstitution };
+module.exports = { searchAuthors, searchAuthorsAtInstitution, fetchAuthorWorks, fetchWorksByOrcid, fetchInstitutionAuthors, lookupInstitution };

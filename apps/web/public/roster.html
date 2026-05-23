@@ -60,11 +60,24 @@
           </div>
         </div>
 
+        <div class="card" id="resolve-card" style="display:none; margin-top:24px;">
+          <h3 style="font-family: var(--display); font-weight: 400; font-size: 20px; margin-bottom: 8px;">Find ORCIDs</h3>
+          <div class="view-sub" style="margin-bottom:14px;">For academics with no ORCID, search OpenAlex under this tenant's institution. Review the suggested profiles (works count helps you judge), pick the right one or paste a known ORCID, then save. Nothing is linked until you confirm.</div>
+          <button class="primary-btn" id="resolve-find-btn">Find candidates</button>
+          <button class="primary-btn" id="resolve-save-btn" style="display:none; margin-left:8px;">Save selected ORCIDs</button>
+          <span id="resolve-status" class="text-small" style="margin-left:10px;"></span>
+          <table class="admin-table" id="resolve-table" style="display:none; margin-top:16px;">
+            <thead><tr><th>Academic</th><th>Candidate (OpenAlex @ tenant)</th><th>ORCID</th></tr></thead>
+            <tbody id="resolve-tbody"></tbody>
+          </table>
+        </div>
+
         <div class="card" id="roster-noaccess" style="display:none;">
           <p>Tenant admin access required.</p>
         </div>
       </div>
       <script type="module" src="/roster-app.js"></script>
+      <script type="module" src="/roster-resolve-ui.js"></script>
     </main>
   </div>
   <script type="module" src="/shell-mount.tsx"></script>

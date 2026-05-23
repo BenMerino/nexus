@@ -12,9 +12,8 @@ function authorize(scope, tid) {
 
 async function handleRosterAction(req, res) {
   const action = req.query.action;
-  if (action !== "users-import" && action !== "roster-resolve" && action !== "roster-ingest") {
-    return false;
-  }
+  const ACTIONS = ["users-import", "roster-suggest", "roster-save-orcids", "roster-ingest"];
+  if (!ACTIONS.includes(action)) return false;
   const scope = await getScope(req);
   if (!scope) { res.status(401).json({ error: "Not authenticated" }); return true; }
   if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return true; }
@@ -30,16 +29,26 @@ async function handleRosterAction(req, res) {
     return true;
   }
 
-  // roster-resolve / roster-ingest both need the tenant ROR for OpenAlex.
   const tid = req.body?.tenant_id || scope.tenantId;
   if (!authorize(scope, tid)) { res.status(403).json({ error: "Requires superadmin, or tenant admin of the target tenant" }); return true; }
+
+  // Writing admin-confirmed ORCIDs needs no ROR / OpenAlex.
+  if (action === "roster-save-orcids") {
+    const { saveOrcids } = require("../src/lib/roster-resolve");
+    res.json({ ok: true, ...(await saveOrcids(tid, req.body?.assignments)) });
+    return true;
+  }
+
+  // suggest / ingest both query OpenAlex under the tenant ROR.
   const tenants = await listTenants();
   const ror = tenants.find(t => t.id === tid)?.ror_id;
   if (!ror) { res.status(400).json({ error: "Tenant has no ROR id; cannot query OpenAlex" }); return true; }
 
-  if (action === "roster-resolve") {
-    const { resolveOrcids } = require("../src/lib/roster-resolve");
-    res.json({ ok: true, ...(await resolveOrcids(tid, ror)) });
+  if (action === "roster-suggest") {
+    const { suggestOrcids } = require("../src/lib/roster-resolve");
+    const limit = Math.min(parseInt(req.body?.limit) || 30, 50);
+    const offset = parseInt(req.body?.offset) || 0;
+    res.json({ ok: true, ...(await suggestOrcids(tid, ror, limit, offset)) });
     return true;
   }
 

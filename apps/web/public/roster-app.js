@@ -8,7 +8,10 @@
     tenantId = d.tenantId;
     var allowed = d.tenantAdmin === true || d.role === "superadmin";
     document.getElementById(allowed ? "roster-card" : "roster-noaccess").style.display = "";
-    if (allowed) document.getElementById("ingest-card").style.display = "";
+    if (allowed) {
+      document.getElementById("ingest-card").style.display = "";
+      document.getElementById("resolve-card").style.display = "";
+    }
   });
 
   var fileInput = document.getElementById("roster-file");
