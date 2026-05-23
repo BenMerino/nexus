@@ -94,3 +94,37 @@ export async function saveTokens(values: Record<string, string>): Promise<number
   if (!resp.ok) throw new Error(data.error || 'Save failed');
   return data.updated ?? 0;
 }
+
+// ── Chart heatmap colors ──────────────────────────────────────────────
+// The four heatmap gradient stops, formerly edited in the admin console.
+// They live in the same theme_tokens table (keys chart-heatmap-*) and are
+// applied app-wide as --chart-heatmap-* CSS vars by shell-mount's
+// loadThemeTokens. Edited here so all appearance config has one home.
+export const HEATMAP: { token: string; label: string }[] = [
+  { token: 'chart-heatmap-from', label: 'From · low' },
+  { token: 'chart-heatmap-low',  label: 'Low–mid' },
+  { token: 'chart-heatmap-mid',  label: 'Mid–high' },
+  { token: 'chart-heatmap-to',   label: 'To · high' },
+];
+
+export const HEATMAP_DEFAULTS: Record<string, string> = {
+  'chart-heatmap-from': '#3a2a14',
+  'chart-heatmap-low':  '#7a5320',
+  'chart-heatmap-mid':  '#c08a35',
+  'chart-heatmap-to':   '#e8c870',
+};
+
+export async function saveHeatmap(values: Record<string, string>): Promise<number> {
+  const body: Record<string, string> = {};
+  for (const { token } of HEATMAP) {
+    if (HEX.test(values[token] || '')) body[token] = values[token];
+  }
+  const resp = await fetch('/api/theme-tokens', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || 'Save failed');
+  return data.updated ?? 0;
+}

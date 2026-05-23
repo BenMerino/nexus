@@ -8,6 +8,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useCurrentUser } from '../shell-helpers';
 import { TOKENS, DEFAULTS, key, HEX, saveTokens, applyThemeMode, activeThemeMode, type Mode } from './theme-config';
+import { ThemeChartColors } from './ThemeChartColors';
 
 export function ThemeConfigPage() {
   const { me, loading } = useCurrentUser();
@@ -127,6 +128,8 @@ export function ThemeConfigPage() {
         <button onClick={save}>Save palette</button>
         {status && <span style={{ fontSize: 13, color: 'var(--fg-muted)' }}>{status}</span>}
       </div>
+
+      <ThemeChartColors />
     </div>
   );
 }

@@ -57,17 +57,6 @@
           <button class="primary-btn" style="margin-top:18px;" id="btn-new-tenant">+ New tenant</button>
           <div class="card" id="new-tenant-card" style="display:none;margin-top:18px;"></div>
 
-          <div class="card" id="theme-tokens-card" style="margin-top:18px;">
-            <h3>Chart color tokens</h3>
-            <p>Override the heatmap gradient. Stops interpolate from <em>From</em> (lowest values) to <em>To</em> (highest). Changes apply on next page load.</p>
-            <div id="theme-tokens-rows"></div>
-            <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
-              <button class="primary-btn" onclick="themeTokensSave()">Save</button>
-              <button onclick="themeTokensReset()">Reset to defaults</button>
-              <span id="theme-tokens-status" style="font-size:12px;color:var(--fg-muted);"></span>
-            </div>
-          </div>
-
           <div class="card" id="indexation-card" style="margin-top:18px;">
             <h3>Journal indexation (source of truth)</h3>
             <p>One row per indexing source. Auto sources fetch fresh data on click; manual sources take a CSV upload. Every seed replaces the source's list and re-tags every matching paper.</p>
@@ -148,7 +137,6 @@
       <script type="module" src="/admin-tag-manager.js"></script>
       <script type="module" src="/admin-author-import.js"></script>
       <script type="module" src="/admin-indexation.js"></script>
-      <script type="module" src="/admin-theme-tokens.js"></script>
       <script type="module" src="/admin-app.js"></script>
     </main>
   </div>
