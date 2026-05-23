@@ -8,6 +8,7 @@
     tenantId = d.tenantId;
     var allowed = d.tenantAdmin === true || d.role === "superadmin";
     document.getElementById(allowed ? "roster-card" : "roster-noaccess").style.display = "";
+    if (allowed) document.getElementById("ingest-card").style.display = "";
   });
 
   var fileInput = document.getElementById("roster-file");
@@ -21,6 +22,46 @@
   });
 
   document.getElementById("roster-import-btn").addEventListener("click", runImport);
+  document.getElementById("ingest-btn").addEventListener("click", runIngest);
+
+  // Ingest in bounded batches (the server caps each call so a single request
+  // can't run long enough to hit the platform timeout). Loop until done.
+  function runIngest() {
+    document.getElementById("ingest-btn").disabled = true;
+    document.getElementById("ingest-result").style.display = "";
+    var totals = { users: 0, imported: 0, skipped: 0, errors: 0 };
+    ingestBatch(0, totals);
+  }
+
+  function ingestBatch(offset, totals) {
+    var status = document.getElementById("ingest-status");
+    fetch("/api/auth?action=roster-ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenant_id: tenantId, offset: offset, limit: 25 }),
+    })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) { status.textContent = res.j.error || "Ingest failed."; document.getElementById("ingest-btn").disabled = false; return; }
+        var j = res.j;
+        totals.users += j.users || 0;
+        totals.imported += j.imported || 0;
+        totals.skipped += j.skipped || 0;
+        totals.errors += (j.errors && j.errors.length) || 0;
+        document.getElementById("ing-users").textContent = totals.users;
+        document.getElementById("ing-imported").textContent = totals.imported;
+        document.getElementById("ing-skipped").textContent = totals.skipped;
+        document.getElementById("ing-errors").textContent = totals.errors;
+        status.textContent = "Processed " + j.nextOffset + " / " + j.total + " academics…";
+        if (!j.done) {
+          ingestBatch(j.nextOffset, totals);
+        } else {
+          status.textContent = "Done. " + totals.imported + " papers imported across " + totals.users + " academics.";
+          document.getElementById("ingest-btn").disabled = false;
+        }
+      })
+      .catch(function (err) { status.textContent = "Error: " + err.message; document.getElementById("ingest-btn").disabled = false; });
+  }
 
   function runImport() {
     var csv = textArea.value.trim();

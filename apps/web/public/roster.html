@@ -47,6 +47,19 @@
           </div>
         </div>
 
+        <div class="card" id="ingest-card" style="display:none; margin-top:24px;">
+          <h3 style="font-family: var(--display); font-weight: 400; font-size: 20px; margin-bottom: 8px;">Ingest publications</h3>
+          <div class="view-sub" style="margin-bottom:14px;">For every academic that has an ORCID (supplied in the roster CSV's ORCID column), pull their publications from OpenAlex into the corpus. Academics without an ORCID are skipped — add ORCIDs to the roster and re-import to include them.</div>
+          <button class="primary-btn" id="ingest-btn">Ingest papers for ORCID-linked academics</button>
+          <span id="ingest-status" class="text-small" style="margin-left:10px;"></span>
+          <div id="ingest-result" style="display:none; margin-top:16px;">
+            <div class="roster-stat"><b id="ing-users">0</b><span>linked academics</span></div>
+            <div class="roster-stat"><b id="ing-imported">0</b><span>papers imported</span></div>
+            <div class="roster-stat"><b id="ing-skipped">0</b><span>already in db</span></div>
+            <div class="roster-stat"><b id="ing-errors">0</b><span>errors</span></div>
+          </div>
+        </div>
+
         <div class="card" id="roster-noaccess" style="display:none;">
           <p>Tenant admin access required.</p>
         </div>

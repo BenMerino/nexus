@@ -12,21 +12,49 @@ function fixMojibake(s) {
   }
 }
 
-// Parse a semicolon-delimited roster export with a header row.
-// Returns [{ fullName, profileCategory, department, faculty }].
+// Locate a column index by trying several header aliases (accent/case
+// insensitive). Returns -1 if none match.
+function findCol(headers, aliases) {
+  const norm = (s) => fixMojibake(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  const H = headers.map(norm);
+  for (const a of aliases) {
+    const i = H.indexOf(norm(a));
+    if (i !== -1) return i;
+  }
+  return -1;
+}
+
+// Parse a semicolon-delimited roster export with a header row. Columns are
+// matched by header name (not position), so an optional ORCID column can
+// appear anywhere — or be absent. Returns
+// [{ fullName, profileCategory, department, faculty, orcid }].
 function parseRoster(text) {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length);
-  if (!lines.length) return [];
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(";");
+  const ci = {
+    name: findCol(headers, ["Nombre", "Name", "Full Name"]),
+    category: findCol(headers, ["Categoría/Familia de Perfil", "Categoria", "Category"]),
+    department: findCol(headers, ["Departamento / Unidad", "Departamento", "Department"]),
+    faculty: findCol(headers, ["Facultad", "Faculty"]),
+    orcid: findCol(headers, ["ORCID", "Orcid", "ORCID iD"]),
+  };
+  // Fall back to legacy positional layout (name;category;department;faculty)
+  // when the name header isn't recognized.
+  if (ci.name === -1) { ci.name = 0; ci.category = 1; ci.department = 2; ci.faculty = 3; }
+
+  const get = (cols, idx) => (idx >= 0 ? fixMojibake((cols[idx] || "").trim()) : "");
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(";");
-    const fullName = fixMojibake((cols[0] || "").trim());
+    const fullName = get(cols, ci.name);
     if (!fullName) continue;
     rows.push({
       fullName,
-      profileCategory: fixMojibake((cols[1] || "").trim()) || null,
-      department: fixMojibake((cols[2] || "").trim()) || null,
-      faculty: fixMojibake((cols[3] || "").trim()) || null,
+      profileCategory: get(cols, ci.category) || null,
+      department: get(cols, ci.department) || null,
+      faculty: get(cols, ci.faculty) || null,
+      orcid: (get(cols, ci.orcid) || "").replace("https://orcid.org/", "") || null,
     });
   }
   return rows;
@@ -52,13 +80,17 @@ async function importRoster(rows, tenantId) {
   for (const r of rows) {
     try {
       const existing = await sql`
-        SELECT id FROM users WHERE tenant_id = ${tenantId} AND full_name = ${r.fullName} LIMIT 1`;
+        SELECT id, orcid FROM users WHERE tenant_id = ${tenantId} AND full_name = ${r.fullName} LIMIT 1`;
       if (existing.rows[0]) {
+        // Backfill orcid only when the row doesn't already have one — never
+        // overwrite an orcid a user may have claimed since the last import.
+        const keepOrcid = existing.rows[0].orcid || r.orcid || null;
         await sql`
           UPDATE users SET
             department = ${r.department},
             faculty = ${r.faculty},
-            profile_category = ${r.profileCategory}
+            profile_category = ${r.profileCategory},
+            orcid = ${keepOrcid}
           WHERE id = ${existing.rows[0].id}`;
         result.updated++;
         continue;
@@ -74,8 +106,8 @@ async function importRoster(rows, tenantId) {
 
       const tempPassword = crypto.randomBytes(9).toString("base64url");
       await sql`
-        INSERT INTO users (username, password, full_name, role, tenant_id, active, department, faculty, profile_category)
-        VALUES (${candidate}, ${tempPassword}, ${r.fullName}, 'academic', ${tenantId}, TRUE, ${r.department}, ${r.faculty}, ${r.profileCategory})`;
+        INSERT INTO users (username, password, full_name, role, tenant_id, active, department, faculty, profile_category, orcid)
+        VALUES (${candidate}, ${tempPassword}, ${r.fullName}, 'academic', ${tenantId}, TRUE, ${r.department}, ${r.faculty}, ${r.profileCategory}, ${r.orcid})`;
       result.created++;
       result.credentials.push({ username: candidate, password: tempPassword, fullName: r.fullName });
     } catch (err) {

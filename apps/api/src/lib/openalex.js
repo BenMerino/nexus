@@ -26,6 +26,18 @@ async function fetchAuthorWorks(authorId, page = 1) {
   return { dois, totalCount, page, hasMore };
 }
 
+async function fetchWorksByOrcid(orcid, page = 1) {
+  const url = `${BASE}/works?filter=author.orcid:${orcid}&per_page=50&page=${page}&select=doi`;
+  const resp = await fetch(url);
+  if (!resp.ok) return { dois: [], totalCount: 0, page, hasMore: false };
+  const data = await resp.json();
+  const dois = (data.results || [])
+    .map(w => w.doi?.replace("https://doi.org/", ""))
+    .filter(Boolean);
+  const totalCount = data.meta?.count || 0;
+  return { dois, totalCount, page, hasMore: page * 50 < totalCount };
+}
+
 async function fetchInstitutionAuthors(rorId, page = 1) {
   var ror = rorId.replace("https://ror.org/", "");
   var url = `${BASE}/authors?filter=affiliations.institution.ror:https://ror.org/${ror}&per_page=50&page=${page}&select=id,display_name,works_count,cited_by_count,orcid`;
@@ -55,4 +67,4 @@ async function lookupInstitution(query) {
   }));
 }
 
-module.exports = { searchAuthors, fetchAuthorWorks, fetchInstitutionAuthors, lookupInstitution };
+module.exports = { searchAuthors, fetchAuthorWorks, fetchWorksByOrcid, fetchInstitutionAuthors, lookupInstitution };
