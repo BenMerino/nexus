@@ -19,6 +19,7 @@ async function getScope(req) {
     role: user.role,
     userId: user.id,
     username: user.username,
+    tenantAdmin: user.tenant_admin === true,
   };
 }
 

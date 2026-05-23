@@ -34,10 +34,10 @@ async function _doSeed() {
     },
     {
       username: "hectorquinteros@utalca.cl", password: "hectorben2026",
-      fullName: "Héctor Quinteros Lama", role: "director", tenantId: 1,
+      fullName: "Héctor Quinteros Lama", role: "academic", tenantId: 1,
       position: "Director de Investigación", faculty: "Facultad de Tecnologías Industriales",
       titles: JSON.stringify(["Dr.", "Prof."]),
-      orcid: "0000-0001-8953-6140",
+      orcid: "0000-0001-8953-6140", tenantAdmin: true, syncRole: true,
     },
     {
       username: "secretaria@utalca.cl", password: "secutalca2026",
@@ -50,12 +50,21 @@ async function _doSeed() {
   for (const s of seeds) {
     const existing = await getUserByUsername(s.username);
     if (!existing) {
-      await createUser(
+      const id = await createUser(
         s.username, s.password, s.fullName, null,
         s.role, s.tenantId, s.position, s.faculty, s.titles, s.orcid
       );
-    } else if (s.orcid && existing.orcid !== s.orcid) {
-      await sql`UPDATE users SET orcid = ${s.orcid} WHERE id = ${existing.id}`;
+      if (s.tenantAdmin) await sql`UPDATE users SET tenant_admin = TRUE WHERE id = ${id}`;
+    } else {
+      if (s.orcid && existing.orcid !== s.orcid) {
+        await sql`UPDATE users SET orcid = ${s.orcid} WHERE id = ${existing.id}`;
+      }
+      if (s.tenantAdmin && existing.tenant_admin !== true) {
+        await sql`UPDATE users SET tenant_admin = TRUE WHERE id = ${existing.id}`;
+      }
+      if (s.syncRole && existing.role !== s.role) {
+        await sql`UPDATE users SET role = ${s.role} WHERE id = ${existing.id}`;
+      }
     }
   }
 }
