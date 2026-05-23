@@ -104,12 +104,17 @@ module.exports = async function handler(req, res) {
   }
 
   if (action === "users-import") {
-    const sa = await requireRole(req, "superadmin");
-    if (!sa) return res.status(403).json({ error: "Superadmin required" });
+    const scope = await getScope(req);
+    if (!scope) return res.status(401).json({ error: "Not authenticated" });
     if (req.method === "POST") {
       const { csv, tenant_id } = req.body;
       const tid = tenant_id || (req.query.tenantId ? parseInt(req.query.tenantId) : null);
       if (!csv || !tid) return res.status(400).json({ error: "csv and tenant_id are required" });
+      const isSuperadmin = scope.role === "superadmin";
+      const isOwnTenantAdmin = scope.tenantAdmin && scope.tenantId === tid;
+      if (!isSuperadmin && !isOwnTenantAdmin) {
+        return res.status(403).json({ error: "Requires superadmin, or tenant admin of the target tenant" });
+      }
       const { parseRoster, importRoster } = require("../lib/roster-import");
       const rows = parseRoster(csv);
       const result = await importRoster(rows, tid);
