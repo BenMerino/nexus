@@ -7,13 +7,28 @@
   fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
     tenantId = d.tenantId;
     var allowed = d.tenantAdmin === true || d.role === "superadmin";
-    document.getElementById(allowed ? "roster-card" : "roster-noaccess").style.display = "";
-    if (allowed) {
-      document.getElementById("overview-card").style.display = "";
-      document.getElementById("ingest-card").style.display = "";
-      document.getElementById("resolve-card").style.display = "";
-      if (window.rosterOverview) window.rosterOverview.load();
-    }
+    document.getElementById(allowed ? "overview-card" : "roster-noaccess").style.display = "";
+    if (allowed && window.rosterOverview) window.rosterOverview.load();
+  });
+
+  // Toolbar: each button toggles its tool panel (and closes the others).
+  var TOOLS = [
+    { btn: "tool-import", panel: "panel-import" },
+    { btn: "tool-resolve", panel: "panel-resolve" },
+    { btn: "tool-ingest", panel: "panel-ingest" },
+  ];
+  TOOLS.forEach(function (t) {
+    var btn = document.getElementById(t.btn);
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      var panel = document.getElementById(t.panel);
+      var opening = panel.style.display === "none" || !panel.style.display;
+      TOOLS.forEach(function (o) {
+        document.getElementById(o.panel).style.display = "none";
+        document.getElementById(o.btn).classList.remove("active");
+      });
+      if (opening) { panel.style.display = ""; btn.classList.add("active"); }
+    });
   });
 
   var fileInput = document.getElementById("roster-file");

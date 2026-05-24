@@ -17,6 +17,17 @@
         .roster-stat b { font-size: 22px; font-family: var(--display); font-weight: 400; }
         .roster-stat span { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
         .roster-err { color: var(--danger, #d66); font-size: 11px; font-family: var(--mono); }
+        /* Roster table — bordered, full-width, sticky header, hover rows. */
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+        .admin-table th, .admin-table td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border-soft); }
+        .admin-table th { position: sticky; top: 0; z-index: 1; background: var(--bg-inset); font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: 0.12em; color: var(--fg-dim); font-family: var(--mono); user-select: none; }
+        .admin-table tbody tr:last-child td { border-bottom: none; }
+        .admin-table tbody tr:hover { background: var(--bg-inset); }
+        .roster-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .roster-toolbar .tool-btn { background: var(--bg-inset); border: 1px solid var(--border); color: var(--fg); padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .roster-toolbar .tool-btn.active { border-color: var(--accent); color: var(--accent); }
+        .tool-panel { border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; background: var(--bg-inset); }
+        .tableScroll { max-height: 56vh; overflow: auto; }
       </style>
       <div class="view">
         <header class="view-head">
@@ -28,67 +39,72 @@
         </header>
 
         <div class="card" id="overview-card" style="display:none;">
-          <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-            <input type="text" id="ov-filter" placeholder="search name / faculty / department" style="font-size:12px; padding:6px 10px; width:300px; border:1px solid var(--border); border-radius:4px; background:var(--bg-inset); color:var(--fg);">
+          <div class="roster-toolbar">
+            <button class="tool-btn" id="tool-import">Import roster</button>
+            <button class="tool-btn" id="tool-resolve">Find ORCIDs</button>
+            <button class="tool-btn" id="tool-ingest">Ingest publications</button>
+            <input type="text" id="ov-filter" placeholder="search name / faculty / department" style="margin-left:auto; font-size:12px; padding:6px 10px; width:280px; border:1px solid var(--border); border-radius:4px; background:var(--bg-inset); color:var(--fg);">
           </div>
-          <div style="max-height:460px; overflow:auto;">
+
+          <!-- Import panel -->
+          <div class="tool-panel" id="panel-import" style="display:none;">
+            <div class="view-sub" style="margin-bottom:12px;">Import academics from a semicolon-delimited roster export (Nombre; Categoría; Departamento; Facultad; ORCID). Re-importing updates org fields without duplicating.</div>
+            <input type="file" id="roster-file" accept=".csv,text/csv,text/plain" class="mb-8">
+            <textarea id="roster-text" placeholder="…or paste the CSV contents here" style="width:100%; min-height:140px; font-family:var(--mono); font-size:11px; background:transparent; color:var(--fg); border:1px solid var(--border); border-radius:4px; padding:10px; resize:vertical;"></textarea>
+            <div style="margin-top:12px;">
+              <button class="primary-btn" id="roster-import-btn">Import roster</button>
+              <span id="roster-status" class="text-small" style="margin-left:10px;"></span>
+            </div>
+            <div id="roster-result" style="display:none; margin-top:20px;">
+              <div class="roster-stat"><b id="stat-parsed">0</b><span>parsed</span></div>
+              <div class="roster-stat"><b id="stat-created">0</b><span>created</span></div>
+              <div class="roster-stat"><b id="stat-updated">0</b><span>updated</span></div>
+              <div class="roster-stat"><b id="stat-errors">0</b><span>errors</span></div>
+              <div id="roster-creds" style="margin-top:16px;"></div>
+              <div id="roster-errlist" class="roster-err" style="margin-top:12px;"></div>
+            </div>
+          </div>
+
+          <!-- Find ORCIDs panel -->
+          <div class="tool-panel" id="panel-resolve" style="display:none;">
+            <div class="view-sub" style="margin-bottom:12px;">For academics with no ORCID, search OpenAlex under this tenant's institution. Review the suggested profiles (works count helps you judge), pick the right one or paste a known ORCID, then save. Nothing is linked until you confirm.</div>
+            <button class="primary-btn" id="resolve-find-btn">Find candidates</button>
+            <button class="primary-btn" id="resolve-save-btn" style="display:none; margin-left:8px;">Save selected ORCIDs</button>
+            <span id="resolve-status" class="text-small" style="margin-left:10px;"></span>
+            <div class="tableScroll" style="margin-top:16px;">
+              <table class="admin-table" id="resolve-table" style="display:none;">
+                <thead><tr><th>Academic</th><th>Candidate (OpenAlex @ tenant)</th><th>ORCID</th></tr></thead>
+                <tbody id="resolve-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Ingest panel -->
+          <div class="tool-panel" id="panel-ingest" style="display:none;">
+            <div class="view-sub" style="margin-bottom:12px;">For every academic that has an ORCID, pull their publications from OpenAlex into the corpus. Academics without an ORCID are skipped.</div>
+            <button class="primary-btn" id="ingest-btn">Ingest papers for ORCID-linked academics</button>
+            <span id="ingest-status" class="text-small" style="margin-left:10px;"></span>
+            <div id="ingest-result" style="display:none; margin-top:16px;">
+              <div class="roster-stat"><b id="ing-users">0</b><span>linked academics</span></div>
+              <div class="roster-stat"><b id="ing-imported">0</b><span>papers imported</span></div>
+              <div class="roster-stat"><b id="ing-skipped">0</b><span>already in db</span></div>
+              <div class="roster-stat"><b id="ing-errors">0</b><span>errors</span></div>
+            </div>
+          </div>
+
+          <div class="tableScroll">
             <table class="admin-table" id="overview-table">
               <thead id="overview-thead"></thead>
               <tbody id="overview-tbody"></tbody>
             </table>
           </div>
-          <div id="overview-empty" class="text-muted text-small" style="display:none; padding:14px;">No academics yet — import a roster below to populate.</div>
+          <div id="overview-empty" class="text-muted text-small" style="display:none; padding:14px;">No academics yet — use Import roster to populate.</div>
           <div style="display:flex; align-items:center; gap:12px; margin-top:12px;">
             <span id="ov-foot" class="text-small text-muted"></span>
             <span style="margin-left:auto;"></span>
             <button class="primary-btn" id="ov-prev" style="padding:4px 12px;">‹</button>
             <button class="primary-btn" id="ov-next" style="padding:4px 12px;">›</button>
           </div>
-        </div>
-
-        <div class="card" id="roster-card" style="display:none;">
-          <div class="roster-drop">
-            <input type="file" id="roster-file" accept=".csv,text/csv,text/plain" class="mb-8">
-            <textarea id="roster-text" placeholder="…or paste the CSV contents here"></textarea>
-            <div style="margin-top:12px;">
-              <button class="primary-btn" id="roster-import-btn">Import roster</button>
-              <span id="roster-status" class="text-small" style="margin-left:10px;"></span>
-            </div>
-          </div>
-
-          <div id="roster-result" style="display:none; margin-top:20px;">
-            <div class="roster-stat"><b id="stat-parsed">0</b><span>parsed</span></div>
-            <div class="roster-stat"><b id="stat-created">0</b><span>created</span></div>
-            <div class="roster-stat"><b id="stat-updated">0</b><span>updated</span></div>
-            <div class="roster-stat"><b id="stat-errors">0</b><span>errors</span></div>
-            <div id="roster-creds" style="margin-top:16px;"></div>
-            <div id="roster-errlist" class="roster-err" style="margin-top:12px;"></div>
-          </div>
-        </div>
-
-        <div class="card" id="ingest-card" style="display:none; margin-top:24px;">
-          <h3 style="font-family: var(--display); font-weight: 400; font-size: 20px; margin-bottom: 8px;">Ingest publications</h3>
-          <div class="view-sub" style="margin-bottom:14px;">For every academic that has an ORCID (supplied in the roster CSV's ORCID column), pull their publications from OpenAlex into the corpus. Academics without an ORCID are skipped — add ORCIDs to the roster and re-import to include them.</div>
-          <button class="primary-btn" id="ingest-btn">Ingest papers for ORCID-linked academics</button>
-          <span id="ingest-status" class="text-small" style="margin-left:10px;"></span>
-          <div id="ingest-result" style="display:none; margin-top:16px;">
-            <div class="roster-stat"><b id="ing-users">0</b><span>linked academics</span></div>
-            <div class="roster-stat"><b id="ing-imported">0</b><span>papers imported</span></div>
-            <div class="roster-stat"><b id="ing-skipped">0</b><span>already in db</span></div>
-            <div class="roster-stat"><b id="ing-errors">0</b><span>errors</span></div>
-          </div>
-        </div>
-
-        <div class="card" id="resolve-card" style="display:none; margin-top:24px;">
-          <h3 style="font-family: var(--display); font-weight: 400; font-size: 20px; margin-bottom: 8px;">Find ORCIDs</h3>
-          <div class="view-sub" style="margin-bottom:14px;">For academics with no ORCID, search OpenAlex under this tenant's institution. Review the suggested profiles (works count helps you judge), pick the right one or paste a known ORCID, then save. Nothing is linked until you confirm.</div>
-          <button class="primary-btn" id="resolve-find-btn">Find candidates</button>
-          <button class="primary-btn" id="resolve-save-btn" style="display:none; margin-left:8px;">Save selected ORCIDs</button>
-          <span id="resolve-status" class="text-small" style="margin-left:10px;"></span>
-          <table class="admin-table" id="resolve-table" style="display:none; margin-top:16px;">
-            <thead><tr><th>Academic</th><th>Candidate (OpenAlex @ tenant)</th><th>ORCID</th></tr></thead>
-            <tbody id="resolve-tbody"></tbody>
-          </table>
         </div>
 
         <div class="card" id="roster-noaccess" style="display:none;">
