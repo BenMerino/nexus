@@ -58,23 +58,58 @@ async function saveOrcids(tenantId, assignments) {
   return result;
 }
 
-// List the tenant's academics for the roster overview table. Returns the
-// paper count per ORCID-linked academic so the admin sees ingest coverage.
-async function listRoster(tenantId) {
-  const { rows } = await sql`
-    SELECT u.full_name, u.department, u.faculty, u.profile_category, u.orcid,
-           COALESCE(p.n, 0)::int AS paper_count
+// Whitelist of sortable columns → safe SQL expressions. The key is what the
+// client sends as `sort`; the value is interpolated as the ORDER BY target.
+// Because only these fixed expressions can be selected, the sort param can
+// never inject SQL (see table-query.js parseTableQuery).
+const ROSTER_SORT = {
+  name: "u.full_name",
+  department: "u.department",
+  faculty: "u.faculty",
+  category: "u.profile_category",
+  orcid: "u.orcid",
+  papers: "paper_count",
+};
+const ROSTER_SORT_DEFAULT = { columnId: "name", direction: "asc" };
+
+// Paginated/sorted/searchable roster query. Returns a PaginatedResult.
+// query: { page, pageSize, sort:{columnId,direction}|null, search }.
+// Built via sql.query (dynamic text + params) because the tagged-template
+// helper can't compose a shared FROM/WHERE fragment across count + rows.
+async function queryRoster(tenantId, query) {
+  const sort = query.sort || ROSTER_SORT_DEFAULT;
+  const orderExpr = ROSTER_SORT[sort.columnId] || ROSTER_SORT.name; // whitelist → safe
+  const dir = sort.direction === "asc" ? "ASC" : "DESC";
+  const search = query.search ? `%${query.search}%` : null;
+
+  // $1 tenantId, $2 search (nullable). Column/direction are from the fixed
+  // whitelist, never user input, so interpolating them is safe.
+  const base = `
     FROM users u
     LEFT JOIN (
       SELECT t.ext_id, COUNT(DISTINCT t.doi_record_id) AS n
       FROM tags t JOIN doi_records d ON t.doi_record_id = d.id
-      WHERE t.category = 'author' AND d.tenant_id = ${tenantId}
+      WHERE t.category = 'author' AND d.tenant_id = $1
       GROUP BY t.ext_id
     ) p ON p.ext_id = u.orcid
-    WHERE u.tenant_id = ${tenantId} AND u.role = 'academic'
+    WHERE u.tenant_id = $1 AND u.role = 'academic'
       AND u.profile_category IS NOT NULL
-    ORDER BY u.full_name`;
-  return rows;
+      AND ($2::text IS NULL
+           OR u.full_name ILIKE $2 OR u.faculty ILIKE $2 OR u.department ILIKE $2)`;
+
+  const countRes = await sql.query(`SELECT COUNT(*)::int AS n ${base}`, [tenantId, search]);
+  const totalCount = countRes.rows[0].n;
+
+  const rowsRes = await sql.query(
+    `SELECT u.full_name, u.department, u.faculty, u.profile_category, u.orcid,
+            COALESCE(p.n, 0)::int AS paper_count
+     ${base}
+     ORDER BY ${orderExpr} ${dir} NULLS LAST, u.full_name ASC
+     LIMIT $3 OFFSET $4`,
+    [tenantId, search, query.pageSize, query.page * query.pageSize],
+  );
+
+  return { rows: rowsRes.rows, totalCount, page: query.page, pageSize: query.pageSize };
 }
 
-module.exports = { suggestOrcids, saveOrcids, listRoster, normalizeOrcid, searchQuery };
+module.exports = { suggestOrcids, saveOrcids, queryRoster, ROSTER_SORT, normalizeOrcid, searchQuery };

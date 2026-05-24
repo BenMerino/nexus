@@ -21,8 +21,19 @@ async function handleRosterAction(req, res) {
   if (action === "roster-list") {
     const tid = req.query.tenantId ? parseInt(req.query.tenantId) : scope.tenantId;
     if (!authorize(scope, tid)) { res.status(403).json({ error: "Requires superadmin, or tenant admin of the target tenant" }); return true; }
-    const { listRoster } = require("../src/lib/roster-resolve");
-    res.json({ ok: true, academics: await listRoster(tid) });
+    const { queryRoster, ROSTER_SORT } = require("../src/lib/roster-resolve");
+    const { parseTableQuery, TableQueryValidationError } = require("../src/lib/table-query");
+    try {
+      const query = parseTableQuery(req.query, {
+        sortable: ROSTER_SORT,
+        defaultSort: { columnId: "name", direction: "asc" },
+        maxPageSize: 100,
+      });
+      res.json({ ok: true, ...(await queryRoster(tid, query)) });
+    } catch (err) {
+      if (err instanceof TableQueryValidationError) { res.status(400).json({ error: err.message }); }
+      else throw err;
+    }
     return true;
   }
 

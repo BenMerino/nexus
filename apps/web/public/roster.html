@@ -28,19 +28,22 @@
         </header>
 
         <div class="card" id="overview-card" style="display:none;">
-          <div style="display:flex; align-items:baseline; gap:24px; margin-bottom:14px;">
-            <div class="roster-stat"><b id="ov-total">0</b><span>academics</span></div>
-            <div class="roster-stat"><b id="ov-orcid">0</b><span>with ORCID</span></div>
-            <div class="roster-stat"><b id="ov-papers">0</b><span>with papers</span></div>
-            <input type="text" id="ov-filter" placeholder="filter by name / faculty / department" style="margin-left:auto; font-size:12px; padding:6px 10px; width:280px; border:1px solid var(--border); border-radius:4px; background:var(--bg-inset); color:var(--fg);">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+            <input type="text" id="ov-filter" placeholder="search name / faculty / department" style="font-size:12px; padding:6px 10px; width:300px; border:1px solid var(--border); border-radius:4px; background:var(--bg-inset); color:var(--fg);">
           </div>
-          <div style="max-height:420px; overflow:auto;">
+          <div style="max-height:460px; overflow:auto;">
             <table class="admin-table" id="overview-table">
-              <thead><tr><th>Name</th><th>Department</th><th>Faculty</th><th>ORCID</th><th>Papers</th></tr></thead>
+              <thead id="overview-thead"></thead>
               <tbody id="overview-tbody"></tbody>
             </table>
           </div>
           <div id="overview-empty" class="text-muted text-small" style="display:none; padding:14px;">No academics yet — import a roster below to populate.</div>
+          <div style="display:flex; align-items:center; gap:12px; margin-top:12px;">
+            <span id="ov-foot" class="text-small text-muted"></span>
+            <span style="margin-left:auto;"></span>
+            <button class="primary-btn" id="ov-prev" style="padding:4px 12px;">‹</button>
+            <button class="primary-btn" id="ov-next" style="padding:4px 12px;">›</button>
+          </div>
         </div>
 
         <div class="card" id="roster-card" style="display:none;">

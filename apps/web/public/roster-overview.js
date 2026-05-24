@@ -1,36 +1,43 @@
-// Roster overview table: lists the tenant's academics (name, department,
-// faculty, ORCID status, paper count) with client-side filtering. Exposes
-// window.rosterOverview.load() so roster-app.js can refresh it after an import.
+// Roster overview table — server-paginated, mirroring Zincro's TableRender
+// behavior (sortable headers with ▲/▼, search, footer count + pager) over
+// Nexus's roster-list endpoint, which speaks the TableQuery/PaginatedResult
+// contract. window.rosterOverview.load() refreshes after an import.
 (function () {
-  var allAcademics = [];
+  var PAGE_SIZE = 25;
+  var state = { page: 0, sort: "name", dir: "asc", q: "" };
+  var searchTimer = null;
+
+  var COLS = [
+    { id: "name", label: "Name", field: "full_name", sortable: true },
+    { id: "department", label: "Department", field: "department", sortable: true },
+    { id: "faculty", label: "Faculty", field: "faculty", sortable: true },
+    { id: "orcid", label: "ORCID", field: "orcid", sortable: true },
+    { id: "papers", label: "Papers", field: "paper_count", sortable: true },
+  ];
 
   function esc(s) {
-    return String(s).replace(/[&<>"]/g, function (c) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
       return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c];
     });
   }
 
-  function load() {
-    fetch("/api/auth?action=roster-list")
+  function load() { state.page = 0; fetchPage(); }
+
+  function fetchPage() {
+    var p = new URLSearchParams({ page: state.page, pageSize: PAGE_SIZE, sort: state.sort, dir: state.dir, q: state.q });
+    fetch("/api/auth?action=roster-list&" + p.toString())
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        allAcademics = j.academics || [];
-        document.getElementById("ov-total").textContent = allAcademics.length;
-        document.getElementById("ov-orcid").textContent = allAcademics.filter(function (a) { return a.orcid; }).length;
-        document.getElementById("ov-papers").textContent = allAcademics.filter(function (a) { return a.paper_count > 0; }).length;
-        render("");
+        if (!j.ok) { document.getElementById("ov-foot").textContent = j.error || "Failed to load."; return; }
+        render(j);
       });
   }
 
-  function render(filter) {
+  function render(j) {
+    renderHead();
     var tbody = document.getElementById("overview-tbody");
-    var f = filter.toLowerCase();
-    var rows = allAcademics.filter(function (a) {
-      return !f || [a.full_name, a.faculty, a.department].some(function (s) { return (s || "").toLowerCase().indexOf(f) !== -1; });
-    });
-    document.getElementById("overview-empty").style.display = allAcademics.length ? "none" : "";
     tbody.innerHTML = "";
-    rows.forEach(function (a) {
+    j.rows.forEach(function (a) {
       var tr = document.createElement("tr");
       tr.innerHTML =
         "<td>" + esc(a.full_name) + "</td>" +
@@ -40,10 +47,48 @@
         "<td>" + (a.paper_count || 0) + "</td>";
       tbody.appendChild(tr);
     });
+    document.getElementById("overview-empty").style.display = j.totalCount ? "none" : "";
+
+    var start = j.totalCount === 0 ? 0 : j.page * j.pageSize + 1;
+    var end = Math.min(j.totalCount, (j.page + 1) * j.pageSize);
+    document.getElementById("ov-foot").textContent = j.totalCount === 0 ? "No academics yet." : (start + "–" + end + " of " + j.totalCount);
+    document.getElementById("ov-prev").disabled = j.page <= 0;
+    document.getElementById("ov-next").disabled = end >= j.totalCount;
   }
 
+  function renderHead() {
+    var thead = document.getElementById("overview-thead");
+    thead.innerHTML = "";
+    var tr = document.createElement("tr");
+    COLS.forEach(function (col) {
+      var th = document.createElement("th");
+      var active = state.sort === col.id;
+      th.textContent = col.label + (active ? (state.dir === "asc" ? " ▲" : " ▼") : "");
+      if (col.sortable) {
+        th.style.cursor = "pointer";
+        th.addEventListener("click", function () {
+          if (state.sort === col.id) state.dir = state.dir === "asc" ? "desc" : "asc";
+          else { state.sort = col.id; state.dir = "asc"; }
+          state.page = 0;
+          fetchPage();
+        });
+      }
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+  }
+
+  // Wire controls (filter box reused as server search; pager buttons).
   var filterInput = document.getElementById("ov-filter");
-  if (filterInput) filterInput.addEventListener("input", function (e) { render(e.target.value); });
+  if (filterInput) filterInput.addEventListener("input", function (e) {
+    clearTimeout(searchTimer);
+    var v = e.target.value;
+    searchTimer = setTimeout(function () { state.q = v; state.page = 0; fetchPage(); }, 250);
+  });
+  var prev = document.getElementById("ov-prev");
+  var next = document.getElementById("ov-next");
+  if (prev) prev.addEventListener("click", function () { if (state.page > 0) { state.page--; fetchPage(); } });
+  if (next) next.addEventListener("click", function () { state.page++; fetchPage(); });
 
   window.rosterOverview = { load: load };
 })();
