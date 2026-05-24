@@ -14,7 +14,6 @@
   // Toolbar: each button toggles its tool panel (and closes the others).
   var TOOLS = [
     { btn: "tool-import", panel: "panel-import" },
-    { btn: "tool-resolve", panel: "panel-resolve" },
     { btn: "tool-ingest", panel: "panel-ingest" },
   ];
   TOOLS.forEach(function (t) {

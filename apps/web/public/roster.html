@@ -41,7 +41,6 @@
         <div class="card" id="overview-card" style="display:none;">
           <div class="roster-toolbar">
             <button class="tool-btn" id="tool-import">Import roster</button>
-            <button class="tool-btn" id="tool-resolve">Find ORCIDs</button>
             <button class="tool-btn" id="tool-ingest">Ingest publications</button>
             <input type="text" id="ov-filter" placeholder="search name / faculty / department" style="margin-left:auto; font-size:12px; padding:6px 10px; width:280px; border:1px solid var(--border); border-radius:4px; background:var(--bg-inset); color:var(--fg);">
           </div>
@@ -62,20 +61,6 @@
               <div class="roster-stat"><b id="stat-errors">0</b><span>errors</span></div>
               <div id="roster-creds" style="margin-top:16px;"></div>
               <div id="roster-errlist" class="roster-err" style="margin-top:12px;"></div>
-            </div>
-          </div>
-
-          <!-- Find ORCIDs panel -->
-          <div class="tool-panel" id="panel-resolve" style="display:none;">
-            <div class="view-sub" style="margin-bottom:12px;">For academics with no ORCID, search OpenAlex under this tenant's institution. Review the suggested profiles (works count helps you judge), pick the right one or paste a known ORCID, then save. Nothing is linked until you confirm.</div>
-            <button class="primary-btn" id="resolve-find-btn">Find candidates</button>
-            <button class="primary-btn" id="resolve-save-btn" style="display:none; margin-left:8px;">Save selected ORCIDs</button>
-            <span id="resolve-status" class="text-small" style="margin-left:10px;"></span>
-            <div class="tableScroll" style="margin-top:16px;">
-              <table class="admin-table" id="resolve-table" style="display:none;">
-                <thead><tr><th>Academic</th><th>Candidate (OpenAlex @ tenant)</th><th>ORCID</th></tr></thead>
-                <tbody id="resolve-tbody"></tbody>
-              </table>
             </div>
           </div>
 
@@ -113,7 +98,6 @@
       </div>
       <script type="module" src="/roster-overview.js"></script>
       <script type="module" src="/roster-app.js"></script>
-      <script type="module" src="/roster-resolve-ui.js"></script>
     </main>
   </div>
   <script type="module" src="/shell-mount.tsx"></script>
