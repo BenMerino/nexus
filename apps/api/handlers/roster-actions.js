@@ -12,10 +12,19 @@ function authorize(scope, tid) {
 
 async function handleRosterAction(req, res) {
   const action = req.query.action;
-  const ACTIONS = ["users-import", "roster-list", "roster-suggest", "roster-save-orcids", "roster-ingest"];
+  const ACTIONS = ["users-import", "roster-list", "roster-suggest", "roster-save-orcids", "roster-ingest", "org-tree"];
   if (!ACTIONS.includes(action)) return false;
   const scope = await getScope(req);
   if (!scope) { res.status(401).json({ error: "Not authenticated" }); return true; }
+
+  // org-tree: the org scheme view. Read-only and visible to ANY authenticated
+  // user of the tenant (no tenant_admin gate), so it bypasses authorize().
+  if (action === "org-tree") {
+    const tid = req.query.tenantId ? parseInt(req.query.tenantId) : scope.tenantId;
+    const { queryOrgTree } = require("../src/lib/org-tree");
+    res.json({ ok: true, ...(await queryOrgTree(tid)) });
+    return true;
+  }
 
   // roster-list is a GET; everything else is a POST.
   if (action === "roster-list") {

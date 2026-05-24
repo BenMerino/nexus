@@ -11,6 +11,7 @@ const DEFAULT_LINKS: NavLink[] = [
   { href: '/overview.html',       label: 'Graph explorer', icon: 'graph',  section: 'Workspace' },
   { href: '/explore.html',        label: 'Explore',        icon: 'search', section: 'Workspace' },
   { href: '/collaborators.html',  label: 'Collaborators',  icon: 'people', section: 'Workspace' },
+  { href: '/org-scheme.html',     label: 'Organization',   icon: 'graph',  section: 'Workspace' },
   { href: '/submit.html',         label: 'Submit DOI',     icon: 'submit', section: 'Workspace' },
   { href: '/claustro.html',       label: 'Claustro',       icon: 'people', section: 'Workspace' },
 ];

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Organization — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+</head>
+<body class="shell-fixed">
+  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/org-scheme.html"></div>
+    <main class="main">
+      <style>
+        .org-stat { display: inline-block; margin-right: 24px; }
+        .org-stat b { font-size: 22px; font-family: var(--display); font-weight: 400; }
+        .org-stat span { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
+        /* Tree: nested rows with disclosure triangles + a metrics strip per node. */
+        .org-tree { font-size: 13px; }
+        .org-node { border-bottom: 1px solid var(--border-soft); }
+        .org-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; cursor: pointer; }
+        .org-row:hover { background: var(--bg-inset); }
+        .org-row.leaf { cursor: default; }
+        .org-twist { width: 12px; color: var(--fg-dim); font-size: 10px; flex: none; transition: transform 0.12s; }
+        .org-twist.open { transform: rotate(90deg); }
+        .org-name { flex: 1; }
+        .org-name.fac { font-family: var(--display); font-size: 15px; }
+        .org-name.dep { color: var(--fg); }
+        .org-name.person { color: var(--fg-dim); font-size: 12px; }
+        .org-metrics { display: flex; gap: 6px; align-items: center; flex: none; }
+        .org-pill { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 10px; background: var(--bg-inset); border: 1px solid var(--border); color: var(--fg-dim); white-space: nowrap; }
+        .org-pill.cov-full { border-color: var(--accent); color: var(--accent); }
+        .org-children { display: none; padding-left: 22px; }
+        .org-children.open { display: block; }
+        .org-orcid { font-family: var(--mono); font-size: 10px; color: var(--fg-dim); }
+        .org-orcid.none { opacity: 0.45; }
+        .org-err { color: var(--danger, #d66); font-size: 11px; font-family: var(--mono); }
+      </style>
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Tenant</div>
+            <h1 class="view-title">Organization <em>scheme</em>.</h1>
+            <div class="view-sub">The academic roster as a Faculty → Department → people hierarchy. Each node shows headcount, ORCID coverage, and total publications. Click a row to expand.</div>
+          </div>
+        </header>
+
+        <div class="card">
+          <div style="margin-bottom:18px;">
+            <div class="org-stat"><b id="t-fac">0</b><span>faculties</span></div>
+            <div class="org-stat"><b id="t-head">0</b><span>academics</span></div>
+            <div class="org-stat"><b id="t-orcid">0</b><span>with ORCID</span></div>
+            <div class="org-stat"><b id="t-papers">0</b><span>publications</span></div>
+          </div>
+          <div class="org-tree" id="org-tree"></div>
+          <div id="org-empty" class="text-muted text-small" style="display:none; padding:14px;">No roster data for this tenant yet.</div>
+          <div id="org-err" class="org-err" style="display:none; padding:14px;"></div>
+        </div>
+      </div>
+      <script type="module" src="/org-scheme-app.js"></script>
+    </main>
+  </div>
+  <script type="module" src="/shell-mount.tsx"></script>
+  <script type="module" src="/spa-router.js"></script>
+</body>
+</html>
