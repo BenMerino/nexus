@@ -30,14 +30,15 @@
       + "</div></div>";
   }
 
-  // a collapsible node: header row + hidden children container
-  function branch(label, cls, metricsHtml, childrenHtml) {
+  // a collapsible node: header row + hidden children container.
+  // labelHtml is pre-built safe HTML (caller escapes the dynamic parts).
+  function branch(labelHtml, cls, metricsHtml, childrenHtml) {
     var node = document.createElement("div");
     node.className = "org-node";
     node.innerHTML =
       '<div class="org-row">'
       + '<span class="org-twist">▶</span>'
-      + '<span class="org-name ' + cls + '">' + esc(label) + "</span>"
+      + '<span class="org-name ' + cls + '">' + labelHtml + "</span>"
       + metricsHtml
       + "</div>"
       + '<div class="org-children">' + childrenHtml + "</div>";
@@ -53,6 +54,7 @@
 
   function render(data) {
     document.getElementById("t-fac").textContent = data.totals.faculties;
+    document.getElementById("t-inst").textContent = data.totals.institutes;
     document.getElementById("t-head").textContent = data.totals.headcount;
     document.getElementById("t-orcid").textContent = data.totals.withOrcid;
     document.getElementById("t-papers").textContent = data.totals.papers;
@@ -78,7 +80,9 @@
           + "</div>"
           + '<div class="org-children">' + peopleHtml + "</div></div>";
       }
-      var facNode = branch(f.name, "fac", metrics(f.headcount, f.withOrcid, f.papers), depHtml);
+      var kindLabel = { faculty: "Facultad", institute: "Instituto", other: "Otras" }[f.kind] || "";
+      var facLabel = esc(f.name) + (kindLabel ? ' <span class="org-kind">' + kindLabel + "</span>" : "");
+      var facNode = branch(facLabel, "fac", metrics(f.headcount, f.withOrcid, f.papers), depHtml);
       // wire up the department rows (built as raw HTML inside the faculty)
       facNode.querySelectorAll('[data-dep="1"]').forEach(function (depNode) {
         var row = depNode.querySelector(".org-row");

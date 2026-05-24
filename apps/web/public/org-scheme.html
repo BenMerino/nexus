@@ -24,6 +24,7 @@
         .org-twist.open { transform: rotate(90deg); }
         .org-name { flex: 1; }
         .org-name.fac { font-family: var(--display); font-size: 15px; }
+        .org-kind { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; margin-left: 8px; vertical-align: middle; }
         .org-name.dep { color: var(--fg); }
         .org-name.person { color: var(--fg-dim); font-size: 12px; }
         .org-metrics { display: flex; gap: 6px; align-items: center; flex: none; }
@@ -47,6 +48,7 @@
         <div class="card">
           <div style="margin-bottom:18px;">
             <div class="org-stat"><b id="t-fac">0</b><span>faculties</span></div>
+            <div class="org-stat"><b id="t-inst">0</b><span>institutes</span></div>
             <div class="org-stat"><b id="t-head">0</b><span>academics</span></div>
             <div class="org-stat"><b id="t-orcid">0</b><span>with ORCID</span></div>
             <div class="org-stat"><b id="t-papers">0</b><span>publications</span></div>

@@ -23,13 +23,32 @@ async function queryOrgTree(tenantId) {
       AND u.profile_category IS NOT NULL
     ORDER BY u.faculty NULLS LAST, u.department NULLS LAST, u.full_name`;
 
-  const UNFILED = "(Unfiled)";
-  const facMap = new Map(); // faculty -> { name, depts: Map }
+  // Per the official UTalca org chart (RU N°1053-2025), the academic tier is
+  // Facultades + Institutos as peers; Programas / Direcciones belong to the
+  // administrative branch. Classify each unit so the academic units render as
+  // the chart shows them and non-academic units fall into one "Otras unidades"
+  // group rather than masquerading as faculties.
+  const OTHER = "Otras unidades (no académicas)";
+  function classify(faculty) {
+    const s = (faculty || "").toLowerCase();
+    if (s.startsWith("facultad")) return { group: faculty, kind: "faculty" };
+    if (s.startsWith("instituto")) return { group: faculty, kind: "institute" };
+    return { group: OTHER, kind: "other", sub: faculty }; // Programas, Direcciones
+  }
+
+  const UNFILED = "(sin unidad)";
+  const facMap = new Map(); // group name -> { name, kind, depts: Map }
 
   for (const r of rows) {
-    const fac = r.faculty || UNFILED;
-    const dep = r.department || UNFILED;
-    if (!facMap.has(fac)) facMap.set(fac, { name: fac, depts: new Map() });
+    const c = classify(r.faculty);
+    const fac = c.group;
+    // self-referential leaf (person filed at faculty level) -> "(sin unidad)".
+    // For "Otras unidades", keep the real program/direccion name as the dept.
+    let dep;
+    if (c.kind === "other") dep = c.sub || UNFILED;
+    else dep = (!r.department || r.department === r.faculty) ? UNFILED : r.department;
+
+    if (!facMap.has(fac)) facMap.set(fac, { name: fac, kind: c.kind, depts: new Map() });
     const f = facMap.get(fac);
     if (!f.depts.has(dep)) f.depts.set(dep, { name: dep, people: [] });
     f.depts.get(dep).people.push({
@@ -54,13 +73,24 @@ async function queryOrgTree(tenantId) {
       fHead += head; fOrcid += withOrcid; fPapers += papers;
     }
     depts.sort((a, b) => b.headcount - a.headcount || a.name.localeCompare(b.name));
-    faculties.push({ name: f.name, headcount: fHead, withOrcid: fOrcid, papers: fPapers, departments: depts });
+    faculties.push({ name: f.name, kind: f.kind, headcount: fHead, withOrcid: fOrcid, papers: fPapers, departments: depts });
     tHead += fHead; tOrcid += fOrcid; tPapers += fPapers;
   }
-  faculties.sort((a, b) => b.headcount - a.headcount || a.name.localeCompare(b.name));
+  // chart order: Facultades, then Institutos, then "Otras unidades" last;
+  // within a kind, larger headcount first.
+  const KIND_ORDER = { faculty: 0, institute: 1, other: 2 };
+  faculties.sort((a, b) =>
+    (KIND_ORDER[a.kind] - KIND_ORDER[b.kind])
+    || (b.headcount - a.headcount) || a.name.localeCompare(b.name));
+
+  const facultyCount = faculties.filter((f) => f.kind === "faculty").length;
+  const instituteCount = faculties.filter((f) => f.kind === "institute").length;
 
   return {
-    totals: { headcount: tHead, withOrcid: tOrcid, papers: tPapers, faculties: faculties.length },
+    totals: {
+      headcount: tHead, withOrcid: tOrcid, papers: tPapers,
+      faculties: facultyCount, institutes: instituteCount, units: faculties.length,
+    },
     faculties,
   };
 }

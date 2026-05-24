@@ -31,6 +31,16 @@ async function ingestResolved(tenantId, uploader, limit = 25, offset = 0) {
     SELECT COUNT(*)::int AS n FROM users
     WHERE tenant_id = ${tenantId} AND orcid IS NOT NULL AND orcid <> ''`;
 
+  const result = {
+    total: countRows[0].n,
+    offset,
+    nextOffset: offset + users.length,
+    processed: users.length,
+    doisSeen: 0,
+    imported: 0,
+    skipped: 0,
+    errors: [],
+  };
   result.done = result.nextOffset >= result.total;
   for (const u of users) {
     let dois;
