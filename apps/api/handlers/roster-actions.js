@@ -12,7 +12,7 @@ function authorize(scope, tid) {
 
 async function handleRosterAction(req, res) {
   const action = req.query.action;
-  const ACTIONS = ["users-import", "roster-list", "roster-suggest", "roster-save-orcids", "roster-ingest", "org-tree"];
+  const ACTIONS = ["users-import", "roster-list", "roster-suggest", "roster-save-orcids", "roster-ingest", "roster-ingest-start", "org-tree"];
   if (!ACTIONS.includes(action)) return false;
   const scope = await getScope(req);
   if (!scope) { res.status(401).json({ error: "Not authenticated" }); return true; }
@@ -55,12 +55,31 @@ async function handleRosterAction(req, res) {
     if (!authorize(scope, tid)) { res.status(403).json({ error: "Requires superadmin, or tenant admin of the target tenant" }); return true; }
     const { parseRoster, importRoster } = require("../src/lib/roster-import");
     const rows = parseRoster(csv);
-    res.json({ ok: true, parsed: rows.length, ...(await importRoster(rows, tid)) });
+    const imp = await importRoster(rows, tid);
+    // Auto-ingest: if the import brought in ORCID-linked academics, pull their
+    // papers in the background (non-blocking). The import response returns now;
+    // ingest runs in-process afterward. Triggered whenever the roster gained or
+    // updated academics, since either can introduce new ORCIDs.
+    let ingest = { started: false };
+    if (imp.created > 0 || imp.updated > 0) {
+      const { startTenantIngest } = require("../src/lib/ingest-runner");
+      ingest = startTenantIngest(tid, "roster-import:" + scope.username);
+    }
+    res.json({ ok: true, parsed: rows.length, ...imp, autoIngest: ingest });
     return true;
   }
 
   const tid = req.body?.tenant_id || scope.tenantId;
   if (!authorize(scope, tid)) { res.status(403).json({ error: "Requires superadmin, or tenant admin of the target tenant" }); return true; }
+
+  // Manual kick of the background paper-ingest for the whole tenant (e.g. to
+  // ingest ORCIDs that arrived via the backfill migration rather than import).
+  // Runs in-process inside the app; returns immediately.
+  if (action === "roster-ingest-start") {
+    const { startTenantIngest } = require("../src/lib/ingest-runner");
+    res.json({ ok: true, ...startTenantIngest(tid, "manual-start:" + scope.username) });
+    return true;
+  }
 
   // Writing admin-confirmed ORCIDs needs no ROR / OpenAlex.
   if (action === "roster-save-orcids") {
