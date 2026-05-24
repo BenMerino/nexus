@@ -45,6 +45,17 @@
             <input type="text" id="ov-filter" placeholder="search name / faculty / department" style="margin-left:auto; font-size:12px; padding:6px 10px; width:280px; border:1px solid var(--border); border-radius:4px; background:var(--bg-inset); color:var(--fg);">
           </div>
 
+          <!-- Live ingest indicator: shown only while a background paper-ingest
+               is running (or just finished), polled from roster-ingest-status. -->
+          <div id="ingest-banner" style="display:none; align-items:center; gap:10px; padding:10px 14px; margin-bottom:14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-inset); font-size:12px;">
+            <span class="sync-pulse" id="ingest-banner-pulse"></span>
+            <span id="ingest-banner-text">Ingesting publications…</span>
+            <div style="flex:1; height:6px; background:var(--border-soft); border-radius:3px; overflow:hidden; min-width:80px;">
+              <div id="ingest-banner-bar" style="height:100%; width:0%; background:var(--accent); transition:width 0.4s;"></div>
+            </div>
+            <span id="ingest-banner-pct" class="text-small text-muted" style="font-family:var(--mono);"></span>
+          </div>
+
           <!-- Import panel -->
           <div class="tool-panel" id="panel-import" style="display:none;">
             <div class="view-sub" style="margin-bottom:12px;">Import academics from a semicolon-delimited roster export (Nombre; Categoría; Departamento; Facultad; ORCID). Re-importing updates org fields without duplicating.</div>
@@ -97,6 +108,7 @@
         </div>
       </div>
       <script type="module" src="/roster-overview.js"></script>
+      <script type="module" src="/roster-ingest-indicator.js"></script>
       <script type="module" src="/roster-app.js"></script>
     </main>
   </div>

@@ -12,17 +12,30 @@ const { ingestResolved } = require("./roster-ingest");
 // (ingestResolved skips DOIs already in the corpus), but the lock avoids
 // wasted API calls.
 
-const running = new Set(); // tenantIds with an ingest in flight
+// Per-tenant live status, so the roster UI can show an indicator + progress.
+// state: "running" | "done" | "error" | (absent = never run this process).
+const status = new Map(); // tenantId -> { state, total, processed, imported, errors, startedAt, finishedAt }
 const BATCH = 10;
+
+function isRunning(tenantId) {
+  return status.get(tenantId)?.state === "running";
+}
+
+function getTenantIngestStatus(tenantId) {
+  return status.get(tenantId) || { state: "idle" };
+}
 
 // Fire-and-forget: start a background ingest for the tenant if one isn't
 // already running. Returns immediately. Errors are logged, never thrown.
 function startTenantIngest(tenantId, label) {
-  if (running.has(tenantId)) {
+  if (isRunning(tenantId)) {
     console.log(`[ingest-runner] tenant ${tenantId} already ingesting; skip`);
     return { started: false, reason: "already-running" };
   }
-  running.add(tenantId);
+  status.set(tenantId, {
+    state: "running", total: null, processed: 0, imported: 0, errors: 0,
+    startedAt: Date.now(), finishedAt: null,
+  });
   // run on the next tick so the caller can respond first
   setImmediate(() => runLoop(tenantId, label || `auto-ingest:tenant-${tenantId}`));
   return { started: true };
@@ -31,29 +44,32 @@ function startTenantIngest(tenantId, label) {
 async function runLoop(tenantId, label) {
   const t0 = Date.now();
   let offset = 0;
-  const totals = { imported: 0, skipped: 0, errors: 0, processed: 0 };
+  const st = status.get(tenantId);
   console.log(`[ingest-runner] start tenant ${tenantId}`);
   try {
     for (;;) {
       const r = await ingestResolved(tenantId, label, BATCH, offset);
-      totals.imported += r.imported;
-      totals.skipped += r.skipped;
-      totals.errors += r.errors.length;
-      totals.processed += r.processed;
+      st.total = r.total;
+      st.processed = r.nextOffset;
+      st.imported += r.imported;
+      st.errors += r.errors.length;
       console.log(
         `[ingest-runner] tenant ${tenantId} | ${offset}-${r.nextOffset}/${r.total}`
-        + ` | +${r.imported} imported (total ${totals.imported}), ${r.errors.length} err`);
+        + ` | +${r.imported} imported (total ${st.imported}), ${r.errors.length} err`);
       if (r.done) break;
       offset = r.nextOffset;
     }
+    st.state = "done";
+    st.finishedAt = Date.now();
     const mins = ((Date.now() - t0) / 60000).toFixed(1);
     console.log(`[ingest-runner] DONE tenant ${tenantId} in ${mins}min —`
-      + ` processed=${totals.processed} imported=${totals.imported} already=${totals.skipped} errors=${totals.errors}`);
+      + ` processed=${st.processed} imported=${st.imported} errors=${st.errors}`);
   } catch (err) {
+    st.state = "error";
+    st.error = err.message;
+    st.finishedAt = Date.now();
     console.error(`[ingest-runner] tenant ${tenantId} fatal:`, err.message);
-  } finally {
-    running.delete(tenantId);
   }
 }
 
-module.exports = { startTenantIngest };
+module.exports = { startTenantIngest, getTenantIngestStatus };

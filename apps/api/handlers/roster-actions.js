@@ -12,10 +12,20 @@ function authorize(scope, tid) {
 
 async function handleRosterAction(req, res) {
   const action = req.query.action;
-  const ACTIONS = ["users-import", "roster-list", "roster-suggest", "roster-save-orcids", "roster-ingest", "roster-ingest-start", "org-tree"];
+  const ACTIONS = ["users-import", "roster-list", "roster-suggest", "roster-save-orcids", "roster-ingest", "roster-ingest-start", "roster-ingest-status", "org-tree"];
   if (!ACTIONS.includes(action)) return false;
   const scope = await getScope(req);
   if (!scope) { res.status(401).json({ error: "Not authenticated" }); return true; }
+
+  // roster-ingest-status: live progress of the background paper-ingest, polled
+  // by the roster UI indicator. GET; tenant-admin (or superadmin) of the tenant.
+  if (action === "roster-ingest-status") {
+    const tid = req.query.tenantId ? parseInt(req.query.tenantId) : scope.tenantId;
+    if (!authorize(scope, tid)) { res.status(403).json({ error: "Requires superadmin, or tenant admin of the target tenant" }); return true; }
+    const { getTenantIngestStatus } = require("../src/lib/ingest-runner");
+    res.json({ ok: true, ...getTenantIngestStatus(tid) });
+    return true;
+  }
 
   // org-tree: the org scheme view. Read-only and visible to ANY authenticated
   // user of the tenant (no tenant_admin gate), so it bypasses authorize().

@@ -9,6 +9,8 @@
     var allowed = d.tenantAdmin === true || d.role === "superadmin";
     document.getElementById(allowed ? "overview-card" : "roster-noaccess").style.display = "";
     if (allowed && window.rosterOverview) window.rosterOverview.load();
+    // surface any in-flight background ingest (indicator is its own module)
+    if (allowed && window.rosterIngestIndicator) window.rosterIngestIndicator.poll(tenantId);
   });
 
   // Toolbar: each button toggles its tool panel (and closes the others).
@@ -99,6 +101,10 @@
         status.textContent = "Done.";
         showResult(res.j);
         if (window.rosterOverview) window.rosterOverview.load();
+        // import may have kicked a background ingest — start showing progress.
+        if (res.j.autoIngest && res.j.autoIngest.started && window.rosterIngestIndicator) {
+          window.rosterIngestIndicator.poll(tenantId);
+        }
       })
       .catch(function (err) { status.textContent = "Error: " + err.message; });
   }
