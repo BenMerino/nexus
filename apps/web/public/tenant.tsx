@@ -1,21 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { GraphRender } from '../ui/graph-engine/index';
 import { AuthorsTable } from './tenant-authors';
-import { TenantGraph, type PublicGraphNode, type PublicGraphEdge } from './tenant-graph';
-import { buildTenantCharts, type PublicStats } from './tenant-builders';
+import { TenantGraph } from './tenant-graph';
+import { buildTenantCharts } from './tenant-builders';
 import { TenantPublicSidebar, type PublicNavItem } from './tenant-sidebar';
-import { SummaryCards, SectionPlaceholder } from './tenant-summary';
+import { SummaryCards, SectionPlaceholder, TabPane } from './tenant-summary';
 import { ReplayChart } from './tenant-replay-chart';
 import { TenantOrgTree } from './tenant-org-tree';
-
-interface TenantChrome {
-  id: number; name: string; slug: string | null; ror_id: string | null;
-  logo_url: string | null; primary_color: string | null; secondary_color: string | null;
-}
-
-interface StatsPayload { tenant: TenantChrome; stats: PublicStats; }
-interface GraphPayload { graph: { nodes: PublicGraphNode[]; edges: PublicGraphEdge[] }; }
+import { useTenantData, readSlugFromUrl } from './tenant-data';
 
 const NAV: PublicNavItem[] = [
   { id: 'overview',  label: 'Overview' },
@@ -24,58 +17,39 @@ const NAV: PublicNavItem[] = [
   { id: 'org-tree',  label: 'Organisation scheme' },
   { id: 'authors',   label: 'Authors directory' },
 ];
+const NAV_IDS = new Set(NAV.map(n => n.id));
+
+function initialTabFromHash(): string {
+  const h = window.location.hash.replace(/^#/, '');
+  return NAV_IDS.has(h) ? h : 'overview';
+}
 
 function App() {
-  const [slug, setSlug] = useState<string | null>(null);
-  const [statsPayload, setStatsPayload] = useState<StatsPayload | null>(null);
-  const [graphPayload, setGraphPayload] = useState<GraphPayload | null>(null);
-  const [statsError, setStatsError] = useState<string | null>(null);
-  const [graphError, setGraphError] = useState<string | null>(null);
-  const [fatalError, setFatalError] = useState<string | null>(null);
-  const [active, setActive] = useState<string>('overview');
-  const mainRef = useRef<HTMLDivElement>(null);
+  const [slug] = useState<string | null>(() => readSlugFromUrl());
+  const { statsPayload, graphPayload, statsError, graphError, fatalError } = useTenantData(slug);
+  const [active, setActive] = useState<string>(initialTabFromHash);
+  const [seen, setSeen] = useState<Set<string>>(() => new Set([active]));
 
+  // Hash → tab sync: respects browser back/forward and shareable deep links.
   useEffect(() => {
-    const qSlug = new URLSearchParams(window.location.search).get('slug');
-    const pathMatch = window.location.pathname.match(/^\/t\/([^\/?#]+)/);
-    const s = qSlug || (pathMatch ? pathMatch[1] : null);
-    if (!s) { setFatalError('Missing tenant slug.'); return; }
-    setSlug(s);
-
-    // Stats: gates the page chrome (title, branding). 404 here = fatal.
-    fetch(`/api/public/${encodeURIComponent(s)}/stats`)
-      .then(async r => {
-        if (r.status === 404) throw new Error('Tenant not found.');
-        if (!r.ok) throw new Error(`Stats failed (${r.status})`);
-        return r.json() as Promise<StatsPayload>;
-      })
-      .then(d => {
-        setStatsPayload(d);
-        if (d.tenant.primary_color) document.body.style.setProperty('--primary', d.tenant.primary_color);
-        if (d.tenant.secondary_color) document.body.style.setProperty('--secondary', d.tenant.secondary_color);
-        document.title = `${d.tenant.name} — Research`;
-      })
-      .catch(e => {
-        if (e.message === 'Tenant not found.') setFatalError(e.message);
-        else setStatsError(e.message);
-      });
-
-    // Graph: independent. Failure shows an inline error, doesn't block the page.
-    fetch(`/api/public/${encodeURIComponent(s)}/graph`)
-      .then(async r => {
-        if (!r.ok) throw new Error(`Graph failed (${r.status})`);
-        return r.json() as Promise<GraphPayload>;
-      })
-      .then(setGraphPayload)
-      .catch(e => setGraphError(e.message));
+    const onHash = () => {
+      const next = initialTabFromHash();
+      setActive(next);
+      setSeen(prev => prev.has(next) ? prev : new Set(prev).add(next));
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  const handleNavigate = (id: string) => {
+  const navigate = (id: string) => {
     setActive(id);
-    const el = document.getElementById(id);
-    if (el && mainRef.current) mainRef.current.scrollTo({ top: el.offsetTop - 24, behavior: 'smooth' });
+    setSeen(prev => prev.has(id) ? prev : new Set(prev).add(id));
+    if (window.location.hash.slice(1) !== id) window.history.replaceState(null, '', `#${id}`);
   };
 
+  if (!slug) {
+    return <div className="app"><main className="main"><div className="view" style={{ padding: 24, color: 'var(--danger, #c00)' }}>Missing tenant slug.</div></main></div>;
+  }
   if (fatalError) {
     return <div className="app"><main className="main"><div className="view" style={{ padding: 24, color: 'var(--danger, #c00)' }}>{fatalError}</div></main></div>;
   }
@@ -84,12 +58,13 @@ function App() {
   }
 
   const charts = buildTenantCharts(statsPayload.stats, statsPayload.tenant.id);
+  const paneProps = { active, seen };
 
   return (
     <div className="app">
       <TenantPublicSidebar tenant={statsPayload.tenant} items={NAV} currentId={active}
-        onNavigate={handleNavigate} yearRange={statsPayload.stats.yearRange} />
-      <main className="main" ref={mainRef}>
+        onNavigate={navigate} yearRange={statsPayload.stats.yearRange} />
+      <main className="main">
         <div className="view">
           <header className="view-head">
             <div>
@@ -99,12 +74,11 @@ function App() {
             </div>
           </header>
 
-          <section id="overview" style={{ marginBottom: 24 }}>
+          <TabPane id="overview" {...paneProps}>
             <SummaryCards summary={statsPayload.stats.summary} />
-          </section>
+          </TabPane>
 
-          <section id="charts" style={{ marginBottom: 32 }}>
-            <h2 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 22, marginBottom: 12 }}>Charts</h2>
+          <TabPane id="charts" {...paneProps}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
               {charts.map((chart, i) => (
                 <div key={i} className="card" style={{ minHeight: 400 }}>
@@ -112,24 +86,21 @@ function App() {
                 </div>
               ))}
             </div>
-          </section>
+          </TabPane>
 
-          <section id="graph" style={{ marginBottom: 32 }}>
-            <h2 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 22, marginBottom: 12 }}>Collaboration graph</h2>
+          <TabPane id="graph" {...paneProps}>
             {graphPayload
               ? <TenantGraph nodes={graphPayload.graph.nodes} edges={graphPayload.graph.edges} />
               : <SectionPlaceholder label="collaboration graph" error={graphError} />}
-          </section>
+          </TabPane>
 
-          <section id="org-tree" style={{ marginBottom: 32 }}>
-            <h2 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 22, marginBottom: 12 }}>Organisation scheme</h2>
-            {slug ? <TenantOrgTree slug={slug} /> : null}
-          </section>
+          <TabPane id="org-tree" {...paneProps}>
+            <TenantOrgTree slug={slug} />
+          </TabPane>
 
-          <section id="authors" style={{ marginBottom: 32 }}>
-            <h2 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 22, marginBottom: 12 }}>Authors directory</h2>
-            {slug ? <AuthorsTable slug={slug} /> : null}
-          </section>
+          <TabPane id="authors" {...paneProps}>
+            <AuthorsTable slug={slug} />
+          </TabPane>
         </div>
       </main>
     </div>

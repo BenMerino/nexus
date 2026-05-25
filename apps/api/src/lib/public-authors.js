@@ -94,16 +94,35 @@ function cachedAggregate(tenantId, tenantRor) {
   return promise;
 }
 
-// Paginated + searchable view over the cached aggregate.
-async function getAuthorsPage(tenantId, tenantRor, { limit, offset, q }) {
+// Sortable fields exposed to clients. The aggregator pre-sorts by paperCount
+// desc; non-default sorts re-order the cached array in place per request.
+const SORT_FIELDS = {
+  name:           (a, b) => a.name.localeCompare(b.name),
+  paperCount:     (a, b) => a.paperCount - b.paperCount,
+  hIndex:         (a, b) => a.hIndex - b.hIndex,
+  totalCitations: (a, b) => a.totalCitations - b.totalCitations,
+};
+
+// Paginated + searchable view over the cached aggregate. Speaks the same
+// shape as /api/auth?action=roster-list so the table component on the
+// public profile can reuse the roster UI verbatim.
+async function getAuthorsPage(tenantId, tenantRor, opts) {
   const all = await cachedAggregate(tenantId, tenantRor);
-  const needle = (q || "").trim().toLowerCase();
+  const needle = (opts.q || "").trim().toLowerCase();
   const filtered = needle
     ? all.filter(a => a.name.toLowerCase().includes(needle))
-    : all;
+    : all.slice();
+  const cmp = SORT_FIELDS[opts.sort] || SORT_FIELDS.paperCount;
+  const dir = opts.dir === "asc" ? 1 : -1;
+  filtered.sort((a, b) => cmp(a, b) * dir);
+  const page = Math.max(0, opts.page | 0);
+  const pageSize = Math.max(1, Math.min(200, opts.pageSize | 0 || 25));
+  const start = page * pageSize;
   return {
-    data: filtered.slice(offset, offset + limit),
-    total: filtered.length,
+    rows: filtered.slice(start, start + pageSize),
+    page,
+    pageSize,
+    totalCount: filtered.length,
   };
 }
 

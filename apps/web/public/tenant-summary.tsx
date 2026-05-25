@@ -28,3 +28,13 @@ export function SectionPlaceholder({ label, error }: { label: string; error?: st
     </div>
   );
 }
+
+// Lazy tab pane: not rendered until first activated, then kept mounted so
+// per-tab state (pagination, search, scroll) survives switching away and
+// back. `display: none` when inactive — never unmount-on-hide.
+export function TabPane({ id, active, seen, children }: {
+  id: string; active: string; seen: Set<string>; children: React.ReactNode;
+}) {
+  if (!seen.has(id)) return null;
+  return <section id={id} style={{ display: active === id ? 'block' : 'none' }}>{children}</section>;
+}

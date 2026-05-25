@@ -10,117 +10,132 @@ export interface AuthorRow {
   hIndexByType?: Record<string, number> | null;
 }
 
-export interface AuthorsPage {
-  data: AuthorRow[];
-  pagination: { total: number; limit: number; offset: number; has_more: boolean; next_offset: number | null };
+interface AuthorsResponse {
+  ok: boolean;
+  rows: AuthorRow[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  error?: string;
 }
 
-const PAGE_SIZE = 50;
+type SortKey = 'name' | 'paperCount' | 'hIndex' | 'totalCitations';
+type Dir = 'asc' | 'desc';
+interface Col { id: SortKey; label: string; numeric?: boolean }
 
-// Server-side paginated + searchable directory. Sort is fixed at
-// paperCount-desc on the backend; client-side resorting was dropped along
-// with the dump-everything endpoint, since once you're paginated you
-// can't re-sort just the current page without lying about the order.
+const COLS: Col[] = [
+  { id: 'name',           label: 'Name' },
+  { id: 'paperCount',     label: 'Papers',    numeric: true },
+  { id: 'hIndex',         label: 'h-index',   numeric: true },
+  { id: 'totalCitations', label: 'Citations', numeric: true },
+];
+
+const PAGE_SIZE = 25;
+
 export function AuthorsTable({ slug }: { slug: string }) {
   const [rows, setRows] = useState<AuthorRow[]>([]);
-  const [total, setTotal] = useState(0);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
+  const [sort, setSort] = useState<SortKey>('paperCount');
+  const [dir, setDir] = useState<Dir>('desc');
+  const [q, setQ] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const reqIdRef = useRef(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounce search input — 250 ms after typing stops, reset and refetch.
+  // Refetch whenever page/sort/dir/q changes. Search input updates `q` from
+  // a debounced handler so the URL state cleanly drives this effect.
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setOffset(0);
-      void fetchPage(0, query, /* replace */ true);
-    }, 250);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
-
-  async function fetchPage(nextOffset: number, q: string, replace: boolean) {
-    const myReq = ++reqIdRef.current;
+    const id = ++reqIdRef.current;
     setLoading(true);
     setError(null);
-    try {
-      const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(nextOffset) });
-      if (q.trim()) params.set('q', q.trim());
-      const r = await fetch(`/api/public/${encodeURIComponent(slug)}/authors?${params}`);
-      if (!r.ok) throw new Error(`Failed (${r.status})`);
-      const page: AuthorsPage = await r.json();
-      if (reqIdRef.current !== myReq) return; // stale — newer request in flight
-      setRows(prev => replace ? page.data : [...prev, ...page.data]);
-      setTotal(page.pagination.total);
-      setOffset(page.pagination.offset + page.data.length);
-      setHasMore(page.pagination.has_more);
-    } catch (e: any) {
-      if (reqIdRef.current === myReq) setError(e.message || 'Failed to load authors');
-    } finally {
-      if (reqIdRef.current === myReq) setLoading(false);
-    }
+    const params = new URLSearchParams({
+      page: String(page), pageSize: String(PAGE_SIZE), sort, dir,
+    });
+    if (q.trim()) params.set('q', q.trim());
+    fetch(`/api/public/${encodeURIComponent(slug)}/authors?${params}`)
+      .then(async r => {
+        const j: AuthorsResponse = await r.json();
+        if (!j.ok) throw new Error(j.error || `Failed (${r.status})`);
+        if (reqIdRef.current !== id) return;
+        setRows(j.rows);
+        setTotalCount(j.totalCount);
+      })
+      .catch(e => { if (reqIdRef.current === id) setError(e.message || 'Failed to load'); })
+      .finally(() => { if (reqIdRef.current === id) setLoading(false); });
+  }, [slug, page, sort, dir, q]);
+
+  function onSortClick(id: SortKey) {
+    if (sort === id) setDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSort(id); setDir(id === 'name' ? 'asc' : 'desc'); }
+    setPage(0);
   }
+
+  function onFilterChange(value: string) {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => { setQ(value); setPage(0); }, 250);
+  }
+
+  const start = totalCount === 0 ? 0 : page * PAGE_SIZE + 1;
+  const end = Math.min(totalCount, (page + 1) * PAGE_SIZE);
+  const arrow = (id: SortKey) => sort === id ? (dir === 'asc' ? ' ▲' : ' ▼') : '';
 
   return (
     <div>
-      <div className="authors-toolbar">
+      <div className="roster-toolbar">
         <input
-          placeholder="Search by name…"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
+          type="text"
+          placeholder="search by name"
+          defaultValue={q}
+          onChange={e => onFilterChange(e.target.value)}
+          style={{ marginLeft: 'auto', fontSize: 12, padding: '6px 10px', width: 280, border: '1px solid var(--border)', borderRadius: 4, background: 'var(--bg-inset)', color: 'var(--fg)' }}
         />
-        <span style={{ fontSize: 12, color: '#666' }}>
-          {loading && rows.length === 0
-            ? 'Loading…'
-            : `${rows.length.toLocaleString()} of ${total.toLocaleString()}`}
-        </span>
       </div>
-      <table className="authors-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>ORCID</th>
-            <th style={{ textAlign: 'right' }}>Papers ↓</th>
-            <th style={{ textAlign: 'right' }}>h-index</th>
-            <th style={{ textAlign: 'right' }}>Citations</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((a, i) => (
-            <tr key={`${a.orcid || a.name}-${i}`}>
-              <td>{a.name}</td>
-              <td>
-                {a.orcid ? (
-                  <a href={`https://orcid.org/${a.orcid}`} target="_blank" rel="noopener noreferrer">
-                    {a.orcid}
-                  </a>
-                ) : <span style={{ color: '#ccc' }}>—</span>}
-              </td>
-              <td className="num">{a.paperCount.toLocaleString()}</td>
-              <td className="num" title={hIndexTooltip(a.hIndexByType)}>{a.hIndex}</td>
-              <td className="num">{a.totalCitations.toLocaleString()}</td>
+      <div className="tableScroll">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              {COLS.map(c => (
+                <th key={c.id}
+                    style={{ cursor: 'pointer', textAlign: c.numeric ? 'right' : 'left' }}
+                    onClick={() => onSortClick(c.id)}>
+                  {c.label}{arrow(c.id)}
+                </th>
+              ))}
+              <th>ORCID</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {error ? (
-        <div style={{ fontSize: 12, color: 'var(--danger, #c00)', marginTop: 8 }}>{error}</div>
-      ) : null}
-      {hasMore ? (
-        <div style={{ marginTop: 12, textAlign: 'center' }}>
-          <button
-            onClick={() => fetchPage(offset, query, /* replace */ false)}
-            disabled={loading}
-            style={{ padding: '6px 14px', fontFamily: 'var(--mono)', fontSize: 12 }}
-          >
-            {loading ? 'Loading…' : `Load more (${(total - rows.length).toLocaleString()} remaining)`}
-          </button>
-        </div>
-      ) : !loading && rows.length === 0 ? (
-        <div style={{ fontSize: 12, color: '#666', marginTop: 8 }}>No matching authors.</div>
-      ) : null}
+          </thead>
+          <tbody>
+            {rows.map((a, i) => (
+              <tr key={`${a.orcid || a.name}-${i}`}>
+                <td>{a.name}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums' }}>{a.paperCount.toLocaleString()}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums' }} title={hIndexTooltip(a.hIndexByType)}>{a.hIndex}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums' }}>{a.totalCitations.toLocaleString()}</td>
+                <td>{a.orcid
+                  ? <a href={`https://orcid.org/${a.orcid}`} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{a.orcid}</a>
+                  : <span className="text-muted text-small">none</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {totalCount === 0 && !loading
+        ? <div className="text-muted text-small" style={{ padding: 14 }}>No matching authors.</div>
+        : null}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+        <span className="text-small text-muted">
+          {error ? `Error: ${error}` : totalCount === 0 ? 'No authors.' : `${start}–${end} of ${totalCount.toLocaleString()}`}
+        </span>
+        <span style={{ marginLeft: 'auto' }} />
+        <button className="primary-btn" style={{ padding: '4px 12px' }}
+                disabled={page <= 0 || loading}
+                onClick={() => setPage(p => Math.max(0, p - 1))}>‹</button>
+        <button className="primary-btn" style={{ padding: '4px 12px' }}
+                disabled={end >= totalCount || loading}
+                onClick={() => setPage(p => p + 1)}>›</button>
+      </div>
     </div>
   );
 }
