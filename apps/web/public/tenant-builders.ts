@@ -22,15 +22,38 @@ export interface PublicStats {
 
 const INDEXES = ['WoS', 'Scopus', 'SciELO', 'DOAJ'];
 
-function buildYearChart(stats: PublicStats): GraphDirective | null {
+// Window toggle positions for the publications timeline. windowDays is the
+// engine's unit; academic output is decade-scale, so offer year-equivalents.
+function pubWindowToggle(tenantId: number) {
+  return {
+    id: 'windowDays',
+    field: 'windowDays' as const,
+    valueType: 'numberOrNull' as const,
+    current: 'null',
+    options: [
+      { value: '1825', label: '5y' },
+      { value: '3650', label: '10y' },
+      { value: '7305', label: '20y' },
+      { value: 'null', label: 'All' },
+    ],
+  };
+}
+
+function buildYearChart(stats: PublicStats, tenantId?: number): GraphDirective | null {
   const byYearTotal = new Map<string, number>();
   for (const row of stats.yearSource) byYearTotal.set(row.year, (byYearTotal.get(row.year) || 0) + parseInt(row.count));
   const years = [...byYearTotal.keys()].filter(Boolean).sort();
   if (years.length <= 1) return null;
 
+  // When we know the tenant, attach the replay query + window toggle so the
+  // engine shows a live slider (atoms come from POST /api/architect/recompose).
+  const replay = tenantId != null
+    ? { query: { kind: 'publications', tenantId: String(tenantId), windowDays: null as number | null }, toggles: [pubWindowToggle(tenantId)] }
+    : {};
+
   const hasIndexData = (stats.yearByIndex || []).some(r => INDEXES.includes(r.bucket));
   if (!hasIndexData) {
-    return { type: 'bar', title: 'Publications by Year', xLabel: 'Year', yLabel: 'Articles',
+    return { type: 'bar', title: 'Publications by Year', xLabel: 'Year', yLabel: 'Articles', ...replay,
       data: years.map(y => ({ label: y, value: byYearTotal.get(y) || 0 })) };
   }
 
@@ -54,6 +77,7 @@ function buildYearChart(stats: PublicStats): GraphDirective | null {
     xLabel: 'Year',
     yLabel: 'Articles',
     series: presentIndexes,
+    ...replay,
     data: years.map(y => ({ label: y, ...grid.get(y)! })),
   };
 }
@@ -106,9 +130,9 @@ function buildCountryChart(stats: PublicStats): GraphDirective | null {
   };
 }
 
-export function buildTenantCharts(stats: PublicStats): GraphDirective[] {
+export function buildTenantCharts(stats: PublicStats, tenantId?: number): GraphDirective[] {
   return [
-    buildYearChart(stats),
+    buildYearChart(stats, tenantId),
     buildTypeChart(stats),
     buildJournalChart(stats),
     buildCollabChart(stats),

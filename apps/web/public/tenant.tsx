@@ -6,6 +6,7 @@ import { TenantGraph, type PublicGraphNode, type PublicGraphEdge } from './tenan
 import { buildTenantCharts, type PublicStats } from './tenant-builders';
 import { TenantPublicSidebar, type PublicNavItem } from './tenant-sidebar';
 import { SummaryCards, SectionPlaceholder } from './tenant-summary';
+import { ReplayChart } from './tenant-replay-chart';
 
 interface TenantChrome {
   id: number; name: string; slug: string | null; ror_id: string | null;
@@ -80,7 +81,7 @@ function App() {
     return <div className="app"><main className="main"><div className="view" style={{ padding: 24, color: 'var(--fg-dim)' }}>{statsError ? `Failed: ${statsError}` : 'Loading…'}</div></main></div>;
   }
 
-  const charts = buildTenantCharts(statsPayload.stats);
+  const charts = buildTenantCharts(statsPayload.stats, statsPayload.tenant.id);
 
   return (
     <div className="app">
@@ -105,7 +106,7 @@ function App() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
               {charts.map((chart, i) => (
                 <div key={i} className="card" style={{ minHeight: 400 }}>
-                  <GraphRender chart={chart} />
+                  {chart.query ? <ReplayChart initial={chart} /> : <GraphRender chart={chart} />}
                 </div>
               ))}
             </div>
