@@ -76,6 +76,22 @@ day/week/month/year honestly, no synthetic-date hacks. The current year-only
 charts are purely an artifact of the query slicing `SUBSTRING(published,1,4)`;
 the fix is to read the full date. The 3 non-full rows are filtered out.
 
+## STATUS (paused 2026-05-25)
+
+Done + deployed:
+- White charts fixed (palette tokens in shared.css).
+- Backend live: `GET /api/architect/timeline-span/:tenantId/:kind`,
+  `POST /api/architect/recompose` (publications kind, day→hour-key atoms).
+- Slider wired on PLAIN-bar publications charts via `tenant-replay-chart.tsx`
+  (loads all-time atoms once, folds locally).
+
+Paused here. Known gap: the slider is attached only to plain-bar charts.
+**UTalca's year chart is STACKED (WoS/Scopus/SciELO/DOAJ)** so it has NO slider —
+flat-value atoms empty the stacked series. To finish: add a per-series recompose
+variant emitting per-day counts per index (data is per-record via `indexed_in`
+tags, date-joinable), so stacked charts get a working slider with series intact.
+Then resume phases 5 (user-ui-prefs) and 6 (other charts, drill-down).
+
 ## Risk / honesty
 - Largest risk is Phase 4 wiring: the engine's `sliderActive` needs
   `windowToggle && tenantId && kind && span && onWindowChange` ALL present and
