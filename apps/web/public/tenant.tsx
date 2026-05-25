@@ -4,7 +4,7 @@ import { GraphRender } from '../ui/graph-engine/index';
 import { AuthorsTable } from './tenant-authors';
 import { TenantGraph } from './tenant-graph';
 import { buildTenantCharts } from './tenant-builders';
-import { TenantPublicSidebar, type PublicNavItem } from './tenant-sidebar';
+import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
 import { SummaryCards, SectionPlaceholder, TabPane } from './tenant-summary';
 import { ReplayChart } from './tenant-replay-chart';
 import { TenantOrgTree } from './tenant-org-tree';
@@ -48,32 +48,24 @@ function App() {
   };
 
   if (!slug) {
-    return <div className="app"><main className="main"><div className="view" style={{ padding: 24, color: 'var(--danger, #c00)' }}>Missing tenant slug.</div></main></div>;
+    return <div className="public-app"><main className="public-main" style={{ color: 'var(--danger, #c00)' }}>Missing tenant slug.</main></div>;
   }
   if (fatalError) {
-    return <div className="app"><main className="main"><div className="view" style={{ padding: 24, color: 'var(--danger, #c00)' }}>{fatalError}</div></main></div>;
+    return <div className="public-app"><main className="public-main" style={{ color: 'var(--danger, #c00)' }}>{fatalError}</main></div>;
   }
   if (!statsPayload) {
-    return <div className="app"><main className="main"><div className="view" style={{ padding: 24, color: 'var(--fg-dim)' }}>{statsError ? `Failed: ${statsError}` : 'Loading…'}</div></main></div>;
+    return <div className="public-app"><main className="public-main" style={{ color: 'var(--fg-dim)' }}>{statsError ? `Failed: ${statsError}` : 'Loading…'}</main></div>;
   }
 
   const charts = buildTenantCharts(statsPayload.stats, statsPayload.tenant.id);
   const paneProps = { active, seen };
 
   return (
-    <div className="app">
-      <TenantPublicSidebar tenant={statsPayload.tenant} items={NAV} currentId={active}
+    <div className="public-app">
+      <TenantPublicHeader tenant={statsPayload.tenant} items={NAV} currentId={active}
         onNavigate={navigate} yearRange={statsPayload.stats.yearRange} />
-      <main className="main">
+      <main className="public-main">
         <div className="view">
-          <header className="view-head">
-            <div>
-              <div className="eyebrow">Institutional research</div>
-              <h1 className="view-title">{statsPayload.tenant.name}</h1>
-              <div className="view-sub">Public research profile · {statsPayload.stats.summary.totalPubs.toLocaleString()} publications · {statsPayload.stats.summary.authorCount.toLocaleString()} authors</div>
-            </div>
-          </header>
-
           <TabPane id="overview" {...paneProps}>
             <SummaryCards summary={statsPayload.stats.summary} />
           </TabPane>
