@@ -30,7 +30,7 @@ function buildYearChart(stats: PublicStats): GraphDirective | null {
 
   const hasIndexData = (stats.yearByIndex || []).some(r => INDEXES.includes(r.bucket));
   if (!hasIndexData) {
-    return { type: 'bar', title: 'Publications by Year', yLabel: 'Articles',
+    return { type: 'bar', title: 'Publications by Year', xLabel: 'Year', yLabel: 'Articles',
       data: years.map(y => ({ label: y, value: byYearTotal.get(y) || 0 })) };
   }
 
@@ -51,6 +51,7 @@ function buildYearChart(stats: PublicStats): GraphDirective | null {
   return {
     type: 'stacked-bar',
     title: 'Publications by Year',
+    xLabel: 'Year',
     yLabel: 'Articles',
     series: presentIndexes,
     data: years.map(y => ({ label: y, ...grid.get(y)! })),
@@ -65,7 +66,7 @@ function buildTypeChart(stats: PublicStats): GraphDirective | null {
     .filter(r => typeSet.has(r.type) && r.year)
     .map(r => ({ row: r.type, col: r.year, value: r.count, label: `${r.type} ${r.year}` }));
   if (!cells.length) return null;
-  return { type: 'heatmap', title: 'Publications by Type', data: cells as any };
+  return { type: 'heatmap', title: 'Publications by Type', xLabel: 'Year', yLabel: 'Type', data: cells as any };
 }
 
 function buildJournalChart(stats: PublicStats): GraphDirective | null {
@@ -73,6 +74,7 @@ function buildJournalChart(stats: PublicStats): GraphDirective | null {
   return {
     type: 'bar',
     title: 'Top Journals',
+    xLabel: 'Journal',
     yLabel: 'Papers',
     data: stats.journals.map(j => ({
       label: (j.journal || '').substring(0, 18),
@@ -87,6 +89,7 @@ function buildCollabChart(stats: PublicStats): GraphDirective | null {
   return {
     type: 'bar',
     title: 'Top Collaborating Institutions',
+    xLabel: 'Institution',
     yLabel: 'Co-authored Papers',
     data: top.map(c => ({ label: (c.value || '').substring(0, 30), value: parseInt(c.count) })),
   };
