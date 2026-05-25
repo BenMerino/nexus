@@ -7,6 +7,7 @@ import { buildTenantCharts, type PublicStats } from './tenant-builders';
 import { TenantPublicSidebar, type PublicNavItem } from './tenant-sidebar';
 import { SummaryCards, SectionPlaceholder } from './tenant-summary';
 import { ReplayChart } from './tenant-replay-chart';
+import { TenantOrgTree } from './tenant-org-tree';
 
 interface TenantChrome {
   id: number; name: string; slug: string | null; ror_id: string | null;
@@ -17,10 +18,11 @@ interface StatsPayload { tenant: TenantChrome; stats: PublicStats; }
 interface GraphPayload { graph: { nodes: PublicGraphNode[]; edges: PublicGraphEdge[] }; }
 
 const NAV: PublicNavItem[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'charts',   label: 'Charts' },
-  { id: 'graph',    label: 'Collaboration graph' },
-  { id: 'authors',  label: 'Authors directory' },
+  { id: 'overview',  label: 'Overview' },
+  { id: 'charts',    label: 'Charts' },
+  { id: 'graph',     label: 'Collaboration graph' },
+  { id: 'org-tree',  label: 'Organisation scheme' },
+  { id: 'authors',   label: 'Authors directory' },
 ];
 
 function App() {
@@ -117,6 +119,11 @@ function App() {
             {graphPayload
               ? <TenantGraph nodes={graphPayload.graph.nodes} edges={graphPayload.graph.edges} />
               : <SectionPlaceholder label="collaboration graph" error={graphError} />}
+          </section>
+
+          <section id="org-tree" style={{ marginBottom: 32 }}>
+            <h2 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 22, marginBottom: 12 }}>Organisation scheme</h2>
+            {slug ? <TenantOrgTree slug={slug} /> : null}
           </section>
 
           <section id="authors" style={{ marginBottom: 32 }}>
