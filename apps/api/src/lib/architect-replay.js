@@ -74,8 +74,13 @@ async function buildPublicationAtoms(tenantId, query, span) {
       AND SUBSTRING(published FROM 1 FOR 10) <= ${asOf}
     GROUP BY 1 ORDER BY 1`;
 
+  // key is HOURS-since-anchor (engine contract, fold-atoms.ts): daily atoms
+  // sit at hour 0 of their day → key = dayIndex * 24. Using day index alone
+  // makes the engine's `(lastKey-firstKey+1)/24` span math 24x too small,
+  // which mis-scales the slider geometry (offset pointer) and breaks folding.
+  const HOURS_PER_DAY = 24;
   return rows.map((r) => ({
-    key: daysBetween(span.earliest, r.iso),
+    key: daysBetween(span.earliest, r.iso) * HOURS_PER_DAY,
     label: r.iso,
     iso: r.iso,
     value: r.n,
