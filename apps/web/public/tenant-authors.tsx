@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { hIndexTooltip } from './h-index-breakdown';
 
 export interface AuthorRow {
@@ -10,57 +10,86 @@ export interface AuthorRow {
   hIndexByType?: Record<string, number> | null;
 }
 
-type SortKey = 'name' | 'paperCount' | 'hIndex' | 'totalCitations';
-
-function compare(a: AuthorRow, b: AuthorRow, key: SortKey, asc: boolean): number {
-  const dir = asc ? 1 : -1;
-  if (key === 'name') return a.name.localeCompare(b.name) * dir;
-  return ((a[key] as number) - (b[key] as number)) * dir;
+export interface AuthorsPage {
+  data: AuthorRow[];
+  pagination: { total: number; limit: number; offset: number; has_more: boolean; next_offset: number | null };
 }
 
-export function AuthorsTable({ authors }: { authors: AuthorRow[] }) {
+const PAGE_SIZE = 50;
+
+// Server-side paginated + searchable directory. Sort is fixed at
+// paperCount-desc on the backend; client-side resorting was dropped along
+// with the dump-everything endpoint, since once you're paginated you
+// can't re-sort just the current page without lying about the order.
+export function AuthorsTable({ slug }: { slug: string }) {
+  const [rows, setRows] = useState<AuthorRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [query, setQuery] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('paperCount');
-  const [asc, setAsc] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const reqIdRef = useRef(0);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const rows = q ? authors.filter(a => a.name.toLowerCase().includes(q)) : authors;
-    return rows.slice().sort((a, b) => compare(a, b, sortKey, asc));
-  }, [authors, query, sortKey, asc]);
+  // Debounce search input — 250 ms after typing stops, reset and refetch.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setOffset(0);
+      void fetchPage(0, query, /* replace */ true);
+    }, 250);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
-  const onSort = (key: SortKey) => {
-    if (sortKey === key) setAsc(!asc);
-    else { setSortKey(key); setAsc(key === 'name'); }
-  };
-
-  const arrow = (key: SortKey) => sortKey === key ? (asc ? ' ↑' : ' ↓') : '';
+  async function fetchPage(nextOffset: number, q: string, replace: boolean) {
+    const myReq = ++reqIdRef.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(nextOffset) });
+      if (q.trim()) params.set('q', q.trim());
+      const r = await fetch(`/api/public/${encodeURIComponent(slug)}/authors?${params}`);
+      if (!r.ok) throw new Error(`Failed (${r.status})`);
+      const page: AuthorsPage = await r.json();
+      if (reqIdRef.current !== myReq) return; // stale — newer request in flight
+      setRows(prev => replace ? page.data : [...prev, ...page.data]);
+      setTotal(page.pagination.total);
+      setOffset(page.pagination.offset + page.data.length);
+      setHasMore(page.pagination.has_more);
+    } catch (e: any) {
+      if (reqIdRef.current === myReq) setError(e.message || 'Failed to load authors');
+    } finally {
+      if (reqIdRef.current === myReq) setLoading(false);
+    }
+  }
 
   return (
     <div>
       <div className="authors-toolbar">
         <input
-          placeholder="Filter by name…"
+          placeholder="Search by name…"
           value={query}
           onChange={e => setQuery(e.target.value)}
         />
         <span style={{ fontSize: 12, color: '#666' }}>
-          {filtered.length.toLocaleString()} of {authors.length.toLocaleString()}
+          {loading && rows.length === 0
+            ? 'Loading…'
+            : `${rows.length.toLocaleString()} of ${total.toLocaleString()}`}
         </span>
       </div>
       <table className="authors-table">
         <thead>
           <tr>
-            <th onClick={() => onSort('name')}>Name{arrow('name')}</th>
+            <th>Name</th>
             <th>ORCID</th>
-            <th onClick={() => onSort('paperCount')} style={{ textAlign: 'right' }}>Papers{arrow('paperCount')}</th>
-            <th onClick={() => onSort('hIndex')} style={{ textAlign: 'right' }}>h-index{arrow('hIndex')}</th>
-            <th onClick={() => onSort('totalCitations')} style={{ textAlign: 'right' }}>Citations{arrow('totalCitations')}</th>
+            <th style={{ textAlign: 'right' }}>Papers ↓</th>
+            <th style={{ textAlign: 'right' }}>h-index</th>
+            <th style={{ textAlign: 'right' }}>Citations</th>
           </tr>
         </thead>
         <tbody>
-          {filtered.slice(0, 500).map((a, i) => (
-            <tr key={i}>
+          {rows.map((a, i) => (
+            <tr key={`${a.orcid || a.name}-${i}`}>
               <td>{a.name}</td>
               <td>
                 {a.orcid ? (
@@ -76,10 +105,21 @@ export function AuthorsTable({ authors }: { authors: AuthorRow[] }) {
           ))}
         </tbody>
       </table>
-      {filtered.length > 500 ? (
-        <div style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
-          Showing first 500 of {filtered.length.toLocaleString()}. Refine the filter to narrow down.
+      {error ? (
+        <div style={{ fontSize: 12, color: 'var(--danger, #c00)', marginTop: 8 }}>{error}</div>
+      ) : null}
+      {hasMore ? (
+        <div style={{ marginTop: 12, textAlign: 'center' }}>
+          <button
+            onClick={() => fetchPage(offset, query, /* replace */ false)}
+            disabled={loading}
+            style={{ padding: '6px 14px', fontFamily: 'var(--mono)', fontSize: 12 }}
+          >
+            {loading ? 'Loading…' : `Load more (${(total - rows.length).toLocaleString()} remaining)`}
+          </button>
         </div>
+      ) : !loading && rows.length === 0 ? (
+        <div style={{ fontSize: 12, color: '#666', marginTop: 8 }}>No matching authors.</div>
       ) : null}
     </div>
   );

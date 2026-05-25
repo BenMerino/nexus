@@ -26,7 +26,9 @@ function paperAuthorsAtRor(affiliationsJson, tenantRorTail) {
   } catch { return null; }
 }
 
-async function getAuthorsDirectory(tenantId, tenantRor) {
+// Aggregate every tenant author into the directory shape. Pure compute —
+// no pagination, no search. Returned in paperCount-desc order.
+async function aggregateAuthors(tenantId, tenantRor) {
   const tail = rorTail(tenantRor);
   const records = await sql`
     SELECT d.id, d.citation_count, d.affiliations, d.type
@@ -79,4 +81,37 @@ async function getAuthorsDirectory(tenantId, tenantRor) {
   return out;
 }
 
-module.exports = { getAuthorsDirectory };
+// Per-request cache so concurrent stats+authors calls don't aggregate twice.
+// Keyed on tenantId; cleared when the value is older than CACHE_MS.
+const CACHE_MS = 60_000;
+const cache = new Map(); // tenantId -> { at, promise }
+
+function cachedAggregate(tenantId, tenantRor) {
+  const hit = cache.get(tenantId);
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.promise;
+  const promise = aggregateAuthors(tenantId, tenantRor);
+  cache.set(tenantId, { at: Date.now(), promise });
+  return promise;
+}
+
+// Paginated + searchable view over the cached aggregate.
+async function getAuthorsPage(tenantId, tenantRor, { limit, offset, q }) {
+  const all = await cachedAggregate(tenantId, tenantRor);
+  const needle = (q || "").trim().toLowerCase();
+  const filtered = needle
+    ? all.filter(a => a.name.toLowerCase().includes(needle))
+    : all;
+  return {
+    data: filtered.slice(offset, offset + limit),
+    total: filtered.length,
+  };
+}
+
+// Cheap summary count of distinct authors at the tenant (post-ROR filter).
+// Used by stats.summary.authorCount so /stats stays self-contained.
+async function getAuthorCount(tenantId, tenantRor) {
+  const all = await cachedAggregate(tenantId, tenantRor);
+  return all.length;
+}
+
+module.exports = { getAuthorsPage, getAuthorCount };
