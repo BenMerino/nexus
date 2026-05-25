@@ -6,10 +6,12 @@
   <link rel="stylesheet" href="/shared.css">
   <style>
     body { --primary: #333333; --secondary: #1565c0; }
-    /* Public tenant shell: top header bar + scrollable main, no sidebar. */
-    .public-app { display: flex; flex-direction: column; min-height: 100vh; }
+    /* Public tenant shell: top header bar + scrollable main, no sidebar.
+       Height pinned to viewport so .public-main is a real scroll container —
+       body.shell-fixed clips overflow at the body level, so an inner scroller
+       is the only way tall content (charts, long author tables) can scroll. */
+    .public-app { display: flex; flex-direction: column; height: 100vh; }
     .public-header {
-      position: sticky; top: 0; z-index: 10;
       display: flex; align-items: center; gap: 24px;
       padding: 10px 24px;
       background: var(--bg-inset);
@@ -48,7 +50,7 @@
     }
     .public-signin { color: var(--fg-dim); }
     .public-signin:hover { color: var(--accent); }
-    .public-main { flex: 1; padding: 24px; overflow-y: auto; }
+    .public-main { flex: 1; padding: 24px; overflow-y: auto; min-height: 0; }
     .public-main .view { max-width: 1200px; margin: 0 auto; }
     @media (max-width: 700px) {
       .public-header { padding: 8px 14px; gap: 12px; }
