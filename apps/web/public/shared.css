@@ -32,6 +32,26 @@
   --warn:       oklch(0.80 0.14 80);
   --err:        oklch(0.68 0.18 25);
 
+  /* Categorical chart palette (--chart-1..8) + sequential ramps (--ramp-*-1..5).
+     Referenced by ui/graph-engine/svg-color-schemes.ts; without these every
+     chart fill resolves to an undefined var and renders transparent (white).
+     This block is the dark theme — higher lightness so series read on dark bg. */
+  --chart-1: oklch(0.78 0.14 70);   /* orange  */
+  --chart-2: oklch(0.70 0.13 250);  /* azure   */
+  --chart-3: oklch(0.78 0.14 145);  /* green   */
+  --chart-4: oklch(0.70 0.16 320);  /* violet  */
+  --chart-5: oklch(0.72 0.16 25);   /* crimson */
+  --chart-6: oklch(0.78 0.11 190);  /* teal    */
+  --chart-7: oklch(0.82 0.14 90);   /* amber   */
+  --chart-8: oklch(0.66 0.12 290);  /* indigo  */
+
+  --ramp-azure-1: oklch(0.40 0.10 250); --ramp-azure-2: oklch(0.52 0.12 250); --ramp-azure-3: oklch(0.64 0.13 250); --ramp-azure-4: oklch(0.74 0.12 250); --ramp-azure-5: oklch(0.84 0.08 250);
+  --ramp-crimson-1: oklch(0.42 0.14 10); --ramp-crimson-2: oklch(0.54 0.17 10); --ramp-crimson-3: oklch(0.64 0.18 10); --ramp-crimson-4: oklch(0.74 0.15 10); --ramp-crimson-5: oklch(0.84 0.09 10);
+  --ramp-amber-1: oklch(0.45 0.10 130); --ramp-amber-2: oklch(0.57 0.13 130); --ramp-amber-3: oklch(0.68 0.15 130); --ramp-amber-4: oklch(0.78 0.13 130); --ramp-amber-5: oklch(0.87 0.09 130);
+  --ramp-violet-1: oklch(0.42 0.13 310); --ramp-violet-2: oklch(0.54 0.16 310); --ramp-violet-3: oklch(0.64 0.17 310); --ramp-violet-4: oklch(0.74 0.14 310); --ramp-violet-5: oklch(0.84 0.09 310);
+  --ramp-orange-1: oklch(0.45 0.11 70); --ramp-orange-2: oklch(0.57 0.13 70); --ramp-orange-3: oklch(0.68 0.14 70); --ramp-orange-4: oklch(0.78 0.13 70); --ramp-orange-5: oklch(0.87 0.09 70);
+  --ramp-teal-1: oklch(0.44 0.08 190); --ramp-teal-2: oklch(0.56 0.10 190); --ramp-teal-3: oklch(0.67 0.11 190); --ramp-teal-4: oklch(0.77 0.10 190); --ramp-teal-5: oklch(0.86 0.07 190);
+
   /* Precious-metal palette — paper-type colors, ordered by prestige. */
   --metal-18k-gold:    oklch(0.82 0.14 85);
   --metal-platinum:    oklch(0.88 0.02 250);
@@ -103,6 +123,23 @@
   --ok:         oklch(0.58 0.14 145);
   --warn:       oklch(0.62 0.13 80);
   --err:        oklch(0.55 0.20 25);
+
+  /* Chart palette — light theme: lower lightness so series read on white. */
+  --chart-1: oklch(0.62 0.14 70);   /* orange  */
+  --chart-2: oklch(0.52 0.14 250);  /* azure   */
+  --chart-3: oklch(0.56 0.14 145);  /* green   */
+  --chart-4: oklch(0.52 0.17 320);  /* violet  */
+  --chart-5: oklch(0.55 0.19 25);   /* crimson */
+  --chart-6: oklch(0.58 0.11 190);  /* teal    */
+  --chart-7: oklch(0.66 0.14 90);   /* amber   */
+  --chart-8: oklch(0.50 0.14 290);  /* indigo  */
+
+  --ramp-azure-1: oklch(0.88 0.05 250); --ramp-azure-2: oklch(0.76 0.10 250); --ramp-azure-3: oklch(0.64 0.13 250); --ramp-azure-4: oklch(0.52 0.13 250); --ramp-azure-5: oklch(0.40 0.11 250);
+  --ramp-crimson-1: oklch(0.90 0.05 10); --ramp-crimson-2: oklch(0.78 0.12 10); --ramp-crimson-3: oklch(0.64 0.18 10); --ramp-crimson-4: oklch(0.52 0.18 10); --ramp-crimson-5: oklch(0.42 0.15 10);
+  --ramp-amber-1: oklch(0.90 0.06 130); --ramp-amber-2: oklch(0.78 0.12 130); --ramp-amber-3: oklch(0.66 0.15 130); --ramp-amber-4: oklch(0.55 0.14 130); --ramp-amber-5: oklch(0.45 0.11 130);
+  --ramp-violet-1: oklch(0.89 0.05 310); --ramp-violet-2: oklch(0.76 0.12 310); --ramp-violet-3: oklch(0.64 0.17 310); --ramp-violet-4: oklch(0.52 0.17 310); --ramp-violet-5: oklch(0.42 0.14 310);
+  --ramp-orange-1: oklch(0.90 0.06 70); --ramp-orange-2: oklch(0.78 0.12 70); --ramp-orange-3: oklch(0.66 0.14 70); --ramp-orange-4: oklch(0.55 0.13 70); --ramp-orange-5: oklch(0.45 0.11 70);
+  --ramp-teal-1: oklch(0.89 0.04 190); --ramp-teal-2: oklch(0.76 0.09 190); --ramp-teal-3: oklch(0.64 0.11 190); --ramp-teal-4: oklch(0.54 0.10 190); --ramp-teal-5: oklch(0.44 0.08 190);
 
   /* Metals re-tuned: lower lightness so light golds/silvers don't wash
      out against white, hue/chroma preserved for recognizability. */
