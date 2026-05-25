@@ -1,0 +1,17 @@
+/* LiveBadge — pulsing dot. Animation only when .live-badge-dot--active.
+ * The dim/inactive variant is a static dot so layout doesn't jitter
+ * when streams disconnect/reconnect. */
+
+.live-badge-dot--active {
+    animation: zincro-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes zincro-live-pulse {
+    0%   { box-shadow: 0 0 0 0   color-mix(in srgb, currentColor 60%, transparent); }
+    70%  { box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 0%,  transparent); }
+    100% { box-shadow: 0 0 0 0   color-mix(in srgb, currentColor 0%,  transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .live-badge-dot--active { animation: none; }
+}

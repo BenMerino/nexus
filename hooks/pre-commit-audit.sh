@@ -4,7 +4,16 @@
 MAX_LINES=150
 VIOLATIONS=0
 
-for file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts|jsx|tsx|mjs|cjs)$' | grep -v '\-bundle\.js$'); do
+# Vendored from Zincro — carbon-copied as-is, do not refactor here.
+# Pulled in by the graph-engine migration; size rule does not apply.
+for file in $(git diff --cached --name-only --diff-filter=ACM \
+    | grep -E '\.(js|ts|jsx|tsx|mjs|cjs)$' \
+    | grep -v '\-bundle\.js$' \
+    | grep -v '^apps/web/ui/' \
+    | grep -v '^apps/web/architect/' \
+    | grep -v '^apps/web/calendar/' \
+    | grep -v '^apps/web/hooks/' \
+    | grep -v '^apps/web/telemetry/'); do
   lines=$(wc -l < "$file")
   if [ "$lines" -gt "$MAX_LINES" ]; then
     echo "RULE nbr15 VIOLATION: $file has $lines lines (max $MAX_LINES)"

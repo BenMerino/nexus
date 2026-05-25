@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { GraphRender } from '../graph-engine/index';
+import { GraphRender } from '../ui/graph-engine/index';
 import { AuthorsTable, type AuthorRow } from './tenant-authors';
 import { TenantGraph, type PublicGraphNode, type PublicGraphEdge } from './tenant-graph';
 import { buildTenantCharts, type PublicStats } from './tenant-builders';

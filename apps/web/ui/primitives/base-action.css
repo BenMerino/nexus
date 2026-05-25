@@ -1,0 +1,71 @@
+.base-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+/* Per-size border-radius + padding — declared in CSS (not inline
+ * style) so ancestor selectors can override via specificity. See
+ * BaseAction.tsx SIZE_STYLE for the corresponding font/gap mapping.
+ *
+ * Bordered variants (secondary, outline) get the base padding;
+ * borderless variants (ghost, primary, etc.) get +1px to compensate
+ * for the missing 1px border so total footprint stays identical. */
+/* All button sizes share the `control` corner (var(--radius-control)) — a
+ * control is a control regardless of size, and it matches chrome tiles by
+ * construction. Only padding scales with size. (Icon-only stays full-pill.) */
+.base-action--sm { border-radius: var(--radius-control); padding: var(--space-1-5) var(--space-3); }
+.base-action--md { border-radius: var(--radius-control); padding: var(--space-2)   var(--space-4); }
+.base-action--lg { border-radius: var(--radius-control); padding: var(--space-3)   var(--space-6); }
+
+.base-action--sm:not(.base-action--has-border) { padding: calc(var(--space-1-5) + 1px) calc(var(--space-3) + 1px); }
+.base-action--md:not(.base-action--has-border) { padding: calc(var(--space-2)   + 1px) calc(var(--space-4) + 1px); }
+.base-action--lg:not(.base-action--has-border) { padding: calc(var(--space-3)   + 1px) calc(var(--space-6) + 1px); }
+
+/* Icon-only buttons: square padding (symmetric all sides) and a
+ * full-pill radius. Per-size icon-only padding is the same as the
+ * sided version's smaller axis. */
+.base-action--icon-only.base-action--sm { padding: var(--space-1-5); border-radius: var(--radius-full); }
+.base-action--icon-only.base-action--md { padding: var(--space-2);   border-radius: var(--radius-full); }
+.base-action--icon-only.base-action--lg { padding: var(--space-3);   border-radius: var(--radius-full); }
+.base-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.base-action:active { transform: scale(0.95); }
+
+.base-action--primary { color: var(--text-inverse); box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: none; }
+.base-action--primary:hover { opacity: 0.9; }
+
+.base-action--secondary {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-main);
+}
+.base-action--secondary:hover { background: var(--bg-elevated); }
+
+.base-action--danger { background: var(--status-error); color: var(--text-inverse); border: none; box-shadow: 0 1px 2px color-mix(in srgb, var(--status-error) 20%, transparent); }
+.base-action--danger:hover { filter: brightness(0.9); }
+
+.base-action--warning { background: var(--status-warning); color: var(--text-inverse); border: none; box-shadow: 0 1px 2px color-mix(in srgb, var(--status-warning) 20%, transparent); }
+.base-action--warning:hover { filter: brightness(0.9); }
+
+.base-action--ghost { color: var(--text-muted); border: none; }
+.base-action--ghost:hover { background: var(--bg-elevated); }
+
+.base-action--outline {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-main);
+}
+.base-action--outline:hover { background: var(--bg-elevated); }
+
+.base-action--full { width: 100%; }
+.base-action .action-icon { flex-shrink: 0; }
+.base-action .action-spinner { animation: spin 1s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }

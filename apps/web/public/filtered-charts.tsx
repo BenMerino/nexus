@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { CartesianRender } from '../graph-engine/cartesian-render';
-import { RadialRender } from '../graph-engine/radial-render';
+import { GraphRender } from '../ui/graph-engine/index';
 import type { GraphDirective } from '../architect/graph-composer.types';
 import type { TagNode, DoiRecord } from './relationship-types';
 import { TAG_CATEGORIES, COLORS } from './relationship-types';
 import { FilteredPaperList } from './filtered-paper-list';
 
 function ChartCard({ chart }: { chart: GraphDirective }) {
-  const isDonut = chart.type === 'donut' || chart.type === 'pie';
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', padding: '14px 16px 10px', overflow: 'hidden' }}>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-dim)', marginBottom: 10 }}>{chart.title}</div>
-      {isDonut ? <RadialRender chart={chart} size={200} /> : <CartesianRender chart={chart} width={340} height={160} />}
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', padding: '14px 16px 10px', overflow: 'hidden', minHeight: 220 }}>
+      <GraphRender chart={chart} />
     </div>
   );
 }

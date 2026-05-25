@@ -1,0 +1,291 @@
+/* ── Atomic Data Foundation ─────────────────────────────────
+ * The graph engine's single source of truth for time/ordinal
+ * data: a stream of atoms at the finest meaningful granularity.
+ * The client folds atoms into visible buckets at render time
+ * via a pure aggregator. One math primitive replaces what was
+ * three layered systems (server granularity ladder, client
+ * compress-data, semantic-zoom level picker).
+ *
+ * Design principles:
+ *   - Atoms are immutable, ordered, equally-spaced on their key axis.
+ *   - Folding is mathematically correct: aggregators carry weights
+ *     where needed (averages of averages are forbidden).
+ *   - Folding is continuous: the fold factor can be any positive
+ *     real, not just integer steps. Animation falls out for free.
+ *   - No knowledge of pixels lives here. Caller decides the
+ *     visible bucket count from layout; this file does math.
+ *
+ * Tested in __tests__/fold-atoms.test.ts.
+ * ──────────────────────────────────────────────────────────── */
+
+/** Aggregator: how to combine N atoms into one visible bucket.
+ *
+ *   sum   — additive metrics (revenue, count, total minutes)
+ *   wavg  — weighted-average ratios. Each atom carries a numerator
+ *           in `value` and a denominator in `weight`; the bucket's
+ *           value is `Σ(value) / Σ(weight)`. Math-correct: averaging
+ *           averages is wrong, this avoids it.
+ *   min   — minimum across atoms
+ *   max   — maximum across atoms
+ *   first / last — boundary samples (useful for snapshots)
+ */
+export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
+
+/** Calendar-aligned fold units for time-series atoms. The renderer
+ * reads `iso` (+ optional `hour`) and groups atoms whose timestamps
+ * fall within the same unit. `'auto'` lets the renderer pick based
+ * on the visible-pixel budget; the rest are explicit user choices.
+ *
+ * Ordered ladder (fine → coarse):
+ *   hour < day < week < month < quarter < year
+ *
+ * `'hour'` enables sub-day resolution for builders that ship hourly
+ * atoms (`Atom.hour` set). Daily-only builders never reach this rung —
+ * `eligibleFoldUnits` filters it out unless atoms expose hour data. */
+export type FoldUnit = 'auto' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year';
+
+/** Atom key resolution. `key` is hours-since-anchor (integer). Daily
+ * atoms occupy hour 0 of each day (`key = dayIdx * HOURS_PER_DAY`);
+ * hourly atoms fill the remaining 23 slots when builders opt in. The
+ * slider's user-facing `windowDays` field multiplies by this constant
+ * to span atom keys. Centralized so we never sprinkle `24`s. */
+export const HOURS_PER_DAY = 24;
+
+/** A single atomic data point. `key` is a sortable numeric position
+ * on the axis (hours-since-anchor for time series, ordinal index for
+ * non-time). `iso` is the `YYYY-MM-DD` date; required for calendar-
+ * aligned fold modes. `hour` (0-23) is set only by hourly-resolution
+ * builders — when absent the atom lives at hour 0. `weight` is
+ * required only for `wavg`. Extra series fields (stacked charts) live
+ * alongside via the `[seriesKey]` sibling fields. */
+export interface Atom {
+    key: number;
+    label: string;
+    iso?: string;
+    hour?: number;
+    value: number;
+    weight?: number;
+    [seriesKey: string]: string | number | undefined;
+}
+
+/** A folded atom — same shape as Atom but represents N atoms combined.
+ * Carries `count` (atoms in this bucket, for tooltip / breakdown) and
+ * `__x` (temporal midpoint in [0..1] across the source atom range, for
+ * the renderer's time-axis positioning). */
+export interface FoldedAtom extends Atom {
+    count: number;
+    __x?: number;
+}
+
+/** Combine atoms in fractional range [from, to) into one folded atom.
+ * Internal helper used by `foldByCalendar`. */
+function combineRange(atoms: Atom[], from: number, to: number, aggregator: Aggregator, seriesKeys: string[]): FoldedAtom {
+    const startInt = Math.floor(from);
+    const endInt = Math.min(atoms.length, Math.ceil(to));
+    // Per-atom weight in [0..1] — partial at the edges, full inside.
+    const aw = (i: number): number => {
+        const left = Math.max(from, i);
+        const right = Math.min(to, i + 1);
+        return Math.max(0, right - left);
+    };
+
+    if (aggregator === 'first') {
+        const a = atoms[startInt];
+        return { ...a, count: endInt - startInt };
+    }
+    if (aggregator === 'last') {
+        const a = atoms[endInt - 1];
+        return { ...a, count: endInt - startInt };
+    }
+    if (aggregator === 'min' || aggregator === 'max') {
+        // Min/max ignore fractional weights — the extremum is the extremum.
+        let extreme = atoms[startInt].value;
+        for (let i = startInt + 1; i < endInt; i++) {
+            const v = atoms[i].value;
+            if (aggregator === 'min' ? v < extreme : v > extreme) extreme = v;
+        }
+        return synthesize(atoms, startInt, endInt, extreme, seriesKeys);
+    }
+    if (aggregator === 'wavg') {
+        let num = 0; let den = 0;
+        const seriesNum: Record<string, number> = {};
+        for (const k of seriesKeys) seriesNum[k] = 0;
+        for (let i = startInt; i < endInt; i++) {
+            const w = aw(i);
+            const a = atoms[i];
+            num += (a.value || 0) * (a.weight ?? 1) * w;
+            den += (a.weight ?? 1) * w;
+            for (const k of seriesKeys) {
+                const sv = a[k];
+                if (typeof sv === 'number') seriesNum[k] += sv * (a.weight ?? 1) * w;
+            }
+        }
+        const folded = synthesize(atoms, startInt, endInt, den === 0 ? 0 : num / den, seriesKeys);
+        for (const k of seriesKeys) folded[k] = den === 0 ? 0 : seriesNum[k] / den;
+        return folded;
+    }
+    // sum (default)
+    let sum = 0;
+    const seriesSum: Record<string, number> = {};
+    for (const k of seriesKeys) seriesSum[k] = 0;
+    for (let i = startInt; i < endInt; i++) {
+        const w = aw(i);
+        const a = atoms[i];
+        sum += (a.value || 0) * w;
+        for (const k of seriesKeys) {
+            const sv = a[k];
+            if (typeof sv === 'number') seriesSum[k] += sv * w;
+        }
+    }
+    const folded = synthesize(atoms, startInt, endInt, sum, seriesKeys);
+    for (const k of seriesKeys) folded[k] = seriesSum[k];
+    return folded;
+}
+
+/** Build the folded atom's metadata: midpoint key, label from the
+ * boundary atoms, count. Series values are filled by the caller. */
+function synthesize(atoms: Atom[], startInt: number, endInt: number, value: number, _seriesKeys: string[]): FoldedAtom {
+    const first = atoms[startInt];
+    const last = atoms[endInt - 1];
+    const key = (first.key + last.key) / 2;
+    const label = startInt === endInt - 1 ? first.label : `${first.label}–${last.label}`;
+    return { key, label, value, count: endInt - startInt };
+}
+
+/** Calendar-aligned bucket: each visible bucket spans one unit
+ * (day/week/month/quarter/year) AND carries the start/end keys so the
+ * renderer can position it geometrically inside the visible window.
+ *
+ * `startKey` and `endKey` are atom keys (epoch-day indices). The bucket
+ * may extend OUTSIDE the visible window — the renderer clips its pixel
+ * width to the plot range. This is what makes drag continuous: as the
+ * window edges sweep through a bucket, its pixel x and width interpolate
+ * smoothly. No bucket-count snapping. */
+export interface CalendarBucket extends FoldedAtom {
+    /** First atom key included in this bucket (inclusive). */
+    startKey: number;
+    /** Last atom key included in this bucket (inclusive). */
+    endKey: number;
+    /** Calendar unit boundaries — used by the renderer for clipping
+     * and label formatting. ISO `YYYY-MM-DD` half-open `[startISO, endISO)`. */
+    startISO: string;
+    endISO: string;
+}
+
+/** Pick a default fold unit based on the visible time span. Aims for
+ * ~30 buckets across the plot, which gives bars wide enough to read
+ * at 16-24px each. `hasHourly` controls whether the `'hour'` rung is
+ * available — builders that ship daily-only atoms never get hour-fold
+ * even when zoomed to a single day (their atoms have nothing finer). */
+export function pickAutoFoldUnit(visibleDays: number, hasHourly: boolean = false): Exclude<FoldUnit, 'auto'> {
+    if (hasHourly && visibleDays <= 5) return 'hour';
+    if (visibleDays <= 60) return 'day';
+    if (visibleDays <= 365 * 1.2) return 'week';
+    if (visibleDays <= 365 * 4) return 'month';
+    if (visibleDays <= 365 * 12) return 'quarter';
+    return 'year';
+}
+
+/** Which fold units make sense for a given visible window?
+ *
+ * Rule: a unit is allowed if its bucket count for `visibleDays` falls in
+ * a readable range — not too dense (>~120 buckets, cells become invisible)
+ * nor too sparse (<3 buckets, the chart looks empty). 'auto' is always
+ * included as the default. `'hour'` only appears when `hasHourly` is true.
+ *
+ * Output order is coarse → fine, matching how a user typically thinks
+ * about zooming in: "show me yearly, then monthly, then weekly". */
+export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = false): Array<Exclude<FoldUnit, 'auto'> | 'auto'> {
+    const out: Array<Exclude<FoldUnit, 'auto'> | 'auto'> = ['auto'];
+    const yearly = visibleDays / 365;
+    const quarterly = visibleDays / 91;
+    const monthly = visibleDays / 30;
+    const weekly = visibleDays / 7;
+    const daily = visibleDays;
+    const hourly = visibleDays * HOURS_PER_DAY;
+    if (yearly >= 3 && yearly <= 120) out.push('year');
+    if (quarterly >= 3 && quarterly <= 120) out.push('quarter');
+    if (monthly >= 3 && monthly <= 120) out.push('month');
+    if (weekly >= 3 && weekly <= 120) out.push('week');
+    if (daily >= 3 && daily <= 120) out.push('day');
+    if (hasHourly && hourly >= 3 && hourly <= 120) out.push('hour');
+    return out;
+}
+
+import { stepByUnit, alignToUnitStart, formatLabel } from './fold-atoms-calendar';
+
+/** Calendar-aligned fold. Groups atoms by calendar unit (hour/day/week/
+ * month/quarter/year). Each output bucket carries `startKey`/`endKey`
+ * atom-key range AND `startISO`/`endISO` calendar boundaries, so the
+ * renderer can position it geometrically inside the visible window via
+ * linearScale.
+ *
+ * Atom keys are hours-since-anchor. Atoms whose `(iso, hour)` falls
+ * inside the bucket's calendar window belong to the bucket. The first/
+ * last bucket may have boundaries outside the atom array's range — that's
+ * fine; their atom range is empty and they render as zero.
+ *
+ * Pure. */
+export function foldByCalendar(atoms: Atom[], unit: Exclude<FoldUnit, 'auto'>, aggregator: Aggregator, seriesKeys: string[] = []): CalendarBucket[] {
+    if (atoms.length === 0) return [];
+    const firstISO = atoms[0].iso;
+    const lastISO = atoms[atoms.length - 1].iso;
+    if (!firstISO || !lastISO) {
+        const folded = combineRange(atoms, 0, atoms.length, aggregator, seriesKeys);
+        return [{
+            ...folded,
+            startKey: atoms[0].key, endKey: atoms[atoms.length - 1].key,
+            startISO: '', endISO: '',
+        }];
+    }
+    /* Atoms are keyed by hours-since-anchor where anchor is hour 0 of
+     * the first atom's date. Build a (iso, hour) → atom map; daily-only
+     * atoms register at hour 0. Walk calendar boundaries, slice atoms
+     * by `(boundary date, boundary hour)`, fold. */
+    const firstD = new Date(`${firstISO}T00:00:00Z`);
+    const lastD = new Date(`${lastISO}T00:00:00Z`);
+    const anchorMs = firstD.getTime();
+    const atomsByHourKey = new Map<number, Atom>();
+    for (const a of atoms) {
+        if (a.iso == null) continue;
+        const aD = new Date(`${a.iso}T00:00:00Z`);
+        const k = Math.round((aD.getTime() - anchorMs) / HOUR_MS) + (a.hour ?? 0);
+        atomsByHourKey.set(k, a);
+    }
+
+    let cur = alignToUnitStart(firstD, unit);
+    /* Coarse units (year/quarter/month) may start before the first
+     * atom's day — that's intentional, the bucket's atom range is just
+     * empty before the timeline begins. End the loop one full day past
+     * the last atom so a trailing partial bucket still gets emitted. */
+    const after = new Date(lastD); after.setUTCDate(after.getUTCDate() + 1);
+    const buckets: CalendarBucket[] = [];
+    while (cur < after) {
+        const next = stepByUnit(new Date(cur), unit);
+        const startISO = cur.toISOString().split('T')[0];
+        const endISO = next.toISOString().split('T')[0];
+        const startKey = Math.round((cur.getTime() - anchorMs) / HOUR_MS);
+        const endKey = Math.round((next.getTime() - anchorMs) / HOUR_MS) - 1;
+        const slice: Atom[] = [];
+        for (let k = startKey; k <= endKey; k++) {
+            const a = atomsByHourKey.get(k);
+            if (a) slice.push(a);
+        }
+        if (slice.length > 0) {
+            const folded = combineRange(slice, 0, slice.length, aggregator, seriesKeys);
+            folded.label = formatLabel(cur, unit);
+            buckets.push({ ...folded, startKey, endKey, startISO, endISO });
+        } else {
+            // Empty bucket — keep position so the geometry stays continuous.
+            buckets.push({
+                key: (startKey + endKey) / 2, label: formatLabel(cur, unit), value: 0, count: 0,
+                startKey, endKey, startISO, endISO,
+            });
+        }
+        cur = next;
+    }
+    return buckets;
+}
+
+const HOUR_MS = 3_600_000;
+
