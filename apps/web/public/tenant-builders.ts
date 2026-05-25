@@ -45,8 +45,11 @@ function buildYearChart(stats: PublicStats, tenantId?: number): GraphDirective |
   const years = [...byYearTotal.keys()].filter(Boolean).sort();
   if (years.length <= 1) return null;
 
-  // When we know the tenant, attach the replay query + window toggle so the
-  // engine shows a live slider (atoms come from POST /api/architect/recompose).
+  // Replay slider attaches only to the PLAIN-bar (total) chart. The
+  // stacked-bar variant reads per-series fields off each atom; our publications
+  // atoms carry only a flat `value`, so enabling the slider there empties every
+  // series (bars vanish). Per-series atoms are a follow-up (recompose would need
+  // to emit WoS/Scopus/SciELO/DOAJ counts per day). Until then, stacked = static.
   const replay = tenantId != null
     ? { query: { kind: 'publications', tenantId: String(tenantId), windowDays: null as number | null }, toggles: [pubWindowToggle(tenantId)] }
     : {};
@@ -77,7 +80,6 @@ function buildYearChart(stats: PublicStats, tenantId?: number): GraphDirective |
     xLabel: 'Year',
     yLabel: 'Articles',
     series: presentIndexes,
-    ...replay,
     data: years.map(y => ({ label: y, ...grid.get(y)! })),
   };
 }
