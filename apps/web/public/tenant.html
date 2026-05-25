@@ -14,12 +14,15 @@
     .admin-table tbody tr:hover { background: var(--bg-inset); }
     .roster-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
     .tableScroll { max-height: 56vh; overflow: auto; }
-    .org-tree { font-size: 13px; }
-    .org-node { border-bottom: 1px solid var(--border-soft); }
-    .org-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; cursor: pointer; }
-    .org-row:hover { background: var(--bg-inset); }
-    .org-row.leaf { cursor: default; }
-    .org-twist { width: 12px; color: var(--fg-dim); font-size: 10px; flex: none; transition: transform 0.12s; }
+    /* Org tree — file-explorer style with CSS-drawn connector lines.
+       Each subtree carries a vertical guide on the left; each direct
+       child grows a horizontal hook into its row's vertical center. */
+    .org-tree { font-size: 13px; --tree-guide: var(--border); }
+    .org-node { position: relative; }
+    .org-node > .org-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; cursor: pointer; position: relative; }
+    .org-node > .org-row:hover { background: var(--bg-inset); }
+    .org-node > .org-row.leaf { cursor: default; }
+    .org-twist { width: 12px; color: var(--fg-dim); font-size: 10px; flex: none; transition: transform 0.12s; text-align: center; }
     .org-twist.open { transform: rotate(90deg); }
     .org-name { flex: 1; }
     .org-name.fac { font-family: var(--display); font-size: 15px; }
@@ -29,8 +32,32 @@
     .org-metrics { display: flex; gap: 6px; align-items: center; flex: none; }
     .org-pill { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 10px; background: var(--bg-inset); border: 1px solid var(--border); color: var(--fg-dim); white-space: nowrap; }
     .org-pill.cov-full { border-color: var(--accent); color: var(--accent); }
-    .org-children { display: none; padding-left: 22px; }
+
+    /* Top-level faculties: light card stripe so they read as roots. */
+    .org-tree > .org-node { border-top: 1px solid var(--border-soft); }
+    .org-tree > .org-node:first-child { border-top: none; }
+    .org-tree > .org-node > .org-row { padding: 12px 4px; }
+
+    /* Sub-tree container with vertical guide on the left. */
+    .org-children { display: none; position: relative; margin-left: 11px; padding-left: 18px; }
     .org-children.open { display: block; }
+    .org-children::before {
+      content: ""; position: absolute; left: 0; top: 0;
+      bottom: 18px; /* stop near the last child's row centre so the guide ends at └─ */
+      border-left: 1px solid var(--tree-guide);
+    }
+    /* Horizontal hook from the vertical guide into each direct child row. */
+    .org-children > .org-node > .org-row::before {
+      content: ""; position: absolute; left: -18px; top: 18px;
+      width: 14px; border-top: 1px solid var(--tree-guide);
+    }
+    /* Last-child elbow: extend a short tail of the vertical guide down to
+       the row centre so the connector reads as └─ instead of ├─. */
+    .org-children > .org-node:last-child > .org-row::after {
+      content: ""; position: absolute; left: -19px; top: 0;
+      height: 18px; width: 1px; background: var(--tree-guide);
+    }
+
     .org-orcid { font-family: var(--mono); font-size: 10px; color: var(--fg-dim); }
     .org-orcid.none { opacity: 0.45; }
     .org-err { color: var(--danger, #d66); font-size: 11px; font-family: var(--mono); }
