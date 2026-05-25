@@ -100,7 +100,7 @@ export function useForceLayout(
     // Pin nodes after they've animated to their grid positions
     pinTimer.current = setTimeout(() => {
       for (const n of nodes) {
-        if (!pinGroups.has(n.group)) continue;
+        if (!alwaysPin.has(n.group)) continue;
         const p = pos.get(n.id);
         if (p) { n.fx = p.x; n.fy = p.y; n.x = p.x; n.y = p.y; }
       }

@@ -32,7 +32,7 @@ function envelope({ data, total, limit, offset }) {
       limit,
       offset,
       has_more: offset + data.length < total,
-      next_offset: offset + data.length < total ? offset + limit : null,
+      next_offset: offset + data.length < total ? offset + data.length : null,
     },
   };
 }
