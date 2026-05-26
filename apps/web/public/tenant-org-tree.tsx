@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ES } from './tenant-i18n';
 
 interface Person { name: string; category: string | null; orcid: string | null; paperCount: number; }
 interface Department { name: string; headcount: number; withOrcid: number; papers: number; people: Person[]; }
@@ -13,15 +14,15 @@ interface OrgTree {
   faculties: Faculty[];
 }
 
-const KIND_LABEL: Record<Faculty['kind'], string> = { faculty: 'Facultad', institute: 'Instituto', other: 'Otras' };
+const KIND_LABEL = ES.orgTree.kindLabel;
 
 function Metrics({ head, withOrcid, papers }: { head: number; withOrcid: number; papers: number }) {
   const full = head > 0 && withOrcid === head;
   return (
     <span className="org-metrics">
-      <span className="org-pill">{head} {head === 1 ? 'academic' : 'academics'}</span>
-      <span className={`org-pill${full ? ' cov-full' : ''}`}>{withOrcid}/{head} ORCID</span>
-      <span className="org-pill">{papers} {papers === 1 ? 'paper' : 'papers'}</span>
+      <span className="org-pill">{head} {head === 1 ? ES.orgTree.academicOne : ES.orgTree.academicMany}</span>
+      <span className={`org-pill${full ? ' cov-full' : ''}`}>{withOrcid}/{head} {ES.orgTree.orcidRatio}</span>
+      <span className="org-pill">{papers} {papers === 1 ? ES.orgTree.paperOne : ES.orgTree.paperMany}</span>
     </span>
   );
 }
@@ -35,8 +36,8 @@ function PersonRow({ p }: { p: Person }) {
         <span className="org-metrics">
           {p.orcid
             ? <a className="org-orcid" href={`https://orcid.org/${p.orcid}`} target="_blank" rel="noopener noreferrer">{p.orcid}</a>
-            : <span className="org-orcid none">no ORCID</span>}
-          <span className="org-pill">{p.paperCount} {p.paperCount === 1 ? 'paper' : 'papers'}</span>
+            : <span className="org-orcid none">{ES.orgTree.orcidNone}</span>}
+          <span className="org-pill">{p.paperCount} {p.paperCount === 1 ? ES.orgTree.paperOne : ES.orgTree.paperMany}</span>
         </span>
       </div>
     </div>
@@ -74,17 +75,17 @@ export function TenantOrgTree({ slug }: { slug: string }) {
   }, [slug]);
 
   if (error) return <div className="org-err" style={{ padding: 14 }}>{error}</div>;
-  if (!data) return <div style={{ padding: 14, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>Loading organisation scheme…</div>;
-  if (!data.faculties.length) return <div className="text-muted text-small" style={{ padding: 14 }}>No roster data for this tenant yet.</div>;
+  if (!data) return <div style={{ padding: 14, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>{ES.loadingLabel(ES.orgSchemeLoading)}</div>;
+  if (!data.faculties.length) return <div className="text-muted text-small" style={{ padding: 14 }}>{ES.orgTree.noRoster}</div>;
 
   return (
     <>
       <div style={{ display: 'flex', gap: 18, fontSize: 12, color: 'var(--fg-muted)', fontFamily: 'var(--mono)', padding: '6px 0 14px', flexWrap: 'wrap' }}>
-        <span>{data.totals.faculties} faculties</span>
-        <span>{data.totals.institutes} institutes</span>
-        <span>{data.totals.headcount} academics</span>
-        <span>{data.totals.withOrcid} with ORCID</span>
-        <span>{data.totals.papers} papers</span>
+        <span>{ES.orgTree.faculties(data.totals.faculties)}</span>
+        <span>{ES.orgTree.institutes(data.totals.institutes)}</span>
+        <span>{ES.orgTree.headcount(data.totals.headcount)}</span>
+        <span>{ES.orgTree.withOrcid(data.totals.withOrcid)}</span>
+        <span>{ES.orgTree.papers(data.totals.papers)}</span>
       </div>
       <div className="org-tree">
         {data.faculties.map(f => (

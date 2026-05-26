@@ -1,4 +1,5 @@
 import React from 'react';
+import { ES } from './tenant-i18n';
 
 interface TenantLike { name: string; ror_id: string | null; logo_url: string | null; }
 export interface PublicNavItem { id: string; label: string; }
@@ -25,13 +26,13 @@ export function TenantPublicHeader({
         <div>
           <div className="public-tenant-name">{tenant.name}</div>
           <div className="public-tenant-sub">
-            <span>Research profile</span>
+            <span>{ES.publicProfile}</span>
             {yearRange.minYear && yearRange.maxYear ? <> · <span>{yearRange.minYear}–{yearRange.maxYear}</span></> : null}
             {tenant.ror_id ? <> · <a href={rorHref(tenant.ror_id)} target="_blank" rel="noopener noreferrer">ROR {rorId(tenant.ror_id)}</a></> : null}
           </div>
         </div>
       </div>
-      <nav className="public-tabs" aria-label="Section navigation">
+      <nav className="public-tabs" aria-label="Navegación de secciones">
         {items.map(it => (
           <a key={it.id} href={`#${it.id}`}
              className={`public-tab${currentId === it.id ? ' active' : ''}`}
@@ -41,8 +42,8 @@ export function TenantPublicHeader({
         ))}
       </nav>
       <div className="public-header-aux">
-        <span className="sync-pulse" /> <span>Public profile</span>
-        <a href="/login.html" className="public-signin">sign in</a>
+        <span className="sync-pulse" /> <span>{ES.publicProfileBadge}</span>
+        <a href="/login.html" className="public-signin">{ES.signIn}</a>
       </div>
     </header>
   );

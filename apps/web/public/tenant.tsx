@@ -9,13 +9,16 @@ import { SummaryCards, SectionPlaceholder, TabPane } from './tenant-summary';
 import { ReplayChart } from './tenant-replay-chart';
 import { TenantOrgTree } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
+import { VelocityPanel } from './portfolio-velocity';
+import { CadencePanel } from './portfolio-cadence';
+import { ES, VELOCITY_LABELS_ES, CADENCE_LABELS_ES, typeLabelEs } from './tenant-i18n';
 
 const NAV: PublicNavItem[] = [
-  { id: 'overview',  label: 'Overview' },
-  { id: 'charts',    label: 'Charts' },
-  { id: 'graph',     label: 'Collaboration graph' },
-  { id: 'org-tree',  label: 'Organisation scheme' },
-  { id: 'authors',   label: 'Authors directory' },
+  { id: 'overview',  label: ES.nav.overview },
+  { id: 'charts',    label: ES.nav.charts },
+  { id: 'graph',     label: ES.nav.graph },
+  { id: 'org-tree',  label: ES.nav.orgTree },
+  { id: 'authors',   label: ES.nav.authors },
 ];
 const NAV_IDS = new Set(NAV.map(n => n.id));
 
@@ -48,13 +51,13 @@ function App() {
   };
 
   if (!slug) {
-    return <div className="public-app"><main className="public-main" style={{ color: 'var(--danger, #c00)' }}>Missing tenant slug.</main></div>;
+    return <div className="public-app"><main className="public-main" style={{ color: 'var(--danger, #c00)' }}>{ES.missingSlug}</main></div>;
   }
   if (fatalError) {
     return <div className="public-app"><main className="public-main" style={{ color: 'var(--danger, #c00)' }}>{fatalError}</main></div>;
   }
   if (!statsPayload) {
-    return <div className="public-app"><main className="public-main" style={{ color: 'var(--fg-dim)' }}>{statsError ? `Failed: ${statsError}` : 'Loading…'}</main></div>;
+    return <div className="public-app"><main className="public-main" style={{ color: 'var(--fg-dim)' }}>{statsError ? `${ES.failedPrefix}: ${statsError}` : ES.loading}</main></div>;
   }
 
   const charts = buildTenantCharts(statsPayload.stats, statsPayload.tenant.id);
@@ -71,6 +74,20 @@ function App() {
           </TabPane>
 
           <TabPane id="charts" {...paneProps}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              {statsPayload.stats.velocity ? (
+                <section className="card" style={{ padding: 18 }}>
+                  <h3 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 16, margin: '0 0 12px' }}>{ES.charts.citationVelocity}</h3>
+                  <VelocityPanel velocity={statsPayload.stats.velocity} labels={VELOCITY_LABELS_ES} />
+                </section>
+              ) : null}
+              {statsPayload.stats.cadence ? (
+                <section className="card" style={{ padding: 18 }}>
+                  <h3 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 16, margin: '0 0 12px' }}>{ES.charts.publicationCadence}</h3>
+                  <CadencePanel cadence={statsPayload.stats.cadence} labels={CADENCE_LABELS_ES} typeLabel={typeLabelEs} />
+                </section>
+              ) : null}
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
               {charts.map((chart, i) => (
                 <div key={i} className="card" style={{ minHeight: 400 }}>
@@ -83,7 +100,7 @@ function App() {
           <TabPane id="graph" {...paneProps}>
             {graphPayload
               ? <TenantGraph nodes={graphPayload.graph.nodes} edges={graphPayload.graph.edges} />
-              : <SectionPlaceholder label="collaboration graph" error={graphError} />}
+              : <SectionPlaceholder label={ES.collaborationGraph} error={graphError} />}
           </TabPane>
 
           <TabPane id="org-tree" {...paneProps}>

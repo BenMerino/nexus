@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { PublicStats } from './tenant-builders';
+import { ES } from './tenant-i18n';
 
 interface TenantChrome {
   id: number; name: string; slug: string | null; ror_id: string | null;
@@ -29,24 +30,24 @@ export function useTenantData(slug: string | null) {
     if (!slug) return;
     fetch(`/api/public/${encodeURIComponent(slug)}/stats`)
       .then(async r => {
-        if (r.status === 404) throw new Error('Tenant not found.');
-        if (!r.ok) throw new Error(`Stats failed (${r.status})`);
+        if (r.status === 404) throw new Error(ES.tenantNotFound);
+        if (!r.ok) throw new Error(`${ES.failedPrefix} stats (${r.status})`);
         return r.json() as Promise<StatsPayload>;
       })
       .then(d => {
         setStatsPayload(d);
         if (d.tenant.primary_color) document.body.style.setProperty('--primary', d.tenant.primary_color);
         if (d.tenant.secondary_color) document.body.style.setProperty('--secondary', d.tenant.secondary_color);
-        document.title = `${d.tenant.name} — Research`;
+        document.title = `${d.tenant.name} — ${ES.research}`;
       })
       .catch(e => {
-        if (e.message === 'Tenant not found.') setFatalError(e.message);
+        if (e.message === ES.tenantNotFound) setFatalError(e.message);
         else setStatsError(e.message);
       });
 
     fetch(`/api/public/${encodeURIComponent(slug)}/graph`)
       .then(async r => {
-        if (!r.ok) throw new Error(`Graph failed (${r.status})`);
+        if (!r.ok) throw new Error(`${ES.failedPrefix} graph (${r.status})`);
         return r.json() as Promise<GraphPayload>;
       })
       .then(setGraphPayload)

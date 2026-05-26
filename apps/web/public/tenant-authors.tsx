@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { hIndexTooltip } from './h-index-breakdown';
+import { ES } from './tenant-i18n';
 
 export interface AuthorRow {
   name: string;
@@ -24,10 +25,10 @@ type Dir = 'asc' | 'desc';
 interface Col { id: SortKey; label: string; numeric?: boolean }
 
 const COLS: Col[] = [
-  { id: 'name',           label: 'Name' },
-  { id: 'paperCount',     label: 'Papers',    numeric: true },
-  { id: 'hIndex',         label: 'h-index',   numeric: true },
-  { id: 'totalCitations', label: 'Citations', numeric: true },
+  { id: 'name',           label: ES.authorsTable.name },
+  { id: 'paperCount',     label: ES.authorsTable.papers,    numeric: true },
+  { id: 'hIndex',         label: ES.authorsTable.hIndex,    numeric: true },
+  { id: 'totalCitations', label: ES.authorsTable.citations, numeric: true },
 ];
 
 const PAGE_SIZE = 25;
@@ -86,7 +87,7 @@ export function AuthorsTable({ slug }: { slug: string }) {
       <div className="roster-toolbar">
         <input
           type="text"
-          placeholder="search by name"
+          placeholder={ES.authorsTable.searchPlaceholder}
           defaultValue={q}
           onChange={e => onFilterChange(e.target.value)}
           style={{ marginLeft: 'auto', fontSize: 12, padding: '6px 10px', width: 280, border: '1px solid var(--border)', borderRadius: 4, background: 'var(--bg-inset)', color: 'var(--fg)' }}
@@ -103,7 +104,7 @@ export function AuthorsTable({ slug }: { slug: string }) {
                   {c.label}{arrow(c.id)}
                 </th>
               ))}
-              <th>ORCID</th>
+              <th>{ES.authorsTable.orcid}</th>
             </tr>
           </thead>
           <tbody>
@@ -115,18 +116,18 @@ export function AuthorsTable({ slug }: { slug: string }) {
                 <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums' }}>{a.totalCitations.toLocaleString()}</td>
                 <td>{a.orcid
                   ? <a href={`https://orcid.org/${a.orcid}`} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{a.orcid}</a>
-                  : <span className="text-muted text-small">none</span>}</td>
+                  : <span className="text-muted text-small">{ES.authorsTable.none}</span>}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       {totalCount === 0 && !loading
-        ? <div className="text-muted text-small" style={{ padding: 14 }}>No matching authors.</div>
+        ? <div className="text-muted text-small" style={{ padding: 14 }}>{ES.authorsTable.noMatches}</div>
         : null}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
         <span className="text-small text-muted">
-          {error ? `Error: ${error}` : totalCount === 0 ? 'No authors.' : `${start}–${end} of ${totalCount.toLocaleString()}`}
+          {error ? `${ES.failedPrefix}: ${error}` : totalCount === 0 ? ES.authorsTable.empty : ES.authorsTable.rangeOf(start, end, totalCount.toLocaleString())}
         </span>
         <span style={{ marginLeft: 'auto' }} />
         <button className="primary-btn" style={{ padding: '4px 12px' }}

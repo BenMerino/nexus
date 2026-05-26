@@ -1,4 +1,6 @@
 import type { GraphDirective } from '../architect/graph-composer.types';
+import type { Velocity } from './portfolio-velocity';
+import type { Cadence } from './portfolio-cadence';
 
 export interface YearSourceRow { year: string; source: string; count: string; }
 export interface CollabRow { value: string; count: string; }
@@ -18,6 +20,8 @@ export interface PublicStats {
   yearRange: { minYear: string | null; maxYear: string | null };
   typeByYear: TypeYearRow[];
   yearByIndex: YearIndexRow[];
+  velocity?: Velocity;
+  cadence?: Cadence;
 }
 
 const INDEXES = ['WoS', 'Scopus', 'SciELO', 'DOAJ'];
@@ -56,7 +60,7 @@ function buildYearChart(stats: PublicStats, tenantId?: number): GraphDirective |
 
   const hasIndexData = (stats.yearByIndex || []).some(r => INDEXES.includes(r.bucket));
   if (!hasIndexData) {
-    return { type: 'bar', title: 'Publications by Year', xLabel: 'Year', yLabel: 'Articles', ...replay,
+    return { type: 'bar', title: 'Publicaciones por año', xLabel: 'Año', yLabel: 'Artículos', ...replay,
       data: years.map(y => ({ label: y, value: byYearTotal.get(y) || 0 })) };
   }
 
@@ -76,9 +80,9 @@ function buildYearChart(stats: PublicStats, tenantId?: number): GraphDirective |
   }
   return {
     type: 'stacked-bar',
-    title: 'Publications by Year',
-    xLabel: 'Year',
-    yLabel: 'Articles',
+    title: 'Publicaciones por año',
+    xLabel: 'Año',
+    yLabel: 'Artículos',
     series: presentIndexes,
     data: years.map(y => ({ label: y, ...grid.get(y)! })),
   };
@@ -92,16 +96,16 @@ function buildTypeChart(stats: PublicStats): GraphDirective | null {
     .filter(r => typeSet.has(r.type) && r.year)
     .map(r => ({ row: r.type, col: r.year, value: r.count, label: `${r.type} ${r.year}` }));
   if (!cells.length) return null;
-  return { type: 'heatmap', title: 'Publications by Type', xLabel: 'Year', yLabel: 'Type', data: cells as any };
+  return { type: 'heatmap', title: 'Publicaciones por tipo', xLabel: 'Año', yLabel: 'Tipo', data: cells as any };
 }
 
 function buildJournalChart(stats: PublicStats): GraphDirective | null {
   if (!stats.journals.length) return null;
   return {
     type: 'bar',
-    title: 'Top Journals',
-    xLabel: 'Journal',
-    yLabel: 'Papers',
+    title: 'Principales revistas',
+    xLabel: 'Revista',
+    yLabel: 'Artículos',
     data: stats.journals.map(j => ({
       label: (j.journal || '').substring(0, 18),
       value: j.count,
@@ -114,9 +118,9 @@ function buildCollabChart(stats: PublicStats): GraphDirective | null {
   if (!top.length) return null;
   return {
     type: 'bar',
-    title: 'Top Collaborating Institutions',
-    xLabel: 'Institution',
-    yLabel: 'Co-authored Papers',
+    title: 'Principales instituciones colaboradoras',
+    xLabel: 'Institución',
+    yLabel: 'Artículos en colaboración',
     data: top.map(c => ({ label: (c.value || '').substring(0, 30), value: parseInt(c.count) })),
   };
 }
@@ -125,7 +129,7 @@ function buildCountryChart(stats: PublicStats): GraphDirective | null {
   if (!stats.countries.length) return null;
   return {
     type: 'donut',
-    title: 'Publications by Country',
+    title: 'Publicaciones por país',
     data: stats.countries.slice(0, 12).map(c => ({
       label: c.country, value: parseInt(c.count),
     })),

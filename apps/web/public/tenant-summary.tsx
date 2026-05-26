@@ -1,13 +1,14 @@
 import React from 'react';
 import type { PublicStats } from './tenant-builders';
+import { ES } from './tenant-i18n';
 
 export function SummaryCards({ summary }: { summary: PublicStats['summary'] }) {
   const oaPct = summary.totalPubs > 0 ? Math.round((summary.oaCount / summary.totalPubs) * 100) : 0;
   const cards = [
-    { label: 'Publications', value: summary.totalPubs.toLocaleString() },
-    { label: 'Citations', value: summary.totalCitations.toLocaleString() },
-    { label: 'Open access', value: `${oaPct}%` },
-    { label: 'Authors', value: summary.authorCount.toLocaleString() },
+    { label: ES.summary.publications, value: summary.totalPubs.toLocaleString() },
+    { label: ES.summary.citations,    value: summary.totalCitations.toLocaleString() },
+    { label: ES.summary.openAccess,   value: `${oaPct}%` },
+    { label: ES.summary.authors,      value: summary.authorCount.toLocaleString() },
   ];
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: '1.5rem' }}>
@@ -24,7 +25,7 @@ export function SummaryCards({ summary }: { summary: PublicStats['summary'] }) {
 export function SectionPlaceholder({ label, error }: { label: string; error?: string | null }) {
   return (
     <div style={{ padding: 24, color: error ? 'var(--danger, #c00)' : 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>
-      {error ? `Failed: ${error}` : `Loading ${label}…`}
+      {error ? `${ES.failedPrefix}: ${error}` : ES.loadingLabel(label)}
     </div>
   );
 }

@@ -12,7 +12,20 @@ export type Velocity = {
 const TREND_SYMBOL: Record<Velocity['trend'], string> = { rising: '▲', flat: '→', falling: '▼' };
 const TREND_COLOR: Record<Velocity['trend'], string> = { rising: 'var(--ok)', flat: 'var(--fg-dim)', falling: 'var(--err)' };
 
-export function VelocityPanel({ velocity }: { velocity: Velocity }) {
+export interface VelocityLabels {
+  score: string;
+  trend: Record<Velocity['trend'], string>;
+  actual: string;
+  forecast: string;
+}
+const DEFAULT_LABELS: VelocityLabels = {
+  score: 'score',
+  trend: { rising: 'rising', flat: 'flat', falling: 'falling' },
+  actual: 'Citas reales',
+  forecast: 'Proyección',
+};
+
+export function VelocityPanel({ velocity, labels = DEFAULT_LABELS }: { velocity: Velocity; labels?: VelocityLabels }) {
   const { series, forecast = [], score, trend } = velocity;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(460);
@@ -53,10 +66,10 @@ export function VelocityPanel({ velocity }: { velocity: Velocity }) {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 12 }}>
         <div>
           <div style={{ fontFamily: 'var(--display)', fontSize: 42, letterSpacing: '-0.02em', color: 'var(--accent)', lineHeight: 1 }}>{score.toFixed(2)}</div>
-          <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 }}>score</div>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 }}>{labels.score}</div>
         </div>
         <div style={{ color: TREND_COLOR[trend], fontSize: 16, fontFamily: 'var(--mono)' }}>
-          {TREND_SYMBOL[trend]} {trend}
+          {TREND_SYMBOL[trend]} {labels.trend[trend]}
         </div>
       </div>
       <svg width={w} height={h} style={{ display: 'block' }}>
@@ -79,12 +92,12 @@ export function VelocityPanel({ velocity }: { velocity: Velocity }) {
       <div style={{ display: 'flex', gap: 14, marginTop: 8, fontSize: 11, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', letterSpacing: '0.04em' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <svg width={18} height={6}><line x1={0} y1={3} x2={18} y2={3} stroke="var(--accent)" strokeWidth={2} /></svg>
-          Citas reales
+          {labels.actual}
         </span>
         {fcSource.length > 0 && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <svg width={18} height={6}><line x1={0} y1={3} x2={18} y2={3} stroke="var(--accent)" strokeWidth={2} strokeDasharray="3 3" opacity={0.6} /></svg>
-            Proyección
+            {labels.forecast}
           </span>
         )}
       </div>

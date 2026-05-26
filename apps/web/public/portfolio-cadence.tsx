@@ -6,9 +6,14 @@ export type CadenceSegment = { type: string; count: number };
 export type CadencePoint = { year: number; count: number; segments: CadenceSegment[] };
 export type Cadence = { series: CadencePoint[]; types: string[]; meanPerYear: number };
 
-const typeLabel = (t: string) => TYPE_DISPLAY_LABELS[t] || (t === 'unknown' ? 'Unknown' : t);
+const defaultTypeLabel = (t: string) => TYPE_DISPLAY_LABELS[t] || (t === 'unknown' ? 'Unknown' : t);
 
-export function CadencePanel({ cadence }: { cadence: Cadence }) {
+export interface CadenceLabels { avgPerYear: string; }
+const DEFAULT_LABELS: CadenceLabels = { avgPerYear: 'papers / year (avg)' };
+
+export function CadencePanel({ cadence, labels = DEFAULT_LABELS, typeLabel = defaultTypeLabel }: {
+  cadence: Cadence; labels?: CadenceLabels; typeLabel?: (t: string) => string;
+}) {
   const { series, types, meanPerYear } = cadence;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(460);
@@ -46,7 +51,7 @@ export function CadencePanel({ cadence }: { cadence: Cadence }) {
             {meanPerYear.toFixed(1)}
           </div>
           <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 }}>
-            papers / year (avg)
+            {labels.avgPerYear}
           </div>
         </div>
       </div>
