@@ -4,14 +4,14 @@ import { GraphRender } from '../ui/graph-engine/index';
 import { AuthorsTable } from './tenant-authors';
 import { TenantGraph } from './tenant-graph';
 import { buildTenantCharts } from './tenant-builders';
+import { buildVelocityChart, buildCadenceChart } from './tenant-portfolio-charts';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
 import { SummaryCards, SectionPlaceholder, TabPane } from './tenant-summary';
 import { ReplayChart } from './tenant-replay-chart';
 import { TenantOrgTree } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
-import { VelocityPanel } from './portfolio-velocity';
-import { CadencePanel } from './portfolio-cadence';
-import { ES, VELOCITY_LABELS_ES, CADENCE_LABELS_ES, typeLabelEs } from './tenant-i18n';
+import { ES, typeLabelEs } from './tenant-i18n';
+import { VelocityStat, CadenceStat } from './tenant-portfolio-stats';
 
 const NAV: PublicNavItem[] = [
   { id: 'overview',  label: ES.nav.overview },
@@ -78,13 +78,15 @@ function App() {
               {statsPayload.stats.velocity ? (
                 <section className="card" style={{ padding: 18 }}>
                   <h3 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 16, margin: '0 0 12px' }}>{ES.charts.citationVelocity}</h3>
-                  <VelocityPanel velocity={statsPayload.stats.velocity} labels={VELOCITY_LABELS_ES} />
+                  <VelocityStat velocity={statsPayload.stats.velocity} />
+                  <GraphRender chart={buildVelocityChart(statsPayload.stats.velocity, ES.charts.citationVelocity)} />
                 </section>
               ) : null}
               {statsPayload.stats.cadence ? (
                 <section className="card" style={{ padding: 18 }}>
                   <h3 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 16, margin: '0 0 12px' }}>{ES.charts.publicationCadence}</h3>
-                  <CadencePanel cadence={statsPayload.stats.cadence} labels={CADENCE_LABELS_ES} typeLabel={typeLabelEs} />
+                  <CadenceStat meanPerYear={statsPayload.stats.cadence.meanPerYear} />
+                  <GraphRender chart={buildCadenceChart(statsPayload.stats.cadence, ES.charts.publicationCadence, typeLabelEs)} />
                 </section>
               ) : null}
             </div>
