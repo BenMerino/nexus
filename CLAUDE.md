@@ -2,6 +2,18 @@
 
 Guidance for Claude Code working in this repo. Nexus-specific only — universal coding guidelines live in `~/.claude/CLAUDE.md`.
 
+## Memory & invariants (read first)
+
+Nexus's doctrine lives **in-repo** (a Zincro-style memory system, Phase 1):
+
+- **Invariants `N1–N7`** — `.claude/rules/hard-rules.md` (`@`-included below, always loaded): scope guard, live-tree, token styling, data-layer isolation, file size, theme/FOUC, English-only.
+- **Philosophy** — `docs/PHILOSOPHY.md` (5 tenets + voice).
+- **Heuristics** — `docs/HEURISTICS.md` (`H-NNN` gotchas: per-ISSN tags, OpenAlex flags, FOUC, scope divergence…).
+
+> ⚠️ **The "Commands" and "Architecture" sections below are STALE.** They describe the dead pre-monorepo Vercel tree (`vercel dev`, `node build.js`, root `api/`/`lib/`/`public/`, "three tables"). The **live** tree is `apps/api/` (Express on Railway) + `apps/web/` (Vite). See **N2**. Full rewrite pending (memory-system Phase 2).
+
+@.claude/rules/hard-rules.md
+
 ## Commands
 
 - **Dev server:** `vercel dev` (or `npm run dev`)
