@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Proyectos — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+  <link rel="stylesheet" href="/claustro.css">
+</head>
+<body class="shell-fixed">
+  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/proyectos.html"></div>
+    <main class="main">
+      <div class="view claustro-view">
+        <header class="view-head">
+          <div>
+            <div class="eyebrow">Proyectos</div>
+            <h1 class="view-title">Proyectos <em>financiados</em>.</h1>
+            <div class="view-sub">Registro centralizado de proyectos. Cada uno alimenta los antecedentes que CNA usará después al asignar perfil al investigador (claustro de doctorado, magíster, individual o grupal) — pero esa asignación corresponde a la persona, no al proyecto.</div>
+          </div>
+          <div class="view-meta">
+            <span class="tag mono" id="tag-count">0 PROYECTOS</span>
+            <span class="tag mono tag-muted" id="tag-amount">$0</span>
+          </div>
+        </header>
+
+        <div id="proyectos-no-access" class="card" style="display:none;">
+          <p>Solo roles administrativos del tenant pueden gestionar proyectos.</p>
+        </div>
+        <div id="proyectos-area" style="display:none;">
+          <div class="stat-row">
+            <div class="stat">
+              <div class="stat-label">Proyectos vigentes</div>
+              <div class="stat-value" id="stat-total-val">0</div>
+              <div class="stat-sub">todas las facultades</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Monto total</div>
+              <div class="stat-value" id="stat-amount-val" style="color: var(--accent);">$0</div>
+              <div class="stat-sub">comprometido</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Concursables</div>
+              <div class="stat-value" id="stat-conc-val">0</div>
+              <div class="stat-sub" id="stat-conc-sub">de 0 proyectos</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Externos</div>
+              <div class="stat-value" id="stat-ext-val">0</div>
+              <div class="stat-sub">financiamiento externo</div>
+            </div>
+          </div>
+
+          <div class="claustro-actions">
+            <div class="filter-pills" id="filter-pills"></div>
+            <button class="primary-btn" id="btn-toggle-form">+ Nuevo proyecto</button>
+          </div>
+
+          <section class="card project-form" id="project-form-card" style="display:none;">
+            <div class="eyebrow" id="proj-form-eyebrow">Nuevo proyecto</div>
+            <div id="project-form"></div>
+            <div class="form-actions">
+              <button class="secondary-btn" id="btn-cancel-project">Cancelar</button>
+              <button class="primary-btn" id="btn-save-project">Guardar</button>
+            </div>
+          </section>
+
+          <section class="claustro-list">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow">Proyectos registrados</div>
+                <h2 class="section-title" id="list-title">Todos los proyectos</h2>
+              </div>
+              <span class="tag mono" id="list-count">0 resultados</span>
+            </div>
+            <div id="projects-list"></div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="/claustro-funding.js"></script>
+  <script type="module" src="/claustro-app.js"></script>
+  <script type="module" src="/claustro-projects-ui.js"></script>
+  <script type="module" src="/claustro-form-bind.js"></script>
+  <script type="module" src="/claustro-form.js"></script>
+  <script type="module" src="/claustro-render.js"></script>
+  <script type="module" src="/shell-mount.tsx"></script>
+</body>
+</html>

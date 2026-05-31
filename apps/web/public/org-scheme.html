@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <title>Organization — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
+  <link rel="stylesheet" href="/org-claustro.css">
 </head>
 <body class="shell-fixed">
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
@@ -40,25 +41,49 @@
         <header class="view-head">
           <div>
             <div class="eyebrow">Tenant</div>
-            <h1 class="view-title">Organization <em>scheme</em>.</h1>
-            <div class="view-sub">The academic roster as a Faculty → Department → people hierarchy. Each node shows headcount, ORCID coverage, and total publications. Click a row to expand.</div>
+            <h1 class="view-title">Organization.</h1>
+            <div class="view-sub">The academic structure of the tenant: the Faculty → Department → people hierarchy, and the CNA claustro classification of the núcleo.</div>
           </div>
         </header>
 
-        <div class="card">
-          <div style="margin-bottom:18px;">
-            <div class="org-stat"><b id="t-fac">0</b><span>faculties</span></div>
-            <div class="org-stat"><b id="t-inst">0</b><span>institutes</span></div>
-            <div class="org-stat"><b id="t-head">0</b><span>academics</span></div>
-            <div class="org-stat"><b id="t-orcid">0</b><span>with ORCID</span></div>
-            <div class="org-stat"><b id="t-papers">0</b><span>publications</span></div>
-          </div>
-          <div class="org-tree" id="org-tree"></div>
-          <div id="org-empty" class="text-muted text-small" style="display:none; padding:14px;">No roster data for this tenant yet.</div>
-          <div id="org-err" class="org-err" style="display:none; padding:14px;"></div>
+        <div class="org-tabs">
+          <button id="btn-org-organigrama" class="active">Organigrama</button>
+          <button id="btn-org-claustro">Claustro</button>
         </div>
+
+        <section id="tab-organigrama">
+          <div class="card">
+            <div style="margin-bottom:18px;">
+              <div class="org-stat"><b id="t-fac">0</b><span>faculties</span></div>
+              <div class="org-stat"><b id="t-inst">0</b><span>institutes</span></div>
+              <div class="org-stat"><b id="t-head">0</b><span>academics</span></div>
+              <div class="org-stat"><b id="t-orcid">0</b><span>with ORCID</span></div>
+              <div class="org-stat"><b id="t-papers">0</b><span>publications</span></div>
+            </div>
+            <div class="org-tree" id="org-tree"></div>
+            <div id="org-empty" class="text-muted text-small" style="display:none; padding:14px;">No roster data for this tenant yet.</div>
+            <div id="org-err" class="org-err" style="display:none; padding:14px;"></div>
+          </div>
+        </section>
+
+        <section id="tab-claustro" hidden>
+          <div class="card">
+            <div class="indices-row">
+              <label>Índices aceptados</label>
+              <div id="oc-indices-checks"></div>
+              <button class="primary-btn" id="oc-save-indices" style="display:none;">Guardar</button>
+            </div>
+          </div>
+          <div class="program-cards" id="oc-program-cards"></div>
+          <div class="card" style="margin-top:18px;">
+            <h3 style="font-family:var(--display);font-weight:400;font-size:18px;margin:0 0 10px;">Académicos del núcleo</h3>
+            <div id="oc-claustro-table"></div>
+            <p class="reasons-tt">Tipo 3 (Magíster Profesional) evaluado por Alternativa A — publicaciones. Alternativa B (innovación, patentes, cargos directivos) no incluida en V1.</p>
+          </div>
+        </section>
       </div>
       <script type="module" src="/org-scheme-app.js"></script>
+      <script type="module" src="/org-claustro.js"></script>
     </main>
   </div>
   <script type="module" src="/shell-mount.tsx"></script>

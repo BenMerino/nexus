@@ -55,7 +55,7 @@
 		root * {$RAILPACK_SPA_OUTPUT_DIR}
 		# try_files order:
 		#   1. {path}            — exact file (incl. legacy .html files like
-		#                          /dashboard.html, /claustro.html during the
+		#                          /dashboard.html, /proyectos.html during the
 		#                          phased migration; legacy nav still links to
 		#                          these explicitly).
 		#   2. /index.html       — React Router catch-all. Migrated routes
