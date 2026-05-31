@@ -306,6 +306,10 @@ em {
 /* ═══ MAIN AREA ═══ */
 .main {
   overflow-y: auto; overflow-x: hidden;
+  /* Always reserve the scrollbar gutter so the centered .view (margin: 0 auto)
+   * doesn't shift sideways when the vertical scrollbar appears after data
+   * loads. Without this the whole content area jitters on first render. */
+  scrollbar-gutter: stable;
   background: var(--bg);
 }
 /* Full-bleed variant for views that want to occupy the whole main area
