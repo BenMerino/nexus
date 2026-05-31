@@ -1,15 +1,20 @@
 {
-  // TypeScript for the DGA layer only. Compiles src/services/** + src/substrate/**
-  // to dist/ as CommonJS, so the existing CJS index.js / lib / handlers can
-  // `require("./dist/services/...")` the compiled governors during the migration.
-  // The legacy JS tree is NOT compiled (allowJs:false) — TS reaches into it via
-  // runtime require where needed, typed loosely at the call site.
+  // Full app mirror: compile the ENTIRE apps/api (TS + legacy JS) into dist/
+  // preserving directory structure, then run `node dist/index.js`. Because
+  // dist/ mirrors the source tree 1:1, every relative require — TS→JS, JS→JS,
+  // __dirname-relative handler/migration paths — resolves identically at
+  // runtime as it does in source. This is the standard TS-project layout and
+  // the migration's end-state: as JS files convert to TS in place, nothing
+  // about the build changes. checkJs:false → legacy JS is emitted but not
+  // typechecked; only .ts files are strict-checked.
   "compilerOptions": {
     "target": "ES2022",
     "module": "node16",
     "moduleResolution": "node16",
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist",
+    "allowJs": true,
+    "checkJs": false,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -19,6 +24,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["src/services/**/*.ts", "src/substrate/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/__tests__/**"]
+  "include": ["index.js", "handlers/**/*.js", "scripts/**/*.js", "src/**/*.js", "src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.js", "**/*.test.ts"]
 }
