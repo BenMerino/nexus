@@ -34,9 +34,11 @@ Nexus is a DOI metadata aggregator and multi-tenant CRIS for universities. Users
 
 ## Project Rules
 
-### Rule nbr15: File Size
+### Pre-commit audit (`scripts/arch-audit.sh`)
 
-`hooks/pre-commit-audit.sh` blocks commits with source files over 150 lines. This fires at commit time only — write code at whatever size it naturally wants to be, and refactor only when the hook complains or the seam is real.
+The pre-commit hook (`hooks/pre-commit-audit.sh` → `scripts/arch-audit.sh`) enforces the invariants. **Hard-blocks:** N2 dead-tree edits, N4 data-layer leaks, **N5/nbr15** source files >150 lines. **Soft-warns:** N1, N3. Opt-out per file with `arch-audit-ignore: <Nx>`. Run manually: `bash scripts/arch-audit.sh`. On a fresh clone install it: `cp hooks/pre-commit-audit.sh .git/hooks/pre-commit`.
+
+**On N5 (file size):** fires at commit time only — write code at whatever size it naturally wants, and refactor only when the hook complains or the seam is real.
 
 **When the hook fires, refactor — extract a cohesive chunk into a new file and import it back.** Never compress: don't collapse multi-line `useMemo` / `useEffect` / `if` blocks into one-liners, don't strip comments or whitespace, don't inline things that were intentionally expanded. The rule exists to force real refactoring; making the code denser defeats its purpose.
 

@@ -30,5 +30,8 @@ All user-facing UI is **English**. Exempt: proper nouns (Fondecyt, CORFO, CNA, A
 ## Deploy
 After a task, commit and push `main` (Railway auto-deploys both services). Ask before destructive git ops (force push, `reset --hard`, branch deletion).
 
+## Enforcement
+`scripts/arch-audit.sh` runs at pre-commit (via `.git/hooks/pre-commit` → `hooks/pre-commit-audit.sh`). **Hard-blocks:** N2 (dead-tree edits), N4 (`@vercel/postgres` / frontend DB driver), N5 (≤150 lines). **Soft-warns:** N1 (handler missing a gate), N3 (new hex / `--chart-N`). Per-file opt-out: comment `arch-audit-ignore: N1` (etc.). Run manually: `bash scripts/arch-audit.sh`. On a fresh clone, install with `cp hooks/pre-commit-audit.sh .git/hooks/pre-commit` (git hooks aren't version-controlled).
+
 ## On-demand subsystem guides
-Read from `.claude/rules/` when touching the area (not auto-loaded): `scope-model.md`, `db-layer.md`, `design-dna.md`, `theme.md`, `claustro-feature.md`. Doctrine: `docs/PHILOSOPHY.md`, `docs/ANTI_PATTERNS.md`, `docs/HEURISTICS.md`. *(Enforcement — `scripts/arch-audit.sh` for N1–N4 — is Phase 3, not yet built.)*
+Read from `.claude/rules/` when touching the area (not auto-loaded): `scope-model.md`, `db-layer.md`, `design-dna.md`, `theme.md`, `claustro-feature.md`. Doctrine: `docs/PHILOSOPHY.md`, `docs/ANTI_PATTERNS.md`, `docs/HEURISTICS.md`.
