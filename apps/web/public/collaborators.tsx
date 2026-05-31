@@ -19,9 +19,7 @@ function App() {
     <div className="view">
       <header className="view-head">
         <div>
-          <div className="eyebrow">Missing link</div>
-          <h1 className="view-title">Suggested <em>collaborators</em>.</h1>
-          <div className="view-sub">Researchers in your institution working on similar concepts.</div>
+          <h1 className="view-title">Colaboradores</h1>
         </div>
         <div className="view-meta"><Tag mono>SCOPED · YOUR ORCID</Tag></div>
       </header>

@@ -47,17 +47,12 @@ function DashboardContent({ data }: { data: DashboardData }) {
   const title = isPersonal && displayName
     ? <><em>{displayName}</em></>
     : <><em>{tenantName}</em></>;
-  const sub = isPersonal
-    ? [subject.profile?.position, subject.profile?.faculty].filter(Boolean).join(' · ')
-    : `A living map of ${tenantName}'s scholarly output.`;
 
   return (
     <div className="view dashboard">
       <header className="view-head">
         <div>
-          {!isPersonal && <div className="eyebrow">Institutional overview</div>}
           <h1 className="view-title">{title}</h1>
-          {sub && <div className="view-sub">{sub}</div>}
         </div>
       </header>
 

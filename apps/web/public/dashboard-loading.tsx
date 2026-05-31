@@ -36,19 +36,11 @@ export function DashboardLoading() {
     : isPersonal
       ? <><em>Loading…</em></>
       : <><em>{tenantName}</em></>;
-  const sub = isPersonal && !viewingOther
-    ? [me?.profile.position, me?.profile.faculty].filter(Boolean).join(' · ')
-    : !isPersonal
-      ? `A living map of ${tenantName}'s scholarly output.`
-      : '';
-
   return (
     <div className="view dashboard" aria-busy="true" aria-live="polite">
       <header className="view-head">
         <div>
-          {!isPersonal && <div className="eyebrow">Institutional overview</div>}
           <h1 className="view-title">{title}</h1>
-          {sub && <div className="view-sub">{sub}</div>}
         </div>
       </header>
 

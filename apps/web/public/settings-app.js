@@ -7,7 +7,7 @@
     if (d.role === "superadmin") {
       document.getElementById("branding-card").style.display = "";
     }
-    document.getElementById("branding-title").textContent = (d.tenant || "University") + " Branding";
+    document.getElementById("branding-title").textContent = (d.tenant || "Institución") + " · Identidad visual";
     if (d.logo) showPreview(d.logo);
     if (d.primaryColor) {
       document.getElementById("primary-color").value = d.primaryColor;

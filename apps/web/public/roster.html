@@ -32,9 +32,7 @@
       <div class="view">
         <header class="view-head">
           <div>
-            <div class="eyebrow">Tenant</div>
-            <h1 class="view-title">Academic <em>roster</em>.</h1>
-            <div class="view-sub">Import academics from a semicolon-delimited roster export (Nombre; Categoría; Departamento; Facultad). Each becomes an academic user under your tenant. Re-importing updates org fields without duplicating.</div>
+            <h1 class="view-title">Nómina académica</h1>
           </div>
         </header>
 
@@ -58,7 +56,7 @@
 
           <!-- Import panel -->
           <div class="tool-panel" id="panel-import" style="display:none;">
-            <div class="view-sub" style="margin-bottom:12px;">Import academics from a semicolon-delimited roster export (Nombre; Categoría; Departamento; Facultad; ORCID). Re-importing updates org fields without duplicating.</div>
+            <div class="view-sub" style="margin-bottom:12px;">Importa académicos desde una nómina delimitada por punto y coma (Nombre; Categoría; Departamento; Facultad; ORCID). Reimportar actualiza los campos sin duplicar.</div>
             <input type="file" id="roster-file" accept=".csv,text/csv,text/plain" class="mb-8">
             <textarea id="roster-text" placeholder="…or paste the CSV contents here" style="width:100%; min-height:140px; font-family:var(--mono); font-size:11px; background:transparent; color:var(--fg); border:1px solid var(--border); border-radius:4px; padding:10px; resize:vertical;"></textarea>
             <div style="margin-top:12px;">
@@ -77,7 +75,7 @@
 
           <!-- Ingest panel -->
           <div class="tool-panel" id="panel-ingest" style="display:none;">
-            <div class="view-sub" style="margin-bottom:12px;">For every academic that has an ORCID, pull their publications from OpenAlex into the corpus. Academics without an ORCID are skipped.</div>
+            <div class="view-sub" style="margin-bottom:12px;">Para cada académico con ORCID, importa sus publicaciones desde OpenAlex al corpus. Los académicos sin ORCID se omiten.</div>
             <button class="primary-btn" id="ingest-btn">Ingest papers for ORCID-linked academics</button>
             <span id="ingest-status" class="text-small" style="margin-left:10px;"></span>
             <div id="ingest-result" style="display:none; margin-top:16px;">

@@ -7,24 +7,24 @@ import type { CurrentUser } from './shell-helpers';
 export interface NavLink { href: string; label: string; icon: keyof typeof Ico; section?: string; }
 
 const DEFAULT_LINKS: NavLink[] = [
-  { href: '/dashboard.html',      label: 'Dashboard',      icon: 'home',   section: 'Workspace' },
-  { href: '/overview.html',       label: 'Graph explorer', icon: 'graph',  section: 'Workspace' },
-  { href: '/explore.html',        label: 'Explore',        icon: 'search', section: 'Workspace' },
-  { href: '/collaborators.html',  label: 'Collaborators',  icon: 'people', section: 'Workspace' },
-  { href: '/org-scheme.html',     label: 'Organization',   icon: 'graph',  section: 'Workspace' },
-  { href: '/proyectos.html',      label: 'Proyectos',      icon: 'paper',  section: 'Workspace' },
-  { href: '/submit.html',         label: 'Submit DOI',     icon: 'submit', section: 'Workspace' },
+  { href: '/dashboard.html',      label: 'Panel',              icon: 'home',   section: 'Espacio de trabajo' },
+  { href: '/overview.html',       label: 'Explorador de grafo', icon: 'graph',  section: 'Espacio de trabajo' },
+  { href: '/explore.html',        label: 'Explorar',           icon: 'search', section: 'Espacio de trabajo' },
+  { href: '/collaborators.html',  label: 'Colaboradores',      icon: 'people', section: 'Espacio de trabajo' },
+  { href: '/org-scheme.html',     label: 'Organización',       icon: 'graph',  section: 'Espacio de trabajo' },
+  { href: '/proyectos.html',      label: 'Proyectos',          icon: 'paper',  section: 'Espacio de trabajo' },
+  { href: '/submit.html',         label: 'Enviar DOI',         icon: 'submit', section: 'Espacio de trabajo' },
 ];
 const SUPERADMIN_LINKS: NavLink[] = [
-  { href: '/admin.html',         label: 'Admin',         icon: 'build',  section: 'Admin' },
-  { href: '/author-import.html', label: 'Author import', icon: 'people', section: 'Admin' },
-  { href: '/tag-manager.html',   label: 'Tag manager',   icon: 'tag',    section: 'Admin' },
-  { href: '/theme',              label: 'Theme palette', icon: 'gear',   section: 'Admin' },
+  { href: '/admin.html',         label: 'Consola',             icon: 'build',  section: 'Administración' },
+  { href: '/author-import.html', label: 'Importar autores',    icon: 'people', section: 'Administración' },
+  { href: '/tag-manager.html',   label: 'Gestor de etiquetas', icon: 'tag',    section: 'Administración' },
+  { href: '/theme',              label: 'Paleta de tema',      icon: 'gear',   section: 'Administración' },
 ];
 const TENANT_LINKS: NavLink[] = [
-  { href: '/settings.html', label: 'Settings', icon: 'gear', section: 'Tenant' },
+  { href: '/settings.html', label: 'Configuración', icon: 'gear', section: 'Institución' },
 ];
-const ROSTER_LINK: NavLink = { href: '/roster.html', label: 'Roster', icon: 'people', section: 'Tenant' };
+const ROSTER_LINK: NavLink = { href: '/roster.html', label: 'Nómina', icon: 'people', section: 'Institución' };
 
 function linksFor(me: CurrentUser | null): NavLink[] {
   const role = me?.role ?? '';
@@ -93,12 +93,12 @@ export function Sidebar({ me, currentPath, roleSwitcher }: SidebarProps) {
       </nav>
 
       <div className="sidebar-footer">
-        <div><span className="sync-pulse" />Live · authenticated</div>
+        <div><span className="sync-pulse" />En línea · autenticado</div>
         <div className="sidebar-user-row">
           <span title={me?.profile.name || me?.user}>
             {me ? initials(me.profile.name || me.user) : '··'}
           </span>
-          <a href="/api/auth?action=logout">logout</a>
+          <a href="/api/auth?action=logout">salir</a>
         </div>
       </div>
     </aside>
