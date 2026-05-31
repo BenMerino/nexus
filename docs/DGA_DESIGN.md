@@ -1,53 +1,76 @@
 # DGA Design — Nexus domains, governors, events, refs
 
-The canonical domain model for Nexus's Deterministic Governor Architecture. **Domain-first**: bounded contexts derived from the CRIS mission, then tables mapped under them (schema is malleable). Produced by a 4-lens decomposition → reconciliation → adversarial stress-test against the one-writer invariant, verified against the live `apps/api` tree. Doctrine: [.claude/rules/governor-patterns.md](../.claude/rules/governor-patterns.md).
+The canonical domain model for Nexus's Deterministic Governor Architecture. **Domain-first**: bounded contexts derived from the CRIS mission, then tables mapped under them (schema is malleable). Produced by a multi-lens decomposition → adversarial stress-test → iterative reasoning against the one-writer invariant, verified against the live `apps/api` tree. Doctrine: [.claude/rules/governor-patterns.md](../.claude/rules/governor-patterns.md).
 
-**12 domains:** 6 write-aggregate Governors · 2 Workflows · 2 Resolvers · 1 Composer · 1 Dispatcher.
+**The decision rule, applied throughout:** a **Governor** exists only for an aggregate that *something writes independently of the papers it appears on*. Entities with real identity + their own lifecycle (claim/merge/admin-edit) are governed; write-once-at-ingest connections are **edges** owned by the entity they hang off; pure reads are Resolvers/Composers; cross-aggregate orchestration is a Workflow; outbound effects are a Dispatcher. The **actor** (user) and the **scope boundary** (tenant) are **substrate**, not domains.
 
-The decision rule throughout: a **Governor** exists only for an aggregate with an **independent write lifecycle**. Derived state is not an aggregate (→ Resolver/projection). Pure reads → Resolver/Composer. Cross-aggregate orchestration → Workflow. Outbound side effects → Dispatcher.
+This model is the product of deliberately dissolving startup shortcuts: the generic `tags` EAV table (it was *ingestion's edge output*, not a domain), `IndexationReference` (a *property of a venue*), the affiliation-institution-as-entity (an *edge value*), and `User`/`Tenant`-as-domains (the *actor* and *boundary* — substrate). What remains is subject-matter only.
 
-## Governors (sole writer per aggregate)
+---
 
-| Governor | Domain | Owns | Tables |
+## Scholarship context — the scholarly record
+
+| Domain | Role | Owns | Key actions | Emits |
+|---|---|---|---|---|
+| **Publication** (`publication`, in `services/catalog/`) | Governor | the paper (DOI) + `submissions` (immutable receipt) + `doi_citations_by_year` + `doi_concepts` + the **authorship / published-in / affiliation edges** (written once at ingest, no independent lifecycle → children of the publication) | `upsert`, `delete`, `setCitations`, `setConcepts`, `linkAuthorship`, `linkVenue`, `linkAffiliation` | `publication.upserted`, `publication.deleted` |
+| **Author** (`author`) | Governor | researcher entity keyed by **ORCID** + academic profile fields (faculty/position/titles/grado) | `upsert`, `merge` (entity resolution), `claim` (bind to a substrate user) | `author.upserted`, `author.merged`, `author.claimed` |
+| **Venue** (`venue`) | Governor | journal/venue keyed by **ISSN-L** + indexation flags (WoS/Scopus/DOAJ/SciELO — *a property of the venue*) | `upsert`, `merge`, `setIndexation(source, …)` | `venue.upserted`, `venue.indexationUpdated` |
+
+**Naming note:** the governor is `PublicationGovernor` (named for its aggregate root, like its Author/Venue/Project siblings), living in the `catalog` *context folder*. It owns the publication **and its edges** because those edges are write-once-at-ingest children with no life of their own — not a separate "links" aggregate. The affiliation edge carries the foreign-institution value (ROR+name); the affiliation-institution is **not** a governed entity (Nexus doesn't manage MIT) — only the managed institution (below) is.
+
+## Institution context — the managed organization (the tenant, promoted to a domain)
+
+The university that *owns* a Nexus tenant is not just the `withTenant` scope boundary — it is an organization that **acts**: it provisions members, approves projects, monetizes output, and reports. That gives it an independent write lifecycle → a real domain. (The scope boundary itself stays substrate; this is the *organizational* half.)
+
+| Domain | Role | Owns | Key actions | Emits |
+|---|---|---|---|---|
+| **Institution** (`institution`) | Governor | the managed org: identity/tree (ROR/slug/parent), members & secretary roles, org policy, config (theme/settings `tenant.*`) | `provision`, `setPolicy`, `assignRole`, `setTheme`, `updateSettings` | `institution.provisioned`, `institution.policyChanged` |
+| **Project** (`project`) | Governor | `projects` + `project_investigators` (child, wholesale-replaced) + **approval state** | `create`, `update`, `delete`, `setInvestigators`, `approve`, `reject` | `project.created`, `project.updated`, `project.approved` |
+| **Monetization** (`monetization`) `[PLANNED]` | Governor | reward record (academic × paper × amount; accrue→approve→pay) | `accrue`, `approve`, `pay` | `monetization.*` |
+
+## Orchestration — Workflows (the only role that calls governors directly; own no table)
+
+| Domain | Role | Orchestrates |
+|---|---|---|
+| **Ingestion** (`ingestion`) | Workflow | MetadataProviders (4 APIs) → resolve Author/Venue (upsert by ORCID/ISSN) → PublicationGovernor (paper + edges). **Per-DOI `withTenant`** (one bad DOI never rolls back a batch). Two entrypoints, identical write shape: `store.js#fetchAndStore`, `store-openalex.js#storeNormalizedRecord`. Emits `ingestion.completed`. |
+| **Onboarding** (`onboarding`) | Workflow | Institution.provision + members → resolve ORCIDs → Ingestion per author. Emits `roster.imported`. ← `roster-import`, `roster-ingest`, `roster-resolve`, `seed-users`. |
+| **Approval** (`approval`) `[PLANNED]` | Workflow | secretary acts (role check via substrate) → Project.approve/reject |
+
+## Read & external — Resolvers / Composer / Dispatcher (own no table)
+
+| Domain | Role | Reads | Job |
 |---|---|---|---|
-| **CatalogGovernor** | `catalog` | The canonical scholarly paper + everything re-derived from one fetch+merge (facets, citations, concepts) + the immutable submission receipt. Aggregate root = the paper (by DOI), **not** the submission. | `doi_records` *(rename → `publications`)*, `submissions` *(immutable owned receipt)*, `tags` WHERE category≠`indexed_in`, `doi_citations_by_year`, `doi_concepts`, **`record_indexation`** *(new derived projection — see Schema changes)* |
-| **TagCurationGovernor** | `tagCuration` | Editorial entity-resolution: variant→canonical synonyms (incl. ROR-resolved institutions) + dismissed merge-candidate pairs. Independent admin clock; read by Catalog at store time; mutates Catalog facets only via a `tag.merged` event. | `tag_synonyms`, `tag_dismissed_pairs` |
-| **IndexationReferenceGovernor** | `indexationRef` | Admin-seeded authority list of which journals (by ISSN-L) are indexed in WoS/Scopus/DOAJ/SciELO. Replace-per-source lifecycle. Emits `indexation.updated`. | `indexed_journals` |
-| **ProjectGovernor** | `project` | Funded research projects (título/financiamiento/montos/dates) + investigator roster (child, wholesale-replaced, CASCADE, soft-linked to users by value). Independent admin CRUD. Feeds the Claustro resolver but is a distinct aggregate. | `projects`, `project_investigators` |
-| **UserGovernor** | `user` | Identity/authorization principals: credentials, role, `tenant_admin` capability, ORCID binding, tenant membership, roster org fields. **Cross-tenant — no-RLS read exception.** | `users` |
-| **TenantGovernor** | `tenant` | Institution-as-territory: tenant tree (name/ROR/slug/parent_id/branding) + theming + `tenant.*` config keys. **Cross-tenant — no-RLS read exception.** | `tenants`, `theme_tokens` *(add `tenant_id`)*, `settings` WHERE key LIKE `tenant.%` |
+| **Portfolio** (`portfolio`) | Resolver | Publication + Author + Venue | velocity, cadence, h-index, top-cited, concept profile, coauthor graph, org-tree (pure scope-narrowed SELECT). ← `portfolio*`, `h-index`, `dashboard-stats`, `graph-builder`, `org-tree` |
+| **Claustro** (`claustro`) | Resolver | Author × Venue(indexation) × Project | CNA core-faculty accreditation; only write is its `claustro.indices.*` config key. ← `claustro.js`, `db-schema-claustro.js` |
+| **Reports** (`reports`) `[PLANNED]` | Resolver/Composer | Institution + Project + Publication | automatic institutional reports |
+| **Architect** (`architect`) | Composer | the resolvers | data → `GraphDirective` chart/graph specs + node-detail; unauthenticated public profiles (wraps `withTenant(tenantBySlug)`). Generalize `architect-replay.js` → a `kind → atom-builder` registry. |
+| **MetadataProviders** (`metadataProviders`) | Dispatcher | — | CrossRef/OpenAlex/SemanticScholar/DataCite + ROR resolution + object-storage presign. Outbound HTTP only. ← `fetchers`, `fetchers-institution`, `openalex`, `ror-resolve`, `storage` |
 
-## Workflows (only role that calls governors directly; own no table)
-- **IngestionWorkflow** (`ingestion`): per-DOI deterministic ingest — MetadataProviders (4 APIs) → normalize/merge → `CatalogGovernor` → derive `record_indexation` from `IndexationReferenceGovernor`. Per-DOI `withTenant` (one bad DOI never rolls back a batch). **Two entrypoints, identical write shape:** `store.js#fetchAndStore` (manual/roster DOI) and `store-openalex.js#storeNormalizedRecord` (bulk OpenAlex). Emits `ingestion.completed`.
-- **OnboardingWorkflow** (`onboarding`): institutional onboarding across User + Tenant + Catalog + Ingestion — roster CSV → provision users → resolve ORCIDs → per-author bulk ingest. Emits `roster.imported`. Logic ← `roster-import`, `roster-ingest`, `roster-resolve`, `ror-resolve`, `seed-users`.
+## Substrate — NOT the DGA (the layer it runs on)
+- **Identity / ActorContext** — `lib/auth.js` + `scope.js`: the **user** (the *actor*, threaded as `ctx`), session, login, role. Every governor *consumes* it; none govern it. The DGA introduces **no parallel auth**.
+- **Tenancy boundary** — `withTenant` / RLS `app.tenant_id`: the scope every governor runs inside. (The *organizational* half of the tenant is the **Institution** governor; the *boundary* half is substrate.)
 
-## Resolvers (compound reads; own no table; `chartable`/`tableable` feed Architect + Phase C charts)
-- **PortfolioResolver** (`portfolio`): researcher/tenant derived analytics — publication portfolio, citation velocity/forecast, cadence, top-cited, h-index, concept profile, coauthor graph, org tree. Pure scope-narrowed SELECT over Catalog+User. ← `portfolio*`, `h-index`, `dashboard-stats`, `graph-builder`, `org-tree`. (No PortfolioGovernor — no cache table exists; correctly rejected.)
-- **ClaustroResolver** (`claustro`): CNA core-faculty accreditation classifier — core users (grado/horas) × 5yr indexed publications (Catalog) × project roles (Project), gated by accepted-indices config. Pure read (`getClaustroForTenant`, `validateProgram`). Its only write is the `claustro.indices.*` config key it parameterizes (config, not an aggregate). ← `claustro.js`, `db-schema-claustro.js`. *(This domain was missing from the first design — caught by the stress-test.)*
+---
 
-## Composer
-- **ArchitectComposer** (`architect`): turns resolved Catalog/Portfolio data into `GraphDirective` chart/graph specs + node-detail resolutions; serves unauthenticated public-profile reads by tenant slug (wraps `withTenant(tenantBySlug)`). Generalize `architect-replay.js` from hardcoded `kind:"publications"` to a `kind → atom-builder` registry. Emits `GraphDirective` (`apps/web/architect/graph-composer.types.ts`).
+## Tally
+**Built now: 5 Governors** (Publication, Author, Venue, Institution, Project) · **2 Workflows** (Ingestion, Onboarding) · **2 Resolvers** (Portfolio, Claustro) · **1 Composer** (Architect) · **1 Dispatcher** (MetadataProviders).
+**`[PLANNED]` additive** (designed-for, **not built** until specced — evolve-by-addition): Monetization (Gov), Approval (Workflow), Reports (Resolver), all under the Institution context.
 
-## Dispatcher (external side effects; owns no local table)
-- **MetadataProvidersDispatcher** (`metadataProviders`): the external anti-corruption boundary — CrossRef/OpenAlex/SemanticScholar/DataCite + ROR resolution + object-storage presign. Outbound HTTP only; hands raw payloads to normalize. ← `fetchers`, `fetchers-institution`, `openalex`, `ror-resolve`, `storage`.
-
-## Schema changes implied (you authorized; new numbered migrations)
-1. **Rename `doi_records` → `publications`** — the aggregate root is a paper, not a "DOI record." (Touches every reader; do via migration + a grandfathering pass.)
-2. **Extract `tags WHERE category='indexed_in'` → `record_indexation(record_id, source)`** — `indexed_in` is *derived* state (a projection of `indexed_journals` ∩ a record's ISSN), not a Catalog facet. Rebuilt by `IndexationReferenceGovernor` on `indexation.updated` and at ingest. Leaves `tags` single-owner (Catalog).
-3. **Namespace `settings` by owner** — `tenant.*` keys → Tenant; `claustro.indices.*` → Claustro config. (Shared k/v table with two writers today.)
-
-## Cross-tenant / no-RLS exceptions
-`users` and `tenants` are read cross-tenant by auth *before* scope is known (`scope.js` reads `getUserById`/`listTenants` pre-scope). Both keep their governors but **no RLS**; isolation stays in the governor + auth. All other tenant-scoped tables get RLS (per the rollout phase).
+## Schema changes implied (authorized; new numbered migrations)
+1. **Rename `doi_records` → `publications`** (the aggregate root is a paper).
+2. **Promote entities:** new `authors` (PK ORCID), `venues` (PK ISSN-L) tables; **migrate** existing `tags` rows into these + into explicit **edge tables** `authorship` / `published_in` / `affiliation`. Dissolve the generic `tags` table. Venue absorbs `indexed_journals` indexation flags; the derived per-record `indexed_in` becomes a join over edges + venue flags (no separate projection table needed once edges exist).
+3. **Entity resolution replaces synonyms:** `tag_synonyms`/`tag_dismissed_pairs` → `AuthorGovernor.merge` / `VenueGovernor.merge` / `InstitutionGovernor`-style merge state, applied at write time (not folded at read).
+4. **Namespace `settings`:** `tenant.*` → Institution, `claustro.indices.*` → Claustro config.
+> ⚠️ This is the **largest, highest-risk migration in the repo** — `tags` underpins the graph engine, every facet chart, profiles, and coauthor analysis. Sequenced carefully, gated, and verified per-step (not rushed).
 
 ## EventBus catalog (seed)
-`catalog.recordUpserted`, `catalog.recordDeleted`, `tag.merged`, `tag.synonymAdded`, `tag.dismissed`, `indexation.updated`, `project.created/updated/deleted`, `user.created`, `user.orcidMatched`, `tenantAdmin.granted`, `tenant.settingsChanged`, `ingestion.completed`, `roster.imported`. One owner per channel (the domain's governor/workflow).
+`publication.upserted/deleted`, `author.upserted/merged/claimed`, `venue.upserted/indexationUpdated`, `institution.provisioned/policyChanged`, `project.created/updated/approved`, `ingestion.completed`, `roster.imported`. One owner per channel.
 
 ## Entity refs (`<kind>:<id>`, for audit + conversation-bindings)
-`publication:<id>` (was record), `submission:<id>`, `tag:<id>`, `project:<id>`, `user:<orcidOrId>`, `tenant:<id>`, `journal:<issn_l>`; child: `concept:<recordId>:<conceptId>`, `citationYear:<recordId>:<year>`, `recordIndexation:<recordId>:<source>`. Grammar canon: [id-taxonomy](../.claude/rules/id-taxonomy.md).
+`publication:<id>`, `author:<orcid>`, `venue:<issnL>`, `institution:<ror>`, `project:<id>`; child/edge: `concept:<pubId>:<conceptId>`, `citationYear:<pubId>:<year>`, `authorship:<pubId>:<orcid>`. Grammar canon: [id-taxonomy](../.claude/rules/id-taxonomy.md).
 
 ## Conversation entity-kinds (AI surface, when chat lands)
-`publication`, `project`, `tag`, `user` register `verifyAccess` + `readSummary`. Others read-only/none.
+`publication`, `author`, `venue`, `project`, `institution` register `verifyAccess` + `readSummary`.
 
 ## Handler → domain map (route URLs unchanged on migration)
-`tag-stats`→catalog(facets) · `claim-paper`→catalog · `records`,`records/[id]`,`node-detail`,`graph-metadata`→catalog · `submit`,`submissions`,`refetch-all`,`backfill-*`,`venue-type-backfill`→ingestion · `indexation`→indexationRef · `portfolio`,`portfolio-backfill`,`dashboard`→portfolio · `roster-actions`,`author-import`,`search-academics`→onboarding · `projects`→project · `claustro`→claustro · `graph`→portfolio · `architect/*`→architect · `public/[slug]/*`→architect · `files`→metadataProviders · `search`→catalog/tagCuration resolver · `theme-tokens`→tenant · `auth`→(unchanged).
-```
+`tag-stats`,`search`→Portfolio/Author/Venue resolvers · `claim-paper`→author(claim)+publication · `records`,`records/[id]`,`node-detail`,`graph-metadata`→publication · `submit`,`submissions`,`refetch-all`,`backfill-*`,`venue-type-backfill`,`indexation`→ingestion/venue · `portfolio`,`portfolio-backfill`,`dashboard`,`graph`→portfolio · `roster-actions`,`author-import`,`search-academics`→onboarding · `projects`→project · `claustro`→claustro · `architect/*`,`public/[slug]/*`→architect · `files`→metadataProviders · `theme-tokens`→institution · `auth`→substrate (unchanged).

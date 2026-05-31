@@ -15,7 +15,7 @@ Framework-shaped, out of scope. Examples: `users`, `tenants`, `theme_tokens` (`k
 
 ## Entity-ref grammar (audit + conversation-bindings)
 A governor's `logToLedger` and the conversation `registerEntityKind` need a stable string ref for any row. Grammar: **`<kind>:<id>`** — lowercase singular kind, then the entity's own id. Composite/child rows join parts with `:`.
-- `publication:1247`, `submission:88`, `tag:512`, `user:u_orcid…`, `tenant:1`
+- `publication:1247`, `author:0000-0002-…`, `venue:2049-3630`, `institution:03e8d3c79`, `project:42`
 - child: `concept:1247:C2779…`, `citationYear:1247:2024`
 
 Kinds are the singular domain noun (matches the EventBus domain and the conversation entity-kind). Register each new kind's grammar in [docs/DGA_DESIGN.md](../../docs/DGA_DESIGN.md) §Entity refs.
