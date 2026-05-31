@@ -61,16 +61,4 @@
 .pgm-fail { background: oklch(0.28 0.05 25  / 0.6); color: oklch(0.85 0.12 25); }
 .ok  { color: var(--ok); }
 .bad { color: var(--err); }
-
-.indices-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.indices-row > label {
-  font-family: var(--mono); font-size: 10px;
-  letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--fg-dim); margin-right: 6px;
-}
-#indices-checks { display: flex; gap: 14px; flex-wrap: wrap; }
-#indices-checks label {
-  display: inline-flex; gap: 6px; align-items: center;
-  font-family: var(--mono); font-size: 11px;
-}
 .reasons-tt { font-size: 11px; color: var(--fg-dim); margin-top: 12px; }

@@ -19,6 +19,9 @@
         .color-row label { width: 140px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
         .color-row input[type="color"] { width: 40px; height: 32px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 0; background: transparent; }
         .color-row .hex { font-size: 11px; color: var(--fg-dim); font-family: var(--mono); }
+        .indices-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+        #idx-checks { display: flex; gap: 14px; flex-wrap: wrap; }
+        #idx-checks label { display: inline-flex; gap: 6px; align-items: center; font-family: var(--mono); font-size: 12px; }
       </style>
       <div class="view">
         <header class="view-head">
@@ -56,9 +59,20 @@
             </div>
           </div>
         </div>
+
+        <div class="card" id="indices-card" style="display:none; margin-top:18px;">
+          <h3 style="font-family: var(--display); font-weight: 400; font-size: 22px; margin-bottom: 6px;">Índices aceptados (claustro)</h3>
+          <div class="text-small text-muted" style="margin-bottom:16px;">Define qué índices de citación cuentan como publicación calificada al evaluar el claustro académico.</div>
+          <div class="indices-row">
+            <div id="idx-checks"></div>
+            <button class="primary-btn" id="idx-save">Guardar</button>
+            <span id="idx-status" class="text-small"></span>
+          </div>
+        </div>
       </div>
       <script type="module" src="/color-extract.js"></script>
       <script type="module" src="/settings-app.js"></script>
+      <script type="module" src="/settings-indices.js"></script>
     </main>
   </div>
   <script type="module" src="/shell-mount.tsx"></script>

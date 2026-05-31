@@ -1,21 +1,19 @@
 // Organization page — Claustro classification tab. Self-contained: fetches the
-// tenant claustro (núcleo academics) + program validation, renders the program
-// cards and roster table, and lets editors edit the accepted indices. Lazy:
-// data loads the first time the Claustro tab is opened.
+// tenant claustro (núcleo academics) + program validation and renders the
+// program cards and roster table. The accepted-indices config that drives this
+// classification is edited on the Settings page. Lazy: data loads the first
+// time the Claustro tab is opened.
 (function () {
-  var EDITOR = ["secretary", "director", "admin", "superadmin"];
-  var ALL_INDICES = ["WoS", "Scopus", "SciELO", "DOAJ"];
   var PROGRAM_LABELS = {
     doctorado: "Doctorado",
     magister_academico: "Magíster Académico",
     magister_profesional: "Magíster Profesional",
   };
-  var state = { me: null, indices: [], loaded: false };
+  var state = { loaded: false };
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
     return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c];
   }); }
-  function isEditor() { return state.me && (EDITOR.indexOf(state.me.role) !== -1 || state.me.tenantAdmin === true); }
   function fmtPct(p) { return (Math.round(p * 1000) / 10) + "%"; }
   function fmtHours(h) { return (Math.round(h * 10) / 10) + "h"; }
   function meetIcon(ok) { return ok ? '<span class="ok">✓</span>' : '<span class="bad">✗</span>'; }
@@ -68,47 +66,17 @@
     wrap.innerHTML = html + "</table>";
   }
 
-  function renderIndicesChecks() {
-    var html = "";
-    for (var i = 0; i < ALL_INDICES.length; i++) {
-      var src = ALL_INDICES[i];
-      var checked = state.indices.indexOf(src) !== -1 ? "checked" : "";
-      var disabled = isEditor() ? "" : "disabled";
-      html += '<label><input type="checkbox" data-src="' + esc(src) + '" ' + checked + " " + disabled + ">" + esc(src) + "</label>";
-    }
-    document.getElementById("oc-indices-checks").innerHTML = html;
-  }
-
-  function loadIndices() {
-    return fetch("/api/claustro?action=indices").then(function (r) { return r.json(); }).then(function (d) {
-      state.indices = (d && d.indices) || [];
-      renderIndicesChecks();
-    }).catch(function (e) { console.error("loadIndices failed", e); });
-  }
   function loadClaustro() {
     return fetch("/api/claustro?action=validate-all").then(function (r) { return r.json(); }).then(function (d) {
       renderProgramCards(d.programs || {});
       renderClaustroTable(d.claustro || []);
     }).catch(function (e) { console.error("loadClaustro failed", e); });
   }
-  function saveIndices() {
-    var checks = document.querySelectorAll('#oc-indices-checks input[type="checkbox"]');
-    var sel = [];
-    for (var i = 0; i < checks.length; i++) if (checks[i].checked) sel.push(checks[i].dataset.src);
-    fetch("/api/claustro?action=indices", {
-      method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ indices: sel }),
-    }).then(function (r) { return r.json(); }).then(function () { loadIndices().then(loadClaustro); });
-  }
 
   function loadClassification() {
     if (state.loaded) return;
     state.loaded = true;
-    fetch("/api/auth?action=me").then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
-      state.me = d;
-      document.getElementById("oc-save-indices").style.display = isEditor() ? "inline-block" : "none";
-      loadIndices().then(loadClaustro);
-    });
+    loadClaustro();
   }
 
   function switchTab(name) {
@@ -122,7 +90,6 @@
   function init() {
     document.getElementById("btn-org-organigrama").addEventListener("click", function () { switchTab("organigrama"); });
     document.getElementById("btn-org-claustro").addEventListener("click", function () { switchTab("claustro"); });
-    document.getElementById("oc-save-indices").addEventListener("click", saveIndices);
     if (window.location.hash === "#claustro") switchTab("claustro");
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
