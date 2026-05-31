@@ -129,15 +129,20 @@ export function useChartAnimation<State>(opts: ChartAnimationOpts<State>): Chart
     );
     const [easedChrome, setEasedChrome] = useState<ChartChrome>(chrome);
 
-    /* Helper: one setter that updates both layers atomically. Features
-     *  ride the same frame clock as data — when a tween fires, both
-     *  layers' primitives are recomputed from the current eased state.
-     *  Lockstep updates keep markers/trendlines glued to their bars
-     *  during enter/exit animations. */
+    /* Helper: updates the data layer for one frame. Feature overlays
+     *  (trendline/MA/threshold/markers/average) derive only from
+     *  `chart` + `layout` — never from the eased per-frame state — so
+     *  they're recomputed once per directive change in a dedicated
+     *  effect below, not on every rAF tick. */
     const applyFrame = (state: State) => {
         setPrimitives(family.primitives(state, layout, chart));
-        setFeaturePrimitives(featurePrimitivesFor(chart, layout));
     };
+
+    /* Feature primitives recompute only when the directive or layout
+     *  changes, not per animation frame — they take no eased state. */
+    useEffect(() => {
+        setFeaturePrimitives(featurePrimitivesFor(chart, layout));
+    }, [chart, layout]);
 
     useEffect(() => {
         const nextTarget = family.sample(chart, layout);

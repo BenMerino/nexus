@@ -22,7 +22,7 @@ export function LegibilityAlert({ chart }: { chart: GraphDirective }) {
     const stats = summarize(chart.data as GraphDataPoint[]);
     return (
         <BaseBox
-            pad="normal" surfaceRadius="sm"
+            pad="normal" radius="control"
             style={{
                 border: '1px solid var(--status-warning, #f59e0b)',
                 background: 'var(--bg-card)',

@@ -124,9 +124,13 @@ export const animatedArea: AnimatedFamily<AreaState> = {
          *  the eased state's yDomMin/yDomMax represent mid-tween. */
         const yS = linearScale([state.yDomMin, state.yDomMax], [state.plotYR[1], state.plotYR[0]]);
         const ys = state.vs.map(yS);
+        /* Baseline pixel (value 0). Clamps EXTRAPOLATED edge neighbors so a
+         * declining trailing/leading series can't project the area below
+         * zero past the last real bucket. */
+        const floorY = yS(0);
         const raw: { x: number; y: number }[] = [];
-        const leadProj = projectEdgePt(state.leadPt, yS, state.xs, ys, 'left');
-        const tailProj = projectEdgePt(state.tailPt, yS, state.xs, ys, 'right');
+        const leadProj = projectEdgePt(state.leadPt, yS, state.xs, ys, 'left', floorY);
+        const tailProj = projectEdgePt(state.tailPt, yS, state.xs, ys, 'right', floorY);
         if (leadProj) raw.push(leadProj);
         for (let i = 0; i < state.xs.length; i++) raw.push({ x: state.xs[i], y: ys[i] });
         if (tailProj) raw.push(tailProj);

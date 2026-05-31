@@ -64,7 +64,11 @@ function arcPath(p: Extract<Primitive, { kind: 'arc' }>): string {
     return `M ${c0x} ${c0y} A ${p.outerRadius} ${p.outerRadius} 0 ${large} 1 ${c1x} ${c1y} L ${i0x} ${i0y} A ${p.innerRadius} ${p.innerRadius} 0 ${large} 0 ${i1x} ${i1y} Z`;
 }
 
-export function ChartHitLayerInner({ primitives, onHover, onClick }: ChartHitLayerProps) {
+const CURSOR_POINTER: React.CSSProperties = { cursor: 'pointer' };
+const CURSOR_DEFAULT: React.CSSProperties = {};
+
+export const ChartHitLayerInner = React.memo(function ChartHitLayerInner({ primitives, onHover, onClick }: ChartHitLayerProps) {
+    const cursorStyle = onClick ? CURSOR_POINTER : CURSOR_DEFAULT;
     return (
         <>
             {primitives.map((p, i) => {
@@ -72,7 +76,7 @@ export function ChartHitLayerInner({ primitives, onHover, onClick }: ChartHitLay
                 const handlers = {
                     onMouseEnter: onHover ? (e: React.MouseEvent<SVGElement>) => onHover(p.data, p, e) : undefined,
                     onClick: onClick ? (e: React.MouseEvent<SVGElement>) => onClick(p.data, p, e) : undefined,
-                    style: { cursor: onClick ? 'pointer' : undefined } as React.CSSProperties,
+                    style: cursorStyle,
                 };
                 if (p.kind === 'polygon') {
                     const pts = p.points.map(pt => `${pt.x},${pt.y}`).join(' ');
@@ -110,4 +114,4 @@ export function ChartHitLayerInner({ primitives, onHover, onClick }: ChartHitLay
             })}
         </>
     );
-}
+});

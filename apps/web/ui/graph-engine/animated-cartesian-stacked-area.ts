@@ -167,6 +167,11 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
             if (l.weight < 0.01) continue;
             const topYs = l.topVs.map(yS);
             const baseYs = l.baseVs.map(yS);
+            /* Baseline pixel (value 0). Stacked cumulative values are all
+             * ≥0, so an extrapolated edge must never project below it —
+             * otherwise a declining trailing series dips the band negative
+             * past the last real bucket ("future goes negative"). */
+            const floorY = yS(0);
             const rawTops: { x: number; y: number }[] = [];
             const rawBases: { x: number; y: number }[] = [];
             const projectStackedEdge = (
@@ -176,10 +181,10 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
                 if (!pt.extrapolated && pt.topV !== undefined && pt.baseV !== undefined) {
                     return { top: yS(pt.topV), base: yS(pt.baseV) };
                 }
-                const top = extrapolateAtX(l.xs, topYs, side, pt.x);
-                const base = extrapolateAtX(l.xs, baseYs, side, pt.x);
-                if (top === undefined || base === undefined) return undefined;
-                return { top, base };
+                const topRaw = extrapolateAtX(l.xs, topYs, side, pt.x);
+                const baseRaw = extrapolateAtX(l.xs, baseYs, side, pt.x);
+                if (topRaw === undefined || baseRaw === undefined) return undefined;
+                return { top: Math.min(topRaw, floorY), base: Math.min(baseRaw, floorY) };
             };
             const leadProj = projectStackedEdge(l.leadPt, 'left');
             const tailProj = projectStackedEdge(l.tailPt, 'right');

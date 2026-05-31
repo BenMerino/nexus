@@ -19,7 +19,7 @@
  * polygon/polyline/circle/arc-path; rect-bbox for rects).
  */
 
-import React, { useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import type { Primitive } from './chart-primitive.types.js';
 import { ChartCanvasStack } from './ChartCanvasStack.js';
@@ -149,7 +149,8 @@ export function ChartRender({ chart, width, height, axesOverride, onBucketClick,
         return rect.height / layoutSize.h;
     })();
 
-    const handleHover = (data: unknown, _p: Primitive, e: React.MouseEvent<SVGElement>) => {
+    /* Stable so the memoized hit layer doesn't rebuild every mark on each tooltip mousemove. */
+    const handleHover = useCallback((data: unknown, _p: Primitive, e: React.MouseEvent<SVGElement>) => {
         const target = e.currentTarget as SVGGraphicsElement;
         const rect = hitSvgRef.current?.getBoundingClientRect();
         if (!rect || !target.getBBox) return;
@@ -160,9 +161,9 @@ export function ChartRender({ chart, width, height, axesOverride, onBucketClick,
         const sy = rect.height / layoutSize.h;
         const tipState = tipStateFromHover(chart, data, cx, cy, sx, sy);
         if (tipState) show(tipState);
-    };
+    }, [chart, layoutSize.w, layoutSize.h, show]);
 
-    const handleClick = (data: unknown) => {
+    const handleClick = useCallback((data: unknown) => {
         const d = data as { idx?: number; label?: string; series?: string; row?: string; col?: string; startKey?: number; endKey?: number };
         /* Series-isolate: pie/donut wedges and radar/polygon series fire
          * onToggleSeries with the legend key (label for pie, series name
@@ -186,7 +187,7 @@ export function ChartRender({ chart, width, height, axesOverride, onBucketClick,
         if (onBucketClick && typeof d?.idx === 'number' && typeof d?.label === 'string') {
             onBucketClick(d.idx, d.label);
         }
-    };
+    }, [onToggleSeries, onBucketClick, chart.type]);
     const clickHandler = (onBucketClick || onToggleSeries) ? handleClick : undefined;
 
     /* Stable hover ref — keyed on coords so downstream memos don't churn. */

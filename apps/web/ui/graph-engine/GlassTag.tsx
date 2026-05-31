@@ -34,7 +34,7 @@ export interface GlassTagProps extends Omit<React.HTMLAttributes<HTMLDivElement>
 export function GlassTag({ shadow = 'lg', borderColor, style, children, ...rest }: GlassTagProps) {
     return (
         <BaseBox
-            px="3" py="2" surfaceRadius="sm" shadow={shadow}
+            px="3" py="2" radius="control" shadow={shadow}
             style={{
                 background: 'var(--glass-bg, var(--bg-card))',
                 backdropFilter: 'blur(12px)',

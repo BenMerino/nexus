@@ -88,17 +88,28 @@ export function makeEdgePt(
 }
 
 /** Resolve an edge-neighbor to pixel-space (x, y) given the currently-
- *  eased yS and the visible curve's xs/ys (for extrapolation fallback). */
+ *  eased yS and the visible curve's xs/ys (for extrapolation fallback).
+ *
+ *  `floorY` (optional) is the pixel row of the value floor — for AREA
+ *  families this is `yS(0)`, the band's baseline. When given, an
+ *  EXTRAPOLATED edge is clamped so it can never project BELOW the floor
+ *  (larger pixel-y = lower value, so we cap y at floorY). Without this,
+ *  a declining trailing series linearly extrapolates past zero and the
+ *  area renders a negative dip beyond the last real bucket — the "future
+ *  goes negative" artifact. Real (non-extrapolated) neighbors carry a
+ *  true value and are never clamped; line families pass no floor so they
+ *  keep legitimate sub-zero values. */
 export function projectEdgePt(
     pt: EdgePtState | undefined,
     yS: (v: number) => number,
     visibleXs: number[],
     visibleYs: number[],
     side: 'left' | 'right',
+    floorY?: number,
 ): { x: number; y: number } | undefined {
     if (!pt) return undefined;
     if (!pt.extrapolated && pt.v !== undefined) return { x: pt.x, y: yS(pt.v) };
     const y = extrapolateAtX(visibleXs, visibleYs, side, pt.x);
     if (y === undefined) return undefined;
-    return { x: pt.x, y };
+    return { x: pt.x, y: floorY === undefined ? y : Math.min(y, floorY) };
 }

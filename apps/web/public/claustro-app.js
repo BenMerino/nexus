@@ -122,9 +122,11 @@
   window.claustroProgramLabel = function (k) { return PROGRAM_LABELS[k] || k; };
   window.claustroEsc = esc;
   window.claustroState = state;
-  // Wait for full load (not just DOMContentLoaded). Under some network/HTTP2
-  // conditions the body wasn't fully in the DOM when fetches resolved, leading
-  // to getElementById('program-cards') returning null mid-render.
-  if (document.readyState === "complete") init();
-  else window.addEventListener("load", init);
+  // This is a deferred ES module, so it runs only after the DOM is fully
+  // parsed — every element init() touches already exists. Don't gate on
+  // window.load: that waits for all sub-resources (fonts, preloaded chunks),
+  // which on a cold first visit delays the data fetch until the page looks
+  // broken and the user reloads. DOMContentLoaded / immediate is correct.
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 })();
