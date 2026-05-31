@@ -14,7 +14,6 @@ import { lerpNumber, type AnimatedFamily } from './animated-family.js';
 import {
     BAR_TOP_RADIUS_PX,
     BAR_RADIUS_REVEAL_PX,
-    BAR_GRADIENT,
     PER_BAR_START_SPREAD,
     perBarAlpha,
 } from './animated-cartesian-shared.js';
@@ -192,67 +191,35 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
     },
     primitives(state) {
         const segs = state.segments;
-        /* Two per-segment derived quantities, both walked back-to-front
-         * once per bucket:
-         *   coverAbove[k]   — height of segments above segment k in its
-         *                     bucket (used for top-corner radius reveal).
-         *   bucketHeight[k] — total stack height for segment k's bucket
-         *                     (used to derive a UNIFORM bar-wide alpha
-         *                     gradient: each segment publishes a SLICE
-         *                     of one bar-tall gradient, so adjacent
-         *                     segments line up into one continuous fade
-         *                     instead of N independent ribbons). */
+        /* coverAbove[k] — height of segments above segment k in its
+         *  bucket. Drives the top-corner radius reveal: a segment only
+         *  rounds its top once the segment above has shrunk to within
+         *  `BAR_RADIUS_REVEAL_PX`. Walked back-to-front, per bucket. */
         const coverAbove = new Array<number>(segs.length);
-        const bucketHeight = new Array<number>(segs.length);
         let i = segs.length - 1;
         while (i >= 0) {
             const bucket = segs[i].bucketIdx;
-            /* First pass for this bucket: total height (accumulate from
-             * the bottom segment upward). */
-            let total = 0;
             let j = i;
-            while (j >= 0 && segs[j].bucketIdx === bucket) {
-                total += segs[j].h;
-                j--;
-            }
-            /* Second pass: write coverAbove (from the top segment, the
-             * highest j of this bucket, downward) and bucketHeight. */
+            while (j >= 0 && segs[j].bucketIdx === bucket) j--;
             let acc = 0;
             let k = i;
             while (k >= 0 && segs[k].bucketIdx === bucket) {
                 coverAbove[k] = acc;
-                bucketHeight[k] = total;
                 acc += segs[k].h;
                 k--;
             }
             i = j;
         }
-        /* Constants from the shared bar gradient — every bar shares the
-         * SAME top-to-bottom alpha falloff, so segments at the same
-         * relative position inside their bar paint at the same alpha
-         * regardless of which series they belong to. */
-        const G_TOP = BAR_GRADIENT.topOpacity;
-        const G_BOT = BAR_GRADIENT.bottomOpacity;
         const out: ReturnType<AnimatedFamily<StackedBarState>['primitives']> = [];
         for (let kk = 0; kk < segs.length; kk++) {
             const s = segs[kk];
             if (s.w <= 0 || s.h <= 0) continue;
             const topFactor = Math.max(0, Math.min(1, 1 - coverAbove[kk] / BAR_RADIUS_REVEAL_PX));
-            /* Segment's vertical range within its bar, [0,1] from top.
-             * Linearly interpolate the bar-wide gradient at the segment's
-             * top and bottom — these become the segment's own gradient
-             * stops so the SVG paints a sliver of the bar-tall fade. */
-            const H = bucketHeight[kk] || 1;
-            const topPos = coverAbove[kk] / H;
-            const botPos = (coverAbove[kk] + s.h) / H;
-            const topA = G_TOP + topPos * (G_BOT - G_TOP);
-            const botA = G_TOP + botPos * (G_BOT - G_TOP);
             out.push({
                 kind: 'rect' as const,
                 x: s.x, y: s.y, w: s.w, h: s.h,
                 color: s.color, data: s.hit,
                 radiusTop: BAR_TOP_RADIUS_PX * topFactor,
-                gradient: { topOpacity: topA, bottomOpacity: botA },
             });
         }
         return out;

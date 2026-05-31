@@ -7,7 +7,7 @@
 import type { BarItem, BarState } from './animated-cartesian.js';
 import type { Primitive } from './chart-primitive.types.js';
 import type { DatumStatus } from '../../architect/fold-atoms.js';
-import { BAR_TOP_RADIUS_PX, BAR_GRADIENT } from './animated-cartesian-shared.js';
+import { BAR_TOP_RADIUS_PX } from './animated-cartesian-shared.js';
 import { statusStyle } from './datum-status-style.js';
 
 /** Topological fusion: at every frame, polygons that touch or overlap
@@ -24,7 +24,6 @@ import { statusStyle } from './datum-status-style.js';
  *  by neighbor gaps between CLUSTERS, not between source bars within
  *  them. */
 export function barPrimitives(state: BarState): Primitive[] {
-    const gradient = BAR_GRADIENT;
     const R = BAR_TOP_RADIUS_PX;
     const visible = state.bars.filter(b => b.w > 0 && b.h > 0);
     const ordered = [...visible].sort((a, b) => a.x - b.x);
@@ -49,7 +48,6 @@ export function barPrimitives(state: BarState): Primitive[] {
             x: c.x, y: c.y, w: c.right - c.x, h: c.h,
             color: c.color, data: c.hit,
             radiusTL, radiusTR,
-            gradient,
             ...(rect ? { opacity: rect.opacity } : {}),
         };
     });

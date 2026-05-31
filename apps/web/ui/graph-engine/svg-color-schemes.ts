@@ -34,7 +34,14 @@ export const RAMPS = {
 } as const;
 export type RampName = keyof typeof RAMPS;
 
-const INFO_G: ColorScheme = { sentiment: 'neutral', primary: 'var(--status-info)', fill: 'var(--status-info)', gradient: ['var(--chart-7)', 'var(--chart-5)'] };
+/* Default single-series scheme for bar/line/area. `primary`/`fill` resolve
+ * from the CHART palette (`--chart-0`), NOT `--status-info`. Charts must not
+ * borrow the semantic-status palette: status colors carry UI meaning
+ * (success/error/info) and are tuned for badges/alerts, so a chart
+ * inheriting one couples chart appearance to an unrelated token — which is
+ * exactly how the dark-mode washout leaked in. Sourcing from `--chart-0`
+ * keeps every chart governed by the chart palette's light/dark formula. */
+const INFO_G: ColorScheme = { sentiment: 'neutral', primary: 'var(--chart-0)', fill: 'var(--chart-0)', gradient: ['var(--chart-7)', 'var(--chart-5)'] };
 const OK: ColorScheme = { sentiment: 'positive', primary: 'var(--status-success)', fill: 'var(--status-success)' };
 const N = (): ColorScheme => ({ sentiment: 'neutral', primary: SERIES_PALETTE[0], fill: SERIES_PALETTE[0] });
 

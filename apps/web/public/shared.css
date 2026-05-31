@@ -36,6 +36,7 @@
      Referenced by ui/graph-engine/svg-color-schemes.ts; without these every
      chart fill resolves to an undefined var and renders transparent (white).
      This block is the dark theme — higher lightness so series read on dark bg. */
+  --chart-0: oklch(0.70 0.13 250);  /* blue — default single-series (bar/line/area) */
   --chart-1: oklch(0.78 0.14 70);   /* orange  */
   --chart-2: oklch(0.70 0.13 250);  /* azure   */
   --chart-3: oklch(0.78 0.14 145);  /* green   */
@@ -125,6 +126,7 @@
   --err:        oklch(0.55 0.20 25);
 
   /* Chart palette — light theme: lower lightness so series read on white. */
+  --chart-0: oklch(0.52 0.14 250);  /* blue — default single-series (bar/line/area) */
   --chart-1: oklch(0.62 0.14 70);   /* orange  */
   --chart-2: oklch(0.52 0.14 250);  /* azure   */
   --chart-3: oklch(0.56 0.14 145);  /* green   */

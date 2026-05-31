@@ -3,8 +3,8 @@
  * simple-bar (`animated-cartesian.ts`) and stacked-bar
  * (`animated-cartesian-stacked.ts`) families. Extracted so each family
  * file stays focused on its own sample/lerp/primitives and the visual
- * vocabulary (corner radius, gradient, per-bar staggering) is defined
- * in exactly one place.
+ * vocabulary (corner radius, per-bar staggering) is defined in exactly
+ * one place.
  */
 
 import { easeOutCubic } from '../primitives/tween.js';
@@ -18,12 +18,6 @@ import { easeOutCubic } from '../primitives/tween.js';
  *  gone (sub-pixel) instead of growing in alongside it. */
 export const BAR_TOP_RADIUS_PX = 6;
 export const BAR_RADIUS_REVEAL_PX = 1;
-
-/** Vertical alpha gradient applied to every bar / stacked-bar segment.
- *  Same semantics as `AreaBandPrimitive.gradient` — fully opaque at the
- *  mark's top edge, fading toward the axis baseline so bars and area
- *  fills share the same visual language. */
-export const BAR_GRADIENT = { topOpacity: 1, bottomOpacity: 0.15 } as const;
 
 /** How much of the total animation duration each entering/exiting bar
  *  occupies. `GROW_SPAN = 0.6` means each bar's appearance/disappearance
