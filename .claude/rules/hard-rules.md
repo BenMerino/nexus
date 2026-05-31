@@ -31,4 +31,4 @@ All user-facing UI is **English**. Exempt: proper nouns (Fondecyt, CORFO, CNA, A
 After a task, commit and push `main` (Railway auto-deploys both services). Ask before destructive git ops (force push, `reset --hard`, branch deletion).
 
 ## On-demand subsystem guides
-Read from `.claude/rules/` when touching the area (not auto-loaded): *(Phase 2 — to be added)* `scope-model.md`, `db-layer.md`, `design-dna.md`, `theme.md`, `claustro-feature.md`. Doctrine: `docs/PHILOSOPHY.md`, `docs/ANTI_PATTERNS.md` *(Phase 2)*, `docs/HEURISTICS.md`.
+Read from `.claude/rules/` when touching the area (not auto-loaded): `scope-model.md`, `db-layer.md`, `design-dna.md`, `theme.md`, `claustro-feature.md`. Doctrine: `docs/PHILOSOPHY.md`, `docs/ANTI_PATTERNS.md`, `docs/HEURISTICS.md`. *(Enforcement — `scripts/arch-audit.sh` for N1–N4 — is Phase 3, not yet built.)*

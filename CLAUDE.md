@@ -9,28 +9,28 @@ Nexus's doctrine lives **in-repo** (a Zincro-style memory system, Phase 1):
 - **Invariants `N1–N7`** — `.claude/rules/hard-rules.md` (`@`-included below, always loaded): scope guard, live-tree, token styling, data-layer isolation, file size, theme/FOUC, English-only.
 - **Philosophy** — `docs/PHILOSOPHY.md` (5 tenets + voice).
 - **Heuristics** — `docs/HEURISTICS.md` (`H-NNN` gotchas: per-ISSN tags, OpenAlex flags, FOUC, scope divergence…).
-
-> ⚠️ **The "Commands" and "Architecture" sections below are STALE.** They describe the dead pre-monorepo Vercel tree (`vercel dev`, `node build.js`, root `api/`/`lib/`/`public/`, "three tables"). The **live** tree is `apps/api/` (Express on Railway) + `apps/web/` (Vite). See **N2**. Full rewrite pending (memory-system Phase 2).
+- **Anti-patterns** — `docs/ANTI_PATTERNS.md` (the never-do list).
+- **Subsystem guides** (on-demand, not auto-loaded — read when touching the area): `ls .claude/rules/` — `scope-model`, `db-layer`, `design-dna`, `theme`, `claustro-feature`.
 
 @.claude/rules/hard-rules.md
 
 ## Commands
 
-- **Dev server:** `vercel dev` (or `npm run dev`)
-- **Build:** `node build.js` (bundles React entries via esbuild)
+- **Dev:** `npm run dev:web` (Vite frontend, port 9000) · `npm run dev:api` (Express API, :3000)
+- **Build web:** `npm run build:web` (Vite → `apps/web/dist`) · **Start API:** `npm run start:api`
 - **No test suite configured.**
 
 ## Architecture
 
-Nexus is a DOI metadata aggregator and multi-tenant CRIS for universities. Users submit DOIs (or bulk-import by institution ROR); the system fetches metadata from four scholarly APIs (CrossRef, OpenAlex, Semantic Scholar, DataCite), normalizes/merges, stores in Neon PostgreSQL, and renders interactive graph + chart views.
+Nexus is a DOI metadata aggregator and multi-tenant CRIS for universities. Users submit DOIs (or bulk-import an institution by ROR); the system fetches metadata from four scholarly APIs (CrossRef, OpenAlex, Semantic Scholar, DataCite), normalizes/merges, stores it scope-isolated in PostgreSQL, and renders graph + chart views. UTalca is the first tenant.
 
-**Backend:** Vercel serverless functions in `api/`. One file per route.
-**Database:** Neon PostgreSQL via `@vercel/postgres`. Schema + queries in `lib/db.js`. Three tables: `submissions`, `doi_records`, `tags`.
-**Frontend:** HTML pages in `public/` with React bundles built by `build.js`. Six bundles: `charts`, `relationships`, `dashboard`, `tenant`, `shell-mount`, `collaborators`.
-**Graph engine:** `graph-engine/` holds shared D3 visualization modules (rendering, force sim, color scales, legends, drag).
+**Monorepo (npm workspaces).** The live, deployed tree is two apps; root `api/`, `lib/`, `public/`, `legacy/` are **dead pre-monorepo leftovers — never edit** (invariant N2).
 
-For cross-cutting invariants (scope model, role hierarchy, auth flow, HTML→bundle map), see [ARCHITECTURE.md](ARCHITECTURE.md).
-For data pipeline details, see [lib/README.md](lib/README.md).
+- **Backend — `apps/api/`** (Express on Railway). `index.js` auto-mounts each `handlers/*.js` (Vercel-shaped `(req,res)=>…`) at `/api/<name>`. Postgres via `pg` Pool + the local `src/lib/sql.js` wrapper (not `@vercel/postgres`). Shared libs in `src/lib/` (`db*.js`, `scope.js`, `auth.js`, `claustro.js`…). Migrations in `src/db/migrations/NNN_*.sql`, applied on boot by `runMigrations()`. See `.claude/rules/db-layer.md`, `scope-model.md`.
+- **Frontend — `apps/web/`** (Vite). HTML pages + JS/TSX in `public/`; build → `dist/`, served by **Caddy** (static + SPA fallback; Express serves only `/api`, see `Caddyfile`). Design tokens in `public/dna.css` (scales) + `public/shared.css` (palette). See `.claude/rules/design-dna.md`, `theme.md`.
+- **Database** — PostgreSQL (Railway). Core tables: `doi_records`, `tags`, `submissions`, `users`, `tenants`, `theme_tokens`, `projects`. All tenant-scoped via `tenant_id`; every read passes through `requireScope` (N1).
+
+⚠️ `ARCHITECTURE.md` and `lib/README.md` still cite the old root `lib/`/`api/` paths — the **concepts** (scope model, roles, auth flow) are accurate, the **paths** are stale; trust `.claude/rules/scope-model.md` for current paths.
 
 ## Project Rules
 
@@ -42,4 +42,4 @@ For data pipeline details, see [lib/README.md](lib/README.md).
 
 ### Deploy policy
 
-After every task, commit and push to `main`. Vercel auto-deploys from `main`. Do not ask first. Still ask before destructive git ops (force push, reset --hard, branch deletion).
+After every task, commit and push to `main`. **Railway** auto-deploys both services from `main` — `Nexus` (API) and `Nexus-Web` (Caddy static). `dist/` is gitignored; Railway builds the web app from source. Do not ask first. Still ask before destructive git ops (force push, reset --hard, branch deletion).
