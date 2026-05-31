@@ -1,4 +1,6 @@
 import React from 'react';
+import { GraphRender } from '../ui/graph-engine/index';
+import type { GraphDirective } from '../architect/graph-composer.types';
 import { Tag, SectionHead, Ico } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders';
 import { TYPE_DISPLAY_LABELS } from './type-labels';
@@ -13,23 +15,23 @@ export function yearlyCounts(data: DashboardData): { year: string; count: number
   return [...byYear.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-6).map(([year, count]) => ({ year, count }));
 }
 
+// Publications per year — a genuine bar chart, now rendered by graph-engine.
+export function buildYearlyBarChart(rows: { year: string; count: number }[], title: string): GraphDirective {
+  return {
+    type: 'bar',
+    title,
+    xLabel: 'Year',
+    yLabel: 'Publications',
+    valueLabels: true,
+    data: rows.map(r => ({ label: r.year, value: r.count })) as any,
+  };
+}
+
 export function BarChart({ rows, title }: { rows: { year: string; count: number }[]; title: string }) {
-  const max = Math.max(...rows.map(r => r.count), 1);
   return (
     <section className="card card-chart">
       <SectionHead eyebrow="Output" title={title} right={<Tag mono tone="muted">{rows[0]?.year}–{rows[rows.length - 1]?.year}</Tag>} />
-      <div className="bar-chart">
-        {rows.map(r => (
-          <div key={r.year} className="bar-col">
-            <div className="bar-wrap">
-              <div className="bar" style={{ height: `${(r.count / max) * 100}%` }}>
-                <span className="bar-val">{r.count}</span>
-              </div>
-            </div>
-            <div className="bar-label">{r.year}</div>
-          </div>
-        ))}
-      </div>
+      <GraphRender chart={buildYearlyBarChart(rows, title)} />
     </section>
   );
 }
