@@ -17,6 +17,8 @@ import {
 } from '../../architect/fold-atoms.js';
 import { foldByCalendarGrid, pickAutoUnitPair } from '../../architect/fold-atoms-grid.js';
 import { placeAtoms, bucketTops } from '../../architect/place-atoms.js';
+import { bucketSequence } from '../../architect/bucket-sequence.js';
+import { formatLabel } from '../../architect/fold-atoms-calendar.js';
 import type { GraphDirective, ChartData, GraphQuery } from '../../architect/graph-composer.types.js';
 import { maxLookbackForDirective } from './graph-features/index.js';
 
@@ -92,32 +94,11 @@ export function resolveAtomicDirective(
      *  the plot as the slider drags. */
     const winSpan = (windowEndKey - windowStartKey) || 1;
     const overlapping = buckets.filter(b => b.endKey >= windowStartKey && b.startKey <= windowEndKey);
-    const data = overlapping.map((b, i) => {
-        const rawStart = (b.startKey - windowStartKey) / winSpan;
-        const rawEnd = (b.endKey + 1 - windowStartKey) / winSpan;
-        const xStart = Math.max(0, Math.min(1, rawStart));
-        const xEnd = Math.max(0, Math.min(1, rawEnd));
-        const isFirst = i === 0;
-        const isLast = i === overlapping.length - 1;
-        const xCenter = isFirst ? xStart
-            : isLast ? xEnd
-            : (xStart + xEnd) / 2;
-        const out: Record<string, unknown> = {
-            label: b.label,
-            value: b.value,
-            __x: xCenter,
-            __xStart: xStart,
-            __xEnd: xEnd,
-            __startISO: b.startISO,
-            __endISO: b.endISO,
-            /* Folded semantic status + presence — bar/curve families read
-             *  these for status→style (dash/marker/rect) and gaps. */
-            __status: b.status,
-            __defined: b.defined,
-        };
-        for (const s of (chart.series ?? [])) out[s] = b[s];
-        return out;
-    }) as ChartData;
+    /* `chart.data` is built BELOW from the canonical `bucketSequence`
+     *  (after placements), NOT from `overlapping` — so chrome, bars, and
+     *  curves all read ONE empties-included, index-aligned sequence.
+     *  `overlapping` is still used here to clip atoms + drive edge
+     *  neighbors. */
     /* Bucket-clip atoms: include EVERY atom belonging to any bucket
      *  that overlaps the window, even if that atom's own key sits
      *  outside the window. This makes edge buckets render at their
@@ -147,6 +128,41 @@ export function resolveAtomicDirective(
         windowStartKey, windowEndKey,
         anchorISO,
     });
+    /* THE canonical bucket sequence — one empties-included, index-stable
+     *  list that drives chrome (`data`), bars, AND curves. Replaces the
+     *  former split between `foldByCalendar`→data and
+     *  `bucketAggregates`→geometry. Built from the SAME placements the
+     *  curve families read, so marks and axis labels can't desync. */
+    const seq = bucketSequence(windowedAtoms, placements, {
+        foldUnit: resolvedUnit,
+        windowStartKey, windowEndKey,
+        anchorISO: anchorISO ?? '',
+        seriesKeys: chart.series ?? [],
+    });
+    /* Build `data` from `seq`: clamp x to [0,1] for rendering and apply
+     *  the edge-anchoring (first→xStart, last→xEnd) so a partially-
+     *  clipped edge bucket's center doesn't slide during drag. */
+    const data = seq.map((b, i) => {
+        const xStart = Math.max(0, Math.min(1, b.xStart));
+        const xEnd = Math.max(0, Math.min(1, b.xEnd));
+        const xCenter = i === 0 ? xStart
+            : i === seq.length - 1 ? xEnd
+            : (xStart + xEnd) / 2;
+        const out: Record<string, unknown> = {
+            label: formatLabel(new Date(`${b.startISO}T00:00:00Z`), resolvedUnit),
+            value: b.value,
+            __x: xCenter,
+            __xStart: xStart,
+            __xEnd: xEnd,
+            __startISO: b.startISO,
+            __endISO: b.endISO,
+            __bucketKey: b.bucketKey,
+            __status: b.status,
+            __defined: b.defined,
+        };
+        for (const s of (chart.series ?? [])) out[s] = b.seriesValues[s] ?? 0;
+        return out;
+    }) as ChartData;
     /* Y-domain max: tallest per-bucket sum at this fold. Stacked families
      *  (stacked-bar, stacked-area) reach Σ_series per bucket, so we pass
      *  the series list to `bucketTops`. Non-stacked families read
@@ -260,6 +276,7 @@ export function resolveAtomicDirective(
         colorClip,
         __foldUnit: resolvedUnit,
         __placements: placements,
+        __buckets: seq,
         __yMax: yMax,
         __priorBuckets: priorBuckets,
         __edgeNeighbors: (edgeNeighbors.left || edgeNeighbors.right) ? edgeNeighbors : undefined,

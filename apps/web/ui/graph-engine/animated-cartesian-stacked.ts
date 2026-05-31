@@ -11,7 +11,6 @@
 import { cs, seriesColorFor, weightOf } from './svg-parts.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import { lerpNumber, type AnimatedFamily } from './animated-family.js';
-import { bucketAggregates } from '../../architect/place-atoms.js';
 import {
     BAR_TOP_RADIUS_PX,
     BAR_RADIUS_REVEAL_PX,
@@ -45,12 +44,13 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
         const series = chart.series || [];
         const c = cs(chart);
         const segments: StackedBarSegment[] = [];
-        if (chart.atoms && chart.__placements && chart.atoms.length === chart.__placements.length) {
+        if (chart.__buckets && chart.__buckets.length > 0) {
             /* Atomic-flow path: one bucket per fold-aggregated calendar
-             *  envelope, M segments per bucket (one per series). The
-             *  envelope's `(xStart, xEnd)` is the bar's full width;
-             *  segments stack y-wise inside it. */
-            const aggs = bucketAggregates(chart.atoms, chart.__placements, series);
+             *  envelope (the canonical empties-included sequence), M
+             *  segments per bucket (one per series). The envelope's
+             *  `(xStart, xEnd)` is the bar's full width; segments stack
+             *  y-wise inside it. */
+            const aggs = chart.__buckets;
             const plotW = layout.xR[1] - layout.xR[0];
             const aggsCount = aggs.length;
             for (let i = 0; i < aggsCount; i++) {

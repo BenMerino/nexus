@@ -15,7 +15,6 @@ import { cs } from './svg-parts.js';
 import type { Primitive } from './chart-primitive.types.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import { lerpNumber, lerpNumberArray, type AnimatedFamily } from './animated-family.js';
-import { bucketAggregates } from '../../architect/place-atoms.js';
 import type { DatumStatus } from '../../architect/fold-atoms.js';
 import { appendHoverRails } from './animated-curves-rails.js';
 import { linearScale } from './scales.js';
@@ -60,8 +59,8 @@ export const animatedLine: AnimatedFamily<LineState> = {
         const layout = layoutRaw as CartesianLayout;
         const c = cs(chart);
         const en = chart.__edgeNeighbors;
-        if (chart.atoms && chart.__placements && chart.atoms.length === chart.__placements.length) {
-            const aggs = bucketAggregates(chart.atoms, chart.__placements);
+        if (chart.__buckets && chart.__buckets.length > 0) {
+            const aggs = chart.__buckets;
             const plotW = layout.xR[1] - layout.xR[0];
             const toPx = (xNorm: number) => layout.xR[0] + xNorm * plotW;
             return {

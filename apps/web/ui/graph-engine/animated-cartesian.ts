@@ -24,9 +24,13 @@ export interface BarItem {
     /** Bucket's exclusive end ISO; used by the non-atomic fallback
      *  path for iso-containment matching. */
     isoEnd: string;
-    /** Atom key (hours-since-anchor) for stable atomic identity; `null`
-     *  for legacy non-atomic charts. */
-    atomKey: number | null;
+    /** Stable bucket identity for prev↔target animation matching —
+     *  the canonical `bucketKey` from the bucket sequence (e.g.
+     *  `day-2026-05-04`). Defined for EVERY visible bucket including
+     *  empties (an empty bucket has no atom, so a numeric atom key never
+     *  could identify it). `''` for legacy non-atomic charts → matching
+     *  falls through to the iso-containment path. */
+    bucketKey: string;
     /** Bucket's semantic status — drives the bar's fill treatment
      *  (projected/estimated → reduced opacity). A bar can't dash, so
      *  status shows as a rect treatment, not a stroke pattern. */
@@ -44,16 +48,14 @@ export const animatedBar: AnimatedFamily<BarState> = {
         const layout = layoutRaw as CartesianLayout;
         const c = cs(chart);
         const bars: BarItem[] = [];
-        /* Envelope-bar rendering: one rect per fold-bucket, height = Σ
-         *  atom.value in that bucket. `chart.data[]` is already built by
-         *  `GraphRender` from `foldByCalendar` over the windowed atoms —
-         *  carries `__startISO`/`__endISO` (calendar identity) and
-         *  `value` (bucket sum). The bar family reads it directly so it
-         *  never gets out of sync with the chrome's view of buckets. */
+        /* One bar per bucket in the canonical sequence (`chart.data`,
+         *  built by `resolveAtomicDirective` from `bucketSequence` — so
+         *  it includes empty buckets and carries `__bucketKey`). Reading
+         *  it keeps bars perfectly aligned with chrome + curves, which
+         *  read the same sequence. Each bar carries `__bucketKey` as its
+         *  animation identity, reviving `barLerp`'s bucket matching. */
         const data = chart.data as any[];
         const baseY = layout.yR[1];
-        /* Resolve per-bucket status once (folded status on the bucket +
-         *  any directive statusOverrides), keyed by bucket start ISO. */
         const statuses = resolveStatuses(
             data.map((d) => (d.__status as DatumStatus) ?? (d.status as DatumStatus) ?? 'observed'),
             chart.statusOverrides,
@@ -73,7 +75,7 @@ export const animatedBar: AnimatedFamily<BarState> = {
                 hit: { idx: i, label: layout.labels[i], value },
                 iso: typeof d.__startISO === 'string' ? d.__startISO : '',
                 isoEnd: typeof d.__endISO === 'string' ? d.__endISO : '',
-                atomKey: null,
+                bucketKey: typeof d.__bucketKey === 'string' ? d.__bucketKey : '',
                 status: statuses[i],
                 enteredAt: null,
                 exitingAt: null,

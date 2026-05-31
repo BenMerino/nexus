@@ -230,6 +230,10 @@ export interface BucketAggregate {
     /** Bucket's start ISO date (from the first contributing atom).
      *  Empty when atoms lack iso. */
     startISO: string;
+    /** Bucket's exclusive end ISO (calendar-unit boundary). Empty when
+     *  unknown. Populated by `bucketSequence` (needed by the bar MERGE
+     *  path's `isoEnd`); `bucketAggregates` leaves it empty. */
+    endISO?: string;
     /** Folded semantic status — `mergeStatus` across the bucket's atoms
      *  (any projected ⇒ projected). Drives status→style at render. */
     status: DatumStatus;

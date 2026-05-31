@@ -10,7 +10,6 @@ import type { Primitive } from './chart-primitive.types.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import { lerpNumber, lerpNumberArray, type AnimatedFamily } from './animated-family.js';
 import { smoothPoints } from './curve-sampling.js';
-import { bucketAggregates } from '../../architect/place-atoms.js';
 import { appendHoverRails } from './animated-curves-rails.js';
 import { extrapolateAtX, clipPolylineX } from './curve-edge-neighbors.js';
 import { linearScale } from './scales.js';
@@ -49,8 +48,8 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
         const rightReal = en?.right && !en.right.isExtrapolated ? en.right : null;
         const leftExt = en?.left && en.left.isExtrapolated ? en.left : null;
         const rightExt = en?.right && en.right.isExtrapolated ? en.right : null;
-        if (chart.atoms && chart.__placements && chart.atoms.length === chart.__placements.length) {
-            const aggs = bucketAggregates(chart.atoms, chart.__placements, series);
+        if (chart.__buckets && chart.__buckets.length > 0) {
+            const aggs = chart.__buckets;
             const plotW = layout.xR[1] - layout.xR[0];
             const toPx = (xNorm: number) => layout.xR[0] + xNorm * plotW;
             const xs = aggs.map(b => toPx(b.xCenter));

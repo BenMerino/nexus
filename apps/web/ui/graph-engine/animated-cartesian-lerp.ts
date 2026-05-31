@@ -25,25 +25,27 @@ export function barLerp(
     const n = target.bars.length;
     const { alphaX, alphaY } = phase;
     const now = performance.now();
-    /* Match prev↔target bars by ATOM IDENTITY (atomKey) when both
-     *  sides are atomic. Same atom = same key across folds, windows,
-     *  and slider positions. The per-atom matching produces zero
-     *  enter/exit events for fold changes (atoms are conserved
-     *  across folds). Legacy non-atomic bars fall through to
-     *  `pairBarsForFold`'s iso-containment match. */
+    /* Match prev↔target bars by BUCKET IDENTITY (bucketKey) first. A
+     *  bucket keeps its key across slider drags and within a fold, so
+     *  the same bucket is matched as PERSISTENT (no enter/exit) — the
+     *  smooth-slide path. bucketKey is fold-unit-scoped, so a fold
+     *  change (day→week) yields different keys → those targets fall
+     *  through to `pairBarsForFold`'s iso-containment, which handles
+     *  split/merge. Legacy non-atomic bars (bucketKey `''`) also fall
+     *  through. */
     const reshapedPrev: Array<BarItem | undefined> = new Array(n);
     const usedPrev = new Set<number>();
-    const prevByAtomKey = new Map<number, { item: BarItem; idx: number }>();
+    const prevByBucketKey = new Map<string, { item: BarItem; idx: number }>();
     for (let j = 0; j < prev.bars.length; j++) {
         const p = prev.bars[j];
-        if (p.atomKey != null) prevByAtomKey.set(p.atomKey, { item: p, idx: j });
+        if (p.bucketKey) prevByBucketKey.set(p.bucketKey, { item: p, idx: j });
     }
     const unmatchedTargets: number[] = [];
     for (let i = 0; i < n; i++) {
         const t = target.bars[i];
-        if (t.atomKey != null) {
-            const hit = prevByAtomKey.get(t.atomKey);
-            if (hit) {
+        if (t.bucketKey) {
+            const hit = prevByBucketKey.get(t.bucketKey);
+            if (hit && !usedPrev.has(hit.idx)) {
                 reshapedPrev[i] = hit.item;
                 usedPrev.add(hit.idx);
                 continue;
@@ -124,7 +126,7 @@ export function barLerp(
                     h: lerpNumber(0, t.h, a, dRef),
                     color: t.color, hit: t.hit,
                     iso: t.iso, isoEnd: t.isoEnd,
-                    atomKey: t.atomKey,
+                    bucketKey: t.bucketKey,
                     status: t.status,
                     enteredAt, exitingAt: null,
                 });
@@ -149,7 +151,7 @@ export function barLerp(
                     h: lerpNumber(startH, t.h, alphaY, dRef),
                     color: t.color, hit: t.hit,
                     iso: t.iso, isoEnd: t.isoEnd,
-                    atomKey: t.atomKey,
+                    bucketKey: t.bucketKey,
                     status: t.status,
                     enteredAt: null, exitingAt: null,
                 });
@@ -183,7 +185,7 @@ export function barLerp(
                 h: lerpNumber(0, t.h, a, dRef),
                 color: t.color, hit: t.hit,
                 iso: t.iso, isoEnd: t.isoEnd,
-                atomKey: t.atomKey,
+                bucketKey: t.bucketKey,
                 status: t.status,
                 enteredAt: enterClockA < 1 ? enteredAt : null,
                 exitingAt: null,
@@ -212,7 +214,7 @@ export function barLerp(
                 h: lerpNumber(p.h, t.h, alphaY, dRef),
                 color: t.color, hit: t.hit,
                 iso: t.iso, isoEnd: t.isoEnd,
-                atomKey: t.atomKey,
+                bucketKey: t.bucketKey,
                 status: t.status,
                 enteredAt: null, exitingAt: null,
             });
@@ -240,7 +242,7 @@ export function barLerp(
             h: lerpNumber(p.h, 0, a, dRef),
             color: p.color, hit: p.hit,
             iso: p.iso, isoEnd: p.isoEnd,
-            atomKey: p.atomKey,
+            bucketKey: p.bucketKey,
             status: p.status,
             enteredAt: null,
             exitingAt,

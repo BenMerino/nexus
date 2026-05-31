@@ -253,6 +253,12 @@ export interface GraphDirective extends ReplayableDirective<GraphQuery> {
      *  correct path) instead of pre-folded `data[]`. Indexed parallel
      *  to `chart.atoms`. */
     __placements?: ReadonlyArray<{ xStart: number; xEnd: number; yBase: number; bucketKey: string }>;
+    /** THE canonical bucket sequence for the visible window — one
+     *  empties-included, index-stable list (parallel to `data`) that
+     *  every cartesian family reads for geometry. Built once by
+     *  `resolveAtomicDirective` via `bucketSequence`, so chrome, bars,
+     *  and curves share the same buckets (no sparse-data desync). */
+    __buckets?: ReadonlyArray<import('./place-atoms.js').BucketAggregate>;
     /** Visible y-domain maximum derived from per-bucket stack-tops at
      *  the current fold. */
     __yMax?: number;
