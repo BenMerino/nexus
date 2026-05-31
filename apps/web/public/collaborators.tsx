@@ -19,7 +19,7 @@ function App() {
     <div className="view">
       <header className="view-head">
         <div>
-          <h1 className="view-title">Colaboradores</h1>
+          <h1 className="view-title">Collaborators</h1>
         </div>
         <div className="view-meta"><Tag mono>SCOPED · YOUR ORCID</Tag></div>
       </header>
