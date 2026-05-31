@@ -1,0 +1,24 @@
+{
+  // TypeScript for the DGA layer only. Compiles src/services/** + src/substrate/**
+  // to dist/ as CommonJS, so the existing CJS index.js / lib / handlers can
+  // `require("./dist/services/...")` the compiled governors during the migration.
+  // The legacy JS tree is NOT compiled (allowJs:false) — TS reaches into it via
+  // runtime require where needed, typed loosely at the call site.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": false,
+    "sourceMap": true,
+    "noEmitOnError": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"]
+  },
+  "include": ["src/services/**/*.ts", "src/substrate/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/__tests__/**"]
+}
