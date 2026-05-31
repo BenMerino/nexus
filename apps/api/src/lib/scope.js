@@ -35,4 +35,20 @@ function isPersonalScope(scope) {
   return scope.role !== "superadmin" && scope.role !== "admin" && !!scope.orcid;
 }
 
-module.exports = { getScope, requireScope, isPersonalScope };
+// Build the DGA ActorContext (the identity governors consume as `ctx`) from
+// the request scope. Substrate→DGA seam: shape matches src/substrate/actor.ts
+// ActorContext. Returns null when unauthenticated (caller gates first).
+async function actorContext(req) {
+  const scope = await getScope(req);
+  if (!scope) return null;
+  return {
+    tenantId: scope.tenantId,
+    userId: String(scope.userId),
+    displayName: scope.username,
+    actorKind: "user",
+    role: scope.role,
+    orcid: scope.orcid,
+  };
+}
+
+module.exports = { getScope, requireScope, isPersonalScope, actorContext };
