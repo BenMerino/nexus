@@ -125,6 +125,7 @@ export function barLerp(
                     color: t.color, hit: t.hit,
                     iso: t.iso, isoEnd: t.isoEnd,
                     atomKey: t.atomKey,
+                    status: t.status,
                     enteredAt, exitingAt: null,
                 });
             } else {
@@ -149,6 +150,7 @@ export function barLerp(
                     color: t.color, hit: t.hit,
                     iso: t.iso, isoEnd: t.isoEnd,
                     atomKey: t.atomKey,
+                    status: t.status,
                     enteredAt: null, exitingAt: null,
                 });
             }
@@ -182,6 +184,7 @@ export function barLerp(
                 color: t.color, hit: t.hit,
                 iso: t.iso, isoEnd: t.isoEnd,
                 atomKey: t.atomKey,
+                status: t.status,
                 enteredAt: enterClockA < 1 ? enteredAt : null,
                 exitingAt: null,
             });
@@ -210,6 +213,7 @@ export function barLerp(
                 color: t.color, hit: t.hit,
                 iso: t.iso, isoEnd: t.isoEnd,
                 atomKey: t.atomKey,
+                status: t.status,
                 enteredAt: null, exitingAt: null,
             });
             continue;
@@ -237,6 +241,7 @@ export function barLerp(
             color: p.color, hit: p.hit,
             iso: p.iso, isoEnd: p.isoEnd,
             atomKey: p.atomKey,
+            status: p.status,
             enteredAt: null,
             exitingAt,
         });

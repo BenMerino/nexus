@@ -5,7 +5,7 @@
  * yDom plumbing is in `animated-curve-helpers.ts`.
  */
 
-import { cs, seriesColor, weightOf } from './svg-parts.js';
+import { cs, seriesColorFor, weightOf } from './svg-parts.js';
 import type { Primitive } from './chart-primitive.types.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import { lerpNumber, lerpNumberArray, type AnimatedFamily } from './animated-family.js';
@@ -86,7 +86,7 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
                     return {
                         id: s,
                         topVs, baseVs, xs,
-                        color: seriesColor(c, si),
+                        color: seriesColorFor(c, s, si),
                         weight: sw,
                         leadPt, tailPt,
                     };
@@ -117,7 +117,7 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
                 return {
                     id: s,
                     topVs, baseVs, xs,
-                    color: seriesColor(c, si),
+                    color: seriesColorFor(c, s, si),
                     weight: sw,
                 };
             }),

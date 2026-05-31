@@ -51,13 +51,21 @@ export type FoldUnit = 'auto' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 
  * to span atom keys. Centralized so we never sprinkle `24`s. */
 export const HOURS_PER_DAY = 24;
 
+/* Semantic status + the aggregation kernel live in their own concern
+ * files; status is re-exported so existing `from './fold-atoms.js'`
+ * importers keep working. */
+import type { DatumStatus } from './datum-status.js';
+import { combineRange } from './fold-aggregate.js';
+export { mergeStatus, type DatumStatus } from './datum-status.js';
+
 /** A single atomic data point. `key` is a sortable numeric position
  * on the axis (hours-since-anchor for time series, ordinal index for
  * non-time). `iso` is the `YYYY-MM-DD` date; required for calendar-
  * aligned fold modes. `hour` (0-23) is set only by hourly-resolution
  * builders — when absent the atom lives at hour 0. `weight` is
- * required only for `wavg`. Extra series fields (stacked charts) live
- * alongside via the `[seriesKey]` sibling fields. */
+ * required only for `wavg`. `status` (semantic — forecast/partial/…) and
+ * `defined:false` (genuinely missing → curve breaks, not zero) fold into
+ * the bucket. Extra series fields live via the `[seriesKey]` siblings. */
 export interface Atom {
     key: number;
     label: string;
@@ -65,7 +73,9 @@ export interface Atom {
     hour?: number;
     value: number;
     weight?: number;
-    [seriesKey: string]: string | number | undefined;
+    status?: DatumStatus;
+    defined?: boolean;
+    [seriesKey: string]: string | number | boolean | undefined;
 }
 
 /** A folded atom — same shape as Atom but represents N atoms combined.
@@ -75,81 +85,6 @@ export interface Atom {
 export interface FoldedAtom extends Atom {
     count: number;
     __x?: number;
-}
-
-/** Combine atoms in fractional range [from, to) into one folded atom.
- * Internal helper used by `foldByCalendar`. */
-function combineRange(atoms: Atom[], from: number, to: number, aggregator: Aggregator, seriesKeys: string[]): FoldedAtom {
-    const startInt = Math.floor(from);
-    const endInt = Math.min(atoms.length, Math.ceil(to));
-    // Per-atom weight in [0..1] — partial at the edges, full inside.
-    const aw = (i: number): number => {
-        const left = Math.max(from, i);
-        const right = Math.min(to, i + 1);
-        return Math.max(0, right - left);
-    };
-
-    if (aggregator === 'first') {
-        const a = atoms[startInt];
-        return { ...a, count: endInt - startInt };
-    }
-    if (aggregator === 'last') {
-        const a = atoms[endInt - 1];
-        return { ...a, count: endInt - startInt };
-    }
-    if (aggregator === 'min' || aggregator === 'max') {
-        // Min/max ignore fractional weights — the extremum is the extremum.
-        let extreme = atoms[startInt].value;
-        for (let i = startInt + 1; i < endInt; i++) {
-            const v = atoms[i].value;
-            if (aggregator === 'min' ? v < extreme : v > extreme) extreme = v;
-        }
-        return synthesize(atoms, startInt, endInt, extreme, seriesKeys);
-    }
-    if (aggregator === 'wavg') {
-        let num = 0; let den = 0;
-        const seriesNum: Record<string, number> = {};
-        for (const k of seriesKeys) seriesNum[k] = 0;
-        for (let i = startInt; i < endInt; i++) {
-            const w = aw(i);
-            const a = atoms[i];
-            num += (a.value || 0) * (a.weight ?? 1) * w;
-            den += (a.weight ?? 1) * w;
-            for (const k of seriesKeys) {
-                const sv = a[k];
-                if (typeof sv === 'number') seriesNum[k] += sv * (a.weight ?? 1) * w;
-            }
-        }
-        const folded = synthesize(atoms, startInt, endInt, den === 0 ? 0 : num / den, seriesKeys);
-        for (const k of seriesKeys) folded[k] = den === 0 ? 0 : seriesNum[k] / den;
-        return folded;
-    }
-    // sum (default)
-    let sum = 0;
-    const seriesSum: Record<string, number> = {};
-    for (const k of seriesKeys) seriesSum[k] = 0;
-    for (let i = startInt; i < endInt; i++) {
-        const w = aw(i);
-        const a = atoms[i];
-        sum += (a.value || 0) * w;
-        for (const k of seriesKeys) {
-            const sv = a[k];
-            if (typeof sv === 'number') seriesSum[k] += sv * w;
-        }
-    }
-    const folded = synthesize(atoms, startInt, endInt, sum, seriesKeys);
-    for (const k of seriesKeys) folded[k] = seriesSum[k];
-    return folded;
-}
-
-/** Build the folded atom's metadata: midpoint key, label from the
- * boundary atoms, count. Series values are filled by the caller. */
-function synthesize(atoms: Atom[], startInt: number, endInt: number, value: number, _seriesKeys: string[]): FoldedAtom {
-    const first = atoms[startInt];
-    const last = atoms[endInt - 1];
-    const key = (first.key + last.key) / 2;
-    const label = startInt === endInt - 1 ? first.label : `${first.label}–${last.label}`;
-    return { key, label, value, count: endInt - startInt };
 }
 
 /** Calendar-aligned bucket: each visible bucket spans one unit

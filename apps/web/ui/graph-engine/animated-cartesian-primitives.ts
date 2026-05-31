@@ -6,7 +6,9 @@
 
 import type { BarItem, BarState } from './animated-cartesian.js';
 import type { Primitive } from './chart-primitive.types.js';
+import type { DatumStatus } from '../../architect/fold-atoms.js';
 import { BAR_TOP_RADIUS_PX, BAR_GRADIENT } from './animated-cartesian-shared.js';
+import { statusStyle } from './datum-status-style.js';
 
 /** Topological fusion: at every frame, polygons that touch or overlap
  *  in x are emitted as ONE polygon spanning their union. When N prevs
@@ -29,7 +31,6 @@ export function barPrimitives(state: BarState): Primitive[] {
     /* Cluster bars by touching/overlapping x ranges. Two adjacent bars
      *  (sorted by x) are in the same cluster when bar[i+1].x ≤
      *  bar[i].x + bar[i].w (right edge of one ≥ left edge of next). */
-    type Cluster = { x: number; right: number; y: number; h: number; color: string; hit: unknown };
     const clusters: Cluster[] = [];
     for (const b of ordered) fuseInto(clusters, b);
     return clusters.map((c, i) => {
@@ -39,17 +40,22 @@ export function barPrimitives(state: BarState): Primitive[] {
         const rightGap = rightNeighbor ? rightNeighbor.x - c.right : Infinity;
         const radiusTL = Math.max(0, Math.min(1, leftGap / R)) * R;
         const radiusTR = Math.max(0, Math.min(1, rightGap / R)) * R;
+        /* Status → fill opacity. A bar can't dash; projected/estimated
+         *  bars read as "not yet real" via reduced alpha. Cluster status
+         *  follows the tallest bar (like color/hit). */
+        const rect = statusStyle(c.status).rect;
         return {
             kind: 'rect' as const,
             x: c.x, y: c.y, w: c.right - c.x, h: c.h,
             color: c.color, data: c.hit,
             radiusTL, radiusTR,
             gradient,
+            ...(rect ? { opacity: rect.opacity } : {}),
         };
     });
 }
 
-type Cluster = { x: number; right: number; y: number; h: number; color: string; hit: unknown };
+type Cluster = { x: number; right: number; y: number; h: number; color: string; hit: unknown; status: DatumStatus };
 
 /** Merge a single bar into the last cluster if it touches, else open a
  *  new cluster. Cluster geometry is the union rect of its contributors;
@@ -66,6 +72,7 @@ function fuseInto(clusters: Cluster[], b: BarItem): void {
         if (b.y < last.y) {
             last.color = b.color;
             last.hit = b.hit;
+            last.status = b.status;
         }
         last.right = Math.max(last.right, bRight);
         last.y = newTop;
@@ -74,7 +81,7 @@ function fuseInto(clusters: Cluster[], b: BarItem): void {
         clusters.push({
             x: b.x, right: b.x + b.w,
             y: b.y, h: b.h,
-            color: b.color, hit: b.hit,
+            color: b.color, hit: b.hit, status: b.status,
         });
     }
 }

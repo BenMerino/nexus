@@ -66,6 +66,11 @@ export interface PolylinePrimitive extends PrimitiveBase {
     points: ReadonlyArray<{ x: number; y: number }>;
     /** Stroke width in px. Required — there's no default. */
     strokeWidth: number;
+    /** Dash pattern `[onPx, offPx]`. Omit ⇒ solid. Rendered by
+     *  arc-length geometric split at tessellation time (one short stroke
+     *  per "on" run) — NO shader/dash uniform. A dash IS short lines.
+     *  The solid path pays nothing: only set primitives are split. */
+    dash?: [number, number];
 }
 
 /** Monotone-x area ribbon: a band between two y-tracks (top and base)

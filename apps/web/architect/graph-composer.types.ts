@@ -12,36 +12,13 @@ export type GraphType =
     | 'gauge' | 'progress-ring' | 'funnel' | 'scatter' | 'bubble'
     | 'waterfall' | 'sparkline' | 'treemap';
 
-/** Single data point for simple charts (bar, area, line, pie, etc.) */
-export interface GraphDataPoint {
-    label: string;
-    value: number;
-    secondary?: number;
-}
-
-/** Multi-series data point (stacked-bar, stacked-area, radar) */
-export interface StackedGraphDataPoint {
-    label: string;
-    [seriesKey: string]: string | number;
-}
-
-/** Heatmap cell — row × col grid with intensity value */
-export interface HeatmapDataPoint { row: string; col: string; value: number; }
-
-/** Scatter plot point — x/y with optional grouping */
-export interface ScatterDataPoint { x: number; y: number; z?: number; label?: string; group?: string; }
-
-/** Waterfall step — additive, subtractive, or running total */
-export interface WaterfallDataPoint { label: string; value: number; type: 'add' | 'subtract' | 'total'; }
-
-/** Treemap node — hierarchical with optional children */
-export interface TreemapNode { name: string; value: number; children?: TreemapNode[]; }
-
-/** All possible chart data shapes */
-export type ChartData =
-    | GraphDataPoint[] | StackedGraphDataPoint[]
-    | HeatmapDataPoint[] | ScatterDataPoint[]
-    | WaterfallDataPoint[] | TreemapNode[];
+/* Chart data-point shapes live in `graph-data.types.ts`; re-exported so
+ * existing `from './graph-composer.types.js'` importers keep working. */
+export type {
+    GraphDataPoint, StackedGraphDataPoint, HeatmapDataPoint,
+    ScatterDataPoint, WaterfallDataPoint, TreemapNode, ChartData,
+} from './graph-data.types.js';
+import type { ChartData } from './graph-data.types.js';
 
 /** Threshold line rendered on the chart */
 export interface GraphThreshold { value: number; label: string; color: string; }
@@ -96,6 +73,11 @@ export interface ColorScheme {
     secondary?: string;
     gradient?: string[];
     seriesColors?: string[];
+    /** Key→color map binding a color to a category IDENTITY (e.g.
+     *  "OpenAlex" always teal) rather than positional palette order.
+     *  Resolved by `seriesColorFor`; falls back to `seriesColors` /
+     *  positional palette when a key is absent. */
+    seriesColorMap?: Record<string, string>;
 }
 
 /** Rendering context — chat uses bolder sentiment colors, dashboard uses muted professional tones */
@@ -211,6 +193,28 @@ export interface GraphDirective extends ReplayableDirective<GraphQuery> {
     currencyConfig?: { currency: string; currencyFormat: 'prefix' | 'suffix' };
     /** Visual style overrides — engine picks sensible defaults per chart type */
     style?: GraphStyle;
+    /** Render a numeric label above each (decimated) point/bar. Off by
+     *  default; rides the axis decimator so labels never collide. */
+    valueLabels?: boolean;
+    /** Chart-wide RAW style override — bypasses the semantic status→style
+     *  table for pure-aesthetic callers (a dashed target line, brand
+     *  styling). Per-bucket variation goes through atom `status` /
+     *  `statusOverrides`, both of which fold; this is index-free. */
+    presentation?: { dash?: [number, number]; markers?: 'filled' | 'hollow' | 'none' };
+    /** Ad-hoc per-bucket status override, applied AFTER folding by folded
+     *  bucket index or bucketKey. Escape hatch so a human can force e.g.
+     *  the last bucket 'partial' without touching atoms. Composer-set
+     *  status on atoms is the normal path. */
+    statusOverrides?: {
+        byIndex?: Record<number, import('./fold-atoms.js').DatumStatus>;
+        byKey?: Record<string, import('./fold-atoms.js').DatumStatus>;
+    };
+    /** Display order of legend chips by series key. Keys absent here
+     *  append in natural order. Does NOT change data keying — chip order
+     *  only; color stays bound to the original series index/identity. */
+    legendOrder?: string[];
+    /** Display-name overrides for legend chips, keyed by series key. */
+    legendLabels?: Record<string, string>;
     /** Excel-style overlay features (trendline, moving average, threshold,
      *  min/max markers, average line). Catalog-owned: composers attach these
      *  per metric from `AnalyticsMetric.features`. Resolver computes one

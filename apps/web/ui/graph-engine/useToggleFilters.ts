@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { cs, seriesColor } from './svg-parts.js';
+import { cs, seriesColorFor } from './svg-parts.js';
 import { useTweenedMap } from '../primitives/tween.js';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import type { ToggleFilter } from './graph-spatial.types.js';
@@ -35,15 +35,23 @@ export function useToggleFilters(chart: GraphDirective) {
     );
     const weights = useTweenedMap(targetWeights);
 
-    const filters: ToggleFilter[] = useMemo(
-        () => seriesKeys.map((key, i) => ({
-            key,
-            label: key,
+    const filters: ToggleFilter[] = useMemo(() => {
+        /* Display order: `legendOrder` first (in its order), then any
+         *  unlisted keys in natural order. Stable; never changes data
+         *  keying. */
+        const order = chart.legendOrder && chart.legendOrder.length
+            ? orderByList(seriesKeys, chart.legendOrder)
+            : seriesKeys;
+        return order.map((key) => ({
+            key,                                          // real key — keying unchanged
+            label: chart.legendLabels?.[key] ?? key,
             active: activeSet.has(key),
-            color: seriesColor(scheme, i),
-        })),
-        [seriesKeys, activeSet, scheme],
-    );
+            /* Color binds to the ORIGINAL series index/identity, never the
+             *  display position — so reordering the legend never recolors
+             *  a series (composes with seriesColorMap). */
+            color: seriesColorFor(scheme, key, seriesKeys.indexOf(key)),
+        }));
+    }, [seriesKeys, activeSet, scheme, chart.legendOrder, chart.legendLabels]);
 
     const toggle = useCallback((key: string) => {
         setActiveSet(prev => {
@@ -56,4 +64,16 @@ export function useToggleFilters(chart: GraphDirective) {
     }, []);
 
     return { filters, toggle, activeSet, seriesWeights: weights };
+}
+
+/** Reorder `keys` so those named in `order` come first (in `order`'s
+ *  sequence), then any unlisted keys in their natural order. Keys in
+ *  `order` that aren't in `keys` are ignored. Pure + stable. */
+function orderByList(keys: string[], order: string[]): string[] {
+    const rank = new Map(order.map((k, i) => [k, i]));
+    return [...keys].sort((a, b) => {
+        const ra = rank.has(a) ? rank.get(a)! : order.length + keys.indexOf(a);
+        const rb = rank.has(b) ? rank.get(b)! : order.length + keys.indexOf(b);
+        return ra - rb;
+    });
 }

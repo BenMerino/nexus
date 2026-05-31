@@ -22,7 +22,7 @@
  * ──────────────────────────────────────────────────────────── */
 
 import { alignToUnitStart, stepByUnit } from './fold-atoms-calendar.js';
-import { HOURS_PER_DAY, type Atom, type FoldUnit } from './fold-atoms.js';
+import { HOURS_PER_DAY, mergeStatus, type Atom, type DatumStatus, type FoldUnit } from './fold-atoms.js';
 
 /** Per-atom placement in normalized window coordinates. `xStart`/`xEnd`
  *  ∈ [0, 1] across the visible window (or outside when the atom's
@@ -230,6 +230,13 @@ export interface BucketAggregate {
     /** Bucket's start ISO date (from the first contributing atom).
      *  Empty when atoms lack iso. */
     startISO: string;
+    /** Folded semantic status — `mergeStatus` across the bucket's atoms
+     *  (any projected ⇒ projected). Drives status→style at render. */
+    status: DatumStatus;
+    /** `false` ⇒ every atom in this bucket is `defined:false` (the
+     *  whole bucket is missing) → the curve gaps here. `true` ⇒ at least
+     *  one real datum. */
+    defined: boolean;
 }
 
 export function bucketAggregates(
@@ -258,10 +265,16 @@ export function bucketAggregates(
                 startKey: a.key,
                 endKey: a.key,
                 startISO: a.iso ?? '',
+                status: a.status ?? 'observed',
+                defined: a.defined !== false,
             };
             for (const s of seriesKeys) agg.seriesValues[s] = 0;
             byKey.set(p.bucketKey, agg);
             order.push(p.bucketKey);
+        } else {
+            agg.status = mergeStatus(agg.status, a.status ?? 'observed');
+            /* A bucket is defined if ANY contributing atom is defined. */
+            agg.defined = agg.defined || a.defined !== false;
         }
         agg.value += a.value;
         for (const s of seriesKeys) {

@@ -43,7 +43,18 @@ import {
     FAN_STEPS,
     ARC_STEPS_PER_RADIAN,
 } from './tessellate-radial.js';
+import { splitPolylineDash } from '../visual-lang/polyline-dash.js';
 import type { Primitive } from './chart-primitive.types.js';
+
+/** Resolve a polyline to its render sub-polylines. Solid ⇒ `[points]`
+ *  (one run, zero overhead). Dashed ⇒ the geometric "on" runs. Used by
+ *  BOTH the triangle pre-count and the vertex emit so the buffer size
+ *  always matches the geometry written — a mismatch corrupts the GPU
+ *  draw. */
+function polylineSubs(p: Extract<Primitive, { kind: 'polyline' }>): ReadonlyArray<{ x: number; y: number }>[] {
+    if (!p.dash) return [p.points as { x: number; y: number }[]];
+    return splitPolylineDash(p.points, p.dash[0], p.dash[1]);
+}
 
 /* Module-level color cache. resolveColor() calls getComputedStyle which
  * is layout-trigger expensive; many charts share the same CSS var
@@ -119,7 +130,9 @@ export function tessellatePrimitives(
                 v = writePolygonPrim(buf, v, p, rgb, marginPx);
                 break;
             case 'polyline':
-                v = writePolylineStroke(buf, v, offsetPoints(p.points, marginPx), p.strokeWidth, fill);
+                for (const sub of polylineSubs(p)) {
+                    v = writePolylineStroke(buf, v, offsetPoints(sub, marginPx), p.strokeWidth, fill);
+                }
                 break;
             case 'area-band':
                 v = writeAreaBandPrim(buf, v, p, rgb, marginPx);
@@ -221,7 +234,11 @@ function trianglesFor(p: Primitive): number {
             return (topMax > 0 || botMax > 0) ? roundedRectTriangles(topMax, botMax) : 2;
         }
         case 'polygon':   return Math.max(0, p.points.length - 2);
-        case 'polyline':  return polylineStrokeTriangles(p.points);
+        case 'polyline': {
+            let n = 0;
+            for (const sub of polylineSubs(p)) n += polylineStrokeTriangles(sub);
+            return n;
+        }
         case 'area-band': return areaBandTriangles(p.top.length);
         case 'circle':    return p.strokeWidth ? FAN_STEPS * 2 : FAN_STEPS;
         case 'arc': {

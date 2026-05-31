@@ -15,16 +15,17 @@ import { cs } from './svg-parts.js';
 import type { Primitive } from './chart-primitive.types.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import { lerpNumber, lerpNumberArray, type AnimatedFamily } from './animated-family.js';
-import { smoothPoints } from './curve-sampling.js';
 import { bucketAggregates } from '../../architect/place-atoms.js';
+import type { DatumStatus } from '../../architect/fold-atoms.js';
 import { appendHoverRails } from './animated-curves-rails.js';
-import { clipPolylineX } from './curve-edge-neighbors.js';
 import { linearScale } from './scales.js';
+import { curveSegmentsFor } from './curve-segments.js';
+import { appendMarkers } from './curve-markers.js';
+import { resolveBucketStyle, resolveStatuses } from './datum-status-style.js';
 import {
     type EdgePtState,
     lerpEdgePt,
     makeEdgePt,
-    projectEdgePt,
 } from './animated-curve-helpers.js';
 
 /* Single import surface for chart-families: keep the multi-line
@@ -35,10 +36,17 @@ export { animatedMultiLine, type MultiLineState } from './animated-cartesian-mul
 export interface LineState {
     xs: number[];
     /** Raw values per visible point. Projected through eased yS at
-     *  primitive build time. */
+     *  primitive build time. Undefined buckets carry a finite
+     *  placeholder (last-defined/0) so array-lerp never NaN-poisons;
+     *  `defined[i]` is the truth, never `vs[i]`. */
     vs: number[];
     values: number[];
     labels: string[];
+    /** Per-bucket semantic status (post statusOverrides) — drives dash +
+     *  marker. Discrete: pass-through in lerp. */
+    statuses: DatumStatus[];
+    /** Per-bucket presence — `false` ⇒ gap (curve breaks, no marker). */
+    defined: boolean[];
     color: string;
     plotYR: [number, number];
     yDomMin: number;
@@ -61,6 +69,8 @@ export const animatedLine: AnimatedFamily<LineState> = {
                 vs: aggs.map(b => b.value),
                 values: aggs.map(b => b.value),
                 labels: aggs.map(b => b.startISO),
+                statuses: resolveStatuses(aggs.map(b => b.status), chart.statusOverrides, aggs.map(b => b.startISO)),
+                defined: aggs.map(b => b.defined),
                 color: c.primary,
                 plotYR: layout.yR,
                 yDomMin: layout.yDom.min,
@@ -72,9 +82,16 @@ export const animatedLine: AnimatedFamily<LineState> = {
         const data = chart.data as any[];
         return {
             xs: data.map((_d, i) => layout.pointAt(i)),
+            /* Missing (value == null) → finite placeholder so lerp stays
+             *  NaN-free; `defined` carries the truth. */
             vs: data.map((d) => d.value ?? 0),
             values: data.map((d) => d.value ?? 0),
             labels: layout.labels,
+            statuses: resolveStatuses(
+                data.map((d) => (d.__status as DatumStatus) ?? (d.status as DatumStatus) ?? 'observed'),
+                chart.statusOverrides,
+            ),
+            defined: data.map((d) => d.value != null && d.__defined !== false && d.defined !== false),
             color: c.primary,
             plotYR: layout.yR,
             yDomMin: layout.yDom.min,
@@ -91,6 +108,8 @@ export const animatedLine: AnimatedFamily<LineState> = {
                 vs: lerpNumberArray(prev.vs, target.vs, phase.alphaShort, dRef),
                 values: target.values,
                 labels: target.labels,
+                statuses: target.statuses,
+                defined: target.defined,
                 color: target.color,
                 plotYR: target.plotYR,
                 yDomMin: lerpNumber(prev.yDomMin, target.yDomMin, phase.alphaScale, dRef),
@@ -101,21 +120,23 @@ export const animatedLine: AnimatedFamily<LineState> = {
             maxDelta: dRef.value,
         };
     },
-    primitives(state, layoutRaw) {
+    primitives(state, layoutRaw, chart) {
         if (state.xs.length < 2) return [];
         const layout = layoutRaw as CartesianLayout;
         const yS = linearScale([state.yDomMin, state.yDomMax], [state.plotYR[1], state.plotYR[0]]);
         const ys = state.vs.map(yS);
-        const rawPoints: { x: number; y: number }[] = [];
-        const leadProj = projectEdgePt(state.leadPt, yS, state.xs, ys, 'left');
-        const tailProj = projectEdgePt(state.tailPt, yS, state.xs, ys, 'right');
-        if (leadProj) rawPoints.push(leadProj);
-        for (let i = 0; i < state.xs.length; i++) rawPoints.push({ x: state.xs[i], y: ys[i] });
-        if (tailProj) rawPoints.push(tailProj);
-        const points = clipPolylineX(smoothPoints(rawPoints), layout.xR[0], layout.xR[1]);
-        const out: Primitive[] = [
-            { kind: 'polyline', points, strokeWidth: 1.5, color: state.color, data: undefined },
-        ];
+        const pres = chart.presentation;
+        const dashByBucket = state.statuses.map(st => resolveBucketStyle(st, pres).dash);
+
+        const out: Primitive[] = [];
+        const segments = curveSegmentsFor(
+            state.xs, ys, state.defined, dashByBucket, yS,
+            state.leadPt, state.tailPt, layout.xR[0], layout.xR[1],
+        );
+        for (const seg of segments) {
+            out.push({ kind: 'polyline', points: seg.points, strokeWidth: 1.5, color: state.color, dash: seg.dash, data: undefined });
+        }
+        appendMarkers(out, state.xs, ys, state.statuses, state.defined, state.color, layout.xR[0], layout.xR[1]);
         appendHoverRails(out, state.xs, state.plotYR, (i) => ({
             idx: i, label: state.labels[i], value: state.values[i],
         }));

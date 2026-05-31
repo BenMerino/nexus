@@ -10,8 +10,10 @@
 import { cs } from './svg-parts.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import type { AnimatedFamily } from './animated-family.js';
+import type { DatumStatus } from '../../architect/fold-atoms.js';
 import { barLerp } from './animated-cartesian-lerp.js';
 import { barPrimitives } from './animated-cartesian-primitives.js';
+import { resolveStatuses } from './datum-status-style.js';
 
 export interface BarItem {
     x: number; y: number; w: number; h: number;
@@ -25,6 +27,10 @@ export interface BarItem {
     /** Atom key (hours-since-anchor) for stable atomic identity; `null`
      *  for legacy non-atomic charts. */
     atomKey: number | null;
+    /** Bucket's semantic status — drives the bar's fill treatment
+     *  (projected/estimated → reduced opacity). A bar can't dash, so
+     *  status shows as a rect treatment, not a stroke pattern. */
+    status: DatumStatus;
     /** Per-bar lifecycle timestamps for staged enter/exit animation —
      *  survive tween restarts so growth/decay accumulates across rapid
      *  slider drags. `null` means the bar is settled. */
@@ -46,6 +52,13 @@ export const animatedBar: AnimatedFamily<BarState> = {
          *  never gets out of sync with the chrome's view of buckets. */
         const data = chart.data as any[];
         const baseY = layout.yR[1];
+        /* Resolve per-bucket status once (folded status on the bucket +
+         *  any directive statusOverrides), keyed by bucket start ISO. */
+        const statuses = resolveStatuses(
+            data.map((d) => (d.__status as DatumStatus) ?? (d.status as DatumStatus) ?? 'observed'),
+            chart.statusOverrides,
+            data.map((d) => (typeof d.__startISO === 'string' ? d.__startISO : '')),
+        );
         for (let i = 0; i < data.length; i++) {
             const d = data[i];
             const pos = layout.positionAt(i);
@@ -61,6 +74,7 @@ export const animatedBar: AnimatedFamily<BarState> = {
                 iso: typeof d.__startISO === 'string' ? d.__startISO : '',
                 isoEnd: typeof d.__endISO === 'string' ? d.__endISO : '',
                 atomKey: null,
+                status: statuses[i],
                 enteredAt: null,
                 exitingAt: null,
             });

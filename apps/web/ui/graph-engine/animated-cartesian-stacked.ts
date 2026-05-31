@@ -8,7 +8,7 @@
  * visual constants and per-bar timing live in `animated-cartesian-shared.ts`.
  */
 
-import { cs, seriesColor, weightOf } from './svg-parts.js';
+import { cs, seriesColorFor, weightOf } from './svg-parts.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import { lerpNumber, type AnimatedFamily } from './animated-family.js';
 import { bucketAggregates } from '../../architect/place-atoms.js';
@@ -74,7 +74,7 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
                     const topY = y0 - segH;
                     segments.push({
                         x, y: topY, w, h: segH,
-                        color: seriesColor(c, si),
+                        color: seriesColorFor(c, series[si], si),
                         hit: { idx: i, seriesIdx: si, label: b.startISO, series: series[si], value: v },
                         bucketIdx: i,
                         seriesId: series[si],
@@ -101,7 +101,7 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
                 const topY = y0 - segH;
                 segments.push({
                     x: pos.x, y: topY, w: Math.max(0, pos.width), h: segH,
-                    color: seriesColor(c, si),
+                    color: seriesColorFor(c, series[si], si),
                     hit: { idx: i, seriesIdx: si, label: layout.labels[i], series: series[si], value: v },
                     bucketIdx: i,
                     seriesId: series[si],

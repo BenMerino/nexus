@@ -110,6 +110,10 @@ export function resolveAtomicDirective(
             __xEnd: xEnd,
             __startISO: b.startISO,
             __endISO: b.endISO,
+            /* Folded semantic status + presence — bar/curve families read
+             *  these for status→style (dash/marker/rect) and gaps. */
+            __status: b.status,
+            __defined: b.defined,
         };
         for (const s of (chart.series ?? [])) out[s] = b[s];
         return out;

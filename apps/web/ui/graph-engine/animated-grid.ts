@@ -5,7 +5,7 @@
  */
 
 import { rampColor } from './scales.js';
-import { cs, getSeriesPalette, weightOf, seriesColor } from './svg-parts.js';
+import { cs, getSeriesPalette, weightOf, seriesColorFor } from './svg-parts.js';
 import type { Primitive } from './chart-primitive.types.js';
 import { lerpNumber, lerpNumberArray, type AnimatedFamily } from './animated-family.js';
 
@@ -41,7 +41,7 @@ export const animatedRadar: AnimatedFamily<RadarState> = {
                 return {
                     id: s,
                     xs, ys,
-                    color: seriesColor(c, si),
+                    color: seriesColorFor(c, s, si),
                     weight: w,
                 };
             }),

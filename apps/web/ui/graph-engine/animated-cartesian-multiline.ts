@@ -5,16 +5,18 @@
  * `animated-curve-helpers.ts`.
  */
 
-import { cs, seriesColor, weightOf } from './svg-parts.js';
+import { cs, seriesColorFor, weightOf } from './svg-parts.js';
 import type { Primitive } from './chart-primitive.types.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import { lerpNumber, lerpNumberArray, type AnimatedFamily } from './animated-family.js';
-import { smoothPoints } from './curve-sampling.js';
 import { bucketAggregates } from '../../architect/place-atoms.js';
+import type { DatumStatus } from '../../architect/fold-atoms.js';
 import { appendHoverRails } from './animated-curves-rails.js';
-import { clipPolylineX } from './curve-edge-neighbors.js';
 import { linearScale } from './scales.js';
-import { type EdgePtState, lerpEdgePt, projectEdgePt } from './animated-curve-helpers.js';
+import { curveSegmentsFor } from './curve-segments.js';
+import { appendMarkers } from './curve-markers.js';
+import { resolveBucketStyle, resolveStatuses } from './datum-status-style.js';
+import { type EdgePtState, lerpEdgePt } from './animated-curve-helpers.js';
 
 export interface MultiLineState {
     series: {
@@ -22,12 +24,18 @@ export interface MultiLineState {
         xs: number[];
         /** Raw per-series weighted value at each point. */
         vs: number[];
+        /** Per-point presence for THIS series (missing is per-series:
+         *  one series can be null where another isn't). */
+        defined: boolean[];
         color: string;
         weight: number;
         leadPt?: EdgePtState;
         tailPt?: EdgePtState;
     }[];
     labels: string[];
+    /** Per-bucket status (shared across series — a forecast applies to
+     *  the whole bucket). Drives dash + markers. */
+    statuses: DatumStatus[];
     rowValues: Record<string, number>[];
     plotYR: [number, number];
     yDomMin: number;
@@ -58,6 +66,10 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
             const toPx = (xNorm: number) => layout.xR[0] + xNorm * plotW;
             const xs = aggs.map(b => toPx(b.xCenter));
             const rowValues: Record<string, number>[] = aggs.map(b => ({ ...b.seriesValues }));
+            /* Atomic path: `defined` is per-bucket (the fold yields one
+             *  flag per bucket), shared by every series. Per-series gaps
+             *  are a legacy-path feature (see below). */
+            const bucketDefined = aggs.map(b => b.defined);
             return {
                 series: series.map((s, si) => {
                     const sw = weightOf(s, chart.seriesWeights);
@@ -65,13 +77,15 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
                     return {
                         id: s,
                         xs, vs,
-                        color: seriesColor(c, si),
+                        defined: bucketDefined,
+                        color: seriesColorFor(c, s, si),
                         weight: sw,
                         leadPt: makeSeriesNeighbor('left', s, sw),
                         tailPt: makeSeriesNeighbor('right', s, sw),
                     };
                 }),
                 labels: aggs.map(b => b.startISO),
+                statuses: resolveStatuses(aggs.map(b => b.status), chart.statusOverrides, aggs.map(b => b.startISO)),
                 rowValues,
                 plotYR: layout.yR,
                 yDomMin: layout.yDom.min,
@@ -89,16 +103,24 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
                 const sw = weightOf(s, chart.seriesWeights);
                 const xs = data.map((_d, i) => layout.pointAt(i));
                 const vs = data.map((d) => (d[s] || 0) * sw);
+                /* Legacy path: per-series gap when this series' cell is
+                 *  null/undefined (one series can be missing while a
+                 *  sibling has data). */
+                const defined = data.map((d) => d[s] != null);
                 return {
                     id: s,
-                    xs, vs,
-                    color: seriesColor(c, si),
+                    xs, vs, defined,
+                    color: seriesColorFor(c, s, si),
                     weight: sw,
                     leadPt: makeSeriesNeighbor('left', s, sw),
                     tailPt: makeSeriesNeighbor('right', s, sw),
                 };
             }),
             labels: layout.labels,
+            statuses: resolveStatuses(
+                data.map((d) => (d.status as DatumStatus) ?? 'observed'),
+                chart.statusOverrides,
+            ),
             rowValues,
             plotYR: layout.yR,
             yDomMin: layout.yDom.min,
@@ -114,6 +136,7 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
                 id: t.id,
                 xs: lerpNumberArray(p.xs, t.xs, phase.alphaInstant, dRef),
                 vs: lerpNumberArray(p.vs, t.vs, phase.alphaShort, dRef),
+                defined: t.defined,
                 color: t.color,
                 weight: lerpNumber(p.weight, t.weight, phase.alpha, dRef),
                 leadPt: lerpEdgePt(p.leadPt, t.leadPt, phase.alphaInstant, phase.alphaShort, dRef),
@@ -124,6 +147,7 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
             state: {
                 series: out,
                 labels: target.labels,
+                statuses: target.statuses,
                 rowValues: target.rowValues,
                 plotYR: target.plotYR,
                 yDomMin: lerpNumber(prev.yDomMin, target.yDomMin, phase.alphaScale, dRef),
@@ -132,28 +156,33 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
             maxDelta: dRef.value,
         };
     },
-    primitives(state, layoutRaw) {
+    primitives(state, layoutRaw, chart) {
         const out: Primitive[] = [];
         const layout = layoutRaw as CartesianLayout;
         const yS = linearScale([state.yDomMin, state.yDomMax], [state.plotYR[1], state.plotYR[0]]);
+        const pres = chart.presentation;
+        /* Per-bucket dash from the shared status row — computed once, all
+         *  series share it. */
+        const dashByBucket = state.statuses.map(st => resolveBucketStyle(st, pres).dash);
         for (const s of state.series) {
             if (s.xs.length < 2) continue;
             const ys = s.vs.map(yS);
-            const pts: { x: number; y: number }[] = [];
-            const leadProj = projectEdgePt(s.leadPt, yS, s.xs, ys, 'left');
-            const tailProj = projectEdgePt(s.tailPt, yS, s.xs, ys, 'right');
-            if (leadProj) pts.push(leadProj);
-            for (let i = 0; i < s.xs.length; i++) pts.push({ x: s.xs[i], y: ys[i] });
-            if (tailProj) pts.push(tailProj);
-            const points = clipPolylineX(smoothPoints(pts), layout.xR[0], layout.xR[1]);
-            out.push({
-                kind: 'polyline',
-                points,
-                strokeWidth: 1.5,
-                color: s.color,
-                opacity: s.weight,
-                data: { seriesIdx: 0, series: s.id },
-            });
+            const segments = curveSegmentsFor(
+                s.xs, ys, s.defined, dashByBucket, yS,
+                s.leadPt, s.tailPt, layout.xR[0], layout.xR[1],
+            );
+            for (const seg of segments) {
+                out.push({
+                    kind: 'polyline',
+                    points: seg.points,
+                    strokeWidth: 1.5,
+                    color: s.color,
+                    opacity: s.weight,
+                    dash: seg.dash,
+                    data: { seriesIdx: 0, series: s.id },
+                });
+            }
+            appendMarkers(out, s.xs, ys, state.statuses, s.defined, s.color, layout.xR[0], layout.xR[1], s.weight);
         }
         const first = state.series[0];
         if (first) {

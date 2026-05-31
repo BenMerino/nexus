@@ -71,6 +71,16 @@ export function seriesColor(scheme: ColorScheme, i: number): string {
     return palette[i % palette.length];
 }
 
+/** Category-IDENTITY color resolver: binds a color to the series KEY
+ *  (e.g. "OpenAlex" → teal) rather than positional palette order, so a
+ *  series keeps its color regardless of legend reorder or which siblings
+ *  are toggled off. Falls back to positional `seriesColor` when the key
+ *  isn't in `seriesColorMap`. The legend swatch AND every family route
+ *  through this with the same key, so swatch and mark can't disagree. */
+export function seriesColorFor(scheme: ColorScheme, key: string, i: number): string {
+    return scheme.seriesColorMap?.[key] ?? seriesColor(scheme, i);
+}
+
 /** Returns the multi-series palette tokens. Theme-adapts at the CSS layer. */
 export function getSeriesPalette(): string[] {
     return SERIES_PALETTE;

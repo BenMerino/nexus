@@ -10,6 +10,9 @@ import { defaultInteraction } from '../../architect/graph-composer.types.js';
 import type { ChartChrome, ChromeElement } from './chart-chrome.types.js';
 import { niceDomain } from './scales.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
+import { xAxisLabelLayout } from './ChromeXAxisBand.js';
+import { valueLabelElements } from './chrome-value-labels.js';
+import { annotationElements, annotatedIndices } from './chrome-annotations.js';
 import {
     coarserTiersFor,
     groupByTier,
@@ -21,6 +24,9 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
     if (t === 'sparkline') return { elements: [] };
 
     const elements: ChromeElement[] = [];
+    /* Base x-axis band — captured so value labels + sub-annotations can
+     *  reuse its decimation. Undefined for scatter/bubble (linear x). */
+    let baseBand: Extract<ChromeElement, { kind: 'x-axis-band' }> | undefined;
 
     /* X-axis: labels along the bottom of the plot rect. */
     if (t === 'scatter' || t === 'bubble') {
@@ -67,7 +73,11 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
             }
             return layout.pointAt(i);
         };
-        elements.push({
+        /* Annotated indices become decimator anchors so an annotated
+         *  point's slot survives crowding (value labels + annotations
+         *  share this one decimation pass). */
+        const annAnchors = chart.annotations ? Array.from(annotatedIndices(chart)) : undefined;
+        baseBand = {
             kind: 'x-axis-band',
             labels: layout.labels,
             range: layout.xR,
@@ -77,7 +87,9 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
             leadingEdgeXs: baseLeadingEdgeXs,
             trailingEdgeXs: baseTrailingEdgeXs,
             plotYR: layout.yR,
-        });
+            ...(annAnchors && annAnchors.length ? { anchors: annAnchors } : {}),
+        };
+        elements.push(baseBand);
         /* Hierarchical X-axis tiers: when buckets carry calendar
          *  metadata, render coarser context rows beneath the base labels. */
         const tiers = coarserTiersFor(chart.__foldUnit);
@@ -140,6 +152,22 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
                 color: th.color,
                 label: th.label,
             });
+        }
+    }
+
+    /* Value labels + sub-annotations share ONE decimation pass (the base
+     *  band's, with annotated indices forced as anchors above). The
+     *  annotation suppresses its index's plain value label so the two
+     *  don't stack on the same point. Band charts only (scatter/bubble
+     *  have no baseBand). */
+    if (baseBand) {
+        const annotated = annotatedIndices(chart);
+        if (chart.annotations?.length) {
+            elements.push(...annotationElements(chart, layout));
+        }
+        if (chart.valueLabels) {
+            const { indices } = xAxisLabelLayout(baseBand);
+            elements.push(...valueLabelElements(chart, layout, indices, annotated));
         }
     }
 

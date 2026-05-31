@@ -9,10 +9,11 @@ import { cs } from './svg-parts.js';
 import type { Primitive } from './chart-primitive.types.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import { lerpNumber, lerpNumberArray, type AnimatedFamily } from './animated-family.js';
-import { smoothPoints } from './curve-sampling.js';
 import { bucketAggregates } from '../../architect/place-atoms.js';
+import type { DatumStatus } from '../../architect/fold-atoms.js';
 import { appendHoverRails } from './animated-curves-rails.js';
-import { clipPolylineX } from './curve-edge-neighbors.js';
+import { buildCurveSegments, type SegPoint } from './curve-segments.js';
+import { resolveBucketStyle, resolveStatuses } from './datum-status-style.js';
 import { linearScale } from './scales.js';
 import {
     type EdgePtState,
@@ -37,6 +38,9 @@ export interface AreaState {
      *  by index whereas the curve consumes them through the scale. */
     values: number[];
     labels: string[];
+    /** Per-bucket status (dash) + presence (gap). */
+    statuses: DatumStatus[];
+    defined: boolean[];
     baseY: number;
     color: string;
     strokeColor: string;
@@ -66,6 +70,8 @@ export const animatedArea: AnimatedFamily<AreaState> = {
                 vs: aggs.map(b => b.value),
                 values: aggs.map(b => b.value),
                 labels: aggs.map(b => b.startISO),
+                statuses: resolveStatuses(aggs.map(b => b.status), chart.statusOverrides, aggs.map(b => b.startISO)),
+                defined: aggs.map(b => b.defined),
                 baseY: layout.yR[1],
                 color: c.fill,
                 strokeColor: c.primary,
@@ -82,6 +88,11 @@ export const animatedArea: AnimatedFamily<AreaState> = {
             vs: data.map((d) => d.value ?? 0),
             values: data.map((d) => d.value ?? 0),
             labels: layout.labels,
+            statuses: resolveStatuses(
+                data.map((d) => (d.__status as DatumStatus) ?? (d.status as DatumStatus) ?? 'observed'),
+                chart.statusOverrides,
+            ),
+            defined: data.map((d) => d.value != null && d.__defined !== false && d.defined !== false),
             baseY: layout.yR[1],
             color: c.fill,
             strokeColor: c.primary,
@@ -104,6 +115,8 @@ export const animatedArea: AnimatedFamily<AreaState> = {
                 vs: lerpNumberArray(prev.vs, target.vs, phase.alphaShort, dRef),
                 values: target.values,
                 labels: target.labels,
+                statuses: target.statuses,
+                defined: target.defined,
                 baseY: lerpNumber(prev.baseY, target.baseY, phase.alpha, dRef),
                 color: target.color,
                 strokeColor: target.strokeColor,
@@ -116,7 +129,7 @@ export const animatedArea: AnimatedFamily<AreaState> = {
             maxDelta: dRef.value,
         };
     },
-    primitives(state, layoutRaw) {
+    primitives(state, layoutRaw, chart) {
         if (state.xs.length < 2) return [];
         const layout = layoutRaw as CartesianLayout;
         /* Rebuild yS from the eased y-domain — the LAYOUT's yS is fixed
@@ -128,32 +141,43 @@ export const animatedArea: AnimatedFamily<AreaState> = {
          * declining trailing/leading series can't project the area below
          * zero past the last real bucket. */
         const floorY = yS(0);
-        const raw: { x: number; y: number }[] = [];
-        const leadProj = projectEdgePt(state.leadPt, yS, state.xs, ys, 'left', floorY);
-        const tailProj = projectEdgePt(state.tailPt, yS, state.xs, ys, 'right', floorY);
-        if (leadProj) raw.push(leadProj);
-        for (let i = 0; i < state.xs.length; i++) raw.push({ x: state.xs[i], y: ys[i] });
-        if (tailProj) raw.push(tailProj);
-        /* Clip the smoothed polyline at the plot's x-range so the area-
-         *  band's vertical sides sit on the plot border (invisible). */
-        const top = clipPolylineX(smoothPoints(raw), layout.xR[0], layout.xR[1]);
-        const out: Primitive[] = [
-            {
+        const pres = chart.presentation;
+
+        /* Edge neighbors project from DEFINED points only, with floorY
+         *  clamp (area-specific). */
+        const defIdx: number[] = [];
+        for (let i = 0; i < state.defined.length; i++) if (state.defined[i] !== false) defIdx.push(i);
+        const dxs = defIdx.map(i => state.xs[i]);
+        const dys = defIdx.map(i => ys[i]);
+        const leadProj = defIdx.length ? projectEdgePt(state.leadPt, yS, dxs, dys, 'left', floorY) : undefined;
+        const tailProj = defIdx.length ? projectEdgePt(state.tailPt, yS, dxs, dys, 'right', floorY) : undefined;
+
+        const segPts: SegPoint[] = state.xs.map((x, i) => ({
+            x, y: ys[i], defined: state.defined[i],
+            dash: resolveBucketStyle(state.statuses[i], pres).dash,
+        }));
+        /* One fill band + one stroke per run — a gap holes the fill too;
+         *  a dash boundary splits the stroke. */
+        const segments = buildCurveSegments(segPts, leadProj, tailProj, layout.xR[0], layout.xR[1]);
+        const out: Primitive[] = [];
+        for (const seg of segments) {
+            out.push({
                 kind: 'area-band',
-                top,
+                top: seg.points,
                 base: state.baseY,
                 color: state.color,
                 gradient: { topOpacity: 0.75, bottomOpacity: 0 },
                 data: undefined,
-            },
-            {
+            });
+            out.push({
                 kind: 'polyline',
-                points: top,
+                points: seg.points,
                 strokeWidth: 1.5,
                 color: state.strokeColor,
+                dash: seg.dash,
                 data: undefined,
-            },
-        ];
+            });
+        }
         appendHoverRails(out, state.xs, state.plotYR, (i) => ({
             idx: i, label: state.labels[i], value: state.values[i],
         }));
