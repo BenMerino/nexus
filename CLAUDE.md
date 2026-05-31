@@ -10,7 +10,8 @@ Nexus's doctrine lives **in-repo** (a Zincro-style memory system, Phase 1):
 - **Philosophy** — `docs/PHILOSOPHY.md` (5 tenets + voice).
 - **Heuristics** — `docs/HEURISTICS.md` (`H-NNN` gotchas: per-ISSN tags, OpenAlex flags, FOUC, scope divergence…).
 - **Anti-patterns** — `docs/ANTI_PATTERNS.md` (the never-do list).
-- **Subsystem guides** (on-demand, not auto-loaded — read when touching the area): `ls .claude/rules/` — `scope-model`, `db-layer`, `design-dna`, `theme`, `claustro-feature`.
+- **Subsystem guides** (on-demand, not auto-loaded — read when touching the area): `ls .claude/rules/` — `scope-model`, `db-layer`, `design-dna`, `theme`, `claustro-feature`, and the **DGA** set: `governor-patterns` (doctrine), `dga` (layout/wiring), `id-taxonomy`, `cross-stack-naming`, `app-conventions`.
+- **DGA** — the backend is migrating to a Deterministic Governor Architecture (domain-owned Governors/Validators/Resolvers/Composers/Workflows/Dispatchers over a typed EventBus; tenant isolation → Postgres RLS). The domain model (which governors exist, what they own) is `docs/DGA_DESIGN.md`. Migration is additive, one domain at a time; handlers stay thin and delegate to compiled governors in `apps/api/dist/`.
 
 @.claude/rules/hard-rules.md
 
