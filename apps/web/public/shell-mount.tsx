@@ -22,6 +22,9 @@ function SidebarApp({ initialPath }: { initialPath: string }) {
 function loadThemeTokens() {
   fetch('/api/theme-tokens').then(r => r.ok ? r.json() : null).then(tokens => {
     if (!tokens) return;
+    // Cache for the pre-paint boot script (vite.config.ts THEME_BOOT) so the
+    // configured palette applies on the next load before first paint.
+    try { localStorage.setItem('nexus.theme-tokens', JSON.stringify(tokens)); } catch { /* quota / private mode */ }
     const root = document.documentElement;
     for (const k in tokens) root.style.setProperty('--' + k, tokens[k]);
     applyThemeMode(activeThemeMode(), tokens);

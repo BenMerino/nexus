@@ -10,10 +10,14 @@ const htmlEntries = Object.fromEntries(
     .map(f => [f.replace(/\.html$/, ""), resolve(SRC, f)]),
 );
 
-// Sets data-theme="light" before the first style computation when the OS
-// is in light mode, so the page doesn't paint dark first and then flash to
-// light (or vice versa). Synchronous, runs as the first thing in <head>.
-const THEME_BOOT = `<script>try{if(matchMedia('(prefers-color-scheme: light)').matches)document.documentElement.setAttribute('data-theme','light')}catch(e){}</script>`;
+// Before the first style computation: (1) set data-theme="light" when the OS
+// is in light mode so the page doesn't paint the wrong baseline, and (2) apply
+// the tenant's configured surface tokens (cached in localStorage by
+// loadThemeTokens) for the active mode, so a customized --bg/--fg/... doesn't
+// flash from the CSS baseline to the configured color once the async
+// /api/theme-tokens fetch resolves. Synchronous, runs as the first thing in
+// <head>. The token slug list must stay in sync with SURFACE_TOKEN_KEYS.
+const THEME_BOOT = `<script>try{var m=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';var d=document.documentElement;if(m==='light')d.setAttribute('data-theme','light');var t=JSON.parse(localStorage.getItem('nexus.theme-tokens')||'null');if(t){var ks=['bg','bg-elev','bg-card','border','fg','fg-muted','accent'];for(var i=0;i<ks.length;i++){var v=t['theme-'+m+'-'+ks[i]];if(v)d.style.setProperty('--'+ks[i],v)}}}catch(e){}</script>`;
 
 export default defineConfig({
   root: SRC,
