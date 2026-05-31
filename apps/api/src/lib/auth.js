@@ -44,4 +44,17 @@ async function requireRole(req, ...roles) {
   return { id: user.id, username: user.username, role: user.role, tenantId: user.tenant_id };
 }
 
-module.exports = { getUser, requireRole, makeSessionCookie };
+// Administrative roles plus the tenant_admin capability flag. tenant_admin is
+// separate from role (e.g. an `academic` who also administers their tenant —
+// Héctor Quinteros) and must grant the same management access as an editor role.
+const EDITOR_ROLES = ["secretary", "director", "admin", "superadmin"];
+async function requireEditor(req) {
+  const session = getUser(req);
+  if (!session || !session.id) return null;
+  const user = await getUserById(session.id);
+  if (!user || !user.active) return null;
+  if (!EDITOR_ROLES.includes(user.role) && user.tenant_admin !== true) return null;
+  return { id: user.id, username: user.username, role: user.role, tenantId: user.tenant_id };
+}
+
+module.exports = { getUser, requireRole, requireEditor, makeSessionCookie };

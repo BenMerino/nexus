@@ -13,7 +13,7 @@
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
     return ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" })[c];
   }); }
-  function isEditor() { return state.me && EDITOR.indexOf(state.me.role) !== -1; }
+  function isEditor() { return state.me && (EDITOR.indexOf(state.me.role) !== -1 || state.me.tenantAdmin === true); }
 
   function init() {
     document.getElementById("btn-tab-proyectos").addEventListener("click", function () { switchTab("proyectos"); });

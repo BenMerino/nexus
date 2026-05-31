@@ -1,11 +1,10 @@
 const { ensureSchema } = require("../src/lib/db");
 const { requireScope } = require("../src/lib/scope");
-const { requireRole } = require("../src/lib/auth");
+const { requireEditor } = require("../src/lib/auth");
 const {
   getClaustroForTenant, validateProgram, getAcceptedIndices, setAcceptedIndices,
 } = require("../src/lib/claustro");
 
-const EDITOR_ROLES = ["secretary", "director", "admin", "superadmin"];
 const PROGRAMS = ["doctorado", "magister_academico", "magister_profesional"];
 
 module.exports = async function handler(req, res) {
@@ -45,7 +44,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === "PUT" && action === "indices") {
-    const session = await requireRole(req, ...EDITOR_ROLES);
+    const session = await requireEditor(req);
     if (!session) return res.status(403).json({ error: "Forbidden" });
     const { indices } = req.body || {};
     const saved = await setAcceptedIndices(session.tenantId, indices);

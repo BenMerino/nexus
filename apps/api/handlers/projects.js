@@ -1,11 +1,9 @@
 const { ensureSchema } = require("../src/lib/db");
 const { requireScope } = require("../src/lib/scope");
-const { requireRole } = require("../src/lib/auth");
+const { requireEditor } = require("../src/lib/auth");
 const {
   listProjects, getProject, createProject, updateProject, deleteProject,
 } = require("../src/lib/db-projects");
-
-const EDITOR_ROLES = ["secretary", "director", "admin", "superadmin"];
 
 module.exports = async function handler(req, res) {
   await ensureSchema();
@@ -29,7 +27,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === "POST" && action === "create") {
-    const session = await requireRole(req, ...EDITOR_ROLES);
+    const session = await requireEditor(req);
     if (!session) return res.status(403).json({ error: "Forbidden" });
     const { investigators, ...fields } = req.body || {};
     if (!fields.titulo) return res.status(400).json({ error: "titulo required" });
@@ -38,7 +36,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === "PUT" && action === "update") {
-    const session = await requireRole(req, ...EDITOR_ROLES);
+    const session = await requireEditor(req);
     if (!session) return res.status(403).json({ error: "Forbidden" });
     const { id, investigators, ...fields } = req.body || {};
     if (!id) return res.status(400).json({ error: "Missing id" });
@@ -48,7 +46,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === "DELETE" && action === "delete") {
-    const session = await requireRole(req, ...EDITOR_ROLES);
+    const session = await requireEditor(req);
     if (!session) return res.status(403).json({ error: "Forbidden" });
     const id = parseInt(req.query.id, 10);
     if (!id) return res.status(400).json({ error: "Missing id" });
