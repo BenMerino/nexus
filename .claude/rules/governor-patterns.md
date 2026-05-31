@@ -30,8 +30,8 @@ Nexus's backend is migrating to a **Deterministic Governor Architecture (DGA)**,
 - The circular dep (governor → ledger → governor) is broken via the `AuditPort` interface in `GovernorPorts.ts`.
 
 ## EventBus
-- Typed via `GovernorEventMap` in `apps/api/src/services/EventBus.ts`. Channel naming: `<domain>.<action>` — lowercase **singular** domain, camelCase action (`record.upserted`, `ingestion.completed`).
-- **One owner per channel.** Exactly one file emits any given channel (`RecordGovernor` emits `record.*`).
+- Typed via `GovernorEventMap` in `apps/api/src/services/EventBus.ts`. Channel naming: `<domain>.<action>` — lowercase domain, camelCase action (`catalog.recordUpserted`, `ingestion.completed`).
+- **One owner per channel.** Exactly one file emits any given channel (`CatalogGovernor` emits `catalog.*`).
 - Governors coordinate via the bus, not direct calls (except inside a Workflow). Synchronous, in-process.
 
 ## Event sourcing is a targeted choice, not a default
@@ -41,6 +41,6 @@ Nexus has no event-sourced aggregate today, and shouldn't add one by default. Re
 Migrate one domain at a time, **additive only, callers untouched**. Repoint a handler to call the new compiled Governor; keep the route URL identical; remove the legacy `lib/` path only after every caller moves, in a separate pass. Never a big-bang rewrite. A schema change is a *new* numbered migration (never an inline `ALTER`).
 
 ## Naming & size
-- PascalCase = class/manifest files (`RecordGovernor.ts`, `RecordActions.ts`). kebab/camel = `{Domain}Logic.ts` helpers.
+- PascalCase = class/manifest files (`CatalogGovernor.ts`, `CatalogActions.ts`). kebab/camel = `{Domain}Logic.ts` helpers.
 - Every Governor write method gets a companion `{Domain}Actions.ts` manifest, auto-discovered at startup.
 - **N5 (nbr15) applies to `apps/api/**/*.ts`** (only `apps/web/{ui,architect,…}` are exempt) — Governors stay ≤150 lines; extract `{Domain}Logic.ts` when they grow. Per-file opt-out: `arch-audit-ignore: N5`.
