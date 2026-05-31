@@ -85,6 +85,14 @@ async function startServer() {
   } else {
     console.warn("[boot] no DATABASE_URL — skipping migrations");
   }
+  // Wire the DGA (audit ledger + action/resolver scanners). Compiled TS;
+  // present only when built (node dist/index.js). Wrapped so a bootstrap
+  // hiccup logs but never blocks the server from coming up during rollout.
+  try {
+    require("./src/services/bootstrap").bootstrap();
+  } catch (err) {
+    console.error("[boot] DGA bootstrap skipped:", err.message);
+  }
   const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`[boot] Nexus API listening on :${PORT}`);
   });
