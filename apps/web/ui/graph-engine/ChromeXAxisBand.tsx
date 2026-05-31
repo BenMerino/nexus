@@ -27,6 +27,15 @@ const TICK_FONT_AVG_CHAR_PX = 5;
 /** Breathing room between label edges — bigger labels still want a
  *  visible gap so they don't read as one continuous string. */
 const LABEL_GUTTER_PX = 8;
+/** Min gap a label must keep from its bucket's boundary dividers. The
+ *  decimator drops a label that can't clear its dividers by this much,
+ *  so dates never render on top of the grid ticks. */
+const DIVIDER_CLEARANCE_PX = 2;
+/** Minimum glyphs a truncated label renders at (matches the `maxChars`
+ *  floor below). The divider-clearance test uses this as the label's
+ *  smallest possible footprint — a label only yields to a divider when
+ *  even its ellipsised form (`X…`) wouldn't fit inside its bucket. */
+const X_LABEL_MIN_CHARS = 4;
 
 /** No CSS transitions on chrome elements — `useChartAnimation` lerps
  *  chrome positions every frame using the same easing as chart marks
@@ -39,7 +48,7 @@ const LABEL_TRANSITION = 'none';
  *  rest fill in source order, skipping any that would crash an existing
  *  placement (< minSlot gap). Output sorted ascending. */
 export function xAxisLabelLayout(el: Extract<ChromeElement, { kind: 'x-axis-band' }>) {
-    const { labels, range, xAt, anchors } = el;
+    const { labels, range, xAt, anchors, leadingEdgeXs, trailingEdgeXs } = el;
     const n = labels.length;
     const plotWidth = Math.max(1, range[1] - range[0]);
     const uniformStep = plotWidth / Math.max(1, n);
@@ -51,10 +60,39 @@ export function xAxisLabelLayout(el: Extract<ChromeElement, { kind: 'x-axis-band
     const widestLabelChars = labels.reduce((m, l) => Math.max(m, l.length), 0);
     const minSlot = Math.max(X_LABEL_MIN_SLOT_PX_FLOOR, widestLabelChars * TICK_FONT_AVG_CHAR_PX + LABEL_GUTTER_PX);
 
+    /* The decimator is the SINGLE spatial authority: a label places only
+     *  if it clears neighbour labels AND its own bucket's boundary
+     *  dividers, so dates never render on top of the grid ticks. The
+     *  clearance test uses the label's MINIMUM rendered footprint — the
+     *  ellipsis-truncation floor (`X_LABEL_MIN_CHARS` glyphs) — because
+     *  a label that doesn't fit whole is shortened (and may rotate)
+     *  before it is dropped. So we only drop a label when even its
+     *  truncated form would overrun a divider. Dividers always render
+     *  (they're the grid); the label yields. */
+    const minRenderedHalfWidth = (i: number) => {
+        const chars = Math.min(labels[i].length, X_LABEL_MIN_CHARS);
+        return (chars * TICK_FONT_AVG_CHAR_PX) / 2;
+    };
+    const clearsDividers = (i: number): boolean => {
+        const lead = leadingEdgeXs?.[i];
+        const trail = trailingEdgeXs?.[i];
+        if (typeof lead !== 'number' || typeof trail !== 'number') return true;
+        const c = at(i);
+        const hw = minRenderedHalfWidth(i) + DIVIDER_CLEARANCE_PX;
+        return (c - hw) >= lead && (c + hw) <= trail;
+    };
+
     const placed = new Set<number>();
-    const tryPlace = (i: number): boolean => {
+    /* `priority` placements (axis edges + semantic anchors) are
+     *  navigationally important and bypass the divider-clearance test —
+     *  they always show even in a clipped sliver bucket. Interior
+     *  mid-period labels DO yield to dividers, which is where crowding
+     *  actually happens. All placements still respect label↔label
+     *  `minSlot` so priorities never overlap each other. */
+    const tryPlace = (i: number, priority = false): boolean => {
         if (i < 0 || i >= n) return false;
         if (placed.has(i)) return true;
+        if (!priority && !clearsDividers(i)) return false;
         const ci = at(i);
         for (const p of placed) {
             if (Math.abs(at(p) - ci) < minSlot) return false;
@@ -63,10 +101,10 @@ export function xAxisLabelLayout(el: Extract<ChromeElement, { kind: 'x-axis-band
         return true;
     };
 
-    if (n > 0) tryPlace(0);
-    if (n > 1) tryPlace(n - 1);
+    if (n > 0) tryPlace(0, true);
+    if (n > 1) tryPlace(n - 1, true);
     if (anchors) {
-        for (const a of anchors) tryPlace(a);
+        for (const a of anchors) tryPlace(a, true);
     }
     for (let i = 1; i < n - 1; i++) tryPlace(i);
 
@@ -76,7 +114,7 @@ export function xAxisLabelLayout(el: Extract<ChromeElement, { kind: 'x-axis-band
     for (let i = 1; i < indices.length; i++) {
         minNeighborGap = Math.min(minNeighborGap, at(indices[i]) - at(indices[i - 1]));
     }
-    const maxChars = Math.max(4, Math.floor(minNeighborGap / TICK_FONT_AVG_CHAR_PX));
+    const maxChars = Math.max(X_LABEL_MIN_CHARS, Math.floor(minNeighborGap / TICK_FONT_AVG_CHAR_PX));
     const rotate = stride === 1 && labels.some(l => l.length > maxChars);
     return { indices, at, step: uniformStep, stride, maxChars, rotate, range };
 }
