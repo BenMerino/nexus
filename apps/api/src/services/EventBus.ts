@@ -31,12 +31,15 @@ export interface ActorIdentityTail {
 /** The typed event catalog. Seeded empty — each domain phase adds its
  *  own `domain.action` keys here as it lands. */
 export interface GovernorEventMap {
-  // Seeded empty; each domain phase adds its channels (see docs/DGA_DESIGN.md):
+  // Phase 4 — project domain (first migrated governor).
+  "project.created": TenantPayload & { projectId: number } & ActorIdentityTail;
+  "project.updated": TenantPayload & { projectId: number } & ActorIdentityTail;
+  "project.deleted": TenantPayload & { projectId: number } & ActorIdentityTail;
+  // Future domains add their channels here (see docs/DGA_DESIGN.md):
   //   publication.upserted | publication.deleted
   //   author.upserted | author.merged | author.claimed
   //   venue.upserted | venue.indexationUpdated
   //   institution.provisioned | institution.policyChanged
-  //   project.created | project.updated | project.approved
   //   ingestion.completed | roster.imported
 }
 
