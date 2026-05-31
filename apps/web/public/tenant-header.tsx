@@ -32,7 +32,7 @@ export function TenantPublicHeader({
           </div>
         </div>
       </div>
-      <nav className="public-tabs" aria-label="Navegación de secciones">
+      <nav className="public-tabs" aria-label="Section navigation">
         {items.map(it => (
           <a key={it.id} href={`#${it.id}`}
              className={`public-tab${currentId === it.id ? ' active' : ''}`}

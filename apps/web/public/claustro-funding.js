@@ -9,11 +9,11 @@
     { id: "anillos",             name: "Anillos ANID",            external: true,  concursable: true,  agency: "ANID" },
     { id: "corfo",               name: "CORFO",                   external: true,  concursable: true,  agency: "CORFO" },
     { id: "fia",                 name: "FIA",                     external: true,  concursable: true,  agency: "FIA" },
-    { id: "vrid",                name: "VRID Interno (UTalca)",   external: false, concursable: true,  agency: "UTalca" },
-    { id: "extension",           name: "Extensión / Vinculación", external: false, concursable: false, agency: "UTalca" },
-    { id: "contrato-empresa",    name: "Contrato con empresa",    external: true,  concursable: false, agency: "Privado" },
-    { id: "consultoria",         name: "Consultoría",             external: true,  concursable: false, agency: "Privado" },
-    { id: "otro",                name: "Otro",                    external: false, concursable: false, agency: "—" },
+    { id: "vrid",                name: "Internal VRID (UTalca)",  external: false, concursable: true,  agency: "UTalca" },
+    { id: "extension",           name: "Outreach / Engagement",   external: false, concursable: false, agency: "UTalca" },
+    { id: "contrato-empresa",    name: "Company contract",        external: true,  concursable: false, agency: "Private" },
+    { id: "consultoria",         name: "Consulting",              external: true,  concursable: false, agency: "Private" },
+    { id: "otro",                name: "Other",                   external: false, concursable: false, agency: "—" },
   ];
 
   function byId(id) {

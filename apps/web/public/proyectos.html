@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Proyectos — Nexus</title>
+  <title>Projects — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
   <link rel="stylesheet" href="/claustro.css">
 </head>
@@ -17,59 +17,59 @@
             <h1 class="view-title">Projects</h1>
           </div>
           <div class="view-meta">
-            <span class="tag mono" id="tag-count">0 PROYECTOS</span>
+            <span class="tag mono" id="tag-count">0 PROJECTS</span>
             <span class="tag mono tag-muted" id="tag-amount">$0</span>
           </div>
         </header>
 
         <div id="proyectos-no-access" class="card" style="display:none;">
-          <p>Solo roles administrativos del tenant pueden gestionar proyectos.</p>
+          <p>Only tenant administrative roles can manage projects.</p>
         </div>
         <div id="proyectos-area" style="display:none;">
           <div class="stat-row">
             <div class="stat">
-              <div class="stat-label">Proyectos vigentes</div>
+              <div class="stat-label">Active projects</div>
               <div class="stat-value" id="stat-total-val">0</div>
-              <div class="stat-sub">todas las facultades</div>
+              <div class="stat-sub">all faculties</div>
             </div>
             <div class="stat">
-              <div class="stat-label">Monto total</div>
+              <div class="stat-label">Total amount</div>
               <div class="stat-value" id="stat-amount-val" style="color: var(--accent);">$0</div>
-              <div class="stat-sub">comprometido</div>
+              <div class="stat-sub">committed</div>
             </div>
             <div class="stat">
-              <div class="stat-label">Concursables</div>
+              <div class="stat-label">Competitive</div>
               <div class="stat-value" id="stat-conc-val">0</div>
-              <div class="stat-sub" id="stat-conc-sub">de 0 proyectos</div>
+              <div class="stat-sub" id="stat-conc-sub">of 0 projects</div>
             </div>
             <div class="stat">
-              <div class="stat-label">Externos</div>
+              <div class="stat-label">External</div>
               <div class="stat-value" id="stat-ext-val">0</div>
-              <div class="stat-sub">financiamiento externo</div>
+              <div class="stat-sub">external funding</div>
             </div>
           </div>
 
           <div class="claustro-actions">
             <div class="filter-pills" id="filter-pills"></div>
-            <button class="primary-btn" id="btn-toggle-form">+ Nuevo proyecto</button>
+            <button class="primary-btn" id="btn-toggle-form">+ New project</button>
           </div>
 
           <section class="card project-form" id="project-form-card" style="display:none;">
-            <div class="eyebrow" id="proj-form-eyebrow">Nuevo proyecto</div>
+            <div class="eyebrow" id="proj-form-eyebrow">New project</div>
             <div id="project-form"></div>
             <div class="form-actions">
-              <button class="secondary-btn" id="btn-cancel-project">Cancelar</button>
-              <button class="primary-btn" id="btn-save-project">Guardar</button>
+              <button class="secondary-btn" id="btn-cancel-project">Cancel</button>
+              <button class="primary-btn" id="btn-save-project">Save</button>
             </div>
           </section>
 
           <section class="claustro-list">
             <div class="section-head">
               <div>
-                <div class="eyebrow">Proyectos registrados</div>
-                <h2 class="section-title" id="list-title">Todos los proyectos</h2>
+                <div class="eyebrow">Recorded projects</div>
+                <h2 class="section-title" id="list-title">All projects</h2>
               </div>
-              <span class="tag mono" id="list-count">0 resultados</span>
+              <span class="tag mono" id="list-count">0 results</span>
             </div>
             <div id="projects-list"></div>
           </section>

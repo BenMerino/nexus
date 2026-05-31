@@ -66,9 +66,9 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
     return { start, end };
   }, [filtered]);
 
-  if (err) return <section className="card card-span-4"><SectionHead title="Proyectos" /><div className="muted">Error: {err}</div></section>;
-  if (!projects) return <section className="card card-span-4"><SectionHead title="Proyectos" /><div className="muted skel" style={{ height: 200 }} /></section>;
-  if (!filtered.length) return <section className="card card-span-4"><SectionHead title="Proyectos" /><div className="muted">Sin proyectos con fechas registradas.</div></section>;
+  if (err) return <section className="card card-span-4"><SectionHead title="Projects" /><div className="muted">Error: {err}</div></section>;
+  if (!projects) return <section className="card card-span-4"><SectionHead title="Projects" /><div className="muted skel" style={{ height: 200 }} /></section>;
+  if (!filtered.length) return <section className="card card-span-4"><SectionHead title="Projects" /><div className="muted">No projects with recorded dates.</div></section>;
 
   const totalMs = range!.end.getTime() - range!.start.getTime();
   const todayMs = Date.now();
@@ -84,7 +84,7 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
 
   return (
     <section className="card card-span-4 gantt-card">
-      <SectionHead title="Proyectos" />
+      <SectionHead title="Projects" />
       <div className="gantt-wrap">
         <div className="gantt-axis">
           {ticks.map((t, i) => (
@@ -108,7 +108,7 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
             const cls = filterOrcid
               ? (meIsIR ? 'gantt-bar gantt-bar-ir' : 'gantt-bar gantt-bar-co')
               : 'gantt-bar gantt-bar-neutral';
-            const fundLabel = p.fuente_financiamiento || 'Otro';
+            const fundLabel = p.fuente_financiamiento || 'Other';
             return (
               <div key={p.id} className="gantt-row">
                 <div className="gantt-row-label" title={fundLabel}>
@@ -127,13 +127,13 @@ export function ProjectsGanttPanel({ filterOrcid }: { filterOrcid?: string | nul
       <div className="gantt-legend">
         {filterOrcid ? (
           <>
-            <span><i className="legend-dot ir" />Investigador responsable</span>
-            <span><i className="legend-dot co" />Co-investigador</span>
+            <span><i className="legend-dot ir" />Principal investigator</span>
+            <span><i className="legend-dot co" />Co-investigator</span>
           </>
         ) : (
-          <span><i className="legend-dot neutral" />Proyecto</span>
+          <span><i className="legend-dot neutral" />Project</span>
         )}
-        <span><i className="legend-line" />Hoy</span>
+        <span><i className="legend-line" />Today</span>
       </div>
     </section>
   );

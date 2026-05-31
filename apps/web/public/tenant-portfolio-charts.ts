@@ -30,8 +30,8 @@ export function buildVelocityChart(v: Velocity, title: string): GraphDirective {
   return {
     type: 'line',
     title,
-    xLabel: 'Año',
-    yLabel: 'Citas',
+    xLabel: 'Year',
+    yLabel: 'Citations',
     valueLabels: true,
     data: [...hist, ...fc] as any,
   };
@@ -52,8 +52,8 @@ export function buildCadenceChart(c: Cadence, title: string, typeLabel: (t: stri
   return {
     type: 'stacked-bar',
     title,
-    xLabel: 'Año',
-    yLabel: 'Artículos',
+    xLabel: 'Year',
+    yLabel: 'Papers',
     series: ordered,
     legendOrder: ordered,
     legendLabels: Object.fromEntries(ordered.map(t => [t, typeLabel(t)])),

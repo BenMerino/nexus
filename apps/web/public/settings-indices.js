@@ -33,12 +33,12 @@
     var sel = [];
     for (var i = 0; i < checks.length; i++) if (checks[i].checked) sel.push(checks[i].dataset.src);
     var status = document.getElementById("idx-status");
-    status.textContent = "Guardando…";
+    status.textContent = "Saving…";
     fetch("/api/claustro?action=indices", {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ indices: sel }),
     }).then(function (r) { return r.json(); }).then(function (d) {
-      status.textContent = d.error ? d.error : "¡Guardado!";
+      status.textContent = d.error ? d.error : "Saved!";
       if (!d.error) selected = d.indices || sel;
       setTimeout(function () { status.textContent = ""; }, 2000);
     }).catch(function (err) { status.textContent = err.message; });

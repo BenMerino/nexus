@@ -1,13 +1,13 @@
-// Organization page — Claustro classification tab. Self-contained: fetches the
-// tenant claustro (núcleo academics) + program validation and renders the
-// program cards and roster table. The accepted-indices config that drives this
+// Organization page — Faculty (claustro) classification tab. Self-contained:
+// fetches the tenant core faculty + program validation and renders the program
+// cards and roster table. The accepted-indices config that drives this
 // classification is edited on the Settings page. Lazy: data loads the first
-// time the Claustro tab is opened.
+// time the Faculty tab is opened.
 (function () {
   var PROGRAM_LABELS = {
-    doctorado: "Doctorado",
-    magister_academico: "Magíster Académico",
-    magister_profesional: "Magíster Profesional",
+    doctorado: "Doctorate",
+    magister_academico: "Academic Master's",
+    magister_profesional: "Professional Master's",
   };
   var state = { loaded: false };
 
@@ -32,12 +32,12 @@
       var k = keys[i];
       var p = programs[k] || {};
       html += '<div class="program-card"><h4>' + esc(PROGRAM_LABELS[k] || k) + "</h4>";
-      html += '<div class="pgm-row"><span>Núcleo</span><span>' + (p.total || 0) + "</span></div>";
-      html += '<div class="pgm-row"><span>Calificados</span><span>' + (p.qualified || 0) + "</span></div>";
-      html += '<div class="pgm-row"><span>% calificados</span><span>' + fmtPct(p.percentQualified || 0) + " " + meetIcon(p.meetsPercent) + "</span></div>";
-      html += '<div class="pgm-row"><span>Mín requerido</span><span>' + (p.minRequired || 0) + " " + meetIcon(p.meetsCount) + "</span></div>";
-      html += '<div class="pgm-row"><span>Promedio horas</span><span>' + fmtHours(p.averageHours || 0) + " " + meetIcon(p.meetsHours) + "</span></div>";
-      html += '<div class="pgm-banner ' + (p.pass ? "pgm-pass" : "pgm-fail") + '">' + (p.pass ? "Cumple" : "No cumple") + "</div>";
+      html += '<div class="pgm-row"><span>Core</span><span>' + (p.total || 0) + "</span></div>";
+      html += '<div class="pgm-row"><span>Qualified</span><span>' + (p.qualified || 0) + "</span></div>";
+      html += '<div class="pgm-row"><span>% qualified</span><span>' + fmtPct(p.percentQualified || 0) + " " + meetIcon(p.meetsPercent) + "</span></div>";
+      html += '<div class="pgm-row"><span>Min. required</span><span>' + (p.minRequired || 0) + " " + meetIcon(p.meetsCount) + "</span></div>";
+      html += '<div class="pgm-row"><span>Avg. hours</span><span>' + fmtHours(p.averageHours || 0) + " " + meetIcon(p.meetsHours) + "</span></div>";
+      html += '<div class="pgm-banner ' + (p.pass ? "pgm-pass" : "pgm-fail") + '">' + (p.pass ? "Meets" : "Doesn't meet") + "</div>";
       html += "</div>";
     }
     target.innerHTML = html;
@@ -46,10 +46,10 @@
   function renderClaustroTable(rows) {
     var wrap = document.getElementById("oc-claustro-table");
     if (!rows || !rows.length) {
-      wrap.innerHTML = '<p style="color:var(--fg-dim);font-size:12px;">Sin académicos en el núcleo.</p>';
+      wrap.innerHTML = '<p style="color:var(--fg-dim);font-size:12px;">No academics in the core.</p>';
       return;
     }
-    var html = '<table class="claustro-table"><tr><th>Académico</th><th>Grado</th><th>Horas</th><th>Pubs 5a</th><th>Proy IR ext</th><th>Proy total</th><th>Clasificación</th></tr>';
+    var html = '<table class="claustro-table"><tr><th>Academic</th><th>Degree</th><th>Hours</th><th>Pubs 5y</th><th>Ext. PI proj.</th><th>Total proj.</th><th>Classification</th></tr>';
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i]; var u = r.user || {}; var c = r.classification || {}; var rs = r.reasons || {}; var ev = r.evidence || {};
       html += "<tr><td><strong>" + esc(u.full_name || u.username || "—") + "</strong>";
@@ -58,9 +58,9 @@
       html += "</td><td>" + esc(u.grado_academico || "—") + "</td>";
       html += "<td>" + (u.horas_permanencia != null ? esc(u.horas_permanencia) + "h" : "—") + "</td>";
       html += "<td>" + (ev.pubCount || 0) + "</td><td>" + (ev.irExterno || 0) + "</td><td>" + (ev.concursableAny || 0) + "</td>";
-      html += "<td>" + chip(c.doctorado, "chip-doc", "Doctorado", rs.doctorado);
-      html += chip(c.magister_academico, "chip-mac", "Mag. Acad.", rs.magister_academico);
-      html += chip(c.magister_profesional, "chip-mpr", "Mag. Prof.", rs.magister_profesional);
+      html += "<td>" + chip(c.doctorado, "chip-doc", "Doctorate", rs.doctorado);
+      html += chip(c.magister_academico, "chip-mac", "Acad. Master's", rs.magister_academico);
+      html += chip(c.magister_profesional, "chip-mpr", "Prof. Master's", rs.magister_profesional);
       html += "</td></tr>";
     }
     wrap.innerHTML = html + "</table>";

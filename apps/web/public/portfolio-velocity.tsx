@@ -21,8 +21,8 @@ export interface VelocityLabels {
 const DEFAULT_LABELS: VelocityLabels = {
   score: 'score',
   trend: { rising: 'rising', flat: 'flat', falling: 'falling' },
-  actual: 'Citas reales',
-  forecast: 'Proyección',
+  actual: 'Actual citations',
+  forecast: 'Forecast',
 };
 
 export function VelocityPanel({ velocity, labels = DEFAULT_LABELS }: { velocity: Velocity; labels?: VelocityLabels }) {

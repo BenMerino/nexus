@@ -42,7 +42,7 @@
 
   function saveProject() {
     var body = window.claustroRender.collectForm();
-    if (!body.titulo) { alert("Título requerido"); return; }
+    if (!body.titulo) { alert("Title required"); return; }
     var url, method;
     if (state.editingId) { url = "/api/projects?action=update"; method = "PUT"; body.id = state.editingId; }
     else { url = "/api/projects?action=create"; method = "POST"; }
@@ -60,7 +60,7 @@
     });
   };
   window.claustroDelete = function (id) {
-    if (!confirm("¿Eliminar proyecto #" + id + "?")) return;
+    if (!confirm("Delete project #" + id + "?")) return;
     fetch("/api/projects?action=delete&id=" + id, { method: "DELETE" })
       .then(function (r) { return r.json(); })
       .then(function () {

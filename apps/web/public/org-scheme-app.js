@@ -80,7 +80,7 @@
           + "</div>"
           + '<div class="org-children">' + peopleHtml + "</div></div>";
       }
-      var kindLabel = { faculty: "Facultad", institute: "Instituto", other: "Otras" }[f.kind] || "";
+      var kindLabel = { faculty: "Faculty", institute: "Institute", other: "Other" }[f.kind] || "";
       var facLabel = esc(f.name) + (kindLabel ? ' <span class="org-kind">' + kindLabel + "</span>" : "");
       var facNode = branch(facLabel, "fac", metrics(f.headcount, f.withOrcid, f.papers), depHtml);
       // wire up the department rows (built as raw HTML inside the faculty)
