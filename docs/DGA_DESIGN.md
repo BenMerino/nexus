@@ -40,10 +40,10 @@ The university that *owns* a Nexus tenant is not just the `withTenant` scope bou
 
 | Domain | Role | Reads | Job |
 |---|---|---|---|
-| **Portfolio** (`portfolio`) | Resolver | Publication + Author + Venue | velocity, cadence, h-index, top-cited, concept profile, coauthor graph, org-tree (pure scope-narrowed SELECT). ← `portfolio*`, `h-index`, `dashboard-stats`, `graph-builder`, `org-tree` |
+| **Statistician** (`statistician`) | Resolver | Publication + Author + Venue | bibliometric stats: velocity, cadence, h-index, top-cited, concept profile, coauthor graph, org-tree (pure scope-narrowed SELECT). Emits **chartable** `{data, vizHint}` for the Composer. ← `portfolio*`, `h-index`, `dashboard-stats`, `graph-builder`, `org-tree` |
 | **Claustro** (`claustro`) | Resolver | Author × Venue(indexation) × Project | CNA core-faculty accreditation; only write is its `claustro.indices.*` config key. ← `claustro.js`, `db-schema-claustro.js` |
 | **Reports** (`reports`) `[PLANNED]` | Resolver/Composer | Institution + Project + Publication | automatic institutional reports |
-| **Architect** (`architect`) | Composer | the resolvers | data → `GraphDirective` chart/graph specs + node-detail; unauthenticated public profiles (wraps `withTenant(tenantBySlug)`). Generalize `architect-replay.js` → a `kind → atom-builder` registry. |
+| **Architect** (`architect`) | Composer | the resolvers | **The single chart-invocation seam** (Zincro mechanism). A `GraphComposer.compose(data, intent)` turns any chartable resolver's `{data, vizHint}` into a `GraphDirective`: `detectShape → resolveChartType → buildDirective → enrich` (interaction/colors/thresholds/title). Tier-1 auto-detect, Tier-2 `vizHint` override, or a pre-built `__directive` via the **`recompose` registry** (`kind → compose fn`, generalize `architect-replay.js` beyond `publications`). Also node-detail + unauthenticated public profiles (`withTenant(tenantBySlug)`). Frontend just `GraphRender`s the directive — **no per-chart `buildXChart`**. |
 | **MetadataProviders** (`metadataProviders`) | Dispatcher | — | CrossRef/OpenAlex/SemanticScholar/DataCite + ROR resolution + object-storage presign. Outbound HTTP only. ← `fetchers`, `fetchers-institution`, `openalex`, `ror-resolve`, `storage` |
 
 ## Substrate — NOT the DGA (the layer it runs on)
@@ -53,7 +53,9 @@ The university that *owns* a Nexus tenant is not just the `withTenant` scope bou
 ---
 
 ## Tally
-**Built now: 5 Governors** (Publication, Author, Venue, Institution, Project) · **2 Workflows** (Ingestion, Onboarding) · **2 Resolvers** (Portfolio, Claustro) · **1 Composer** (Architect) · **1 Dispatcher** (MetadataProviders).
+**Built now: 5 Governors** (Publication, Author, Venue, Institution, Project) · **2 Workflows** (Ingestion, Onboarding) · **2 Resolvers** (Statistician, Claustro) · **1 Composer** (Architect — the chart-invocation seam) · **1 Dispatcher** (MetadataProviders).
+
+> **Chart invocation (Zincro pattern):** charts are NOT hand-built per panel. A chartable resolver returns `{data, vizHint?}`; the **Architect GraphComposer** auto-builds the `GraphDirective` (shape→type→build→enrich); the frontend `GraphRender`s it. The current frontend `build{Velocity,Cadence,YearlyBar}Chart` helpers (in the panels) are a **transitional shortcut** — they move into the backend composer when the Statistician resolver lands, so directives are produced server-side and the same path serves the dashboard, public profiles, and the AI/chat surface.
 **`[PLANNED]` additive** (designed-for, **not built** until specced — evolve-by-addition): Monetization (Gov), Approval (Workflow), Reports (Resolver), all under the Institution context.
 
 ## Schema changes implied (authorized; new numbered migrations)
@@ -73,4 +75,4 @@ The university that *owns* a Nexus tenant is not just the `withTenant` scope bou
 `publication`, `author`, `venue`, `project`, `institution` register `verifyAccess` + `readSummary`.
 
 ## Handler → domain map (route URLs unchanged on migration)
-`tag-stats`,`search`→Portfolio/Author/Venue resolvers · `claim-paper`→author(claim)+publication · `records`,`records/[id]`,`node-detail`,`graph-metadata`→publication · `submit`,`submissions`,`refetch-all`,`backfill-*`,`venue-type-backfill`,`indexation`→ingestion/venue · `portfolio`,`portfolio-backfill`,`dashboard`,`graph`→portfolio · `roster-actions`,`author-import`,`search-academics`→onboarding · `projects`→project · `claustro`→claustro · `architect/*`,`public/[slug]/*`→architect · `files`→metadataProviders · `theme-tokens`→institution · `auth`→substrate (unchanged).
+`tag-stats`,`search`→statistician/author/venue resolvers · `claim-paper`→author(claim)+publication · `records`,`records/[id]`,`node-detail`,`graph-metadata`→publication · `submit`,`submissions`,`refetch-all`,`backfill-*`,`venue-type-backfill`,`indexation`→ingestion/venue · `portfolio`,`portfolio-backfill`,`dashboard`,`graph`→statistician · `roster-actions`,`author-import`,`search-academics`→onboarding · `projects`→project · `claustro`→claustro · `architect/*`,`public/[slug]/*`→architect · `files`→metadataProviders · `theme-tokens`→institution · `auth`→substrate (unchanged).
