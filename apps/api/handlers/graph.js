@@ -1,6 +1,10 @@
 const { ensureSchema } = require("../src/lib/db");
 const { requireScope } = require("../src/lib/scope");
-const { buildGraph } = require("../src/lib/graph-builder");
+// Entity-derived graph (tags → entities migration). Verified structurally
+// identical to the legacy tag graph: every DOI connects to the same real venues
+// & institutions (scripts/diff-graph-entities.js, zero drift). The legacy
+// buildGraph stays in graph-builder.js as the diff baseline until tags is dropped.
+const { buildGraphFromEntities: buildGraph } = require("../src/lib/graph-builder-entities");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
