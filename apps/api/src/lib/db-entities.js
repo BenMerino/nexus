@@ -75,4 +75,21 @@ async function syncAffiliations(recordId, tenantId, record) {
   }
 }
 
-module.exports = { syncRecordEntities };
+// Entity resolution: merge institution `fromId` INTO `intoId`. Re-points the
+// variant's affiliation edges to the canonical institution (dedupe via ON
+// CONFLICT) and deletes the variant row. The primitive InstitutionGovernor.merge
+// will call; used now to apply the human institution-synonym judgments into the
+// entity model. Idempotent (a second call no-ops once fromId is gone).
+async function mergeInstitution(fromId, intoId) {
+  if (fromId === intoId) return;
+  await sql`UPDATE affiliation SET institution_id = ${intoId}
+    WHERE institution_id = ${fromId}
+      AND NOT EXISTS (
+        SELECT 1 FROM affiliation b WHERE b.institution_id = ${intoId}
+          AND b.publication_id = affiliation.publication_id
+          AND b.author_id = affiliation.author_id)`;
+  await sql`DELETE FROM affiliation WHERE institution_id = ${fromId}`;
+  await sql`DELETE FROM institutions WHERE id = ${fromId}`;
+}
+
+module.exports = { syncRecordEntities, mergeInstitution };
