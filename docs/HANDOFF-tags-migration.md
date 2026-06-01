@@ -27,9 +27,21 @@ Backfill: `railway ssh --service Nexus "cd /app/apps/api && node scripts/backfil
 ## How to run things (no local DATABASE_URL)
 The DB host is `*.railway.internal` (only resolves inside Railway). Run scripts via `railway ssh --service Nexus "cd /app/apps/api && node scripts/<x>.js"`. The container has the full repo at `/app`; app runs `node dist/index.js`. Deploy = push to `main` (Railway auto-builds; `tsc` compiles `src/**` + copies `.sql` to `dist/`). Wait ~90s, confirm `railway deployment list --service Nexus`.
 
-## graph-builder rebuild — BUILT & DIFFED; CUTOVER BLOCKED on ISSN-less venue identity (2026-06-01)
+## graph-builder rebuild — ✅ CUT OVER (2026-06-01). `/api/graph` now reads entities, not tags.
 
-### DONE this session (committed, live; graph still reads tags — NOT cut over)
+### Cutover complete (committed, live)
+`handlers/graph.js` now calls `buildGraphFromEntities`. The legacy `buildGraph` (tags) stays in `graph-builder.js` purely as the diff baseline until `tags` is dropped. **Gate: `scripts/diff-graph-entities.js` reports ZERO structural drift** — every DOI connects to the identical set of real venues & institutions in both graphs (run with `node --max-old-space-size=4096`; the default 2 GB OOMs).
+
+### Foundational fixes that unblocked it (migration 007 + backfills, all RAN on prod tenant 1)
+- **`indexed_in` → `venues.in_*` flags.** Those flags were all-FALSE; now backfilled (`scripts/backfill-venue-flags.js`, 138 venues: wos 135/scopus 136/doaj 23/scielo 2), dual-written on ingest (`db-entities.js syncVenueFlags`). Graph emits 4 per-source nodes instead of 250 per-ISSN nodes (`verify-indexed-flags.js`: onlyOLD=0, onlyNEW=164 recovered sibling-ISSN edges — documented improvement). `venue-flags.js` holds the source→flag map.
+- **ISSN-less venue identity (migration `007`).** `venues.issn_l` made NULLABLE + `name_key TEXT` with `UNIQUE(name_key, tenant_id)` as the venue identity; legacy `UNIQUE(issn_l,tenant)` dropped. `scripts/backfill-venues-namekey.js` fills name_key, inserts the ~4.9k ISSN-less venues (conferences/books/repos), and **merges venues sharing an ISSN** (EPL/RIVAR/Brazilian-surgery split — the VenueGovernor.merge op as backfill). Dual-write moved to `db-venues-sync.js` (name-key upsert).
+- **`venue_type` is journal|non-journal ONLY** (`entity-venue-type.js`; repository is NOT a venue type). **`publications.is_repository` (migration 007)** is the per-paper repository-deposit signal the graph excludes on — because a preprint/repository deposit is essentially a duplicate of the published paper. (preprint↔published *dedup* proper is future PublicationGovernor domain.) Backfilled from repository tags; dual-written.
+- **Per-DOI structural gate** (`diff-graph-entities.js`): replaced a brittle pattern-classifier with the provable invariant — canonicalize each venue to its ISSN-cluster and each institution to its post-merge ROR, then assert every DOI's connected-entity SET is identical. Cause-agnostic; catches real drift, ignores node-id relabels from sanctioned merges/collapses.
+
+### DGA framing (per user direction + DGA_DESIGN.md §17-19)
+Venue identity — including minting a name-keyed synthetic id for an ISSN-less venue, merging duplicates, and (future) fetching a missing ISSN — is **VenueGovernor** territory (`upsert`/`merge`/a `resolveIdentity` action). The backfill scripts are the proto-implementations; wrap them into `services/catalog/VenueGovernor.ts` in the DGA pass. The graph is the **Statistician** resolver reading venues.
+
+### Superseded blocker note (kept for history — NOW RESOLVED)
 - **Foundational fix for `indexed_in`** (was: 250 per-ISSN nodes off `indexed_in` tags; handoff originally said "→ venues.in_* flags" but those flags were **all FALSE / never backfilled**). Now:
   - `src/lib/venue-flags.js` — the one source→flag map (`Scopus→in_scopus`, `WoS→in_wos`, `DOAJ→in_doaj`, `SciELO→in_scielo`).
   - `scripts/backfill-venue-flags.js` — sets `venues.in_*` from `indexed_in` tags via **journal name-key join** (an `indexed_in` ISSN may be any sibling of the venue). **RAN on prod tenant 1: 138 venues flagged (wos 135 / scopus 136 / doaj 23 / scielo 2).** Idempotent.
