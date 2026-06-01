@@ -82,7 +82,27 @@ async function backfillTenant(tenantId) {
       WHERE p.tenant_id=$1 AND EXISTS (
         SELECT 1 FROM tags t WHERE t.doi_record_id=p.id AND t.category='repository')`, [tenantId]);
 
-    return { inserted, edges: edges.length };
+    // 5. Merge venues that share an ISSN-L into one (e.g. "EPL"/"Europhysics
+    //    Letters" both got a name-key row but are one journal). The OLD graph
+    //    collapsed these via journalCanonIssn; name-key identity re-split them.
+    //    Keep the lowest id, re-point published_in, drop the dups. This is the
+    //    VenueGovernor.merge operation, applied here as backfill.
+    const dups = (await c.query(`
+      SELECT issn_l, array_agg(id ORDER BY id) ids FROM venues
+      WHERE tenant_id=$1 AND issn_l IS NOT NULL GROUP BY issn_l HAVING COUNT(*)>1`, [tenantId])).rows;
+    let merged = 0;
+    for (const d of dups) {
+      const [keep, ...drop] = d.ids;
+      for (const from of drop) {
+        await c.query(`UPDATE published_in SET venue_id=$1 WHERE venue_id=$2
+          AND NOT EXISTS (SELECT 1 FROM published_in b WHERE b.venue_id=$1 AND b.publication_id=published_in.publication_id)`, [keep, from]);
+        await c.query(`DELETE FROM published_in WHERE venue_id=$1`, [from]);
+        await c.query(`DELETE FROM venues WHERE id=$1`, [from]);
+        merged++;
+      }
+    }
+
+    return { inserted, edges: edges.length, merged };
   });
 }
 
@@ -104,7 +124,7 @@ async function main() {
   for (const t of await tenantIds()) {
     process.stdout.write(`venues name_key tenant ${t}… `);
     const r = await backfillTenant(t);
-    console.log(`done (+${r.inserted} venues, ${r.edges} published_in edges, is_repository set)`);
+    console.log(`done (${r.inserted} venues upserted, ${r.edges} published_in edges, is_repository set, ${r.merged} ISSN-dup venues merged)`);
   }
   console.log("Venue name_key backfill complete. Re-run diff-graph-entities.js.");
   process.exit(0);
