@@ -3,12 +3,16 @@ const { computeVelocity, buildVelocitySeries } = require("./portfolio-velocity")
 const { getTopConcepts, buildCadence, topCited } = require("./portfolio-aggregates");
 const { buildCoauthorGraph } = require("./portfolio-coauthors");
 
+// orcid may arrive bare or prefixed; authors.orcid is stored bare.
+function bareOrcid(o) { return o ? String(o).replace(/^https?:\/\/orcid\.org\//, "") : o; }
+
 async function getResearcherWorks(orcid) {
   const r = await sql`
     SELECT d.id, d.doi, d.title, d.published, d.citation_count, d.type
-    FROM doi_records d
-    JOIN tags t ON t.doi_record_id = d.id
-    WHERE t.category = 'author' AND t.ext_id = ${orcid}
+    FROM publications d
+    JOIN authorship s ON s.publication_id = d.id
+    JOIN authors a ON a.id = s.author_id
+    WHERE a.orcid = ${bareOrcid(orcid)}
     ORDER BY d.published DESC NULLS LAST`;
   return r.rows;
 }
@@ -70,12 +74,14 @@ async function findCollaborators(orcid, tenantId, limit = 10) {
 }
 
 async function getExistingCoauthors(orcid) {
+  const me = bareOrcid(orcid);
   const r = await sql`
-    SELECT DISTINCT t2.ext_id FROM tags t1
-    JOIN tags t2 ON t2.doi_record_id = t1.doi_record_id
-    WHERE t1.category = 'author' AND t1.ext_id = ${orcid}
-      AND t2.category = 'author' AND t2.ext_id IS NOT NULL AND t2.ext_id <> ${orcid}`;
-  return r.rows.map(row => row.ext_id);
+    SELECT DISTINCT a2.orcid FROM authors a1
+    JOIN authorship s1 ON s1.author_id = a1.id
+    JOIN authorship s2 ON s2.publication_id = s1.publication_id
+    JOIN authors a2 ON a2.id = s2.author_id AND a2.tenant_id = a1.tenant_id
+    WHERE a1.orcid = ${me} AND a2.orcid <> ${me}`;
+  return r.rows.map(row => row.orcid);
 }
 
 async function getResearcherPortfolio(orcid, tenantId) {
