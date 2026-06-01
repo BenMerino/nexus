@@ -11,12 +11,18 @@ async function getPublicationTypes(tenantId) {
   return r.rows.map(row => ({ type: row.type, count: parseInt(row.count) }));
 }
 
+// Top journals by paper count. Reads the entity model (venues + published_in):
+// a venue is one journal (ISSN siblings already collapsed), venue_type='journal'
+// excludes repositories (SSRN) and book series (non-journal) — matching the old
+// category='journal' tag filter. Counts distinct publications per venue.
 async function getTopJournals(tenantId, limit = 10) {
   const r = await sql`
-    SELECT t.value as journal, COUNT(DISTINCT t.doi_record_id) as count
-    FROM tags t JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE t.category = 'journal' AND d.tenant_id = ${tenantId}
-    GROUP BY t.value
+    SELECT v.name as journal, COUNT(DISTINCT pi.publication_id) as count
+    FROM venues v
+    JOIN published_in pi ON pi.venue_id = v.id
+    JOIN publications d ON d.id = pi.publication_id
+    WHERE v.tenant_id = ${tenantId} AND v.venue_type = 'journal' AND d.tenant_id = ${tenantId}
+    GROUP BY v.id, v.name
     ORDER BY count DESC LIMIT ${limit}`;
   return r.rows.map(row => ({ journal: row.journal, count: parseInt(row.count) }));
 }

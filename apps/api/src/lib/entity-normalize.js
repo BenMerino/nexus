@@ -24,7 +24,12 @@ function venueKeyToIssn(rows) {
     if (!r.ext_id) continue;
     const key = journalNameKey(r.value);
     if (!key) continue;
-    const cur = byKey.get(key) || { issns: new Set(), name: r.value, venue_type: r.category === "repository" ? "repository" : "journal" };
+    // venue_type follows the tag category exactly: journal / repository /
+    // non-journal. Only 'journal' counts as a journal in getTopJournals; the
+    // earlier default-to-journal mislabeled SSRN (repository) / book series
+    // (non-journal) as journals.
+    const vtype = r.category === "repository" ? "repository" : r.category === "non-journal" ? "non-journal" : "journal";
+    const cur = byKey.get(key) || { issns: new Set(), name: r.value, venue_type: vtype };
     cur.issns.add(String(r.ext_id).trim());
     byKey.set(key, cur);
   }

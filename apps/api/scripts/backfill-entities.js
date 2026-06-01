@@ -50,9 +50,11 @@ async function backfillTenant(tenantId) {
       WHERE tg.category IN ('journal','non-journal','repository')
         AND tg.ext_id IS NOT NULL AND p.tenant_id=$1`, [tenantId])).rows;
     const venueMap = venueKeyToIssn(vrows); // nameKey → {issn_l,name,venue_type}
+    // UPDATE venue_type on conflict so a re-run corrects rows mistyped by an
+    // earlier backfill (non-journal/repository had defaulted to 'journal').
     await bulkInsert(c, "venues (issn_l, name, venue_type, tenant_id)",
       [...venueMap.values()].map((v) => [v.issn_l, v.name, v.venue_type, tenantId]),
-      "ON CONFLICT (issn_l, tenant_id) DO NOTHING");
+      "ON CONFLICT (issn_l, tenant_id) DO UPDATE SET venue_type = EXCLUDED.venue_type");
 
     // 4. authorship edges — bulk, joined on normalized ORCID.
     await c.query(`
