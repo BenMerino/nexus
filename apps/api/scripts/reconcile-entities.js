@@ -19,6 +19,7 @@
 
 const { sql } = require("../src/lib/sql");
 const { normOrcid, normRor, venueKeyToIssn } = require("./entity-normalize");
+const { collectAffiliationEdges } = require("./backfill-affiliation");
 
 async function tenants() {
   const r = await sql`SELECT DISTINCT tenant_id FROM publications ORDER BY tenant_id`;
@@ -67,6 +68,19 @@ async function newInstitutions(t) {
   return r.rows[0].n;
 }
 
+// affiliation edges: OLD = triples derivable from the affiliations JSON given
+// the current entities; NEW = affiliation rows. Uses the same collector as the
+// backfill (the pool's query, via a thin client shim) so the metric matches.
+async function oldAffiliations(t) {
+  const shim = { query: (text, params) => sql.query(text, params) };
+  return (await collectAffiliationEdges(shim, t)).length;
+}
+async function newAffiliations(t) {
+  const r = await sql`SELECT COUNT(*)::int n FROM affiliation af
+    JOIN publications p ON p.id = af.publication_id WHERE p.tenant_id=${t}`;
+  return r.rows[0].n;
+}
+
 async function main() {
   let drift = 0;
   for (const t of await tenants()) {
@@ -74,6 +88,7 @@ async function main() {
       ["authors", await oldAuthors(t), await newAuthors(t)],
       ["venues", await oldVenues(t), await newVenues(t)],
       ["institutions", await oldInstitutions(t), await newInstitutions(t)],
+      ["affiliations", await oldAffiliations(t), await newAffiliations(t)],
     ];
     console.log(`\n── tenant ${t} ──`);
     for (const [name, oldN, newN] of checks) {

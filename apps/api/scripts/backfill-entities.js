@@ -17,6 +17,7 @@
 const { withTenant, pool } = require("../src/db/index");
 const { venueKeyToIssn } = require("./entity-normalize");
 const { journalNameKey } = require("../src/lib/journal-canon");
+const { collectAffiliationEdges } = require("./backfill-affiliation");
 
 async function tenantIds() {
   const r = await pool.query("SELECT DISTINCT tenant_id FROM publications ORDER BY tenant_id");
@@ -76,6 +77,10 @@ async function backfillTenant(tenantId) {
       if (venueId) edges.push([r.pub, venueId]);
     }
     await bulkInsert(c, "published_in (publication_id, venue_id)", dedupePairs(edges), "ON CONFLICT DO NOTHING");
+
+    // 6. affiliation edges (pub↔author↔institution) from the affiliations JSON.
+    const affEdges = await collectAffiliationEdges(c, tenantId);
+    await bulkInsert(c, "affiliation (publication_id, author_id, institution_id)", affEdges, "ON CONFLICT DO NOTHING");
   });
 }
 
