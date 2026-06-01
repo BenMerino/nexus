@@ -53,15 +53,17 @@ async function main() {
   //   institution   — a synonym-merge variant ROR folded to its canonical
   //                   (OLD keyed the un-merged variant). instVariantRors.
   // Anything else = real drift → fail.
-  const { multiCatKeys, instVariantRors } = await classifiers(1);
+  const { multiCatKeys, mergedInstRors, venueIdKey } = await classifiers(1);
   const benign = (id) => {
     const g = groupOf(id);
     if (g === "source" || g === "indexed_in") return true;
     if (g === "journal" || g === "non-journal") {
-      const node = oldG.nodes.find((n) => n.id === id) || newG.nodes.find((n) => n.id === id);
-      return node && multiCatKeys.has(nameKey(node.label || ""));
+      // Benign if this venue node-id maps to a name_key OLD split into >1 node
+      // (entities collapse to one venue). The node-id suffix can be an ISSN or a
+      // raw name; venueIdKey maps either back to its name_key.
+      return multiCatKeys.has(venueIdKey.get(id) || "");
     }
-    if (g === "institution") return instVariantRors.has(id.slice("institution:".length));
+    if (g === "institution") return mergedInstRors.has(id.slice("institution:".length));
     return false;
   };
   const benignEdge = (e) => benign(e.split("→")[1]);
@@ -94,7 +96,8 @@ async function classifiers(tenantId) {
   // OLD node-id per tag: journal/non-journal key by ext_id when present (journals
   // collapse siblings, so use category alone for journal-with-ext), else by name.
   // We only need a STABLE per-name set whose size>1 means "OLD split it".
-  const reprs = new Map(); // name_key → Set(repr)
+  const reprs = new Map();      // name_key → Set(repr)
+  const venueIdKey = new Map(); // OLD venue node-id → name_key
   for (const r of rows) {
     const k = nameKey(r.value);
     if (!k) continue;
@@ -105,15 +108,25 @@ async function classifiers(tenantId) {
     const repr = r.category === "journal" ? "journal" : (r.ext_id ? `nj:${r.ext_id}` : `nj:${r.value}`);
     if (!reprs.has(k)) reprs.set(k, new Set());
     reprs.get(k).add(repr);
+    // The OLD node-id this tag produced, mapped back to its name_key.
+    const nodeId = r.category === "journal"
+      ? `journal:${r.ext_id}`
+      : `non-journal:${r.ext_id || r.value}`;
+    venueIdKey.set(nodeId, k);
   }
   const multiCatKeys = new Set([...reprs].filter(([, s]) => s.size > 1).map(([k]) => k));
+
+  // Institution merges: both the disappearing VARIANT ROR (its OLD node) and the
+  // CANONICAL ROR (the re-pointed NEW edges) are benign — entities merged them.
   const syn = (await sql`
-    SELECT DISTINCT t.ext_id FROM tag_synonyms s
+    SELECT DISTINCT s.ror_id, t.ext_id AS variant_ext FROM tag_synonyms s
     JOIN tags t ON t.category = 'institution' AND t.value = s.variant
     JOIN publications p ON p.id = t.doi_record_id AND p.tenant_id = ${tenantId}
     WHERE s.tenant_id = ${tenantId} AND s.category = 'institution'`).rows;
-  const instVariantRors = new Set(syn.map((r) => (r.ext_id || "").replace(/^https?:\/\/ror\.org\//, "")));
-  return { multiCatKeys, instVariantRors };
+  const bare = (x) => (x || "").replace(/^https?:\/\/ror\.org\//, "");
+  const mergedInstRors = new Set();
+  for (const r of syn) { mergedInstRors.add(bare(r.variant_ext)); mergedInstRors.add(bare(r.ror_id)); }
+  return { multiCatKeys, mergedInstRors, venueIdKey };
 }
 
 main().catch((e) => { console.error(e); process.exit(2); });
