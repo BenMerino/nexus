@@ -10,6 +10,7 @@
 const { sql } = require("./sql");
 const { normOrcid, normRor, venueKeyToIssn } = require("./entity-normalize");
 const { journalNameKey } = require("./journal-canon");
+const { flagsForNameKeys } = require("./venue-flags");
 
 // `record` is the normalized record (record.authors = [{name,orcid,affiliations:
 // [{name,ror}]}]); `tags` is extractTags(record). recordId is the publications.id.
@@ -53,6 +54,12 @@ async function syncRecordEntities(recordId, tenantId, record, tags) {
       ON CONFLICT DO NOTHING`;
   }
 
+  // Venue indexation flags. indexed_in tags for this record were written just
+  // before (tagIndexationForRecord) — fold their sources onto each venue this
+  // record published in. Indexation is a journal property, so OR the flags in
+  // (never clear) so siblings/other papers don't reset a known index.
+  await syncVenueFlags(recordId, tenantId);
+
   // Direct pub↔institution edges from institution TAGS (any ROR, ORCID or not).
   for (const t of tags.filter((x) => x.category === "institution" && x.ext_id)) {
     const ror = normRor(t.ext_id);
@@ -65,6 +72,25 @@ async function syncRecordEntities(recordId, tenantId, record, tags) {
 
   // Author-mediated affiliation (pub↔author↔institution) from the JSON.
   await syncAffiliations(recordId, tenantId, record);
+}
+
+// OR this record's indexed_in sources onto the venues it published in. The
+// indexed_in tags (value=Scopus|WoS|DOAJ|SciELO) were just written for this
+// record; map them to the in_* columns via venue-flags and set them true. Never
+// clears a flag — indexation is a journal property accreted across its papers.
+async function syncVenueFlags(recordId, tenantId) {
+  const srcRows = (await sql`
+    SELECT DISTINCT value FROM tags WHERE doi_record_id = ${recordId} AND category = 'indexed_in'`).rows;
+  const flags = flagsForNameKeys(new Set(srcRows.map((r) => r.value)));
+  if (!flags) return;
+  await sql`
+    UPDATE venues v SET
+      in_wos = v.in_wos OR ${flags.in_wos},
+      in_scopus = v.in_scopus OR ${flags.in_scopus},
+      in_doaj = v.in_doaj OR ${flags.in_doaj},
+      in_scielo = v.in_scielo OR ${flags.in_scielo}
+    FROM published_in pi
+    WHERE pi.publication_id = ${recordId} AND pi.venue_id = v.id AND v.tenant_id = ${tenantId}`;
 }
 
 async function syncAffiliations(recordId, tenantId, record) {

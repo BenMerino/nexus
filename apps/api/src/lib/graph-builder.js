@@ -1,18 +1,13 @@
 const { sql } = require("./sql");
 const { getAllTags, getAllRecords } = require("./db");
-const { journalNameKey, canonicalJournalIssns } = require("./journal-canon");
+const { canonicalJournalIssns } = require("./journal-canon");
+const { assembleGraph, canonicalExtId } = require("./graph-assemble");
 
 async function loadSynonymMap(tenantId) {
   const { rows } = await sql`SELECT category, variant, canonical FROM tag_synonyms WHERE tenant_id = ${tenantId}`;
   const map = new Map();
   for (const r of rows) map.set(`${r.category}:${r.variant}`, r.canonical);
   return map;
-}
-
-function canonicalExtId(category, extId) {
-  if (!extId) return null;
-  if (category === "institution") return extId.replace(/^https?:\/\/ror\.org\//, "");
-  return extId;
 }
 
 /** Build the authoritative author→institution map from doi_records.authors
@@ -52,60 +47,8 @@ function buildAffiliations(records, institutionIdByName, institutionIdByRor) {
   return { byAuthor };
 }
 
-async function buildGraph(scope) {
-  const [tags, records] = await Promise.all([getAllTags(scope), getAllRecords(scope)]);
-  const synonymMap = await loadSynonymMap(scope.tenantId);
-  const journalCanonIssn = canonicalJournalIssns(tags, synonymMap);
-
-  // Preprints / repository-venue papers are excluded from the graph explorer
-  // by convention — final published papers only. Collect the DOIs of any
-  // record tagged as a repository (SSRN, arXiv, Preprints.org, bioRxiv, …)
-  // or whose type is "preprint", and skip their tags below.
-  const preprintDois = new Set();
-  for (const t of tags) {
-    if (t.category === "repository") preprintDois.add(t.doi);
-    if (t.category === "type" && t.value === "preprint") preprintDois.add(t.doi);
-  }
-
-  const nodes = new Map();
-  const edges = [];
-  const extIdMap = new Map();
-  const seenEdge = new Set();
-  for (const t of tags) {
-    if (preprintDois.has(t.doi)) continue;
-    const resolved = synonymMap.get(`${t.category}:${t.value}`) || t.value;
-    const doiNodeId = `doi:${t.doi}`;
-    let extId = canonicalExtId(t.category, t.ext_id);
-    // Collapse ISSN siblings to the canonical issn for their journal.
-    if (t.category === "journal" && resolved) {
-      const canon = journalCanonIssn.get(journalNameKey(resolved));
-      if (canon) extId = canon;
-    }
-    let tagNodeId;
-    if (extId) {
-      tagNodeId = `${t.category}:${extId}`;
-      // Prefer the first non-empty label we see for a given extId. A blank
-      // earlier row (e.g. missing tags.value) shouldn't stick and block
-      // good labels from later rows.
-      const existing = extIdMap.get(tagNodeId);
-      if (!existing && resolved) extIdMap.set(tagNodeId, resolved);
-    } else {
-      tagNodeId = `${t.category}:${resolved}`;
-    }
-    const label = extIdMap.get(tagNodeId) || resolved;
-    if (!nodes.has(doiNodeId)) nodes.set(doiNodeId, { id: doiNodeId, label: t.title || t.doi, group: "doi", published: t.published || null });
-    if (!nodes.has(tagNodeId)) {
-      nodes.set(tagNodeId, { id: tagNodeId, label, group: t.category, ext_id: extId });
-    } else if (label && !nodes.get(tagNodeId).label) {
-      // Node was created earlier with a blank label; upgrade once a name is known.
-      nodes.get(tagNodeId).label = label;
-    }
-    const edgeKey = `${doiNodeId}→${tagNodeId}`;
-    if (!seenEdge.has(edgeKey)) {
-      edges.push({ source: doiNodeId, target: tagNodeId });
-      seenEdge.add(edgeKey);
-    }
-  }
+// Resolve the author→institution affiliation map shared by both graph paths.
+function affiliationsFromNodes(nodes, records) {
   const institutionIdByRor = new Map();
   const institutionIdByName = new Map();
   for (const n of nodes.values()) {
@@ -113,8 +56,16 @@ async function buildGraph(scope) {
     if (n.ext_id) institutionIdByRor.set(n.ext_id, n.id);
     if (n.label) institutionIdByName.set(n.label.toLowerCase(), n.id);
   }
-  const affiliations = buildAffiliations(records, institutionIdByName, institutionIdByRor);
+  return buildAffiliations(records, institutionIdByName, institutionIdByRor);
+}
+
+async function buildGraph(scope) {
+  const [tags, records] = await Promise.all([getAllTags(scope), getAllRecords(scope)]);
+  const synonymMap = await loadSynonymMap(scope.tenantId);
+  const journalCanonIssn = canonicalJournalIssns(tags, synonymMap);
+  const { nodes, edges } = assembleGraph(tags, { synonymMap, journalCanonIssn });
+  const affiliations = affiliationsFromNodes(nodes, records);
   return { nodes: Array.from(nodes.values()), edges, affiliations };
 }
 
-module.exports = { buildGraph };
+module.exports = { buildGraph, loadSynonymMap, affiliationsFromNodes };
