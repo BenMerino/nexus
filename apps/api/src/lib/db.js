@@ -1,6 +1,7 @@
 const { sql } = require("./sql");
 const schema = require("./db-schema");
 const { isPersonalScope } = require("./scope");
+const { normOrcid } = require("./entity-normalize");
 
 let _schemaReady = null;
 
@@ -25,7 +26,8 @@ async function getAllRecords(scope) {
   if (isPersonalScope(scope)) {
     const r = await sql`
       SELECT * FROM doi_records WHERE id IN (
-        SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid}
+        SELECT s.publication_id FROM authorship s JOIN authors a ON a.id=s.author_id
+        WHERE a.orcid=${normOrcid(scope.orcid)}
       ) ORDER BY id DESC`;
     return r.rows;
   }
@@ -41,7 +43,8 @@ async function getAllTags(scope) {
       SELECT t.category, t.value, t.ext_id, d.doi, d.title, d.published
       FROM tags t JOIN doi_records d ON t.doi_record_id = d.id
       WHERE d.id IN (
-        SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid}
+        SELECT s.publication_id FROM authorship s JOIN authors a ON a.id=s.author_id
+        WHERE a.orcid=${normOrcid(scope.orcid)}
       ) AND t.category IN ('journal', 'author', 'institution', 'repository', 'type')`;
     return r.rows;
   }
@@ -55,7 +58,8 @@ async function getAllTags(scope) {
 async function getRecordByDoi(doi, scope) {
   if (scope && isPersonalScope(scope)) {
     const r = await sql`SELECT id FROM doi_records WHERE doi = ${doi}
-      AND id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid})`;
+      AND id IN (SELECT s.publication_id FROM authorship s JOIN authors a ON a.id=s.author_id
+        WHERE a.orcid=${normOrcid(scope.orcid)})`;
     return r.rows[0];
   }
   const r = await sql`SELECT id FROM doi_records WHERE doi = ${doi}`;
@@ -69,7 +73,8 @@ async function getSubmissions(scope) {
       SELECT s.*, d.title FROM submissions s
       LEFT JOIN doi_records d ON s.doi = d.doi
       WHERE d.id IN (
-        SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid}
+        SELECT au.publication_id FROM authorship au JOIN authors a ON a.id=au.author_id
+        WHERE a.orcid=${normOrcid(scope.orcid)}
       ) ORDER BY s.created_at DESC`;
     return r.rows;
   }
