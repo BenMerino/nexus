@@ -63,9 +63,11 @@ async function backfillTenant(tenantId) {
     }
     // UPDATE venue_type on conflict so a re-run corrects rows mistyped by an
     // earlier backfill (non-journal/repository had defaulted to 'journal').
-    await bulkInsert(c, "venues (issn_l, name, venue_type, tenant_id)",
-      [...byIssn.values()].map((v) => [v.issn_l, v.name, v.venue_type, tenantId]),
-      "ON CONFLICT (issn_l, tenant_id) DO UPDATE SET venue_type = EXCLUDED.venue_type");
+    // Identity is name_key (migration 007); ISSN-less venues + name_key fill are
+    // handled by scripts/backfill-venues-namekey.js (run after this).
+    await bulkInsert(c, "venues (issn_l, name, name_key, venue_type, tenant_id)",
+      [...byIssn.values()].map((v) => [v.issn_l, v.name, journalNameKey(v.name), v.venue_type, tenantId]),
+      "ON CONFLICT (name_key, tenant_id) DO UPDATE SET venue_type = EXCLUDED.venue_type");
 
     // 4. authorship edges — bulk, joined on normalized ORCID.
     await c.query(`

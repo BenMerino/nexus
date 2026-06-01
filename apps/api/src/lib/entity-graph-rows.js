@@ -50,11 +50,15 @@ async function entityGraphRows(scope) {
 
   // journal / non-journal / repository — venue_type is the category; ext_id is
   // the canonical issn_l (siblings already collapsed in venues).
+  // Only journal/non-journal venues become nodes; repository-venue papers are
+  // excluded via publications.is_repository (below), matching the old graph
+  // where repository papers contributed no nodes.
   for (const r of (await sql`
     SELECT v.name, v.issn_l, v.venue_type, p.doi, p.title, p.published
     FROM published_in pi JOIN venues v ON v.id = pi.venue_id
     JOIN publications p ON p.id = pi.publication_id
-    WHERE p.id = ANY(${ids}) AND v.tenant_id = ${t}`).rows)
+    WHERE p.id = ANY(${ids}) AND v.tenant_id = ${t}
+      AND v.venue_type IN ('journal', 'non-journal')`).rows)
     push(r.venue_type, r.name, r.issn_l, r);
 
   // institution — direct pub↔institution edge (affiliated_with), bare ror.
@@ -66,10 +70,15 @@ async function entityGraphRows(scope) {
     push("institution", r.name, r.ror, r);
 
   // type — straight off publications (already canonicalized at ingest).
+  // is_repository is the per-paper repository-deposit signal (migration 007):
+  // emit a 'repository' row so assembleGraph's preprint/repository exclusion
+  // drops the paper, exactly as the old `repository` tag did.
   for (const r of (await sql`
-    SELECT type, doi, title, published FROM publications
-    WHERE id = ANY(${ids}) AND type IS NOT NULL`).rows)
-    push("type", r.type, null, r);
+    SELECT type, is_repository, doi, title, published FROM publications
+    WHERE id = ANY(${ids})`).rows) {
+    if (r.type) push("type", r.type, null, r);
+    if (r.is_repository) push("repository", r.title || r.doi, null, r);
+  }
 
   // indexed_in — one row per (venue flag, paper). value = source name; the
   // builder keys these nodes by value (no ext_id), giving 4 source nodes.

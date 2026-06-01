@@ -17,16 +17,19 @@ async function createEntityTables() {
   await sql`
     CREATE TABLE IF NOT EXISTS venues (
       id SERIAL PRIMARY KEY,
-      issn_l TEXT NOT NULL,
+      issn_l TEXT,
       name TEXT NOT NULL,
+      name_key TEXT,
       venue_type TEXT NOT NULL DEFAULT 'journal',
       in_wos BOOLEAN DEFAULT FALSE,
       in_scopus BOOLEAN DEFAULT FALSE,
       in_doaj BOOLEAN DEFAULT FALSE,
       in_scielo BOOLEAN DEFAULT FALSE,
-      tenant_id INTEGER NOT NULL DEFAULT 1,
-      UNIQUE (issn_l, tenant_id)
+      tenant_id INTEGER NOT NULL DEFAULT 1
     )`;
+  // Venue identity is the normalized name key (migration 007 — ISSN optional).
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_venues_name_key ON venues(name_key, tenant_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_venues_issn ON venues(issn_l, tenant_id)`;
   await sql`
     CREATE TABLE IF NOT EXISTS institutions (
       id SERIAL PRIMARY KEY,

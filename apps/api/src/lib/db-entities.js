@@ -8,9 +8,9 @@
 // (delete-then-insert) to mirror deleteTagsForRecord on re-fetch. Idempotent.
 
 const { sql } = require("./sql");
-const { normOrcid, normRor, venueKeyToIssn } = require("./entity-normalize");
-const { journalNameKey } = require("./journal-canon");
+const { normOrcid, normRor } = require("./entity-normalize");
 const { flagsForNameKeys } = require("./venue-flags");
+const { syncVenues } = require("./db-venues-sync");
 
 // `record` is the normalized record (record.authors = [{name,orcid,affiliations:
 // [{name,ror}]}]); `tags` is extractTags(record). recordId is the publications.id.
@@ -31,28 +31,11 @@ async function syncRecordEntities(recordId, tenantId, record, tags) {
       ON CONFLICT DO NOTHING`;
   }
 
-  // Venues + published_in. A journal is ONE venue identified by its name-key
-  // (ISSN siblings collapse). Canonical ISSN-L is a GLOBAL property, so resolve
-  // against EXISTING venues by name-key first and reuse — only mint a new venue
-  // when this journal isn't already known. (Inserting per-record would create a
-  // duplicate venue when this paper's canonical ISSN differs from the stored one.)
-  const vmap = venueKeyToIssn(tags.filter((x) => ["journal", "non-journal", "repository"].includes(x.category) && x.ext_id));
-  const existing = new Map(
-    (await sql`SELECT id, name FROM venues WHERE tenant_id = ${tenantId}`).rows
-      .map((r) => [journalNameKey(r.name), r.id]));
-  for (const v of vmap.values()) {
-    const key = journalNameKey(v.name);
-    let venueId = existing.get(key);
-    if (!venueId) {
-      const r = await sql`
-        INSERT INTO venues (issn_l, name, venue_type, tenant_id) VALUES (${v.issn_l}, ${v.name}, ${v.venue_type}, ${tenantId})
-        ON CONFLICT (issn_l, tenant_id) DO UPDATE SET name = EXCLUDED.name RETURNING id`;
-      venueId = r.rows[0].id;
-      existing.set(key, venueId);
-    }
-    await sql`INSERT INTO published_in (publication_id, venue_id) VALUES (${recordId}, ${venueId})
-      ON CONFLICT DO NOTHING`;
-  }
+  // Venues + published_in. A venue's identity is its name-key (ISSN optional);
+  // ISSN-less venues (conferences/books/repos) get a synthetic name-keyed row.
+  // venue_type by precedence (journal > repository > non-journal). is_repository
+  // is set as a per-paper publication property (the exclusion signal).
+  await syncVenues(recordId, tenantId, tags);
 
   // Venue indexation flags. indexed_in tags for this record were written just
   // before (tagIndexationForRecord) — fold their sources onto each venue this
