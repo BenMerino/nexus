@@ -6,7 +6,7 @@
 // So this walks the JSON per publication (idempotent, bulk-batched inserts),
 // resolving each (orcid, ror) to entity ids. Run as part of the backfill.
 
-const { normOrcid, normRor } = require("./entity-normalize");
+const { normOrcid, normRor } = require('../src/lib/entity-normalize');
 
 // Returns deduped [publication_id, author_id, institution_id] triples for a tenant.
 async function collectAffiliationEdges(c, tenantId) {

@@ -4,6 +4,8 @@ const { fetchCrossRef, fetchOpenAlex, fetchSemanticScholar, fetchDataCite, unwra
 const { upsertCitationsByYear, upsertConcepts, deleteConceptsForRecord } = require("./db-portfolio");
 const { extractKeywords } = require("./nlp-keywords");
 const { tagIndexationForRecord } = require("./indexed-backfill");
+const { syncRecordEntities } = require("./db-entities");
+const { sql } = require("./sql");
 
 async function fetchAndStore(doi, submissionId) {
   const results = await Promise.allSettled([
@@ -32,6 +34,12 @@ async function fetchAndStore(doi, submissionId) {
     await insertTag(dbRecord.id, tag.category, canonicalize(tag.category, tag.value), tag.ext_id);
   }
   await tagIndexationForRecord(dbRecord.id, record.issnL);
+
+  // Dual-write entities + edges (Step 3) so the entity tables stay in lockstep
+  // with tags on every ingest. Uses canonicalized tag values to match tags.
+  const canonTags = tags.map((t) => ({ ...t, value: canonicalize(t.category, t.value) }));
+  const tRow = await sql`SELECT tenant_id FROM publications WHERE id = ${dbRecord.id}`;
+  await syncRecordEntities(dbRecord.id, tRow.rows[0]?.tenant_id ?? 1, record, canonTags);
 
   await upsertCitationsByYear(dbRecord.id, record.countsByYear);
   await deleteConceptsForRecord(dbRecord.id);

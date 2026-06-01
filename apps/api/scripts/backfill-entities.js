@@ -15,7 +15,7 @@
 // venue + published_in writes as bulk SQL joined to it.
 
 const { withTenant, pool } = require("../src/db/index");
-const { venueKeyToIssn } = require("./entity-normalize");
+const { venueKeyToIssn } = require('../src/lib/entity-normalize');
 const { journalNameKey } = require("../src/lib/journal-canon");
 const { collectAffiliationEdges } = require("./backfill-affiliation");
 

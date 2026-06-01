@@ -18,7 +18,7 @@
 // Exits non-zero if any drift, so it can gate a script/CI step.
 
 const { sql } = require("../src/lib/sql");
-const { normOrcid, normRor, venueKeyToIssn } = require("./entity-normalize");
+const { normOrcid, normRor, venueKeyToIssn } = require('../src/lib/entity-normalize');
 const { collectAffiliationEdges } = require("./backfill-affiliation");
 
 async function tenants() {
