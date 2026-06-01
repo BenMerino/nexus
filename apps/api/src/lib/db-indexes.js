@@ -17,6 +17,15 @@ async function createIndexes() {
   await sql`CREATE INDEX IF NOT EXISTS idx_proj_inv_project ON project_investigators(project_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_proj_inv_user ON project_investigators(user_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_users_grado ON users(grado_academico)`;
+  // DGA entity + edge tables (UNIQUE constraints already index the identifier;
+  // these cover tenant scans + edge traversal in both directions).
+  await sql`CREATE INDEX IF NOT EXISTS idx_authors_tenant ON authors(tenant_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_venues_tenant ON venues(tenant_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_institutions_tenant ON institutions(tenant_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_authorship_author ON authorship(author_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_published_in_venue ON published_in(venue_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_affiliation_author ON affiliation(author_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_affiliation_institution ON affiliation(institution_id)`;
 }
 
 module.exports = { createIndexes };

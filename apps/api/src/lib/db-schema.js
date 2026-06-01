@@ -1,6 +1,8 @@
-const { sql, db } = require("./sql");
+const { sql } = require("./sql");
 const { createIndexes } = require("./db-indexes");
 const { createClaustroTables } = require("./db-schema-claustro");
+const { createEntityTables } = require("./db-schema-entities");
+const { addMissingColumns } = require("./db-schema-columns");
 
 async function createTables() {
   await sql`
@@ -113,31 +115,9 @@ async function createTables() {
       tenant_id INTEGER DEFAULT 1,
       UNIQUE(category, value_a, value_b, tenant_id)
     )`;
-  await createClaustroTables();
-}
 
-async function addMissingColumns() {
-  const safe = async (query) => {
-    try { await db.query(query); } catch (err) {
-      if (!err.message?.includes("already exists")) throw err;
-    }
-  };
-  // doi_records is now a VIEW (migration 004 renamed the table to publications);
-  // ALTER TABLE must target the real table. Idempotent — these columns already exist.
-  await safe("ALTER TABLE publications ADD COLUMN IF NOT EXISTS tenant_id INTEGER DEFAULT 1");
-  await safe("ALTER TABLE publications ADD COLUMN IF NOT EXISTS source_indices TEXT");
-  await safe("ALTER TABLE submissions ADD COLUMN IF NOT EXISTS tenant_id INTEGER DEFAULT 1");
-  await safe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS primary_color TEXT DEFAULT '#333333'");
-  await safe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS secondary_color TEXT DEFAULT '#1565c0'");
-  await safe("ALTER TABLE tag_synonyms ADD COLUMN IF NOT EXISTS tenant_id INTEGER DEFAULT 1");
-  await safe("ALTER TABLE tag_synonyms ADD COLUMN IF NOT EXISTS ror_id TEXT");
-  await safe("ALTER TABLE tags ADD COLUMN IF NOT EXISTS ext_id TEXT");
-  await safe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES tenants(id)");
-  await safe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS slug TEXT");
-  await safe("CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_slug ON tenants(slug)");
-  await safe(`CREATE TABLE IF NOT EXISTS theme_tokens (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TIMESTAMPTZ DEFAULT NOW())`);
-  await safe("ALTER TABLE users ADD COLUMN IF NOT EXISTS grado_academico TEXT");
-  await safe("ALTER TABLE users ADD COLUMN IF NOT EXISTS horas_permanencia INTEGER");
+  await createEntityTables();
+  await createClaustroTables();
 }
 
 async function seedDefaultTenant() {
