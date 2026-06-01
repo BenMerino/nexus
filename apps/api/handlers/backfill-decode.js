@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
       try {
         const decodedAuthors = decodeAuthorsJson(r.authors);
         await sql`
-          UPDATE doi_records SET
+          UPDATE publications SET
             title     = ${decodeEntities(r.title)},
             journal   = ${decodeEntities(r.journal)},
             publisher = ${decodeEntities(r.publisher)},

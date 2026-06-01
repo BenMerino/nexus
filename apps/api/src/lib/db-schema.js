@@ -39,8 +39,11 @@ async function createTables() {
       tenant_id INTEGER DEFAULT 1,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`;
+  // The publication aggregate root (formerly doi_records — renamed per the DGA
+  // domain model). A `doi_records` view (created after this) keeps legacy
+  // readers working. FKs reference the real table `publications`, never the view.
   await sql`
-    CREATE TABLE IF NOT EXISTS doi_records (
+    CREATE TABLE IF NOT EXISTS publications (
       id SERIAL PRIMARY KEY,
       submission_id INTEGER NOT NULL REFERENCES submissions(id),
       doi TEXT NOT NULL UNIQUE,
@@ -52,23 +55,24 @@ async function createTables() {
       source_indices TEXT,
       tenant_id INTEGER DEFAULT 1
     )`;
+  await sql`CREATE OR REPLACE VIEW doi_records AS SELECT * FROM publications`;
   await sql`
     CREATE TABLE IF NOT EXISTS tags (
       id SERIAL PRIMARY KEY,
-      doi_record_id INTEGER NOT NULL REFERENCES doi_records(id),
+      doi_record_id INTEGER NOT NULL REFERENCES publications(id),
       category TEXT NOT NULL,
       value TEXT NOT NULL
     )`;
   await sql`
     CREATE TABLE IF NOT EXISTS doi_citations_by_year (
-      doi_record_id INTEGER NOT NULL REFERENCES doi_records(id) ON DELETE CASCADE,
+      doi_record_id INTEGER NOT NULL REFERENCES publications(id) ON DELETE CASCADE,
       year INTEGER NOT NULL,
       count INTEGER NOT NULL,
       PRIMARY KEY (doi_record_id, year)
     )`;
   await sql`
     CREATE TABLE IF NOT EXISTS doi_concepts (
-      doi_record_id INTEGER NOT NULL REFERENCES doi_records(id) ON DELETE CASCADE,
+      doi_record_id INTEGER NOT NULL REFERENCES publications(id) ON DELETE CASCADE,
       concept_id TEXT NOT NULL,
       display_name TEXT NOT NULL,
       source TEXT NOT NULL DEFAULT 'openalex',
@@ -118,8 +122,10 @@ async function addMissingColumns() {
       if (!err.message?.includes("already exists")) throw err;
     }
   };
-  await safe("ALTER TABLE doi_records ADD COLUMN IF NOT EXISTS tenant_id INTEGER DEFAULT 1");
-  await safe("ALTER TABLE doi_records ADD COLUMN IF NOT EXISTS source_indices TEXT");
+  // doi_records is now a VIEW (migration 004 renamed the table to publications);
+  // ALTER TABLE must target the real table. Idempotent — these columns already exist.
+  await safe("ALTER TABLE publications ADD COLUMN IF NOT EXISTS tenant_id INTEGER DEFAULT 1");
+  await safe("ALTER TABLE publications ADD COLUMN IF NOT EXISTS source_indices TEXT");
   await safe("ALTER TABLE submissions ADD COLUMN IF NOT EXISTS tenant_id INTEGER DEFAULT 1");
   await safe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS primary_color TEXT DEFAULT '#333333'");
   await safe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS secondary_color TEXT DEFAULT '#1565c0'");

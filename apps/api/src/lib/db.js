@@ -90,7 +90,7 @@ async function insertSubmission(doi, uploader) {
 
 async function upsertRecord(submissionId, doi, title, authors, published, journal, publisher, type, citationCount, openAccess, openAccessUrl, abstract, venue, url, affiliations, rawResponses) {
   await sql`
-    INSERT INTO doi_records (submission_id, doi, title, authors, published, journal, publisher, type, citation_count, open_access, open_access_url, abstract, venue, url, affiliations, raw_responses)
+    INSERT INTO publications (submission_id, doi, title, authors, published, journal, publisher, type, citation_count, open_access, open_access_url, abstract, venue, url, affiliations, raw_responses)
     VALUES (${submissionId}, ${doi}, ${title}, ${authors}, ${published}, ${journal}, ${publisher}, ${type}, ${citationCount}, ${openAccess}, ${openAccessUrl}, ${abstract}, ${venue}, ${url}, ${affiliations}, ${rawResponses})
     ON CONFLICT(doi) DO UPDATE SET
       title=EXCLUDED.title, authors=EXCLUDED.authors, published=EXCLUDED.published,
@@ -118,7 +118,7 @@ async function deleteTagsForRecord(id) {
 }
 
 async function deleteRecord(id) {
-  await sql`DELETE FROM doi_records WHERE id = ${id}`;
+  await sql`DELETE FROM publications WHERE id = ${id}`;
 }
 
 async function deleteSubmissionsForDoi(doi) {
