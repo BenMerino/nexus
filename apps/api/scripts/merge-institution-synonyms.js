@@ -12,29 +12,35 @@
 const { sql } = require("../src/lib/sql");
 const { mergeInstitution } = require("../src/lib/db-entities");
 
+// Reusable: apply all institution synonym merges for a tenant. Called by the
+// standalone script AND at the end of the backfill (so a backfill re-run, which
+// recreates variant institutions from tags, always re-folds them). Idempotent.
+async function applyInstitutionMerges(tenantId) {
+  let merged = 0;
+  const syns = (await sql`
+    SELECT variant, ror_id FROM tag_synonyms
+    WHERE tenant_id = ${tenantId} AND category = 'institution' AND ror_id IS NOT NULL`).rows;
+  for (const s of syns) {
+    const canon = (await sql`SELECT id FROM institutions WHERE tenant_id = ${tenantId} AND ror = ${s.ror_id}`).rows[0];
+    if (!canon) continue;
+    const variants = (await sql`
+      SELECT id FROM institutions WHERE tenant_id = ${tenantId} AND name = ${s.variant} AND ror <> ${s.ror_id}`).rows;
+    for (const v of variants) { await mergeInstitution(v.id, canon.id); merged++; }
+  }
+  return merged;
+}
+
 async function main() {
   const tenants = (await sql`SELECT DISTINCT tenant_id FROM institutions`).rows.map((r) => r.tenant_id);
-  let merged = 0;
-  for (const t of tenants) {
-    const syns = (await sql`
-      SELECT variant, ror_id FROM tag_synonyms
-      WHERE tenant_id = ${t} AND category = 'institution' AND ror_id IS NOT NULL`).rows;
-    for (const s of syns) {
-      // canonical institution = the one with the synonym's ror_id
-      const canon = (await sql`SELECT id FROM institutions WHERE tenant_id = ${t} AND ror = ${s.ror_id}`).rows[0];
-      if (!canon) continue;
-      // variant institution(s) = rows whose NAME matches the variant but ROR differs
-      const variants = (await sql`
-        SELECT id FROM institutions WHERE tenant_id = ${t} AND name = ${s.variant} AND ror <> ${s.ror_id}`).rows;
-      for (const v of variants) {
-        await mergeInstitution(v.id, canon.id);
-        merged++;
-        console.log(`  merged inst ${v.id} → ${canon.id} (${s.variant} → ror ${s.ror_id})`);
-      }
-    }
-  }
-  console.log(`Done. ${merged} institution(s) merged.`);
+  let total = 0;
+  for (const t of tenants) total += await applyInstitutionMerges(t);
+  console.log(`Done. ${total} institution(s) merged.`);
   process.exit(0);
 }
 
-main().catch((e) => { console.error(e.message); process.exit(1); });
+module.exports = { applyInstitutionMerges };
+
+// Run as a standalone script only when invoked directly (not when imported).
+if (require.main === module) {
+  main().catch((e) => { console.error(e.message); process.exit(1); });
+}

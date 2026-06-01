@@ -99,13 +99,20 @@ async function newAffiliations(t) {
 // affiliated_with (direct pub↔institution): OLD = distinct (pub, canonical-ROR
 // institution) from institution tags; NEW = affiliated_with rows.
 async function oldAffiliatedWith(t) {
+  // Resolve each institution tag's ROR to its institution, folding merged
+  // variants to canonical (a variant whose name has a synonym → canonical ROR's
+  // institution) so OLD matches the re-pointed affiliated_with rows post-merge.
   const r = await sql`
     SELECT COUNT(*)::int n FROM (
-      SELECT DISTINCT tg.doi_record_id, i.id
+      SELECT DISTINCT tg.doi_record_id,
+        COALESCE(ci.id, i.id) AS inst_id
       FROM tags tg JOIN publications p ON p.id=tg.doi_record_id
-      JOIN institutions i ON i.tenant_id=${t}
+      LEFT JOIN tag_synonyms s ON s.tenant_id=${t} AND s.category='institution' AND s.variant=tg.value
+      LEFT JOIN institutions ci ON ci.tenant_id=${t} AND ci.ror=s.ror_id
+      LEFT JOIN institutions i ON i.tenant_id=${t}
         AND i.ror=regexp_replace(tg.ext_id,'^https?://ror\\.org/','')
       WHERE tg.category='institution' AND tg.ext_id IS NOT NULL AND p.tenant_id=${t}
+        AND COALESCE(ci.id, i.id) IS NOT NULL
     ) x`;
   return r.rows[0].n;
 }

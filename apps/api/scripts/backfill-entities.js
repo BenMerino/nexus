@@ -18,6 +18,7 @@ const { withTenant, pool } = require("../src/db/index");
 const { venueKeyToIssn } = require('../src/lib/entity-normalize');
 const { journalNameKey } = require("../src/lib/journal-canon");
 const { collectAffiliationEdges } = require("./backfill-affiliation");
+const { applyInstitutionMerges } = require("./merge-institution-synonyms");
 
 async function tenantIds() {
   const r = await pool.query("SELECT DISTINCT tenant_id FROM publications ORDER BY tenant_id");
@@ -127,7 +128,10 @@ async function main() {
   for (const t of await tenantIds()) {
     process.stdout.write(`backfilling tenant ${t}… `);
     await backfillTenant(t);
-    console.log("done");
+    // Re-apply institution synonym merges: the backfill recreates variant
+    // institutions from tags, so fold them again to stay idempotent w.r.t. merges.
+    const m = await applyInstitutionMerges(t);
+    console.log(`done (re-merged ${m} inst)`);
   }
   console.log("Backfill complete. Run reconcile-entities.js to verify zero drift.");
   process.exit(0);
