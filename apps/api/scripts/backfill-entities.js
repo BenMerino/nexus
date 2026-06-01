@@ -93,6 +93,18 @@ async function backfillTenant(tenantId) {
     // 6. affiliation edges (pub↔author↔institution) from the affiliations JSON.
     const affEdges = await collectAffiliationEdges(c, tenantId);
     await bulkInsert(c, "affiliation (publication_id, author_id, institution_id)", affEdges, "ON CONFLICT DO NOTHING");
+
+    // 7. affiliated_with edges (pub↔institution, direct) from institution TAGS —
+    // any ROR on the paper, ORCID or not. Set-based; joins to the institution by
+    // normalized ROR (synonym-merged variants resolve via institutions.ror).
+    await c.query(`
+      INSERT INTO affiliated_with (publication_id, institution_id)
+      SELECT DISTINCT tg.doi_record_id, i.id
+      FROM tags tg JOIN publications p ON p.id=tg.doi_record_id
+      JOIN institutions i ON i.tenant_id=$1
+        AND i.ror=regexp_replace(tg.ext_id,'^https?://ror\\.org/','')
+      WHERE tg.category='institution' AND tg.ext_id IS NOT NULL AND p.tenant_id=$1
+      ON CONFLICT DO NOTHING`, [tenantId]);
   });
 }
 

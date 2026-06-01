@@ -55,6 +55,14 @@ async function createEntityTables() {
       institution_id INTEGER NOT NULL REFERENCES institutions(id) ON DELETE CASCADE,
       PRIMARY KEY (publication_id, author_id, institution_id)
     )`;
+  // Direct pub↔institution edge (institutional-output; superset of affiliation's
+  // institutions — any ROR on the paper, ORCID or not). See migration 006.
+  await sql`
+    CREATE TABLE IF NOT EXISTS affiliated_with (
+      publication_id INTEGER NOT NULL REFERENCES publications(id) ON DELETE CASCADE,
+      institution_id INTEGER NOT NULL REFERENCES institutions(id) ON DELETE CASCADE,
+      PRIMARY KEY (publication_id, institution_id)
+    )`;
 }
 
 module.exports = { createEntityTables };

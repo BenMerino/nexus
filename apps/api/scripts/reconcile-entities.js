@@ -96,6 +96,25 @@ async function newAffiliations(t) {
   return r.rows[0].n;
 }
 
+// affiliated_with (direct pub↔institution): OLD = distinct (pub, canonical-ROR
+// institution) from institution tags; NEW = affiliated_with rows.
+async function oldAffiliatedWith(t) {
+  const r = await sql`
+    SELECT COUNT(*)::int n FROM (
+      SELECT DISTINCT tg.doi_record_id, i.id
+      FROM tags tg JOIN publications p ON p.id=tg.doi_record_id
+      JOIN institutions i ON i.tenant_id=${t}
+        AND i.ror=regexp_replace(tg.ext_id,'^https?://ror\\.org/','')
+      WHERE tg.category='institution' AND tg.ext_id IS NOT NULL AND p.tenant_id=${t}
+    ) x`;
+  return r.rows[0].n;
+}
+async function newAffiliatedWith(t) {
+  const r = await sql`SELECT COUNT(*)::int n FROM affiliated_with aw
+    JOIN publications p ON p.id = aw.publication_id WHERE p.tenant_id=${t}`;
+  return r.rows[0].n;
+}
+
 async function main() {
   let drift = 0;
   for (const t of await tenants()) {
@@ -104,6 +123,7 @@ async function main() {
       ["venues", await oldVenues(t), await newVenues(t)],
       ["institutions", await oldInstitutions(t), await newInstitutions(t)],
       ["affiliations", await oldAffiliations(t), await newAffiliations(t)],
+      ["affiliated_with", await oldAffiliatedWith(t), await newAffiliatedWith(t)],
     ];
     console.log(`\n── tenant ${t} ──`);
     for (const [name, oldN, newN] of checks) {

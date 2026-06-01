@@ -18,6 +18,7 @@ async function syncRecordEntities(recordId, tenantId, record, tags) {
   await sql`DELETE FROM authorship WHERE publication_id = ${recordId}`;
   await sql`DELETE FROM published_in WHERE publication_id = ${recordId}`;
   await sql`DELETE FROM affiliation WHERE publication_id = ${recordId}`;
+  await sql`DELETE FROM affiliated_with WHERE publication_id = ${recordId}`;
 
   // Authors + authorship (from author tags: value=name, ext_id=orcid).
   for (const t of tags.filter((x) => x.category === "author" && x.ext_id)) {
@@ -52,7 +53,17 @@ async function syncRecordEntities(recordId, tenantId, record, tags) {
       ON CONFLICT DO NOTHING`;
   }
 
-  // Institutions + affiliation (author↔institution pairs from the JSON).
+  // Direct pub↔institution edges from institution TAGS (any ROR, ORCID or not).
+  for (const t of tags.filter((x) => x.category === "institution" && x.ext_id)) {
+    const ror = normRor(t.ext_id);
+    const inst = await sql`
+      INSERT INTO institutions (ror, name, tenant_id) VALUES (${ror}, ${t.value || ror}, ${tenantId})
+      ON CONFLICT (ror, tenant_id) DO UPDATE SET name = EXCLUDED.name RETURNING id`;
+    await sql`INSERT INTO affiliated_with (publication_id, institution_id)
+      VALUES (${recordId}, ${inst.rows[0].id}) ON CONFLICT DO NOTHING`;
+  }
+
+  // Author-mediated affiliation (pub↔author↔institution) from the JSON.
   await syncAffiliations(recordId, tenantId, record);
 }
 
@@ -89,6 +100,13 @@ async function mergeInstitution(fromId, intoId) {
           AND b.publication_id = affiliation.publication_id
           AND b.author_id = affiliation.author_id)`;
   await sql`DELETE FROM affiliation WHERE institution_id = ${fromId}`;
+  // also re-point the direct pub↔institution edges, then drop the variant's
+  await sql`UPDATE affiliated_with SET institution_id = ${intoId}
+    WHERE institution_id = ${fromId}
+      AND NOT EXISTS (
+        SELECT 1 FROM affiliated_with b WHERE b.institution_id = ${intoId}
+          AND b.publication_id = affiliated_with.publication_id)`;
+  await sql`DELETE FROM affiliated_with WHERE institution_id = ${fromId}`;
   await sql`DELETE FROM institutions WHERE id = ${fromId}`;
 }
 
