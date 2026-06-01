@@ -50,10 +50,20 @@ async function backfillTenant(tenantId) {
       WHERE tg.category IN ('journal','non-journal','repository')
         AND tg.ext_id IS NOT NULL AND p.tenant_id=$1`, [tenantId])).rows;
     const venueMap = venueKeyToIssn(vrows); // nameKey → {issn_l,name,venue_type}
+    // Dedupe by issn_l BEFORE insert: multiple name-keys can share one ISSN
+    // (e.g. "EPL"/"Europhysics Letters"), which would make ON CONFLICT DO UPDATE
+    // "affect row a second time". Keep the most-specific type (journal wins over
+    // non-journal over repository) so a real journal isn't downgraded.
+    const rank = { journal: 3, "non-journal": 2, repository: 1 };
+    const byIssn = new Map();
+    for (const v of venueMap.values()) {
+      const prev = byIssn.get(v.issn_l);
+      if (!prev || rank[v.venue_type] > rank[prev.venue_type]) byIssn.set(v.issn_l, v);
+    }
     // UPDATE venue_type on conflict so a re-run corrects rows mistyped by an
     // earlier backfill (non-journal/repository had defaulted to 'journal').
     await bulkInsert(c, "venues (issn_l, name, venue_type, tenant_id)",
-      [...venueMap.values()].map((v) => [v.issn_l, v.name, v.venue_type, tenantId]),
+      [...byIssn.values()].map((v) => [v.issn_l, v.name, v.venue_type, tenantId]),
       "ON CONFLICT (issn_l, tenant_id) DO UPDATE SET venue_type = EXCLUDED.venue_type");
 
     // 4. authorship edges — bulk, joined on normalized ORCID.
