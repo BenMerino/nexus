@@ -12,8 +12,10 @@
 const { buildGraph } = require("../src/lib/graph-builder");
 const { buildGraphFromEntities } = require("../src/lib/graph-builder-entities");
 const { journalNameKey: nameKey } = require("../src/lib/journal-canon");
+const { sql } = require("../src/lib/sql");
 
 const groupOf = (id) => id.slice(0, id.indexOf(":"));
+const bareRor = (x) => (x || "").replace(/^https?:\/\/ror\.org\//, "");
 
 function diffSets(oldArr, newArr, key) {
   const o = new Set(oldArr.map(key));
@@ -50,8 +52,9 @@ async function main() {
   // journal↔non-journal, ISSN-sibling collapse, synonym merge) preserve this
   // relation; only a DOI genuinely gaining/losing a real venue/institution
   // breaks it. The doc'd source/indexed_in deltas are excluded (no entity).
-  const oldRel = entityRelation(oldG);
-  const newRel = entityRelation(newG);
+  const canon = await canonicalMaps(1);
+  const oldRel = entityRelation(oldG, canon);
+  const newRel = entityRelation(newG, canon);
   const { onlyOld, onlyNew } = diffSets([...oldRel], [...newRel], (x) => x);
   console.log(`\nstructural (DOI → venue-name-key / institution-ROR) relation:`);
   console.log(`  onlyOLD=${onlyOld.length}  onlyNEW=${onlyNew.length}`);
@@ -65,14 +68,14 @@ async function main() {
   process.exit(0);
 }
 
-// The per-DOI relation to REAL entities: a set of strings
-//   "<doi> :: venue=<name-key>" / "<doi> :: inst=<ror>"
-// from a graph's venue/institution nodes + their DOI edges. Venue identity is
-// the node's normalized label (name-key) so two duplicate venue nodes for one
-// journal (different node-ids, same name) count as the SAME venue. Institution
-// identity is the ROR (node ext_id). source/indexed_in/type/author groups are
-// excluded — those deltas are documented and don't touch the venue/inst relation.
-function entityRelation(G) {
+// The per-DOI relation to REAL entities, canonicalized so a pre-merge identity
+// and its post-merge survivor count as the SAME entity:
+//   "<doi> :: venue=<canonical venue id>" / "<doi> :: inst=<canonical ror>"
+// Venue identity → its surviving venues.id (canon.venueIdByNameKey, which folds
+// ISSN-duplicate/label-variant venues to one row). Institution → canonical ROR
+// (canon.canonRor folds synonym-merge variants). source/indexed_in/type/author
+// groups are excluded — those are documented deltas that don't touch this relation.
+function entityRelation(G, canon) {
   const node = new Map(G.nodes.map((n) => [n.id, n]));
   const rel = new Set();
   for (const e of G.edges) {
@@ -80,12 +83,46 @@ function entityRelation(G) {
     if (!t) continue;
     const doi = e.source;
     if (t.group === "journal" || t.group === "non-journal") {
-      rel.add(`${doi} :: venue=${nameKey(t.label || "")}`);
+      const vid = canon.venueIdByNameKey.get(nameKey(t.label || ""));
+      rel.add(`${doi} :: venue=${vid ?? nameKey(t.label || "")}`);
     } else if (t.group === "institution") {
-      rel.add(`${doi} :: inst=${t.ext_id || nameKey(t.label || "")}`);
+      const ror = bareRor(t.ext_id) || nameKey(t.label || "");
+      rel.add(`${doi} :: inst=${canon.canonRor.get(ror) ?? ror}`);
     }
   }
   return rel;
+}
+
+// Canonical identity maps from the entity tables (the merge source of truth):
+//   venueIdByNameKey — every journal-name-key → the surviving venues.id (so all
+//     name variants / ISSN-duplicates of one journal map to one id).
+//   canonRor — synonym-variant ROR → canonical ROR (institution merges).
+async function canonicalMaps(tenantId) {
+  // venue canonical id = its canonical ISSN (so name variants sharing an ISSN —
+  // "revista rivar"/"rivar" → 0719-4994 — are one venue), else the name-key
+  // (ISSN-less venues are identified by name). Computed from tags only (no edge
+  // ambiguity): name_key → min ISSN among that name's journal/non-journal tags.
+  const venueIdByNameKey = new Map();
+  const issnByKey = new Map();
+  for (const r of (await sql`
+    SELECT t.value, t.ext_id FROM tags t
+    JOIN publications p ON p.id = t.doi_record_id AND p.tenant_id = ${tenantId}
+    WHERE t.category IN ('journal','non-journal','repository') AND t.ext_id IS NOT NULL`).rows) {
+    const k = nameKey(r.value);
+    if (!k) continue;
+    const cur = issnByKey.get(k);
+    if (!cur || r.ext_id < cur) issnByKey.set(k, r.ext_id);
+  }
+  for (const [k, issn] of issnByKey) venueIdByNameKey.set(k, `issn:${issn}`);
+
+  const canonRor = new Map();
+  const syn = (await sql`
+    SELECT s.ror_id, t.ext_id AS variant_ext FROM tag_synonyms s
+    JOIN tags t ON t.category = 'institution' AND t.value = s.variant
+    JOIN publications p ON p.id = t.doi_record_id AND p.tenant_id = ${tenantId}
+    WHERE s.tenant_id = ${tenantId} AND s.category = 'institution' AND s.ror_id IS NOT NULL`).rows;
+  for (const r of syn) canonRor.set(bareRor(r.variant_ext), bareRor(r.ror_id));
+  return { venueIdByNameKey, canonRor };
 }
 
 main().catch((e) => { console.error(e); process.exit(2); });
