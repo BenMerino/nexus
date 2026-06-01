@@ -29,15 +29,26 @@ async function syncRecordEntities(recordId, tenantId, record, tags) {
       ON CONFLICT DO NOTHING`;
   }
 
-  // Venues + published_in (journal/repo tags collapsed to canonical ISSN-L).
+  // Venues + published_in. A journal is ONE venue identified by its name-key
+  // (ISSN siblings collapse). Canonical ISSN-L is a GLOBAL property, so resolve
+  // against EXISTING venues by name-key first and reuse — only mint a new venue
+  // when this journal isn't already known. (Inserting per-record would create a
+  // duplicate venue when this paper's canonical ISSN differs from the stored one.)
   const vmap = venueKeyToIssn(tags.filter((x) => ["journal", "non-journal", "repository"].includes(x.category) && x.ext_id));
-  const issnByKey = new Map();
+  const existing = new Map(
+    (await sql`SELECT id, name FROM venues WHERE tenant_id = ${tenantId}`).rows
+      .map((r) => [journalNameKey(r.name), r.id]));
   for (const v of vmap.values()) {
-    issnByKey.set(journalNameKey(v.name), v.issn_l);
-    const r = await sql`
-      INSERT INTO venues (issn_l, name, venue_type, tenant_id) VALUES (${v.issn_l}, ${v.name}, ${v.venue_type}, ${tenantId})
-      ON CONFLICT (issn_l, tenant_id) DO UPDATE SET name = EXCLUDED.name RETURNING id`;
-    await sql`INSERT INTO published_in (publication_id, venue_id) VALUES (${recordId}, ${r.rows[0].id})
+    const key = journalNameKey(v.name);
+    let venueId = existing.get(key);
+    if (!venueId) {
+      const r = await sql`
+        INSERT INTO venues (issn_l, name, venue_type, tenant_id) VALUES (${v.issn_l}, ${v.name}, ${v.venue_type}, ${tenantId})
+        ON CONFLICT (issn_l, tenant_id) DO UPDATE SET name = EXCLUDED.name RETURNING id`;
+      venueId = r.rows[0].id;
+      existing.set(key, venueId);
+    }
+    await sql`INSERT INTO published_in (publication_id, venue_id) VALUES (${recordId}, ${venueId})
       ON CONFLICT DO NOTHING`;
   }
 
