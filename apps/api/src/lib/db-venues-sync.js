@@ -6,18 +6,20 @@
 
 const { sql } = require("./sql");
 const { journalNameKey } = require("./journal-canon");
-
-const RANK = { journal: 3, repository: 2, "non-journal": 1 };
+const { entityVenueType } = require("./entity-venue-type");
 
 async function syncVenues(recordId, tenantId, tags) {
-  // Collapse this record's venue tags to one entry per name-key.
+  // Collapse this record's venue tags to one entry per name-key. venue_type is
+  // journal or non-journal only — "repository" is a PER-PAPER property
+  // (is_repository), not a venue type, so it maps to non-journal here.
   const byKey = new Map();
   for (const t of tags) {
     if (!["journal", "non-journal", "repository"].includes(t.category)) continue;
     const key = journalNameKey(t.value);
     if (!key) continue;
-    const e = byKey.get(key) || { name: t.value, venue_type: t.category, issns: new Set() };
-    if (RANK[t.category] > RANK[e.venue_type]) { e.venue_type = t.category; e.name = t.value; }
+    const e = byKey.get(key) || { name: t.value, venue_type: "non-journal", issns: new Set() };
+    e.venue_type = entityVenueType(e.venue_type, t.category);
+    if (t.category === "journal") e.name = t.value;
     if (t.ext_id) e.issns.add(String(t.ext_id).trim());
     byKey.set(key, e);
   }

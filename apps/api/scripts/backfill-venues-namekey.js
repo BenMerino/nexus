@@ -16,8 +16,7 @@
 
 const { withTenant, pool } = require("../src/db/index");
 const { journalNameKey } = require("../src/lib/journal-canon");
-
-const RANK = { journal: 3, repository: 2, "non-journal": 1 };
+const { entityVenueType } = require("../src/lib/entity-venue-type");
 
 async function tenantIds() {
   const r = await pool.query("SELECT DISTINCT tenant_id FROM publications ORDER BY tenant_id");
@@ -33,7 +32,8 @@ async function backfillTenant(tenantId) {
     }
 
     // 2. Compute the full venue set from tags: name_key → {name, venue_type, issn_l?}.
-    //    venue_type by precedence; issn_l kept if any sibling carried one (smallest).
+    //    venue_type via entityVenueType (journal wins; repository → non-journal,
+    //    it is a per-paper property). issn_l = smallest sibling ISSN if any.
     const rows = (await c.query(`
       SELECT t.category, t.value, t.ext_id FROM tags t JOIN publications p ON p.id=t.doi_record_id
       WHERE t.category IN ('journal','non-journal','repository') AND p.tenant_id=$1`, [tenantId])).rows;
@@ -41,20 +41,23 @@ async function backfillTenant(tenantId) {
     for (const r of rows) {
       const key = journalNameKey(r.value);
       if (!key) continue;
-      const e = byKey.get(key) || { name: r.value, venue_type: r.category, issns: new Set() };
-      if (RANK[r.category] > RANK[e.venue_type]) { e.venue_type = r.category; e.name = r.value; }
+      const e = byKey.get(key) || { name: r.value, venue_type: "non-journal", issns: new Set() };
+      e.venue_type = entityVenueType(e.venue_type, r.category);
+      if (r.category === "journal") e.name = r.value;
       if (r.ext_id) e.issns.add(String(r.ext_id).trim());
       byKey.set(key, e);
     }
-    // Insert venues missing from the table (existing ones already have name_key).
-    const have = new Set(venues.map((v) => journalNameKey(v.name)));
+    // Upsert EVERY venue (insert missing + RE-TYPE existing — a prior backfill
+    // mis-typed multi-category names, e.g. a journal stuck as non-journal).
     let inserted = 0;
     for (const [key, e] of byKey) {
-      if (have.has(key)) continue;
       const issn = e.issns.size ? [...e.issns].sort()[0] : null;
       await c.query(
         `INSERT INTO venues (issn_l, name, name_key, venue_type, tenant_id) VALUES ($1,$2,$3,$4,$5)
-         ON CONFLICT (name_key, tenant_id) DO NOTHING`, [issn, e.name, key, e.venue_type, tenantId]);
+         ON CONFLICT (name_key, tenant_id) DO UPDATE
+           SET venue_type = EXCLUDED.venue_type,
+               issn_l = COALESCE(venues.issn_l, EXCLUDED.issn_l)`,
+        [issn, e.name, key, e.venue_type, tenantId]);
       inserted++;
     }
 
