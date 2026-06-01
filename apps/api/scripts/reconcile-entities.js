@@ -61,7 +61,22 @@ async function oldInstitutions(t) {
     SELECT DISTINCT tg.ext_id FROM tags tg
     JOIN publications p ON p.id = tg.doi_record_id
     WHERE tg.category='institution' AND tg.ext_id IS NOT NULL AND p.tenant_id=${t}`;
-  return new Set(r.rows.map((x) => normRor(x.ext_id))).size;
+  const rors = new Set(r.rows.map((x) => normRor(x.ext_id)));
+  // Fold institution synonym merges (human entity-resolution now applied to the
+  // entity model). The variant ROR is the one carried by the institution TAG
+  // whose value = the synonym variant name; when both it and the canonical ROR
+  // are present, the variant merged away — drop it so OLD matches post-merge NEW.
+  const syns = (await sql`SELECT variant, ror_id FROM tag_synonyms
+    WHERE tenant_id=${t} AND category='institution' AND ror_id IS NOT NULL`).rows;
+  for (const s of syns) {
+    const vt = (await sql`SELECT DISTINCT tg.ext_id FROM tags tg JOIN publications p ON p.id=tg.doi_record_id
+      WHERE tg.category='institution' AND tg.value=${s.variant} AND p.tenant_id=${t} AND tg.ext_id IS NOT NULL`).rows;
+    for (const row of vt) {
+      const vr = normRor(row.ext_id);
+      if (vr !== normRor(s.ror_id) && rors.has(vr) && rors.has(normRor(s.ror_id))) rors.delete(vr);
+    }
+  }
+  return rors.size;
 }
 async function newInstitutions(t) {
   const r = await sql`SELECT COUNT(*)::int n FROM institutions WHERE tenant_id=${t}`;
