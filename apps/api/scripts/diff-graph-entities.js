@@ -97,7 +97,8 @@ async function classifiers(tenantId) {
   const multiCatKeys = new Set([...cats].filter(([, s]) => s.size > 1).map(([k]) => k));
   const syn = (await sql`
     SELECT DISTINCT t.ext_id FROM tag_synonyms s
-    JOIN tags t ON t.tenant_id = ${tenantId} AND t.category = 'institution' AND t.value = s.variant
+    JOIN tags t ON t.category = 'institution' AND t.value = s.variant
+    JOIN publications p ON p.id = t.doi_record_id AND p.tenant_id = ${tenantId}
     WHERE s.tenant_id = ${tenantId} AND s.category = 'institution'`).rows;
   const instVariantRors = new Set(syn.map((r) => (r.ext_id || "").replace(/^https?:\/\/ror\.org\//, "")));
   return { multiCatKeys, instVariantRors };
