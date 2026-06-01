@@ -80,21 +80,33 @@ async function main() {
   process.exit(0);
 }
 
-// name_keys that appear under >1 of journal/non-journal/repository (the
-// inconsistently-tagged venues OLD duplicated), and institution synonym-variant
+// "collapsed" name_keys: ones where the OLD tag-graph produced MORE THAN ONE
+// distinct venue node-id for the same journal name, which the entity model
+// rightly collapses to a single venue. That happens when a name spans >1
+// category (journal+non-journal noise) OR a non-journal name carries multiple
+// distinct ext_ids (sibling ISSNs / mixed ISSN+no-ISSN). We reconstruct each
+// name's OLD node-id set and flag any with >1. Also: institution synonym-variant
 // RORs (folded into a canonical in entities).
 async function classifiers(tenantId) {
   const rows = (await sql`
-    SELECT t.category, t.value FROM tags t JOIN publications p ON p.id = t.doi_record_id
+    SELECT t.category, t.value, t.ext_id FROM tags t JOIN publications p ON p.id = t.doi_record_id
     WHERE t.category IN ('journal','non-journal','repository') AND p.tenant_id = ${tenantId}`).rows;
-  const cats = new Map();
+  // OLD node-id per tag: journal/non-journal key by ext_id when present (journals
+  // collapse siblings, so use category alone for journal-with-ext), else by name.
+  // We only need a STABLE per-name set whose size>1 means "OLD split it".
+  const reprs = new Map(); // name_key → Set(repr)
   for (const r of rows) {
     const k = nameKey(r.value);
     if (!k) continue;
-    if (!cats.has(k)) cats.set(k, new Set());
-    cats.get(k).add(r.category);
+    if (r.category === "repository") continue; // repository papers are excluded
+    // OLD node-id per tag: journal collapses siblings (one repr); non-journal
+    // keys by ext_id, else by RAW value (so case/whitespace variants of one name
+    // were SEPARATE nodes OLD made — entities collapse them to one venue).
+    const repr = r.category === "journal" ? "journal" : (r.ext_id ? `nj:${r.ext_id}` : `nj:${r.value}`);
+    if (!reprs.has(k)) reprs.set(k, new Set());
+    reprs.get(k).add(repr);
   }
-  const multiCatKeys = new Set([...cats].filter(([, s]) => s.size > 1).map(([k]) => k));
+  const multiCatKeys = new Set([...reprs].filter(([, s]) => s.size > 1).map(([k]) => k));
   const syn = (await sql`
     SELECT DISTINCT t.ext_id FROM tag_synonyms s
     JOIN tags t ON t.category = 'institution' AND t.value = s.variant
