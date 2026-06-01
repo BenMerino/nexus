@@ -27,18 +27,40 @@ Backfill: `railway ssh --service Nexus "cd /app/apps/api && node scripts/backfil
 ## How to run things (no local DATABASE_URL)
 The DB host is `*.railway.internal` (only resolves inside Railway). Run scripts via `railway ssh --service Nexus "cd /app/apps/api && node scripts/<x>.js"`. The container has the full repo at `/app`; app runs `node dist/index.js`. Deploy = push to `main` (Railway auto-builds; `tsc` compiles `src/**` + copies `.sql` to `dist/`). Wait ~90s, confirm `railway deployment list --service Nexus`.
 
-## NEXT: rebuild `graph-builder.js` (the linchpin to drop tags) — IN PROGRESS, NOT STARTED IN CODE
-graph-builder is a GENERIC 8-category graph; it still reads `tags`. Categories → entity sources:
-- author → `authorship`+`authors` · journal/non-journal → `published_in`+`venues` · institution → **`affiliated_with`** (NOT `affiliation` — must match the 281k direct edges) · type → `publications.type` · indexed_in → `venues.in_*` flags · **source → DROP (vestigial: 687 legacy rows, not pipeline-produced)**.
+## graph-builder rebuild — BUILT & DIFFED; CUTOVER BLOCKED on ISSN-less venue identity (2026-06-01)
 
-**Recommended approach:** keep the exact `buildGraph` algorithm (node-id scheme, dedup, label upgrade, `buildAffiliations`) but replace the `getAllTags(scope)` data source with an entity-derived stream emitting the SAME `{category,value,ext_id,doi,title,published}` row shape. If the derived rows reproduce the (post-synonym-merge, post-ISSN-collapse) tag rows, the graph is identical by construction.
+### DONE this session (committed, live; graph still reads tags — NOT cut over)
+- **Foundational fix for `indexed_in`** (was: 250 per-ISSN nodes off `indexed_in` tags; handoff originally said "→ venues.in_* flags" but those flags were **all FALSE / never backfilled**). Now:
+  - `src/lib/venue-flags.js` — the one source→flag map (`Scopus→in_scopus`, `WoS→in_wos`, `DOAJ→in_doaj`, `SciELO→in_scielo`).
+  - `scripts/backfill-venue-flags.js` — sets `venues.in_*` from `indexed_in` tags via **journal name-key join** (an `indexed_in` ISSN may be any sibling of the venue). **RAN on prod tenant 1: 138 venues flagged (wos 135 / scopus 136 / doaj 23 / scielo 2).** Idempotent.
+  - `db-entities.js syncVenueFlags` — dual-writes the flags on every ingest (ORs in, never clears).
+  - `scripts/verify-indexed-flags.js` — proved the flag-derived `indexed_in` edges reproduce the old per-ISSN-tag edges: `onlyOLD=0`, `onlyNEW=164`. The 164 are **legit sibling-ISSN coverage** (real WoS/Scopus journals — Calidad en la educación, Maderas, J. Molecular Liquids — whose papers carried the *other* sibling ISSN, so the old per-paper-ISSN tags under-marked them). A documented improvement, not drift.
+- **Entity graph builder, built as a PARALLEL function (handoff approach #5):**
+  - `src/lib/graph-assemble.js` — `assembleGraph(rows, {synonymMap, journalCanonIssn})` extracted from the old builder; **shared** by both paths so node-id/dedup/label-upgrade/preprint-exclusion are identical by construction. (`journalCanonIssn` omitted for entities — venues already collapse siblings, gotcha #3.)
+  - `src/lib/entity-graph-rows.js` — `entityGraphRows(scope)` emits the `{category,value,ext_id,doi,title,published}` shape from `authorship`/`published_in`/`affiliated_with`/`publications.type` + venue `in_*` flags. (gotcha #1 RESOLVED: author ext_ids in tags are ALL bare → `authors.orcid` matches directly; institution tags all ROR-prefixed → `canonicalExtId` strips → matches bare `institutions.ror`.)
+  - `src/lib/graph-builder-entities.js` — `buildGraphFromEntities(scope)`.
+  - `src/lib/graph-builder.js` — refactored to call `assembleGraph`; now also exports `loadSynonymMap`, `affiliationsFromNodes` (reused by the entity path). **Behaviorally unchanged; still the live path.**
+  - `scripts/diff-graph-entities.js` — gate. Run with **`node --max-old-space-size=4096`** (building both ~240k-node graphs OOMs the 2 GB default). Asserts only `source`/`indexed_in` differ.
 
-**CRITICAL gotchas found via diffing (do not skip):**
-1. **node-id exactness.** Old node-ids: `canonicalExtId` strips the ROR prefix for institutions but leaves `author` ext_id AS-IS (may be prefixed `https://orcid.org/...`). Entity `authors.orcid` is BARE. → entity-derived author rows must emit `ext_id` in whatever form keeps node-ids stable for the frontend, OR confirm the frontend doesn't care about the exact author node-id string. **Diff node-id SETS per category before cutover.**
-2. **preprint/repository exclusion.** Old graph excludes papers tagged `repository` OR `type='preprint'`. The entity-derived stream MUST apply the same exclusion, else extra nodes appear. (This is why a raw entity diff shows thousands of `onlyENTITY` author/institution nodes — they're on excluded preprint papers. Apply the filter and it should converge.)
-3. **ISSN collapse** is already baked into `venues` (one venue per journal name-key, smallest ISSN). Old code does it at read-time via `journalCanonIssn`; entity venues already collapsed → don't double-apply.
-4. **institution merges** (3) are applied in entities; old graph applied them via read-time synonym fold. Entity side already merged → consistent.
-5. Diff harness: build entity `buildGraph` as a PARALLEL function, compare `nodes` (by id) and `edges` (by `source→target`) SET-equality against the live tags `buildGraph` for tenant 1 (admin scope) until ZERO difference. Only then swap `handlers/graph.js` / the export.
+### THE BLOCKER (diff result, tenant 1, admin) — a foundational gap, NOT a graph bug
+`OLD nodes=238735 edges=849429` vs `NEW nodes=241180 edges=888836`. Beyond the expected `source` (3 dropped) and `indexed_in` (250 per-ISSN → 4 per-source) deltas, **real drift**:
+- **onlyOLD `non-journal`: 4676 nodes / 9405 edges.** **onlyOLD `repository` papers leak into NEW: +5587 doi, +1587 author, +~192 institution nodes.**
+- **Root cause:** the entity model only stores venues **WITH an ISSN**. But **17,253 of 20,573 `non-journal` tags and 7,879 of 9,132 `repository` tags have NULL ISSN** (conferences, books, institutional repos: arXiv/Apollo/AgEcon, theses, + some garbage rows). `venueKeyToIssn` skips `!ext_id`, so `venues` has only **429 non-journal, 0 repository** rows. Therefore (a) ISSN-less non-journal nodes are absent, and (b) the **repository→exclude signal lives only in the `repository` tag** — with no entity representation, the entity graph fails to exclude those papers (verified: 100% of the +5587 extra DOIs carry a repository/preprint tag).
+- Verified `publications` has `journal`/`venue`/`type` columns but **no `venue_type`/repository flag** — the repository signal is nowhere in entities today.
+
+### NEXT — close the gap via the **VenueGovernor** (the DGA owner; per DGA_DESIGN.md §15-19)
+Doctrine answer to "who owns this": **`VenueGovernor`** (a Governor, keyed today by ISSN-L, owns `upsert`/`merge`/`setIndexation`, emits `venue.upserted`/`venue.indexationUpdated`). A venue is a governed aggregate with its own lifecycle, independent of the papers on it — so **assigning identity to an ISSN-less venue is a `VenueGovernor.upsert` write, and fetching a missing ISSN is a Governor write (a `resolveIdentity` action).** NOT a Resolver (no writes), NOT under Publication (the `published_in` *edge* is Publication's child; the *venue entity* is its own aggregate, §19). The graph itself is the **Statistician Resolver** reading venues — that's this cutover.
+Concrete steps (additive, gated):
+1. **New migration:** `venues.issn_l` NULLABLE + a `name_key` column with `UNIQUE(name_key, tenant_id)` so an ISSN-less venue has a stable synthetic identity; `venue_type` already carries `repository`/`non-journal`.
+2. **Backfill ALL** `journal`/`non-journal`/`repository` tags (with OR without ISSN) into `venues` + `published_in`, keyed by `name_key` when ISSN absent. (~95% are genuinely ISSN-less → synthetic identity; the fetchable minority is the Governor's secondary `resolveIdentity`/ISSN-fetch path via MetadataProviders.)
+3. **Re-run `diff-graph-entities.js`** → expect non-journal nodes to reproduce exactly and the repository papers to be excluded (venue_type='repository' now in entities) → only `source`/`indexed_in` deltas remain.
+4. **Only then** swap `handlers/graph.js` to `buildGraphFromEntities` (route URL unchanged). Wrap the venue writes as `VenueGovernor` and the graph as the `Statistician` resolver per DGA_DESIGN.md.
+
+### Gotchas still relevant for the NEXT step
+- **node-id exactness** (gotcha #1) — RESOLVED for author/institution (see above). For ISSN-less non-journal nodes the old node-id is `non-journal:<resolved name>` (no ext_id); the synthetic venue must emit a row whose `value`=that name and `ext_id`=null so `assembleGraph` keys it identically. Diff per group after backfill.
+- **preprint/repository exclusion** (gotcha #2) — the WHOLE POINT of the blocker. Exclusion needs `venue_type='repository'` reachable from entities; the migration above makes it so.
+- **OOM:** always run the diff harness with `--max-old-space-size=4096`.
+- **Don't** double-apply ISSN collapse (gotcha #3) or institution merges (gotcha #4) — both already baked into entities.
 
 ## AFTER graph-builder
 - Remaining readers (each diffed): `dashboard-stats.js` (6 queries: summary/byYearAndSource/collaborations/countries/topJournals/recentPapers), `public-graph.js`, `node-detail-resolvers.js` (+`node-detail-helpers extIdVariants`), `portfolio.js findCollaborators`.
