@@ -20,6 +20,21 @@ async function collectAffiliationEdges(c, tenantId) {
     (await c.query(`SELECT id, ror FROM institutions WHERE tenant_id=$1`, [tenantId])).rows
       .map((r) => [r.ror, r.id]));
 
+  // Variant-ROR → canonical institution id, for institutions merged via
+  // synonyms (the variant row is gone, but its edges were re-pointed to the
+  // canonical). Lets a JSON aff citing a merged-away ROR resolve correctly so
+  // the recompute matches the actual edges.
+  const merged = (await c.query(
+    `SELECT DISTINCT tg.ext_id AS variant_ror, s.ror_id AS canon_ror
+     FROM tag_synonyms s
+     JOIN tags tg ON tg.category='institution' AND tg.value=s.variant
+     WHERE s.tenant_id=$1 AND s.category='institution' AND s.ror_id IS NOT NULL
+       AND tg.ext_id IS NOT NULL`, [tenantId])).rows;
+  for (const m of merged) {
+    const canonId = instId.get(normRor(m.canon_ror));
+    if (canonId && !instId.has(normRor(m.variant_ror))) instId.set(normRor(m.variant_ror), canonId);
+  }
+
   const seen = new Set();
   const edges = [];
   for (const p of pubs) {
