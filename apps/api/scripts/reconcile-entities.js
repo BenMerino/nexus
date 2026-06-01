@@ -45,7 +45,10 @@ async function oldVenues(t) {
     JOIN publications p ON p.id = tg.doi_record_id
     WHERE tg.category IN ('journal','non-journal','repository')
       AND tg.ext_id IS NOT NULL AND p.tenant_id=${t}`;
-  return venueKeyToIssn(r.rows).size;
+  // Count distinct CANONICAL issn_l (the venue identity), not name-keys — two
+  // name variants sharing one ISSN-L are one venue (e.g. "EPL Europhysics
+  // Letters" / "Europhysics Letters" = 0295-5075). Matches how venues are keyed.
+  return new Set([...venueKeyToIssn(r.rows).values()].map((v) => v.issn_l)).size;
 }
 async function newVenues(t) {
   const r = await sql`SELECT COUNT(*)::int n FROM venues WHERE tenant_id=${t}`;
