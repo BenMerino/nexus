@@ -18,7 +18,6 @@ const DEFAULT_LINKS: NavLink[] = [
 const SUPERADMIN_LINKS: NavLink[] = [
   { href: '/admin.html',         label: 'Admin',         icon: 'build',  section: 'Admin' },
   { href: '/author-import.html', label: 'Author import', icon: 'people', section: 'Admin' },
-  { href: '/tag-manager.html',   label: 'Tag manager',   icon: 'tag',    section: 'Admin' },
   { href: '/theme',              label: 'Theme palette', icon: 'gear',   section: 'Admin' },
 ];
 const TENANT_LINKS: NavLink[] = [

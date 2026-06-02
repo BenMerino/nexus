@@ -59,38 +59,6 @@ async function getSubmissionsPage(scope, query) {
   });
 }
 
-// Tag stats: group + count, paginated by count desc. Tenant-scoped.
-async function getTagStatsPage(scope, query) {
-  if (!scope) throw new Error("getTagStatsPage requires scope");
-  if (isPersonalScope(scope)) {
-    return paginatedQuery({
-      baseSql: `
-        SELECT t.category, t.value, COUNT(DISTINCT t.doi_record_id) AS count
-        FROM tags t
-        WHERE t.doi_record_id IN (
-          SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=$1
-        )
-        GROUP BY t.category, t.value
-      `,
-      baseParams: [scope.orcid],
-      orderBy: "count DESC",
-      query,
-    });
-  }
-  return paginatedQuery({
-    baseSql: `
-      SELECT t.category, t.value, COUNT(DISTINCT t.doi_record_id) AS count
-      FROM tags t
-      JOIN doi_records d ON t.doi_record_id = d.id
-      WHERE d.tenant_id = $1
-      GROUP BY t.category, t.value
-    `,
-    baseParams: [scope.tenantId],
-    orderBy: "count DESC",
-    query,
-  });
-}
-
 // Search records (full-text-ish): title/journal/authors LIKE term.
 async function searchRecordsPage(scope, term, query) {
   if (!scope) throw new Error("searchRecordsPage requires scope");
@@ -121,4 +89,4 @@ async function searchRecordsPage(scope, term, query) {
   });
 }
 
-module.exports = { getRecordsPage, getSubmissionsPage, getTagStatsPage, searchRecordsPage };
+module.exports = { getRecordsPage, getSubmissionsPage, searchRecordsPage };
