@@ -96,6 +96,14 @@ async function startServer() {
   const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`[boot] Nexus API listening on :${PORT}`);
   });
+  // Attach the directive Stream WS endpoint (/api/stream) to the same server,
+  // so Caddy's /api/* reverse_proxy routes it in prod. Compiled TS; wrapped so
+  // a missing build (e.g. running source directly) never blocks startup.
+  try {
+    require("./src/services/architect/stream-ws").attachStreamWs(server);
+  } catch (err) {
+    console.error("[boot] Stream WS skipped:", err.message);
+  }
   attachShutdown(server);
 }
 startServer();

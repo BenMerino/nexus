@@ -11,6 +11,7 @@ import { SummaryCards, SectionPlaceholder, TabPane } from './tenant-summary';
 import { TenantOrgTree } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { ES, typeLabelEs, VELOCITY_LABELS_ES, CADENCE_LABELS_ES } from './tenant-i18n';
+import { bootStreamBridge } from '../architect/websocket-connector';
 
 const NAV: PublicNavItem[] = [
   { id: 'overview',  label: ES.nav.overview },
@@ -133,3 +134,6 @@ function mount() {
 (window as any).__nexusMounts = (window as any).__nexusMounts || {};
 (window as any).__nexusMounts[new URL(import.meta.url).pathname] = mount;
 mount();
+// Open the directive Stream bridge so charts go live (isLive) and re-push on
+// ingestion. Idempotent; falls back to HTTP recompose when the socket is down.
+bootStreamBridge();

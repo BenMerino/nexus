@@ -18,6 +18,7 @@
 
 import type { ActorContext } from "../../substrate/actor";
 import { statComposer, type ServerGraphDirective } from "./StatComposer";
+import { streamKeyOf } from "./stream-key-server";
 
 // architect-replay is legacy JS in lib/; the whole app compiles to dist/ 1:1
 // so this require resolves to the compiled sibling at runtime (tsconfig
@@ -41,17 +42,6 @@ function unknownKind(kind: string): Error & { code: string } {
   const e = new Error(`Unknown chart kind: ${kind}`) as Error & { code: string };
   e.code = "UNKNOWN_KIND";
   return e;
-}
-
-/** Canonical stream key — MUST stay byte-identical to the client's
- *  `apps/web/architect/stream-key.ts` (sorted JSON, undefined dropped) so a
- *  client can subscribe with the same handle the server emits. Phase C keys
- *  Stream subscriptions off this. */
-function streamKeyFromQuery(query: Record<string, unknown>): string {
-  const keys = Object.keys(query).filter((k) => query[k] !== undefined).sort();
-  const sorted: Record<string, unknown> = {};
-  for (const k of keys) sorted[k] = query[k];
-  return JSON.stringify(sorted);
 }
 
 /** Public kinds: composed from a query carrying its own tenantId, reading only
@@ -84,7 +74,7 @@ export async function recomposePublic(query: PublicQuery): Promise<unknown> {
   // Stamp the canonical stream key from the directive's own (normalized)
   // query so the Phase-C client can subscribe without re-canonicalizing.
   if (directive && directive.query && typeof directive.query === "object") {
-    directive.streamKey = streamKeyFromQuery(directive.query as Record<string, unknown>);
+    directive.streamKey = streamKeyOf(directive.query as Record<string, unknown>);
   }
   return directive;
 }
