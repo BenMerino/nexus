@@ -10,30 +10,34 @@ const { sql } = require("../src/lib/sql");
 const NEW = require("../src/lib/dashboard-stats");
 
 // ---- OLD (tag-based) baselines, copied from pre-migration dashboard-stats ----
-const personalCond = (orcid) => sql`d.id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${orcid})`;
+// OLD WHERE over `doi_records d`: personal → $1=orcid; admin → $1=tenantId.
+// Built as plain text+params (the `sql` tagged-template can't nest a fragment).
+const oldWhere = (scope, personal) => personal
+  ? { w: `d.id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=$1)`, p: [scope.orcid] }
+  : { w: `d.tenant_id = $1`, p: [scope.tenantId] };
 
 async function oldSummary(scope, personal) {
-  const where = personal ? personalCond(scope.orcid) : sql`d.tenant_id = ${scope.tenantId}`;
-  const r = await sql`SELECT COUNT(*) total_pubs, COALESCE(SUM(citation_count),0) total_citations,
-      COUNT(DISTINCT CASE WHEN open_access THEN doi END) oa_count FROM doi_records d WHERE ${where}`;
+  const { w, p } = oldWhere(scope, personal);
+  const r = await sql.query(`SELECT COUNT(*) total_pubs, COALESCE(SUM(citation_count),0) total_citations,
+      COUNT(DISTINCT CASE WHEN open_access THEN doi END) oa_count FROM doi_records d WHERE ${w}`, p);
   const a = personal
-    ? await sql`SELECT COUNT(DISTINCT COALESCE(ext_id,value)) count FROM tags
-        WHERE category='author' AND doi_record_id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid})`
-    : await sql`SELECT COUNT(DISTINCT COALESCE(t.ext_id,t.value)) count FROM tags t
-        JOIN doi_records d ON d.id=t.doi_record_id WHERE t.category='author' AND d.tenant_id=${scope.tenantId}`;
+    ? await sql.query(`SELECT COUNT(DISTINCT COALESCE(ext_id,value)) count FROM tags
+        WHERE category='author' AND doi_record_id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=$1)`, [scope.orcid])
+    : await sql.query(`SELECT COUNT(DISTINCT COALESCE(t.ext_id,t.value)) count FROM tags t
+        JOIN doi_records d ON d.id=t.doi_record_id WHERE t.category='author' AND d.tenant_id=$1`, [scope.tenantId]);
   return { totalPubs: +r.rows[0].total_pubs, totalCitations: +r.rows[0].total_citations,
     oaCount: +r.rows[0].oa_count, authorCount: +a.rows[0].count };
 }
 async function oldCollab(scope, personal) {
-  const where = personal ? personalCond(scope.orcid) : sql`d.tenant_id = ${scope.tenantId}`;
-  const r = await sql`SELECT MAX(t.value) value, COUNT(*) count FROM tags t JOIN doi_records d ON d.id=t.doi_record_id
-    WHERE t.category='institution' AND ${where} GROUP BY COALESCE(t.ext_id,t.value) ORDER BY count DESC LIMIT 20`;
+  const { w, p } = oldWhere(scope, personal);
+  const r = await sql.query(`SELECT MAX(t.value) value, COUNT(*) count FROM tags t JOIN doi_records d ON d.id=t.doi_record_id
+    WHERE t.category='institution' AND ${w} GROUP BY COALESCE(t.ext_id,t.value) ORDER BY count DESC LIMIT 20`, p);
   return r.rows.map((x) => `${x.value}|${x.count}`).sort();
 }
 async function oldJournals(scope, personal) {
-  const where = personal ? personalCond(scope.orcid) : sql`d.tenant_id = ${scope.tenantId}`;
-  const r = await sql`SELECT MAX(t.value) value, COUNT(*) count FROM tags t JOIN doi_records d ON d.id=t.doi_record_id
-    WHERE t.category='journal' AND ${where} GROUP BY COALESCE(t.ext_id,t.value) ORDER BY count DESC LIMIT 10`;
+  const { w, p } = oldWhere(scope, personal);
+  const r = await sql.query(`SELECT MAX(t.value) value, COUNT(*) count FROM tags t JOIN doi_records d ON d.id=t.doi_record_id
+    WHERE t.category='journal' AND ${w} GROUP BY COALESCE(t.ext_id,t.value) ORDER BY count DESC LIMIT 10`, p);
   return r.rows.map((x) => `${x.value}|${x.count}`).sort();
 }
 
@@ -61,8 +65,9 @@ async function main() {
     if (!cmp(`${label} getCollaborations`, await oldCollab(scope, personal), sortByKey(await NEW.getCollaborations(scope), "value"))) drift++;
     if (!cmp(`${label} getTopJournals`, await oldJournals(scope, personal), sortByKey(await NEW.getTopJournals(scope), "value"))) drift++;
     // getByYearAndSource: source dim dropped by design — compare year→count totals only.
-    const oldYr = {}; for (const r of (await sql`SELECT SUBSTRING(d.published FROM 1 FOR 4) year, COUNT(*) c FROM doi_records d
-      WHERE d.published IS NOT NULL AND ${personal ? personalCond(scope.orcid) : sql`d.tenant_id=${scope.tenantId}`} GROUP BY 1`).rows) oldYr[r.year] = +r.c;
+    const { w, p } = oldWhere(scope, personal);
+    const oldYr = {}; for (const r of (await sql.query(`SELECT SUBSTRING(d.published FROM 1 FOR 4) year, COUNT(*) c FROM doi_records d
+      WHERE d.published IS NOT NULL AND ${w} GROUP BY 1`, p)).rows) oldYr[r.year] = +r.c;
     const newYr = {}; for (const r of await NEW.getByYearAndSource(scope)) newYr[r.year] = (newYr[r.year] || 0) + +r.count;
     if (!cmp(`${label} byYear (source-agnostic)`, oldYr, newYr)) drift++;
   }

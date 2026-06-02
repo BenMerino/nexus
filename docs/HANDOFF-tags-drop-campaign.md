@@ -1,6 +1,24 @@
-# Campaign — retire `tags` (drop the EAV table). Plan only; no code yet.
+# Campaign — retire `tags` (drop the EAV table) + full DGA resolution.
 
-**As of 2026-06-02.** Companion to `HANDOFF-tags-migration.md` (which covers Steps 0–4 + the graph-builder cutover, DONE). This doc is the sequenced plan to migrate every remaining `tags` reader/writer and finally **DROP `tags` / `tag_synonyms` / `tag_dismissed_pairs`** (migration Step 5). Surveyed via 4 agent passes + DB grounding on 2026-06-02.
+**As of 2026-06-02.** Companion to `HANDOFF-tags-migration.md` (Steps 0–4 + graph-builder cutover, DONE). Sequenced plan to migrate every `tags` reader/writer, wrap reads in DGA Governors/Resolvers, route stats through a backend Composer feeding the EXISTING shared render engine, and finally **DROP `tags`/`tag_synonyms`/`tag_dismissed_pairs`**. Surveyed via 5 agent passes + DB grounding + Zincro reference ([[zincro-dga-reference]]).
+
+## ⟶ FULL-RESOLUTION decision (2026-06-02, approved): follow Zincro's shape, scoped to what Nexus needs.
+**Corrected frontend reality** (I was wrong earlier that there's "no render layer" — I'd only counted `.js`, missed `.tsx`/`architect/`): **Nexus ALREADY has the unified render pipeline.** `apps/web/ui/graph-engine/GraphRender.tsx` is a universal renderer (4 family dispatchers: cartesian/radial/polar/grid; canvas marks + SVG chrome; D3; ~19 chart types, zero per-chart code). Typed `GraphDirective`/`GraphQuery` specs in `apps/web/architect/`. Builders (`chart-builders.ts`/`dashboard-builders.ts`/`tenant-builders.ts`) already emit those specs = the Composer seed. Replay/atom loop exists (`architect-replay.js` + `/api/architect/recompose`, but only `kind:'publications'`). So the render half is ~80% built; this campaign does NOT rebuild it.
+
+**Real gaps to close (the "full" part):**
+1. **Shared spec channel**: `GraphDirective`/`GraphQuery` types live in `apps/web/architect/` only; backend `architect-replay.js` is untyped JS duck-typing the shape. `packages/shared` exists but is EMPTY. → move the spec types to `@nexus/shared`, import from both apps. Now backend Composers emit type-checked specs.
+2. **Backend Statistician resolver + Composer**: today builders run client-side off raw `/api` JSON. Move stat computation into a backend **Statistician resolver** (entity-backed) and a small **Composer** that emits `GraphDirective`s server-side (generalize `architect-replay`'s `kinds` registry beyond `publications`). Frontend just `GraphRender`s. This is the Zincro `Resolver→Composer→GraphRender` shape — built on Nexus's existing engine.
+3. **DGA data layer**: every `tags` reader → Statistician resolver (reads) or VenueGovernor (venue/synonym writes), per [[zincro-dga-reference]] patterns (Resolver class + `{Domain}ResolverTools.ts` manifest, auto-discovered; repos wrap `lib/db-*` for now, `withTenant` in the RLS phase).
+
+**Build order (each step diff-gated + committed):**
+- **P0** Tier-1 reader migrations to entities (below) — pure data correctness, independent of DGA wrapping. (dashboard-stats DONE pending diff.)
+- **P1** Move `GraphDirective`/`GraphQuery`/`graph-data.types` → `packages/shared` (`@nexus/shared`); repoint `apps/web/architect` + builders to import from there. No behavior change; unlocks typed backend specs.
+- **P2** `Statistician.ts` resolver (`src/services/catalog/`) wrapping the migrated entity reads (getSummary/topJournals/collaborations/recent/byYear/portfolio/org-tree) + `StatisticianResolverTools.ts` manifest. Handlers delegate; routes unchanged.
+- **P3** Backend Composer: generalize `architect-replay` into a `kind→compose(data)→GraphDirective` registry emitting `@nexus/shared` specs from the Statistician; migrate the 3 client builders to consume server specs (or keep client builders but typed from shared — decide per chart).
+- **P4** VenueGovernor (`merge`=synonym UI replacement, `setIndexation`=flags) — folds in the backfill scripts; retires the synonym subsystem + indexed_in/venue-type tag writes (Tier 2).
+- **P5** Stop writing tags (insertTag/deleteTagsForRecord) once nothing reads them; **DROP** migration `008` + `doi_records` view via a Zincro-style read-only compat-shim if any consumer still needs the old shape.
+
+Below = the per-reader entity-migration detail (P0), unchanged by the above.
 
 ## Entity model (the target every reader moves to)
 Tenant-scoped; edges FK `publications(id)`.
