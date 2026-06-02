@@ -26,9 +26,8 @@ async function fetchScieloCodes() {
 async function seed() {
   const codes = await fetchScieloCodes();
   const r = await sql`
-    SELECT DISTINCT ext_id, MAX(value) AS name FROM tags
-    WHERE category='journal' AND ext_id IS NOT NULL
-    GROUP BY ext_id`;
+    SELECT issn_l AS ext_id, name FROM venues
+    WHERE venue_type='journal' AND issn_l IS NOT NULL`;
   const matches = [];
   for (const row of r.rows) {
     const issn = normalizeIssn(row.ext_id);

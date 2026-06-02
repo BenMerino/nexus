@@ -20,9 +20,8 @@ async function seed() {
   if (!key) throw new Error("ELSEVIER_API_KEY is not set");
 
   const r = await sql`
-    SELECT DISTINCT ext_id, MAX(value) AS name FROM tags
-    WHERE category='journal' AND ext_id IS NOT NULL
-    GROUP BY ext_id`;
+    SELECT issn_l AS ext_id, name FROM venues
+    WHERE venue_type='journal' AND issn_l IS NOT NULL`;
 
   const hits = [];
   let checked = 0, skipped = 0;

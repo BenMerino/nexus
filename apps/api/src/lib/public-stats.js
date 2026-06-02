@@ -40,20 +40,25 @@ async function getTypeByYear(tenantId) {
 
 async function getYearByIndexation(tenantId) {
   const INDEXES = listSourceIds();
+  // Entity model: a paper is "indexed in X" when its venue carries the in_X flag
+  // (published_in → venues). One row per (paper, year) with the venue's index
+  // sources; counted per (year, index). Replaces the legacy indexed_in tag join.
   const r = await sql`
     SELECT d.id, SUBSTRING(d.published FROM 1 FOR 4) AS year,
-           array_remove(array_agg(DISTINCT t.value), NULL) AS indices
+           bool_or(v.in_wos) AS wos, bool_or(v.in_scopus) AS scopus,
+           bool_or(v.in_doaj) AS doaj, bool_or(v.in_scielo) AS scielo
     FROM doi_records d
-    LEFT JOIN tags t ON t.doi_record_id = d.id
-      AND t.category = 'indexed_in'
-      AND t.value = ANY(${INDEXES})
+    LEFT JOIN published_in pi ON pi.publication_id = d.id
+    LEFT JOIN venues v ON v.id = pi.venue_id AND v.tenant_id = ${tenantId}
     WHERE d.tenant_id = ${tenantId} AND d.published IS NOT NULL AND d.published <> ''
     GROUP BY d.id, SUBSTRING(d.published FROM 1 FOR 4)`;
+  const flagFor = { WoS: "wos", Scopus: "scopus", DOAJ: "doaj", SciELO: "scielo" };
   const counts = new Map();
   for (const row of r.rows) {
     if (!row.year) continue;
     for (const idx of INDEXES) {
-      if (!(row.indices || []).includes(idx)) continue;
+      const col = flagFor[idx];
+      if (!col || !row[col]) continue;
       const key = `${row.year}|${idx}`;
       counts.set(key, (counts.get(key) || 0) + 1);
     }

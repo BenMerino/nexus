@@ -15,8 +15,8 @@ async function fetchSource(issn) {
 }
 
 async function seed() {
-  const r = await sql`SELECT DISTINCT ext_id FROM tags
-    WHERE category='journal' AND ext_id IS NOT NULL`;
+  const r = await sql`SELECT DISTINCT issn_l AS ext_id FROM venues
+    WHERE venue_type='journal' AND issn_l IS NOT NULL`;
   const issns = r.rows.map(x => normalizeIssn(x.ext_id)).filter(Boolean);
 
   const rows = { WoS: [], DOAJ: [] };
