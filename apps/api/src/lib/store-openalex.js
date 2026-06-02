@@ -1,7 +1,6 @@
 const { insertSubmission, upsertRecord, getRecordByDoi, insertTag, deleteTagsForRecord } = require("./db");
 const { normalizeWork } = require("./normalize-openalex");
 const { extractTags, canonicalize } = require("./normalize-tags");
-const { tagIndexationForRecord } = require("./indexed-backfill");
 const { syncRecordEntities } = require("./db-entities");
 const { sql } = require("./sql");
 
@@ -37,7 +36,8 @@ async function storeNormalizedRecord(record, uploader) {
   for (const tag of tags) {
     await insertTag(dbRec.id, tag.category, canonicalize(tag.category, tag.value));
   }
-  await tagIndexationForRecord(dbRec.id, record.issnL);
+  // (indexed_in tags no longer written — venue in_* flags set directly by
+  // syncRecordEntities→syncVenueFlags; nothing reads indexed_in tags.)
 
   // Dual-write entities + edges (Step 3) — keep entity tables in lockstep.
   const canonTags = tags.map((t) => ({ ...t, value: canonicalize(t.category, t.value) }));

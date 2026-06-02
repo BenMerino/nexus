@@ -3,7 +3,6 @@ const { normalize, extractTags, canonicalize } = require("./normalize");
 const { fetchCrossRef, fetchOpenAlex, fetchSemanticScholar, fetchDataCite, unwrap } = require("./fetchers");
 const { upsertCitationsByYear, upsertConcepts, deleteConceptsForRecord } = require("./db-portfolio");
 const { extractKeywords } = require("./nlp-keywords");
-const { tagIndexationForRecord } = require("./indexed-backfill");
 const { syncRecordEntities } = require("./db-entities");
 const { sql } = require("./sql");
 
@@ -33,7 +32,9 @@ async function fetchAndStore(doi, submissionId) {
   for (const tag of tags) {
     await insertTag(dbRecord.id, tag.category, canonicalize(tag.category, tag.value), tag.ext_id);
   }
-  await tagIndexationForRecord(dbRecord.id, record.issnL);
+  // (indexed_in tags no longer written — venue in_* flags are set directly by
+  // syncRecordEntities→syncVenueFlags from the indexation map; nothing reads
+  // indexed_in tags anymore.)
 
   // Dual-write entities + edges (Step 3) so the entity tables stay in lockstep
   // with tags on every ingest. Uses canonicalized tag values to match tags.

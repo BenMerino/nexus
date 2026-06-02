@@ -11,6 +11,7 @@ const { sql } = require("./sql");
 const { normOrcid, normRor } = require("./entity-normalize");
 const { flagsForNameKeys } = require("./venue-flags");
 const { syncVenues } = require("./db-venues-sync");
+const { indexationForIssn } = require("./indexed-journals");
 
 // `record` is the normalized record (record.authors = [{name,orcid,affiliations:
 // [{name,ror}]}]); `tags` is extractTags(record). recordId is the publications.id.
@@ -37,11 +38,12 @@ async function syncRecordEntities(recordId, tenantId, record, tags) {
   // is set as a per-paper publication property (the exclusion signal).
   await syncVenues(recordId, tenantId, tags);
 
-  // Venue indexation flags. indexed_in tags for this record were written just
-  // before (tagIndexationForRecord) — fold their sources onto each venue this
-  // record published in. Indexation is a journal property, so OR the flags in
-  // (never clear) so siblings/other papers don't reset a known index.
-  await syncVenueFlags(recordId, tenantId);
+  // Venue indexation flags — sourced DIRECTLY from the indexation map (the same
+  // source the legacy indexed_in tags came from), not from tags. OR the flags
+  // onto each venue this record published in. Indexation is a journal property,
+  // so OR in (never clear) so siblings/other papers don't reset a known index.
+  const sources = await indexationForIssn(record.issnL);
+  await syncVenueFlags(recordId, tenantId, sources);
 
   // Direct pub↔institution edges from institution TAGS (any ROR, ORCID or not).
   for (const t of tags.filter((x) => x.category === "institution" && x.ext_id)) {
@@ -57,14 +59,12 @@ async function syncRecordEntities(recordId, tenantId, record, tags) {
   await syncAffiliations(recordId, tenantId, record);
 }
 
-// OR this record's indexed_in sources onto the venues it published in. The
-// indexed_in tags (value=Scopus|WoS|DOAJ|SciELO) were just written for this
-// record; map them to the in_* columns via venue-flags and set them true. Never
-// clears a flag — indexation is a journal property accreted across its papers.
-async function syncVenueFlags(recordId, tenantId) {
-  const srcRows = (await sql`
-    SELECT DISTINCT value FROM tags WHERE doi_record_id = ${recordId} AND category = 'indexed_in'`).rows;
-  const flags = flagsForNameKeys(new Set(srcRows.map((r) => r.value)));
+// OR this record's indexation sources (Scopus|WoS|DOAJ|SciELO, from the
+// indexation map) onto the venues it published in — mapping each to its in_*
+// column. Never clears a flag — indexation is a journal property accreted
+// across its papers.
+async function syncVenueFlags(recordId, tenantId, sources) {
+  const flags = flagsForNameKeys(new Set(sources || []));
   if (!flags) return;
   await sql`
     UPDATE venues v SET
