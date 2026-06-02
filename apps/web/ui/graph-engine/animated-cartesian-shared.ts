@@ -16,7 +16,7 @@ import { easeOutCubic } from '../primitives/tween.js';
  *  `BAR_RADIUS_REVEAL_PX` of the covering segment's fade-out, so the
  *  rounded corner appears only after the segment above is visually
  *  gone (sub-pixel) instead of growing in alongside it. */
-export const BAR_TOP_RADIUS_PX = 6;
+export const BAR_TOP_RADIUS_PX = 0;
 export const BAR_RADIUS_REVEAL_PX = 1;
 
 /** How much of the total animation duration each entering/exiting bar

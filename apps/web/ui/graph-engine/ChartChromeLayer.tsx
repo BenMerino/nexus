@@ -127,7 +127,7 @@ function LabelHighlightBand({
             y={TOP}
             width={w}
             height={HEIGHT}
-            rx={3} ry={3}
+            rx={0} ry={0}
             fill="color-mix(in srgb, var(--text-main) 10%, transparent)"
             pointerEvents="none"
         />
