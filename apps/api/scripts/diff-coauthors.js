@@ -39,7 +39,9 @@ async function main() {
      JOIN doi_concepts dc ON dc.doi_record_id=t.doi_record_id JOIN tc ON tc.concept_id=dc.concept_id
      WHERE u.tenant_id=$2 AND u.orcid IS NOT NULL AND u.orcid<>$1 AND u.orcid NOT IN (SELECT ext_id FROM ec)`,
     [orcid, 1])).rows.map((r) => r.orcid));
-  const newSug = new Set((await findCollaborators(orcid, 1, 1000)).map((c) => c.orcid));
+  // High limit so NEW returns the FULL candidate set (OLD baseline is unbounded);
+  // findCollaborators applies LIMIT, so a small cap would falsely look like drift.
+  const newSug = new Set((await findCollaborators(orcid, 1, 100000)).map((c) => c.orcid));
   if (!cmpSet("suggested collaborators set", oldSug, newSug)) drift++;
 
   console.log(drift === 0 ? "\n✓ coauthor + findCollaborators match" : `\n✗ ${drift} drift(s)`);
