@@ -14,11 +14,11 @@ async function queryOrgTree(tenantId) {
            COALESCE(p.n, 0)::int AS paper_count
     FROM users u
     LEFT JOIN (
-      SELECT t.ext_id, COUNT(DISTINCT t.doi_record_id) AS n
-      FROM tags t JOIN doi_records d ON t.doi_record_id = d.id
-      WHERE t.category = 'author' AND d.tenant_id = ${tenantId}
-      GROUP BY t.ext_id
-    ) p ON p.ext_id = u.orcid
+      SELECT a.orcid, COUNT(DISTINCT s.publication_id) AS n
+      FROM authorship s JOIN authors a ON a.id = s.author_id
+      WHERE a.tenant_id = ${tenantId}
+      GROUP BY a.orcid
+    ) p ON p.orcid = u.orcid
     WHERE u.tenant_id = ${tenantId} AND u.role = 'academic'
       AND u.profile_category IS NOT NULL
     ORDER BY u.faculty NULLS LAST, u.department NULLS LAST, u.full_name`;

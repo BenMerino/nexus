@@ -1,6 +1,8 @@
 const { sql } = require("./sql");
 const { getSetting, setSetting } = require("./db");
 const { listSourceIds } = require("./indexation-sources");
+const { SOURCE_TO_FLAG } = require("./venue-flags");
+const { normOrcid } = require("./entity-normalize");
 const { doctorReason, magAcadReason, magProfReason } = require("./claustro-reasons");
 
 const NUCLEO_ROLES = ["academic", "director"];
@@ -42,20 +44,28 @@ async function getClaustroForTenant(tenantId, { now = new Date() } = {}) {
   const orcids = users.map((u) => u.orcid).filter(Boolean);
   const userIds = users.map((u) => u.id);
 
+  // Indexed publications per author (entity model): author by ORCID via
+  // authorship; "indexed in an accepted index" = the paper's venue carries the
+  // corresponding in_* flag. Accepted index names → venue flag columns (trusted
+  // map, not user input). Window-filtered by publication year.
+  const flagCols = [...new Set(indices.map((s) => SOURCE_TO_FLAG[s]).filter(Boolean))];
   const pubByOrcid = new Map();
-  if (orcids.length) {
+  if (orcids.length && flagCols.length) {
+    const flagOr = flagCols.map((c) => `v.${c}`).join(" OR ");
     const r = await sql.query(
-      `SELECT t_author.ext_id AS orcid, COUNT(DISTINCT d.id)::int AS pub_count
+      `SELECT a.orcid, COUNT(DISTINCT d.id)::int AS pub_count
        FROM doi_records d
-       JOIN tags t_author ON t_author.doi_record_id = d.id AND t_author.category = 'author'
-       JOIN tags t_idx ON t_idx.doi_record_id = d.id AND t_idx.category = 'indexed_in'
+       JOIN authorship s ON s.publication_id = d.id
+       JOIN authors a ON a.id = s.author_id AND a.tenant_id = $1
+       JOIN published_in peq ON peq.publication_id = d.id
+       JOIN venues v ON v.id = peq.venue_id AND v.tenant_id = $1
        WHERE d.tenant_id = $1
-         AND t_author.ext_id = ANY($2::text[])
-         AND t_idx.value = ANY($3::text[])
+         AND a.orcid = ANY($2::text[])
+         AND (${flagOr})
          AND d.published ~ '^[0-9]{4}'
-         AND SUBSTRING(d.published FROM 1 FOR 4)::int >= $4
-       GROUP BY t_author.ext_id`,
-      [tenantId, orcids, indices, minYear]
+         AND SUBSTRING(d.published FROM 1 FOR 4)::int >= $3
+       GROUP BY a.orcid`,
+      [tenantId, orcids.map(normOrcid), minYear]
     );
     for (const row of r.rows) pubByOrcid.set(row.orcid, row.pub_count);
   }

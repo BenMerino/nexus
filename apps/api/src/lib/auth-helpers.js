@@ -1,5 +1,6 @@
 const { sql } = require("./sql");
 const { getAuthorHIndexes } = require("./h-index");
+const { normOrcid, normRor } = require("./entity-normalize");
 
 function buildProfile(user, tenant) {
   return {
@@ -13,28 +14,25 @@ function buildProfile(user, tenant) {
 async function countPapersByOrcid(orcid, tenantId) {
   if (!orcid) return 0;
   const r = await sql`
-    SELECT COUNT(DISTINCT t.doi_record_id) as count FROM tags t
-    JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE t.category = 'author' AND t.ext_id = ${orcid} AND d.tenant_id = ${tenantId}`;
+    SELECT COUNT(DISTINCT s.publication_id) as count FROM authorship s
+    JOIN authors a ON a.id = s.author_id
+    WHERE a.orcid = ${normOrcid(orcid)} AND a.tenant_id = ${tenantId}`;
   return parseInt(r.rows[0].count) || 0;
 }
 
 async function researcherNameByOrcid(orcid, tenantId) {
   if (!orcid) return null;
   const r = await sql`
-    SELECT t.value, COUNT(*) AS n FROM tags t
-    JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE t.category = 'author' AND t.ext_id = ${orcid} AND d.tenant_id = ${tenantId}
-    GROUP BY t.value ORDER BY n DESC LIMIT 1`;
-  return r.rows[0]?.value || null;
+    SELECT name FROM authors WHERE orcid = ${normOrcid(orcid)} AND tenant_id = ${tenantId} LIMIT 1`;
+  return r.rows[0]?.name || null;
 }
 
 async function countPapersByRor(ror, tenantId) {
   if (!ror) return 0;
   const r = await sql`
-    SELECT COUNT(DISTINCT t.doi_record_id) as count FROM tags t
-    JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE t.category = 'institution' AND t.ext_id = ${ror} AND d.tenant_id = ${tenantId}`;
+    SELECT COUNT(DISTINCT aw.publication_id) as count FROM affiliated_with aw
+    JOIN institutions i ON i.id = aw.institution_id
+    WHERE i.ror = ${normRor(ror)} AND i.tenant_id = ${tenantId}`;
   return parseInt(r.rows[0].count) || 0;
 }
 
