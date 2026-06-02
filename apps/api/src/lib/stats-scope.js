@@ -23,4 +23,17 @@ function scopedPubFilter(scope) {
   return { where: `p.tenant_id = $1`, params: [scope.tenantId] };
 }
 
-module.exports = { scopedPubFilter };
+// Personal-scope "papers I authored" filter as a SQL fragment for an arbitrary
+// id column, with param placeholders starting at `startIdx`. For readers that
+// build positional SQL by hand (db-list pagination, some handlers) — the entity
+// replacement for `<idCol> IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=$n)`.
+function personalPaperFilter(idCol, orcid, tenantId, startIdx) {
+  return {
+    sql: `${idCol} IN (
+      SELECT s.publication_id FROM authorship s JOIN authors a ON a.id = s.author_id
+      WHERE a.orcid = $${startIdx} AND a.tenant_id = $${startIdx + 1})`,
+    params: [normOrcid(orcid), tenantId],
+  };
+}
+
+module.exports = { scopedPubFilter, personalPaperFilter };

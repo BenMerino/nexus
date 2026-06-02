@@ -2,6 +2,7 @@ const { sql } = require("../src/lib/sql");
 const { ensureSchema } = require("../src/lib/db");
 const { searchRecordsPage } = require("../src/lib/db-list");
 const { requireScope, isPersonalScope } = require("../src/lib/scope");
+const { normOrcid } = require("../src/lib/entity-normalize");
 const { envelope } = require("../src/lib/pagination");
 
 module.exports = async function handler(req, res) {
@@ -29,7 +30,8 @@ module.exports = async function handler(req, res) {
       SELECT * FROM doi_records
       WHERE (title ILIKE ${like} OR authors ILIKE ${like} OR journal ILIKE ${like}
         OR doi ILIKE ${like} OR publisher ILIKE ${like} OR venue ILIKE ${like})
-        AND id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid})
+        AND id IN (SELECT s.publication_id FROM authorship s JOIN authors a ON a.id=s.author_id
+          WHERE a.orcid=${normOrcid(scope.orcid)} AND a.tenant_id=${scope.tenantId})
       ORDER BY id DESC LIMIT 50`
     : await sql`
       SELECT * FROM doi_records

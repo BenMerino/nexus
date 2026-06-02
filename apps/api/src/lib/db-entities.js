@@ -119,4 +119,18 @@ async function mergeInstitution(fromId, intoId) {
   await sql`DELETE FROM institutions WHERE id = ${fromId}`;
 }
 
-module.exports = { syncRecordEntities, mergeInstitution };
+// Author claim: bind a researcher (by ORCID) to a publication as an authorship
+// edge — the entity form of the legacy author-tag claim. Upserts the author
+// (name only set if creating; never clobbers a richer existing name) and the
+// authorship edge. Returns { created } = true when the edge was newly added.
+async function claimAuthorship(publicationId, tenantId, orcidRaw, name) {
+  const orcid = normOrcid(orcidRaw);
+  const a = await sql`
+    INSERT INTO authors (orcid, name, tenant_id) VALUES (${orcid}, ${name || orcid}, ${tenantId})
+    ON CONFLICT (orcid, tenant_id) DO UPDATE SET name = COALESCE(authors.name, EXCLUDED.name) RETURNING id`;
+  const r = await sql`INSERT INTO authorship (publication_id, author_id)
+    VALUES (${publicationId}, ${a.rows[0].id}) ON CONFLICT DO NOTHING`;
+  return { created: r.rowCount > 0 };
+}
+
+module.exports = { syncRecordEntities, mergeInstitution, claimAuthorship };

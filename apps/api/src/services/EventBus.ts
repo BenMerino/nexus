@@ -35,9 +35,12 @@ export interface GovernorEventMap {
   "project.created": TenantPayload & { projectId: number } & ActorIdentityTail;
   "project.updated": TenantPayload & { projectId: number } & ActorIdentityTail;
   "project.deleted": TenantPayload & { projectId: number } & ActorIdentityTail;
+  // Author domain — claim binds a substrate user (by ORCID) to a publication
+  // as an authorship edge (the entity form of the legacy author-tag claim).
+  "author.claimed": TenantPayload & { orcid: string; publicationId: number } & ActorIdentityTail;
   // Future domains add their channels here (see docs/DGA_DESIGN.md):
   //   publication.upserted | publication.deleted
-  //   author.upserted | author.merged | author.claimed
+  //   author.upserted | author.merged
   //   venue.upserted | venue.indexationUpdated
   //   institution.provisioned | institution.policyChanged
   //   ingestion.completed | roster.imported

@@ -2,11 +2,12 @@ const { sql } = require("../src/lib/sql");
 const { ensureSchema } = require("../src/lib/db");
 const { requireScope, isPersonalScope } = require("../src/lib/scope");
 const { getResearcherPortfolio } = require("../src/lib/portfolio");
+const { normOrcid } = require("../src/lib/entity-normalize");
 
 async function lookupResearcher(orcid, tenantId) {
   const u = await sql`SELECT full_name, faculty FROM users WHERE orcid = ${orcid} AND tenant_id = ${tenantId} LIMIT 1`;
   if (u.rows[0]) return { name: u.rows[0].full_name, faculty: u.rows[0].faculty };
-  const t = await sql`SELECT value FROM tags WHERE category = 'author' AND ext_id = ${orcid} LIMIT 1`;
+  const t = await sql`SELECT name AS value FROM authors WHERE orcid = ${normOrcid(orcid)} AND tenant_id = ${tenantId} LIMIT 1`;
   return { name: t.rows[0]?.value || null, faculty: null };
 }
 

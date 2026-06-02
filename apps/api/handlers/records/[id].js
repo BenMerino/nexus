@@ -1,6 +1,7 @@
 const { sql } = require("../../src/lib/sql");
 const { ensureSchema, deleteTagsForRecord, deleteRecord, deleteSubmissionsForDoi } = require("../../src/lib/db");
 const { getScope, requireScope, isPersonalScope } = require("../../src/lib/scope");
+const { normOrcid } = require("../../src/lib/entity-normalize");
 
 module.exports = async function handler(req, res) {
   await ensureSchema();
@@ -15,7 +16,8 @@ module.exports = async function handler(req, res) {
       if (isPersonalScope(scope)) {
         ({ rows } = await sql`SELECT doi, title, authors, abstract, journal, published, citation_count, type, open_access_url
           FROM doi_records WHERE doi = ${doi}
-          AND id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid})`);
+          AND id IN (SELECT s.publication_id FROM authorship s JOIN authors a ON a.id=s.author_id
+            WHERE a.orcid=${normOrcid(scope.orcid)} AND a.tenant_id=${scope.tenantId})`);
       } else {
         ({ rows } = await sql`SELECT doi, title, authors, abstract, journal, published, citation_count, type, open_access_url
           FROM doi_records WHERE doi = ${doi} AND tenant_id = ${scope.tenantId}`);

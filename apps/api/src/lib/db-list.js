@@ -9,18 +9,16 @@
 
 const { paginatedQuery } = require("../db/list");
 const { isPersonalScope } = require("./scope");
+const { personalPaperFilter } = require("./stats-scope");
 
 // /api/records page query.
 async function getRecordsPage(scope, query) {
   if (!scope) throw new Error("getRecordsPage requires scope");
   if (isPersonalScope(scope)) {
+    const f = personalPaperFilter("id", scope.orcid, scope.tenantId, 1);
     return paginatedQuery({
-      baseSql: `
-        SELECT * FROM doi_records WHERE id IN (
-          SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=$1
-        )
-      `,
-      baseParams: [scope.orcid],
+      baseSql: `SELECT * FROM doi_records WHERE ${f.sql}`,
+      baseParams: f.params,
       orderBy: "id DESC",
       query,
     });
@@ -37,15 +35,14 @@ async function getRecordsPage(scope, query) {
 async function getSubmissionsPage(scope, query) {
   if (!scope) throw new Error("getSubmissionsPage requires scope");
   if (isPersonalScope(scope)) {
+    const f = personalPaperFilter("d.id", scope.orcid, scope.tenantId, 1);
     return paginatedQuery({
       baseSql: `
         SELECT s.*, d.title FROM submissions s
         LEFT JOIN doi_records d ON s.doi = d.doi
-        WHERE d.id IN (
-          SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=$1
-        )
+        WHERE ${f.sql}
       `,
-      baseParams: [scope.orcid],
+      baseParams: f.params,
       orderBy: "created_at DESC",
       query,
     });
@@ -100,13 +97,14 @@ async function searchRecordsPage(scope, term, query) {
   if (!term) return { data: [], total: 0, limit: 0, offset: 0 };
   const like = `%${term}%`;
   if (isPersonalScope(scope)) {
+    const f = personalPaperFilter("id", scope.orcid, scope.tenantId, 1);
     return paginatedQuery({
       baseSql: `
         SELECT * FROM doi_records
-        WHERE id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=$1)
-        AND (title ILIKE $2 OR journal ILIKE $2 OR doi ILIKE $2 OR publisher ILIKE $2 OR venue ILIKE $2)
+        WHERE ${f.sql}
+        AND (title ILIKE $3 OR journal ILIKE $3 OR doi ILIKE $3 OR publisher ILIKE $3 OR venue ILIKE $3)
       `,
-      baseParams: [scope.orcid, like],
+      baseParams: [...f.params, like],
       orderBy: "id DESC",
       query,
     });
