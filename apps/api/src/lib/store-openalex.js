@@ -1,4 +1,4 @@
-const { insertSubmission, upsertRecord, getRecordByDoi, insertTag, deleteTagsForRecord } = require("./db");
+const { insertSubmission, upsertRecord, getRecordByDoi } = require("./db");
 const { normalizeWork } = require("./normalize-openalex");
 const { extractTags, canonicalize } = require("./normalize-tags");
 const { syncRecordEntities } = require("./db-entities");
@@ -31,15 +31,11 @@ async function storeNormalizedRecord(record, uploader) {
     JSON.stringify({ openalex: record })
   );
   const dbRec = await getRecordByDoi(record.doi);
-  await deleteTagsForRecord(dbRec.id);
+  // The `tags` table is no longer written (P5). extractTags still runs because
+  // syncRecordEntities derives the entity writes from this tag-shaped array.
   const tags = extractTags(record);
-  for (const tag of tags) {
-    await insertTag(dbRec.id, tag.category, canonicalize(tag.category, tag.value));
-  }
-  // (indexed_in tags no longer written — venue in_* flags set directly by
-  // syncRecordEntities→syncVenueFlags; nothing reads indexed_in tags.)
 
-  // Dual-write entities + edges (Step 3) — keep entity tables in lockstep.
+  // Write entities + edges from the tag-shaped array.
   const canonTags = tags.map((t) => ({ ...t, value: canonicalize(t.category, t.value) }));
   const tRow = await sql`SELECT tenant_id FROM publications WHERE id = ${dbRec.id}`;
   await syncRecordEntities(dbRec.id, tRow.rows[0]?.tenant_id ?? 1, record, canonTags);

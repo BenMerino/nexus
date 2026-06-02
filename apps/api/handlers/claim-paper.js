@@ -1,4 +1,4 @@
-const { ensureSchema, insertSubmission, getRecordByDoi, insertTag } = require("../src/lib/db");
+const { ensureSchema, insertSubmission, getRecordByDoi } = require("../src/lib/db");
 const { getUserById } = require("../src/lib/db-users");
 const { fetchAndStore } = require("../src/lib/store");
 const { requireScope, actorContext } = require("../src/lib/scope");
@@ -31,13 +31,12 @@ module.exports = async function handler(req, res) {
     if (!rec) return res.status(404).json({ error: "Could not resolve DOI (not in Crossref/OpenAlex)" });
 
     // The claim is an AUTHORSHIP edge (AuthorGovernor.claim) — the entity form
-    // that makes the paper show under the user's personal scope. The legacy
-    // author-tag write stays alongside until tags is dropped (P5).
+    // that makes the paper show under the user's personal scope. (P5: the legacy
+    // author-tag write is gone; the authorship edge is authoritative.)
     const user = await getUserById(scope.userId);
     const name = user?.full_name || scope.username;
     const ctx = await actorContext(req);
     const { created } = await authorGovernor.claim(ctx, { publicationId: rec.id, name });
-    if (created) await insertTag(rec.id, "author", name, scope.orcid);
     res.json({ ok: true, recordId: rec.id, ingested, tagged: created });
   } catch (err) {
     res.status(500).json({ error: err.message });

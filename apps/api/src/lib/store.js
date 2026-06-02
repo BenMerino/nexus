@@ -1,4 +1,4 @@
-const { upsertRecord, insertTag, deleteTagsForRecord, getRecordByDoi } = require("./db");
+const { upsertRecord, getRecordByDoi } = require("./db");
 const { normalize, extractTags, canonicalize } = require("./normalize");
 const { fetchCrossRef, fetchOpenAlex, fetchSemanticScholar, fetchDataCite, unwrap } = require("./fetchers");
 const { upsertCitationsByYear, upsertConcepts, deleteConceptsForRecord } = require("./db-portfolio");
@@ -27,17 +27,12 @@ async function fetchAndStore(doi, submissionId) {
   );
 
   const dbRecord = await getRecordByDoi(record.doi);
-  await deleteTagsForRecord(dbRecord.id);
+  // The `tags` table is no longer written (P5) — entities are the sole store.
+  // extractTags still runs because syncRecordEntities derives the entity writes
+  // (authors/venues/institutions + edges) from this canonical tag-shaped array.
   const tags = extractTags(record);
-  for (const tag of tags) {
-    await insertTag(dbRecord.id, tag.category, canonicalize(tag.category, tag.value), tag.ext_id);
-  }
-  // (indexed_in tags no longer written — venue in_* flags are set directly by
-  // syncRecordEntities→syncVenueFlags from the indexation map; nothing reads
-  // indexed_in tags anymore.)
 
-  // Dual-write entities + edges (Step 3) so the entity tables stay in lockstep
-  // with tags on every ingest. Uses canonicalized tag values to match tags.
+  // Write entities + edges from the tag-shaped array. Uses canonicalized values.
   const canonTags = tags.map((t) => ({ ...t, value: canonicalize(t.category, t.value) }));
   const tRow = await sql`SELECT tenant_id FROM publications WHERE id = ${dbRecord.id}`;
   await syncRecordEntities(dbRecord.id, tRow.rows[0]?.tenant_id ?? 1, record, canonTags);
