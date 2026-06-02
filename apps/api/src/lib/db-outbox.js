@@ -48,4 +48,16 @@ async function markProcessed(ids) {
   );
 }
 
-module.exports = { CHANNEL, enqueueEvent, claimUnprocessed, markProcessed };
+// Read-only peek at one outbox row by id — for OBSERVERS (e.g. the web process's
+// Stream invalidation listener) that react to a NOTIFY without consuming the row.
+// Never touches processed_at, so it does NOT race the worker's claim/drain: the
+// outbox stays the worker's queue; observers just glance at the same rows.
+async function peekEvent(id) {
+  const r = await sql.query(
+    `SELECT tenant_id, channel FROM event_outbox WHERE id = $1`,
+    [id],
+  );
+  return r.rows[0] || null;
+}
+
+module.exports = { CHANNEL, enqueueEvent, claimUnprocessed, markProcessed, peekEvent };
