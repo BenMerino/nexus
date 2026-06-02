@@ -1,0 +1,43 @@
+# Handoff — finish the DGA service layer (wrap remaining domains as Governors)
+
+**As of 2026-06-02.** The `tags`→entities migration is DONE (see `HANDOFF-tags-drop-campaign.md`): the entity *data model* is fully live, and a first slice of the DGA *service layer* is built. This doc is for the next session: **wrap the remaining domains (Publication, Venue, Author-upsert, Institution) as Governors, and route the ingestion write path through them.** Doctrine: `docs/DGA_DESIGN.md` + `.claude/rules/governor-patterns.md`. Reference impl: `/Users/ben/Zincro` ([[zincro-dga-reference]] in agent memory).
+
+## The pipeline (target)
+`handler → gate (requireScope/requireEditor → actorContext(req)) → Governor (sole writer, emits event after tx) / Resolver (pure reads) → Composer (typed GraphDirective) → frontend GraphRender`. Workflows orchestrate across Governors; Dispatchers do outbound HTTP.
+
+## What's BUILT (live, use as templates)
+- **BaseGovernor / EventBus / AuditLedger / bootstrap / action+resolver scanners** — `src/services/`. Bootstrap (`index.js` → `src/services/bootstrap`) runs `configure → scanActions → conversation-bindings → scanResolvers`.
+- **ProjectGovernor** (`src/services/project/ProjectGovernor.ts`) — THE governor template: `class extends BaseGovernor`, singleton export, each write = validate (pure) → repo call (legacy `lib/db-projects` on the plain `sql` pool) → `emitEvent("project.x")` AFTER write → `logToLedger`. Handler `handlers/projects.js` delegates via `editorCtx(session)`.
+- **AuthorGovernor.claim** (`src/services/catalog/AuthorGovernor.ts`) — claim = upsert author + authorship edge, emits `author.claimed`. Wraps `claimAuthorship` in `db-entities.js`.
+- **Statistician resolver** (`catalog/Statistician.ts` + `StatisticianResolverTools.ts`) — pure reads wrapping the migrated stat libs; manifest auto-discovered (scanner logs "Discovered 5 resolvers"). `handlers/dashboard.js` delegates.
+- **StatComposer** (`architect/StatComposer.ts` + `handlers/architect/charts.js`) — `kind→compose(ctx)→GraphDirective` over the Statistician, typed via `@nexus/shared`.
+
+## Conventions (match these exactly)
+- TS in `src/services/**`, compiled to `dist/` (CJS, node16). Legacy JS `require()`s the compiled governor (`require("../src/services/catalog/AuthorGovernor")` → resolves to dist at runtime). Handlers stay JS.
+- `ActorContext` (`src/substrate/actor.ts`) built by `actorContext(req)` (`lib/scope.js`) — `{tenantId, userId, orcid, role, actorKind}`. Thread `ctx`, never loose args.
+- Governors wrap the existing `lib/db-*.js` repos (don't rewrite SQL). `withTenant` migration is the later RLS phase — for now repos use the plain `sql` pool, like ProjectGovernor.
+- New event → add typed payload to `GovernorEventMap` in `EventBus.ts`. One owner file per channel.
+- N5: every `apps/api/**/*.ts` ≤150 lines (extract `{Domain}Logic.ts`). Names per `.claude/rules/cross-stack-naming.md`.
+
+## THE WORK (priority order)
+
+### 1. PublicationGovernor + IngestionWorkflow — the big one (un-governed write path)
+Today ingestion writes entities OUTSIDE any governor: `store.js#fetchAndStore` + `store-openalex.js#storeNormalizedRecord` call `upsertRecord` (publications) then `syncRecordEntities` (`db-entities.js`: authors/venues/institutions + authorship/published_in/affiliation/affiliated_with edges + venue flags) + `syncVenues` (`db-venues-sync.js`).
+- **PublicationGovernor** (`services/catalog/PublicationGovernor.ts`): owns the paper + its edges (DGA_DESIGN §15). Methods `upsert`, `delete`, `linkAuthorship`/`linkVenue`/`linkAffiliation` (or one `upsert` that does the edge sync). Wrap `upsertRecord` + `syncRecordEntities`/`syncVenues`. Emit `publication.upserted`/`publication.deleted`.
+- **VenueGovernor** (`upsert`, `merge`, `setIndexation`) + **AuthorGovernor.upsert/merge**: the per-author/venue resolution ingestion does. `merge` already exists as `mergeInstitutionSynonym`/`mergeInstitution` (`db-institution-merge.js`) and venue ISSN-dedup logic — wrap them. `setIndexation` = the venue-flag write (`venue-flags-rebuild.js` / `syncVenueFlags`).
+- **IngestionWorkflow** (`services/ingestion/IngestionWorkflow.ts`): the ONLY place governors call governors (DGA_DESIGN §35). Per-DOI: resolve Author/Venue/Institution → PublicationGovernor (paper+edges), one `withTenant`-shaped unit per DOI. `store.js`/`store-openalex.js` become thin callers. Emit `ingestion.completed`.
+- Add events: `publication.upserted/deleted`, `venue.upserted/indexationUpdated`, `author.upserted/merged`, `ingestion.completed`.
+- **Gate:** diff entity row-counts (authors/venues/edges) before vs after on a re-ingest of a sample DOI set — must be identical (the governor is a wrapper, not a behavior change).
+
+### 2. Wrap remaining reads as the Statistician/Claustro resolvers
+The Statistician resolver exists but most stat handlers still call libs directly. Migrate the rest of `handlers/*` that call `portfolio*`/`dashboard-stats`/`org-tree`/`graph-meta`/`public-stats` to delegate to `statistician.*` (add methods as needed). Wrap `claustro.js` as a **Claustro resolver** (DGA_DESIGN §44). Pure mechanical (resolver = pass-through), no behavior change.
+
+### 3. (Optional, bigger) frontend consumes server chart specs
+StatComposer emits `GraphDirective`s server-side, but the frontend still builds them client-side (`apps/web/public/dashboard-builders.ts` etc.). Migrate panels to fetch `/api/architect/charts` and `GraphRender` the server directive. Incremental, per-chart. Not required for DGA-correctness.
+
+## Known state / gotchas
+- `doi_records` is a VIEW over `publications` (kept on purpose); ~26 readers use it. Repointing to `publications` is separate future work, not blocking.
+- RLS rollout (per-table plumb→permissive→FORCE; `users`/`tenants` exempt) is the other future track — pairs with moving repos to `withTenant`.
+- `tags` is GONE (migration 008). Don't reintroduce tag reads. Local backup: `/tmp/tags-backup-20260602.json` (1.45M rows) if ever needed.
+- Diff-gate discipline paid off all campaign — keep it: every governor wrap should be proven behavior-neutral by a before/after diff on real data before cutover.
+- Deploy = push to `main` (Railway auto-builds both services; `tsc` compiles `src/**`+copies `.sql`; migrations run on boot). Run scripts via `railway ssh --service Nexus "cd /app/apps/api && node scripts/<x>.js"`.
