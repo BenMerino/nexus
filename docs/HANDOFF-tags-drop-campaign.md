@@ -19,7 +19,16 @@ Tenant-scoped; edges FK `publications(id)`.
 
 ---
 
-## TIER 1 — read-path migration (mechanical, diff-gated). Does NOT enable DROP alone, but clears all readers.
+## ⟶ DGA-FIRST decision (2026-06-02, approved)
+Migrate readers **into Governors/Resolvers**, not legacy `lib` SQL — do the tags-drop and the DGA build in ONE pass (no double migration). Verified the foundation is real & running in prod: `dist/src/services/*` compiles & ships, `index.js` bootstraps the DGA, **ProjectGovernor is the one working example** (handler delegates, route URL unchanged, governor wraps the existing `lib/db-projects` repo + adds validate→write→emit→ledger; reads are pass-through). The rest of the design (`Statistician`/`VenueGovernor`/`Author`/`Publication`) is named in DGA_DESIGN.md but **not built**. Frontend is 15 bespoke pages, 43 direct `fetch('/api')`, no shared render layer — out of scope here (the Architect/chart-registry unification is a separate effort).
+
+**Per-cluster two-step (each step its own commit):**
+1. **Migrate the read to entities** in `lib/` — the diff-gated, correctness-critical part (same rigor as the graph cutover). Keep the function signature so the handler is untouched.
+2. **Wrap in the DGA role** — a `Statistician` resolver (pure reads, per ProjectGovernor's pass-through style) for stats/portfolio/org-tree/graph-meta/public-*; `VenueGovernor.merge`/`setIndexation` for the venue + synonym work. Handler delegates to the service; route URL unchanged.
+
+Build the Statistician as `src/services/catalog/Statistician.ts` (+ `StatisticianResolverTools.ts` manifest, auto-discovered by resolver-scanner). It absorbs ~10 reader files — but build it incrementally, one cluster of methods at a time, so each is diff-gated before the next.
+
+## TIER 1 — read-path migration (diff-gated). Does NOT enable DROP alone, but clears all readers.
 Migrate one cluster at a time; each gets a read-only diff script comparing OLD (tags) vs NEW (entities) per tenant; cut over only at zero/explained drift; commit per cluster. **Already migrated (skip):** `portfolio.getResearcherWorks/getExistingCoauthors`, `db.getAllRecords/getSubmissions` (personal path), `public-stats.getTopJournals/getPublicationTypes/getTypeByYear`.
 
 ### Cluster A — personal-scope author filter (the 17-site sweep, LOW risk)

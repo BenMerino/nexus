@@ -1,87 +1,64 @@
 const { sql } = require("./sql");
 const { isPersonalScope } = require("./scope");
+const { scopedPubFilter } = require("./stats-scope");
+
+// Dashboard stats — entity-backed (tags → entities migration). Personal scope
+// narrows to the user's own publications via authorship; admin scope is the
+// whole tenant. See stats-scope.scopedPubFilter for the shared narrowing.
 
 async function getSummary(scope) {
   if (!scope) throw new Error("getSummary requires scope");
-  const filter = isPersonalScope(scope);
-  const r = filter ? await sql`
-    SELECT COUNT(*) as total_pubs,
-           COALESCE(SUM(citation_count), 0) as total_citations,
-           COUNT(DISTINCT CASE WHEN open_access THEN doi END) as oa_count
-    FROM doi_records WHERE id IN (
-      SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid}
-    )`
-  : await sql`
-    SELECT COUNT(*) as total_pubs,
-           COALESCE(SUM(citation_count), 0) as total_citations,
-           COUNT(DISTINCT CASE WHEN open_access THEN doi END) as oa_count
-    FROM doi_records WHERE tenant_id = ${scope.tenantId}`;
-  const authors = filter ? await sql`
-    SELECT COUNT(DISTINCT COALESCE(ext_id, value)) as count FROM tags
-    WHERE category = 'author' AND doi_record_id IN (
-      SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid}
-    )`
-  : await sql`
-    SELECT COUNT(DISTINCT COALESCE(t.ext_id, t.value)) as count
-    FROM tags t JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE t.category = 'author' AND d.tenant_id = ${scope.tenantId}`;
+  const f = scopedPubFilter(scope); // { where, params } over publications p
+  const r = await sql.query(
+    `SELECT COUNT(*) total_pubs, COALESCE(SUM(citation_count),0) total_citations,
+            COUNT(DISTINCT CASE WHEN open_access THEN doi END) oa_count
+     FROM publications p WHERE ${f.where}`, f.params);
+  // Distinct authors on those publications.
+  const a = await sql.query(
+    `SELECT COUNT(DISTINCT s.author_id) count
+     FROM authorship s JOIN publications p ON p.id = s.publication_id WHERE ${f.where}`, f.params);
   const row = r.rows[0];
   return {
     totalPubs: parseInt(row.total_pubs),
     totalCitations: parseInt(row.total_citations),
     oaCount: parseInt(row.oa_count),
-    authorCount: parseInt(authors.rows[0].count),
+    authorCount: parseInt(a.rows[0].count),
   };
 }
 
+// Publications per year. The legacy `source` tag (vestigial provenance, no
+// entity/domain) is dropped; the series keeps a constant `source` so the chart
+// shape is unchanged. Provenance-by-year, if ever wanted, is a Publication
+// property (publications.source_indices), not a tag.
 async function getByYearAndSource(scope) {
   if (!scope) throw new Error("getByYearAndSource requires scope");
-  const r = isPersonalScope(scope) ? await sql`
-    SELECT SUBSTRING(d.published FROM 1 FOR 4) as year,
-      COALESCE(s.value, 'Other') as source, COUNT(*) as count
-    FROM doi_records d
-    LEFT JOIN tags s ON s.doi_record_id = d.id AND s.category = 'source'
-    WHERE d.published IS NOT NULL AND d.id IN (
-      SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid}
-    )
-    GROUP BY SUBSTRING(d.published FROM 1 FOR 4), s.value ORDER BY year`
-  : await sql`
-    SELECT SUBSTRING(d.published FROM 1 FOR 4) as year,
-      COALESCE(s.value, 'Other') as source, COUNT(*) as count
-    FROM doi_records d
-    LEFT JOIN tags s ON s.doi_record_id = d.id AND s.category = 'source'
-    WHERE d.published IS NOT NULL AND d.tenant_id = ${scope.tenantId}
-    GROUP BY SUBSTRING(d.published FROM 1 FOR 4), s.value ORDER BY year`;
+  const f = scopedPubFilter(scope);
+  const r = await sql.query(
+    `SELECT SUBSTRING(p.published FROM 1 FOR 4) year, 'All' source, COUNT(*) count
+     FROM publications p WHERE p.published IS NOT NULL AND ${f.where}
+     GROUP BY SUBSTRING(p.published FROM 1 FOR 4) ORDER BY year`, f.params);
   return r.rows;
 }
 
+// Top collaborating institutions — direct pub↔institution edges (affiliated_with,
+// the superset the graph/collab counts use). group_key = institution id.
 async function getCollaborations(scope) {
   if (!scope) throw new Error("getCollaborations requires scope");
-  const r = isPersonalScope(scope) ? await sql`
-    SELECT MAX(t.value) as value, COALESCE(t.ext_id, t.value) as group_key, COUNT(*) as count
-    FROM tags t JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE t.category = 'institution' AND d.id IN (
-      SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid}
-    )
-    GROUP BY COALESCE(t.ext_id, t.value) ORDER BY count DESC LIMIT 20`
-  : await sql`
-    SELECT MAX(t.value) as value, COALESCE(t.ext_id, t.value) as group_key, COUNT(*) as count
-    FROM tags t JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE t.category = 'institution' AND d.tenant_id = ${scope.tenantId}
-    GROUP BY COALESCE(t.ext_id, t.value) ORDER BY count DESC LIMIT 20`;
+  const f = scopedPubFilter(scope);
+  const r = await sql.query(
+    `SELECT i.name value, i.id::text group_key, COUNT(DISTINCT p.id) count
+     FROM affiliated_with aw JOIN institutions i ON i.id = aw.institution_id
+     JOIN publications p ON p.id = aw.publication_id
+     WHERE i.tenant_id = $${f.params.length + 1} AND ${f.where}
+     GROUP BY i.id, i.name ORDER BY count DESC LIMIT 20`, [...f.params, scope.tenantId]);
   return r.rows;
 }
 
 async function getCountries(scope) {
   if (!scope) throw new Error("getCountries requires scope");
-  const r = isPersonalScope(scope) ? await sql`
-    SELECT affiliations FROM doi_records
-    WHERE affiliations IS NOT NULL AND id IN (
-      SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid}
-    )`
-  : await sql`
-    SELECT affiliations FROM doi_records
-    WHERE affiliations IS NOT NULL AND tenant_id = ${scope.tenantId}`;
+  const f = scopedPubFilter(scope);
+  const r = await sql.query(
+    `SELECT affiliations FROM publications p WHERE affiliations IS NOT NULL AND ${f.where}`, f.params);
   const countryCounts = {};
   for (const row of r.rows) {
     try {
@@ -100,37 +77,29 @@ async function getCountries(scope) {
     .slice(0, 20);
 }
 
+// Top journals — venues + published_in, journals only (ISSN siblings already
+// collapsed into one venue by name_key). key = venue id.
 async function getTopJournals(scope) {
   if (!scope) throw new Error("getTopJournals requires scope");
-  const r = isPersonalScope(scope) ? await sql`
-    SELECT MAX(t.value) as value, COALESCE(t.ext_id, t.value) as key, COUNT(*) as count
-    FROM tags t JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE t.category = 'journal' AND d.id IN (
-      SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid}
-    )
-    GROUP BY COALESCE(t.ext_id, t.value) ORDER BY count DESC LIMIT 10`
-  : await sql`
-    SELECT MAX(t.value) as value, COALESCE(t.ext_id, t.value) as key, COUNT(*) as count
-    FROM tags t JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE t.category = 'journal' AND d.tenant_id = ${scope.tenantId}
-    GROUP BY COALESCE(t.ext_id, t.value) ORDER BY count DESC LIMIT 10`;
+  const f = scopedPubFilter(scope);
+  const r = await sql.query(
+    `SELECT v.name value, v.id::text key, COUNT(DISTINCT p.id) count
+     FROM venues v JOIN published_in pi ON pi.venue_id = v.id
+     JOIN publications p ON p.id = pi.publication_id
+     WHERE v.tenant_id = $${f.params.length + 1} AND v.venue_type = 'journal' AND ${f.where}
+     GROUP BY v.id, v.name ORDER BY count DESC LIMIT 10`, [...f.params, scope.tenantId]);
   return r.rows;
 }
 
 async function getRecentPapers(scope) {
   if (!scope) throw new Error("getRecentPapers requires scope");
-  const r = isPersonalScope(scope) ? await sql`
-    SELECT d.doi, d.title, d.published, d.citation_count, d.type,
-      (SELECT MAX(value) FROM tags WHERE doi_record_id = d.id AND category = 'journal') as journal
-    FROM doi_records d
-    WHERE d.id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid})
-    ORDER BY d.published DESC NULLS LAST LIMIT 8`
-  : await sql`
-    SELECT d.doi, d.title, d.published, d.citation_count, d.type,
-      (SELECT MAX(value) FROM tags WHERE doi_record_id = d.id AND category = 'journal') as journal
-    FROM doi_records d
-    WHERE d.tenant_id = ${scope.tenantId}
-    ORDER BY d.published DESC NULLS LAST LIMIT 8`;
+  const f = scopedPubFilter(scope);
+  const r = await sql.query(
+    `SELECT p.doi, p.title, p.published, p.citation_count, p.type,
+       (SELECT v.name FROM published_in pi JOIN venues v ON v.id = pi.venue_id
+        WHERE pi.publication_id = p.id AND v.venue_type = 'journal' LIMIT 1) journal
+     FROM publications p WHERE ${f.where}
+     ORDER BY p.published DESC NULLS LAST LIMIT 8`, f.params);
   return r.rows;
 }
 
