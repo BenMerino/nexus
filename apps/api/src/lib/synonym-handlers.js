@@ -1,5 +1,6 @@
 const { sql } = require("./sql");
 const { findCandidates } = require("./synonym-candidates");
+const { mergeInstitutionSynonym } = require("./db-entities");
 
 async function handleSynonymGet(action, req, res, tenantId) {
   if (action === "synonyms") {
@@ -25,7 +26,13 @@ async function handleSynonymPost(action, req, res, tenantId) {
       VALUES (${category}, ${variant}, ${canonical}, ${source || "manual"}, ${tenantId}, ${ror_id || null})
       ON CONFLICT(category, variant) DO UPDATE
       SET canonical = EXCLUDED.canonical, source = EXCLUDED.source, ror_id = EXCLUDED.ror_id`;
-    return res.json({ ok: true });
+    // Apply the merge to the ENTITY model at write time (not deferred to a
+    // backfill) so institution-dependent readers reflect it immediately. This is
+    // the entity-resolution write DGA_DESIGN §3 calls for; the tag_synonyms row
+    // becomes legacy bookkeeping that P5 drops.
+    let merged = 0;
+    if (category === "institution" && ror_id) merged = await mergeInstitutionSynonym(tenantId, variant, ror_id);
+    return res.json({ ok: true, merged });
   }
   if (action === "dismiss") {
     const { category, valueA, valueB } = req.body;

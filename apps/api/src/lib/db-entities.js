@@ -95,30 +95,6 @@ async function syncAffiliations(recordId, tenantId, record) {
   }
 }
 
-// Entity resolution: merge institution `fromId` INTO `intoId`. Re-points the
-// variant's affiliation edges to the canonical institution (dedupe via ON
-// CONFLICT) and deletes the variant row. The primitive InstitutionGovernor.merge
-// will call; used now to apply the human institution-synonym judgments into the
-// entity model. Idempotent (a second call no-ops once fromId is gone).
-async function mergeInstitution(fromId, intoId) {
-  if (fromId === intoId) return;
-  await sql`UPDATE affiliation SET institution_id = ${intoId}
-    WHERE institution_id = ${fromId}
-      AND NOT EXISTS (
-        SELECT 1 FROM affiliation b WHERE b.institution_id = ${intoId}
-          AND b.publication_id = affiliation.publication_id
-          AND b.author_id = affiliation.author_id)`;
-  await sql`DELETE FROM affiliation WHERE institution_id = ${fromId}`;
-  // also re-point the direct pub↔institution edges, then drop the variant's
-  await sql`UPDATE affiliated_with SET institution_id = ${intoId}
-    WHERE institution_id = ${fromId}
-      AND NOT EXISTS (
-        SELECT 1 FROM affiliated_with b WHERE b.institution_id = ${intoId}
-          AND b.publication_id = affiliated_with.publication_id)`;
-  await sql`DELETE FROM affiliated_with WHERE institution_id = ${fromId}`;
-  await sql`DELETE FROM institutions WHERE id = ${fromId}`;
-}
-
 // Author claim: bind a researcher (by ORCID) to a publication as an authorship
 // edge — the entity form of the legacy author-tag claim. Upserts the author
 // (name only set if creating; never clobbers a richer existing name) and the
@@ -133,4 +109,9 @@ async function claimAuthorship(publicationId, tenantId, orcidRaw, name) {
   return { created: r.rowCount > 0 };
 }
 
-module.exports = { syncRecordEntities, mergeInstitution, claimAuthorship };
+// Institution merges moved to db-institution-merge.js (own concern); re-exported
+// here so existing importers of mergeInstitution / mergeInstitutionSynonym from
+// db-entities keep working unchanged.
+const { mergeInstitution, mergeInstitutionSynonym } = require("./db-institution-merge");
+
+module.exports = { syncRecordEntities, mergeInstitution, mergeInstitutionSynonym, claimAuthorship };

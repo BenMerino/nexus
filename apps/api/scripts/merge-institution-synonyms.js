@@ -10,23 +10,19 @@
 //   railway ssh --service Nexus "cd /app/apps/api && node scripts/merge-institution-synonyms.js"
 
 const { sql } = require("../src/lib/sql");
-const { mergeInstitution } = require("../src/lib/db-entities");
+const { mergeInstitutionSynonym } = require("../src/lib/db-entities");
 
 // Reusable: apply all institution synonym merges for a tenant. Called by the
 // standalone script AND at the end of the backfill (so a backfill re-run, which
 // recreates variant institutions from tags, always re-folds them). Idempotent.
+// Delegates each synonym to the shared mergeInstitutionSynonym core (also called
+// at synonym-confirm time, so confirm + backfill produce the same result).
 async function applyInstitutionMerges(tenantId) {
   let merged = 0;
   const syns = (await sql`
     SELECT variant, ror_id FROM tag_synonyms
     WHERE tenant_id = ${tenantId} AND category = 'institution' AND ror_id IS NOT NULL`).rows;
-  for (const s of syns) {
-    const canon = (await sql`SELECT id FROM institutions WHERE tenant_id = ${tenantId} AND ror = ${s.ror_id}`).rows[0];
-    if (!canon) continue;
-    const variants = (await sql`
-      SELECT id FROM institutions WHERE tenant_id = ${tenantId} AND name = ${s.variant} AND ror <> ${s.ror_id}`).rows;
-    for (const v of variants) { await mergeInstitution(v.id, canon.id); merged++; }
-  }
+  for (const s of syns) merged += await mergeInstitutionSynonym(tenantId, s.variant, s.ror_id);
   return merged;
 }
 
