@@ -10,23 +10,23 @@ const DEFAULTS = {
 
   // Core surface palette, per theme. shell-mount.tsx maps the active
   // mode's keys onto the real --bg/--fg/... CSS vars and sets
-  // data-theme. Dark defaults are the hex equivalents of shared.css's
-  // oklch :root values; light is a matched companion palette.
-  "theme-dark-bg":       "#1d1f24",
-  "theme-dark-bg-elev":  "#252830",
-  "theme-dark-bg-card":  "#2a2d36",
-  "theme-dark-border":   "#41454f",
-  "theme-dark-fg":       "#f3f1ec",
-  "theme-dark-fg-muted": "#b0ada4",
-  "theme-dark-accent":   "#e0b341",
+  // data-theme. Neutral grayscale (no blue/beige cast); accent is a
+  // mid gray — matches shared.css's chroma-0 :root values.
+  "theme-dark-bg":       "#21211f",
+  "theme-dark-bg-elev":  "#2b2b29",
+  "theme-dark-bg-card":  "#303030",
+  "theme-dark-border":   "#484846",
+  "theme-dark-fg":       "#f3f3f1",
+  "theme-dark-fg-muted": "#aeaeae",
+  "theme-dark-accent":   "#c8c8c8",
 
-  "theme-light-bg":       "#f7f6f3",
+  "theme-light-bg":       "#f4f4f4",
   "theme-light-bg-elev":  "#ffffff",
   "theme-light-bg-card":  "#ffffff",
-  "theme-light-border":   "#d9d6cf",
-  "theme-light-fg":       "#1d1f24",
-  "theme-light-fg-muted": "#5c5f68",
-  "theme-light-accent":   "#b3801a",
+  "theme-light-border":   "#d4d4d4",
+  "theme-light-fg":       "#2a2a2a",
+  "theme-light-fg-muted": "#5e5e5e",
+  "theme-light-accent":   "#4a4a4a",
 };
 const KEYS = Object.keys(DEFAULTS);
 const HEX = /^#[0-9a-fA-F]{6}$/;
