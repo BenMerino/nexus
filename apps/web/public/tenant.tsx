@@ -50,6 +50,15 @@ function App() {
     if (window.location.hash.slice(1) !== id) window.history.replaceState(null, '', `#${id}`);
   };
 
+  // Memoize ABOVE the early returns — hooks must run unconditionally every
+  // render (React #310). Guards on statsPayload internally and yields [] until
+  // data lands. Stable identity so a legend toggle inside DirectiveChart can't
+  // rebuild the seed (which would re-seed the engine's activeSet = "reload").
+  const charts = useMemo(
+    () => statsPayload ? buildTenantCharts(statsPayload.stats, statsPayload.tenant.id) : [],
+    [statsPayload],
+  );
+
   if (!slug) {
     return <div className="public-app"><main className="public-main" style={{ color: 'var(--danger, #c00)' }}>{ES.missingSlug}</main></div>;
   }
@@ -60,14 +69,6 @@ function App() {
     return <div className="public-app"><main className="public-main" style={{ color: 'var(--fg-dim)' }}>{statsError ? `${ES.failedPrefix}: ${statsError}` : ES.loading}</main></div>;
   }
 
-  // Memoize so the directive seeds keep stable identity across re-renders;
-  // a legend toggle inside DirectiveChart must not rebuild the seed (that
-  // re-seeds the engine's activeSet and "reloads" the chart). Controller
-  // owns current state thereafter.
-  const charts = useMemo(
-    () => buildTenantCharts(statsPayload.stats, statsPayload.tenant.id),
-    [statsPayload],
-  );
   const paneProps = { active, seen };
 
   return (
