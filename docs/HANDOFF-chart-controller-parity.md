@@ -4,9 +4,22 @@
 > routes through `DirectiveChart` (controller-owned identity); server composition
 > is unified behind one access-firewalled `recompose-registry`; live directive
 > Streams run over `/api/stream` (WS); drill/breadcrumbs/persistKey are wired.
-> Commits: §A route-through, §B registry, §C streams, §D drill+persist.
-> Remaining known limits: in-process EventBus = single API instance (§C);
-> stacked tenant bar stays static until per-series atoms land (tenant-builders).
+> Commits: §A route-through, §B registry, §C streams, §D drill+persist,
+> §C-fix cross-process invalidation.
+>
+> **§C-fix (foundation reconciliation):** the lifecycle commit (3b6a727) made
+> ingestion run in a separate WORKER process + added a durable outbox + NOTIFY
+> backbone. §C's in-process `eventBus.on` (API process) therefore never heard
+> the worker's ingestion events — live invalidation silently dead for the case
+> it's for. Fixed: `StreamInvalidationListener` (API process) is a READ-ONLY
+> observer on `NOTIFY nexus_events` — peeks the outbox row by id (never
+> claims/marks, so no race with the worker's OutboxRelay drain) and
+> `invalidateTenant` on chart-affecting channels. The single-instance limit is
+> now genuinely gone for invalidation: web + worker coordinate through Postgres.
+>
+> Remaining: stacked tenant bar stays static until per-series atoms land
+> (tenant-builders); Railway worker service (`node dist/worker.js`) must exist
+> for ingestion to run at all — see HANDOFF-lifecycle-supervision.md.
 
 **Goal:** Every chart in nexus — present and future — routes through one blessed,
 controller-owned path (Zincro's `useDirectiveController` + a single wrapper
