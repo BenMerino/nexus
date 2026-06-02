@@ -21,6 +21,7 @@ import {
     computeCurrentEasedChrome,
 } from './chart-animation-phase.js';
 import { classifyGesture, pickDurations } from './chart-animation-setup.js';
+import { traceEvent, traceMountId } from './chart-trace.js';
 
 export interface ChartAnimationOpts<State> {
     family: AnimatedFamily<State>;
@@ -116,7 +117,13 @@ export function useChartAnimation<State>(opts: ChartAnimationOpts<State>): Chart
      * semantic. Series/data changes still tween normally. */
     const prevWHRef = useRef<{ w: number; h: number }>({ w: width, h: height });
 
+    /* TRACE: this ref is created once per MOUNT. If a legend toggle makes a
+     *  NEW mountId appear, the component remounted (= the "reload": refs
+     *  discarded, useState initializer re-run, snap instead of tween). */
+    const mountIdRef = useRef<number>(0);
+    if (mountIdRef.current === 0) mountIdRef.current = traceMountId();
     const [primitives, setPrimitives] = useState<Primitive[]>(() => {
+        traceEvent('useChartAnimation MOUNT', `mountId=${mountIdRef.current} type=${(chart as { type?: string }).type ?? '?'}`);
         const t = family.sample(chart, layout);
         startRef.current = t;
         targetRef.current = t;
@@ -151,6 +158,7 @@ export function useChartAnimation<State>(opts: ChartAnimationOpts<State>): Chart
         /* First mount and resize always snap — no prior state to tween
          *  from. */
         if (isFirstEffectRef.current || sizeChanged) {
+            traceEvent('anim SNAP', `mountId=${mountIdRef.current} ${isFirstEffectRef.current ? 'firstEffect' : 'sizeChanged'}`);
             isFirstEffectRef.current = false;
             if (rafRef.current != null) {
                 cancelAnimationFrame(rafRef.current);
@@ -175,6 +183,7 @@ export function useChartAnimation<State>(opts: ChartAnimationOpts<State>): Chart
         const foldChanged = prevFoldUnitRef.current !== undefined && currentFoldUnit !== prevFoldUnitRef.current;
         prevFoldUnitRef.current = currentFoldUnit;
         const gesture = classifyGesture(isInstant, foldChanged, inGestureRef.current);
+        traceEvent('anim TWEEN', `mountId=${mountIdRef.current} ${gesture.continues ? 'continue' : gesture.discrete ? 'discrete' : 'start/end'} instant=${isInstant}`);
         inGestureRef.current = isInstant && !foldChanged;
 
         let durations: PhaseDurations;
