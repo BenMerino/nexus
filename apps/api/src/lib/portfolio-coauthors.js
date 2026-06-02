@@ -1,4 +1,5 @@
 const { sql } = require("./sql");
+const { normOrcid } = require("./entity-normalize");
 
 function rorTail(r) {
   if (!r) return null;
@@ -15,15 +16,17 @@ function pickPrimaryRor(counts) {
 }
 
 async function buildCoauthorGraph(orcid) {
+  // Co-authors = everyone who shares a paper with `orcid` — authorship self-join
+  // (entity model). author_id keyed by bare ORCID (matches the old node ids).
   const r = await sql`
-    SELECT t2.doi_record_id AS paper_id,
-           COALESCE(t2.ext_id, t2.value) AS author_id,
-           t2.value AS name,
-           t2.ext_id AS orcid
-    FROM tags t1
-    JOIN tags t2 ON t2.doi_record_id = t1.doi_record_id
-    WHERE t1.category = 'author' AND t1.ext_id = ${orcid}
-      AND t2.category = 'author'`;
+    SELECT s2.publication_id AS paper_id,
+           a2.orcid AS author_id,
+           a2.name AS name,
+           a2.orcid AS orcid
+    FROM authorship s1
+    JOIN authors a1 ON a1.id = s1.author_id AND a1.orcid = ${normOrcid(orcid)}
+    JOIN authorship s2 ON s2.publication_id = s1.publication_id
+    JOIN authors a2 ON a2.id = s2.author_id`;
 
   const papersByAuthor = new Map();
   const meta = new Map();
@@ -65,7 +68,7 @@ async function buildCoauthorGraph(orcid) {
       label: m.name || id,
       group: "author",
       weight: papers.size,
-      isMe: m.orcid === orcid,
+      isMe: m.orcid === normOrcid(orcid),
       affiliation: aff,
     });
   }

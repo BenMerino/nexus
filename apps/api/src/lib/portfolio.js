@@ -35,34 +35,38 @@ async function getCitationSeries(recordIds, currentYear, span = 5) {
 }
 
 async function findCollaborators(orcid, tenantId, limit = 10) {
+  // Entity model: target_records via authorship; existing_coauthors via the
+  // authorship self-join; candidate papers via authorship. $1 = bare ORCID.
   const r = await sql.query(
     `WITH target_records AS (
-       SELECT DISTINCT t.doi_record_id
-       FROM tags t WHERE t.category = 'author' AND t.ext_id = $1
+       SELECT DISTINCT s.publication_id AS doi_record_id
+       FROM authorship s JOIN authors a ON a.id = s.author_id
+       WHERE a.orcid = $1 AND a.tenant_id = $2
      ),
      target_concepts AS (
        SELECT DISTINCT concept_id, source FROM doi_concepts
        WHERE doi_record_id IN (SELECT doi_record_id FROM target_records)
      ),
      existing_coauthors AS (
-       SELECT DISTINCT t.ext_id FROM tags t
-       WHERE t.category = 'author' AND t.ext_id IS NOT NULL AND t.ext_id <> $1
-         AND t.doi_record_id IN (SELECT doi_record_id FROM target_records)
+       SELECT DISTINCT a.orcid AS ext_id FROM authorship s JOIN authors a ON a.id = s.author_id
+       WHERE a.orcid IS NOT NULL AND a.orcid <> $1 AND a.tenant_id = $2
+         AND s.publication_id IN (SELECT doi_record_id FROM target_records)
      )
      SELECT u.orcid, u.full_name AS name, u.faculty,
        SUM(CASE WHEN dc.source = 'openalex' THEN 1.0 ELSE 0.5 END) AS shared_score,
        COUNT(DISTINCT dc.concept_id)::int AS shared_count,
        array_agg(DISTINCT dc.display_name) AS shared_concepts
      FROM users u
-     JOIN tags t ON t.category = 'author' AND t.ext_id = u.orcid
-     JOIN doi_concepts dc ON dc.doi_record_id = t.doi_record_id
+     JOIN authors a ON a.orcid = u.orcid AND a.tenant_id = $2
+     JOIN authorship s ON s.author_id = a.id
+     JOIN doi_concepts dc ON dc.doi_record_id = s.publication_id
      JOIN target_concepts tc ON tc.concept_id = dc.concept_id
      WHERE u.tenant_id = $2 AND u.orcid IS NOT NULL AND u.orcid <> $1
        AND u.orcid NOT IN (SELECT ext_id FROM existing_coauthors)
      GROUP BY u.orcid, u.full_name, u.faculty
      ORDER BY shared_score DESC, shared_count DESC
      LIMIT $3`,
-    [orcid, tenantId, limit]
+    [bareOrcid(orcid), tenantId, limit]
   );
   return r.rows.map(row => ({
     orcid: row.orcid,
