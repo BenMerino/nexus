@@ -87,11 +87,11 @@ async function queryRoster(tenantId, query) {
   const base = `
     FROM users u
     LEFT JOIN (
-      SELECT t.ext_id, COUNT(DISTINCT t.doi_record_id) AS n
-      FROM tags t JOIN doi_records d ON t.doi_record_id = d.id
-      WHERE t.category = 'author' AND d.tenant_id = $1
-      GROUP BY t.ext_id
-    ) p ON p.ext_id = u.orcid
+      SELECT a.orcid, COUNT(DISTINCT s.publication_id) AS n
+      FROM authorship s JOIN authors a ON a.id = s.author_id
+      WHERE a.tenant_id = $1
+      GROUP BY a.orcid
+    ) p ON p.orcid = u.orcid
     WHERE u.tenant_id = $1 AND u.role = 'academic'
       AND u.profile_category IS NOT NULL
       AND ($2::text IS NULL

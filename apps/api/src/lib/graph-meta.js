@@ -1,5 +1,7 @@
 const { sql } = require("./sql");
 const { isPersonalScope } = require("./scope");
+const { normOrcid } = require("./entity-normalize");
+const { buildGraphFromEntities } = require("./graph-builder-entities");
 
 const STOPWORDS = new Set([
   'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
@@ -23,33 +25,39 @@ function extractKeywords(text, topN = 3) {
 
 async function getGraphMetadata(scope) {
   if (!scope) throw new Error("getGraphMetadata requires scope");
-  const { rows } = isPersonalScope(scope) ? await sql`
-    SELECT t.category || ':' || COALESCE(t.ext_id, t.value) AS tag_id,
-      AVG(COALESCE(d.citation_count, 0)) AS avg_citations,
-      MAX(COALESCE(d.citation_count, 0)) AS max_citations,
-      CAST(SUM(CASE WHEN d.open_access THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*) AS oa_pct,
-      STRING_AGG(d.abstract, ' ||| ') AS abstracts
-    FROM tags t JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE d.id IN (SELECT doi_record_id FROM tags WHERE category='author' AND ext_id=${scope.orcid})
-    GROUP BY t.category, COALESCE(t.ext_id, t.value)`
-  : await sql`
-    SELECT t.category || ':' || COALESCE(t.ext_id, t.value) AS tag_id,
-      AVG(COALESCE(d.citation_count, 0)) AS avg_citations,
-      MAX(COALESCE(d.citation_count, 0)) AS max_citations,
-      CAST(SUM(CASE WHEN d.open_access THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*) AS oa_pct,
-      STRING_AGG(d.abstract, ' ||| ') AS abstracts
-    FROM tags t JOIN doi_records d ON d.id = t.doi_record_id
-    WHERE d.tenant_id = ${scope.tenantId}
-    GROUP BY t.category, COALESCE(t.ext_id, t.value)`;
+  // Per-graph-node metadata (avg/max citations, OA%, top abstract keywords),
+  // entity-derived. Keyed by the SAME node-ids the entity graph produces — we
+  // fold each node's connected DOIs (graph edges: doi:X → nodeId) up into the
+  // aggregate, so metadata always lines up with the rendered nodes.
+  const { edges } = await buildGraphFromEntities(scope);
+
+  // doi → {citations, openAccess, abstract} for the scope's publications.
+  const where = isPersonalScope(scope)
+    ? { w: `id IN (SELECT s.publication_id FROM authorship s JOIN authors a ON a.id=s.author_id WHERE a.orcid=$1 AND a.tenant_id=$2)`, p: [normOrcid(scope.orcid), scope.tenantId] }
+    : { w: `tenant_id = $1`, p: [scope.tenantId] };
+  const docs = (await sql.query(
+    `SELECT doi, COALESCE(citation_count,0) AS c, open_access AS oa, abstract FROM doi_records WHERE ${where.w}`, where.p)).rows;
+  const byDoi = new Map(docs.map((d) => [`doi:${d.doi}`, d]));
+
+  // Fold edges (doi → node) into per-node accumulators.
+  const acc = new Map(); // tag_id → { sum, n, max, oa, abstracts[] }
+  for (const e of edges) {
+    const d = byDoi.get(e.source);
+    if (!d) continue;
+    let a = acc.get(e.target);
+    if (!a) { a = { sum: 0, n: 0, max: 0, oa: 0, abstracts: [] }; acc.set(e.target, a); }
+    a.sum += d.c; a.n += 1; a.max = Math.max(a.max, d.c);
+    if (d.oa) a.oa += 1;
+    if (d.abstract) a.abstracts.push(d.abstract);
+  }
 
   const tagMeta = {};
-  for (const r of rows) {
-    const abstracts = (r.abstracts || '').split(' ||| ').filter(Boolean).join(' ');
-    tagMeta[r.tag_id] = {
-      avgCitations: Math.round(r.avg_citations * 10) / 10,
-      maxCitations: r.max_citations,
-      openAccessPct: Math.round(r.oa_pct * 100) / 100,
-      topKeywords: extractKeywords(abstracts),
+  for (const [tagId, a] of acc) {
+    tagMeta[tagId] = {
+      avgCitations: a.n ? Math.round((a.sum / a.n) * 10) / 10 : 0,
+      maxCitations: a.max,
+      openAccessPct: a.n ? Math.round((a.oa / a.n) * 100) / 100 : 0,
+      topKeywords: extractKeywords(a.abstracts.join(' ')),
     };
   }
   return { tagMeta };
