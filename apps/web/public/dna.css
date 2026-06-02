@@ -45,9 +45,9 @@
      --radius-sm/--radius/--radius-lg already exist in shared.css
      (3/6/10px). These add role-based aliases so components say
      what they are, not a magic size. */
-  --radius-control: var(--radius-sm);  /* inputs, buttons */
-  --radius-card:    var(--radius);     /* cards, panels */
-  --radius-pill:    999px;             /* chips, toggles */
+  --radius-control: 0;  /* inputs, buttons — squared */
+  --radius-card:    0;  /* cards, panels — squared */
+  --radius-pill:    0;  /* chips, toggles — squared (was 999px) */
 
   /* ── Shadow scale ───────────────────────────────────────────
      Replaces the ad-hoc rgba(0,0,0,...) shadows in shared.css
