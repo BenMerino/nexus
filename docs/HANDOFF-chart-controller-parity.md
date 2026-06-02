@@ -1,5 +1,13 @@
 # Handoff — Chart Controller Parity (full Zincro machinery)
 
+> **STATUS (2026-06-02): all four phases A–D shipped to `main`.** Every chart
+> routes through `DirectiveChart` (controller-owned identity); server composition
+> is unified behind one access-firewalled `recompose-registry`; live directive
+> Streams run over `/api/stream` (WS); drill/breadcrumbs/persistKey are wired.
+> Commits: §A route-through, §B registry, §C streams, §D drill+persist.
+> Remaining known limits: in-process EventBus = single API instance (§C);
+> stacked tenant bar stays static until per-series atoms land (tenant-builders).
+
 **Goal:** Every chart in nexus — present and future — routes through one blessed,
 controller-owned path (Zincro's `useDirectiveController` + a single wrapper
 component), so directive identity is always stable. This kills the legend-toggle

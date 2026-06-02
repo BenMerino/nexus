@@ -54,8 +54,11 @@ function buildYearChart(stats: PublicStats, tenantId?: number): GraphDirective |
   // atoms carry only a flat `value`, so enabling the slider there empties every
   // series (bars vanish). Per-series atoms are a follow-up (recompose would need
   // to emit WoS/Scopus/SciELO/DOAJ counts per day). Until then, stacked = static.
+  // `persistKey` makes the window-toggle selection survive across sessions
+  // (controller mirrors it to localStorage). Stable per chart + tenant so two
+  // tenants' sliders don't share state.
   const replay = tenantId != null
-    ? { query: { kind: 'publications', tenantId: String(tenantId), windowDays: null as number | null }, toggles: [pubWindowToggle(tenantId)] }
+    ? { query: { kind: 'publications', tenantId: String(tenantId), windowDays: null as number | null }, toggles: [pubWindowToggle(tenantId)], persistKey: `tenant:${tenantId}:publications` }
     : {};
 
   const hasIndexData = (stats.yearByIndex || []).some(r => INDEXES.includes(r.bucket));
