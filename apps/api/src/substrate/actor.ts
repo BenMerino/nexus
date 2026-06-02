@@ -25,6 +25,10 @@ export interface ActorContext {
   role?: string;
   /** The actor's ORCID, when they're a researcher acting on their own slice. */
   orcid?: string | null;
+  /** The actor's home-institution ROR (the tenant's ror_id). Read by
+   *  scope-narrowed reads — e.g. node-detail renders a researcher's OWN
+   *  institution differently. Part of the scope→ctx seam. */
+  ror?: string | null;
   /** Effective timestamp for the write (ISO). Absent ⇒ "now". Lets
    *  backfills/replays stamp historical writes deterministically. */
   asOf?: string;

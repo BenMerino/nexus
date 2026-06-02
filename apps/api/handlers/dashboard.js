@@ -5,7 +5,6 @@ const { requireScope, isPersonalScope } = require("../src/lib/scope");
 const { statistician } = require("../src/services/catalog/Statistician");
 const { fetchInstitutionWorks, fetchInstitutionInfo } = require("../src/lib/fetchers-institution");
 const { importWorksBatch } = require("../src/lib/store-openalex");
-const { getResearcherPortfolio } = require("../src/lib/portfolio");
 const { buildProfile, computeHIndex, researcherNameByOrcid } = require("../src/lib/auth-helpers");
 const { listTenants } = require("../src/lib/db-users");
 
@@ -62,7 +61,7 @@ module.exports = async function handler(req, res) {
     const base = { ...totals, yearSource, collabs, countries, topJournals, recentPapers };
     if (personalOrcid) {
       const [portfolio, viewedUser] = await Promise.all([
-        getResearcherPortfolio(personalOrcid, scope.tenantId),
+        statistician.portfolio(scope, personalOrcid),
         targetUser ? buildViewedUser(targetUser, scope) : Promise.resolve(null),
       ]);
       return res.json({ ...base, portfolio, viewedUser });

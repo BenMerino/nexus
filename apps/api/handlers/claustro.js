@@ -1,11 +1,8 @@
 const { ensureSchema } = require("../src/lib/db");
-const { requireScope } = require("../src/lib/scope");
+const { requireScope, actorContext } = require("../src/lib/scope");
 const { requireEditor } = require("../src/lib/auth");
-const {
-  getClaustroForTenant, validateProgram, getAcceptedIndices, setAcceptedIndices,
-} = require("../src/lib/claustro");
-
-const PROGRAMS = ["doctorado", "magister_academico", "magister_profesional"];
+const { setAcceptedIndices } = require("../src/lib/claustro");
+const { claustroResolver, PROGRAMS } = require("../src/services/catalog/Claustro");
 
 module.exports = async function handler(req, res) {
   await ensureSchema();
@@ -14,8 +11,7 @@ module.exports = async function handler(req, res) {
   if (req.method === "GET" && action === "list") {
     const scope = await requireScope(req, res);
     if (!scope) return;
-    const claustro = await getClaustroForTenant(scope.tenantId);
-    return res.json(claustro);
+    return res.json(await claustroResolver.list(await actorContext(req)));
   }
 
   if (req.method === "GET" && action === "validate") {
@@ -23,23 +19,19 @@ module.exports = async function handler(req, res) {
     if (!scope) return;
     const program = req.query.program;
     if (!PROGRAMS.includes(program)) return res.status(400).json({ error: "Invalid program" });
-    const claustro = await getClaustroForTenant(scope.tenantId);
-    return res.json(validateProgram(claustro, program));
+    return res.json(await claustroResolver.validate(await actorContext(req), program));
   }
 
   if (req.method === "GET" && action === "validate-all") {
     const scope = await requireScope(req, res);
     if (!scope) return;
-    const claustro = await getClaustroForTenant(scope.tenantId);
-    const out = {};
-    for (const p of PROGRAMS) out[p] = validateProgram(claustro, p);
-    return res.json({ claustro, programs: out });
+    return res.json(await claustroResolver.validateAll(await actorContext(req)));
   }
 
   if (req.method === "GET" && action === "indices") {
     const scope = await requireScope(req, res);
     if (!scope) return;
-    const indices = await getAcceptedIndices(scope.tenantId);
+    const indices = await claustroResolver.acceptedIndices(await actorContext(req));
     return res.json({ indices });
   }
 

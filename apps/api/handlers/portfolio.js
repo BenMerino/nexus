@@ -1,7 +1,7 @@
 const { sql } = require("../src/lib/sql");
 const { ensureSchema } = require("../src/lib/db");
-const { requireScope, isPersonalScope } = require("../src/lib/scope");
-const { getResearcherPortfolio } = require("../src/lib/portfolio");
+const { requireScope, isPersonalScope, actorContext } = require("../src/lib/scope");
+const { statistician } = require("../src/services/catalog/Statistician");
 const { normOrcid } = require("../src/lib/entity-normalize");
 
 async function lookupResearcher(orcid, tenantId) {
@@ -28,9 +28,10 @@ module.exports = async function handler(req, res) {
   if (!orcid) return res.status(400).json({ error: "ORCID required (set on user or pass ?orcid=)" });
 
   try {
+    const ctx = await actorContext(req);
     const [meta, portfolio] = await Promise.all([
       lookupResearcher(orcid, scope.tenantId),
-      getResearcherPortfolio(orcid, scope.tenantId),
+      statistician.portfolio(ctx, orcid),
     ]);
     res.json({
       researcher: { orcid, name: meta.name, faculty: meta.faculty, ror: scope.ror, tenantId: scope.tenantId },

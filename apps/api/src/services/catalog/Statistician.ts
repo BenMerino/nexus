@@ -23,9 +23,9 @@ const graphMeta = require("../../lib/graph-meta");
 const nodeDetail = require("../../lib/node-detail-resolvers");
 
 // The read scope the lib functions consume (a subset of ActorContext).
-type Scope = Pick<ActorContext, "tenantId" | "orcid" | "role"> & { ror?: string | null };
+type Scope = Pick<ActorContext, "tenantId" | "orcid" | "ror" | "role">;
 const scopeOf = (ctx: ActorContext): Scope =>
-  ({ tenantId: ctx.tenantId, orcid: ctx.orcid ?? null, ror: (ctx as any).ror ?? null, role: ctx.role });
+  ({ tenantId: ctx.tenantId, orcid: ctx.orcid ?? null, ror: ctx.ror ?? null, role: ctx.role });
 
 class Statistician {
   // ── Dashboard ──

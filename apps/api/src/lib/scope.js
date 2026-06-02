@@ -48,6 +48,7 @@ async function actorContext(req) {
     actorKind: "user",
     role: scope.role,
     orcid: scope.orcid,
+    ror: scope.ror,
   };
 }
 
