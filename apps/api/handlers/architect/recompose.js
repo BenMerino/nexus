@@ -1,11 +1,16 @@
 const { ensureSchema } = require("../../src/lib/db");
-const { recompose } = require("../../src/lib/architect-replay");
+const { recomposePublic } = require("../../src/services/architect/recompose-registry");
 
 // POST /api/architect/recompose
 // Body: a GraphQuery { kind, tenantId, windowDays?, asOf?, foldUnit? }.
 // Returns a fresh GraphDirective with day-resolution atoms for the window.
 // Public/read-only and tenant-scoped — drives the anonymous tenant charts'
 // slider/toggles. Not authenticated by design (matches /api/public/:slug).
+//
+// Delegates to the unified recompose-registry's PUBLIC entry: it refuses any
+// kind that isn't registered `access:'public'`, so scoped data is unreachable
+// from this anonymous endpoint (the auth-boundary firewall lives in the
+// registry, enforced per-kind — not by trusting this endpoint).
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   await ensureSchema();
@@ -14,7 +19,7 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "query.kind and query.tenantId are required" });
   }
   try {
-    const directive = await recompose(query);
+    const directive = await recomposePublic(query);
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
     res.json(directive);
   } catch (err) {

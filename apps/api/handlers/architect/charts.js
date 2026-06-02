@@ -1,7 +1,7 @@
 const { sql } = require("../../src/lib/sql");
 const { ensureSchema } = require("../../src/lib/db");
 const { requireScope, actorContext, isPersonalScope } = require("../../src/lib/scope");
-const { statComposer } = require("../../src/services/architect/StatComposer");
+const { recomposeScoped, dashboardScoped } = require("../../src/services/architect/recompose-registry");
 
 // Resolve the viewed-researcher override (?orcid=): an admin/superadmin may view
 // another researcher's charts; a personal-scope user may not. Returns the ctx to
@@ -27,10 +27,13 @@ module.exports = async function handler(req, res) {
   if (!scope) return;
   try {
     const ctx = await viewCtx(req, scope);
+    // Scoped dispatch via the unified registry: these kinds run under the
+    // resolved ActorContext (requireScope narrowing). The public POST endpoint
+    // cannot reach them — access class is firewalled per-kind in the registry.
     if (req.query.kind) {
-      return res.json(await statComposer.compose(ctx, req.query.kind));
+      return res.json(await recomposeScoped(ctx, req.query.kind));
     }
-    res.json({ charts: await statComposer.dashboard(ctx) });
+    res.json({ charts: await dashboardScoped(ctx) });
   } catch (err) {
     if (err.code === "FORBIDDEN") return res.status(403).json({ error: err.message });
     if (err.code === "NOT_FOUND") return res.status(404).json({ error: err.message });

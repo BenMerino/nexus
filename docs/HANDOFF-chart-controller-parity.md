@@ -86,8 +86,20 @@ Server today:
 over ~280ms, no remount, deselection persists. Verify via `/run` or the `verify` skill on
 `npm run dev:web` (port 9000).
 
-### Phase B — Server composer migration (DGA Composer role)
-*Backend. Move directive construction server-side so toggles recompose against the DB.*
+### Phase B — Server composer migration + ENDPOINT UNIFICATION (DGA Composer role)
+*Backend. Move directive construction server-side so toggles recompose against the DB,
+AND reconcile the two disconnected server paths into one registry.*
+
+**Decision (2026-06-02): unify both endpoints behind one `recompose-registry`.**
+Goal = one server path mirroring the one client path. Today there are two:
+- `/api/architect/charts` (GET, **scope-gated**, `StatComposer` → pre-folded snapshots)
+- `/api/architect/recompose` (POST, **anonymous tenant-public**, `architect-replay.js` → atoms)
+
+A single registry dispatches every chart `kind`. **Hard firewall on the auth boundary:**
+each kind declares an `access: 'public' | 'scoped'` class. The public POST endpoint
+REFUSES scoped kinds (404/400, never reads scoped data); the scoped GET endpoint runs
+under `requireScope`. The dispatch enforces this per-kind — never trust the caller's
+endpoint choice alone. A public kind physically cannot reach scoped reads.
 
 6. For each client-built kind (tenant year/type/journal/collab/country, portfolio velocity/cadence),
    add a server composer behind `/api/architect/recompose` (extend `architect-replay.js`'s `KINDS`
