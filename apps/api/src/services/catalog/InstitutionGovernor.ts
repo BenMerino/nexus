@@ -13,8 +13,16 @@
 import { BaseGovernor } from "../BaseGovernor";
 import type { ActorContext } from "../../substrate/actor";
 const { mergeInstitution, mergeInstitutionSynonym } = require("../../lib/db-institution-merge");
+const { upsertInstitutions } = require("../../lib/db-entities");
 
 class InstitutionGovernor extends BaseGovernor {
+  /** Sole writer of the `institutions` table on ingest: upsert institutions from
+   *  this record's institution tags AND author-mediated affiliations (idempotent
+   *  by ror). Called by IngestionWorkflow before edges. Quiet by design. */
+  async upsertFromTags(ctx: ActorContext, tags: Array<Record<string, unknown>>, record: unknown): Promise<void> {
+    await upsertInstitutions(ctx.tenantId, tags, record);
+  }
+
   /** Fold institution `fromId` into `intoId` (re-point edges, delete variant).
    *  Idempotent. */
   async merge(ctx: ActorContext, fromId: number, intoId: number): Promise<void> {

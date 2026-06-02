@@ -13,8 +13,23 @@
 import { BaseGovernor } from "../BaseGovernor";
 import type { ActorContext } from "../../substrate/actor";
 const { rebuildVenueFlags } = require("../../lib/venue-flags-rebuild");
+const { upsertVenues, applyRecordVenueFlags } = require("../../lib/db-venues-sync");
 
 class VenueGovernor extends BaseGovernor {
+  /** Sole writer of the `venues` table on ingest: upsert every venue tag for a
+   *  record (idempotent by name_key). Called by IngestionWorkflow before edges.
+   *  Quiet by design (see PLAN-ingest-sole-writer-split). */
+  async upsertFromTags(ctx: ActorContext, tags: Array<Record<string, unknown>>): Promise<void> {
+    await upsertVenues(ctx.tenantId, tags);
+  }
+
+  /** Sole writer of the venues.in_* flags on ingest: OR this record's
+   *  indexation sources onto the venues it published in (never clears). Runs
+   *  after published_in edges exist. */
+  async applyRecordFlags(ctx: ActorContext, recordId: number, sources: string[]): Promise<void> {
+    await applyRecordVenueFlags(recordId, ctx.tenantId, sources);
+  }
+
   /** Rebuild this tenant's venue indexation flags from the indexed_journals
    *  registry (sibling-aware: matches by issn_l + name-key). Idempotent —
    *  resets all four flags then sets from the registry. Returns rows updated. */

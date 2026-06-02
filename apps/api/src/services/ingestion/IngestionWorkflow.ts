@@ -1,35 +1,57 @@
 /* ── IngestionWorkflow ─────────────────────────────────────────
- * Orchestrates the per-DOI write path (DGA_DESIGN §35). A Workflow is the
- * ONLY role allowed to call Governors directly. Here it drives the single
- * publication write: PublicationGovernor.upsert (paper row + all entity edges,
- * which internally resolves authors/venues/institutions + venue flags).
+ * Orchestrates the per-DOI write path (DGA_DESIGN §35). A Workflow is the ONLY
+ * role allowed to call Governors directly. It resolves each entity through its
+ * OWN governor (the sole writer of that table), then links the publication's
+ * edges — the doctrine-pure shape that makes Author/Venue/Institution genuine
+ * sole-writers instead of having PublicationGovernor write their tables.
  *
- * The four-source fetch + normalize stays in store.js (a Dispatcher concern —
- * outbound HTTP); this workflow takes the already-normalized record and owns
- * the governed write + the `ingestion.completed` event. store.js /
- * store-openalex.js become thin callers: fetch/normalize → run(ctx, input).
+ * Order (must match the legacy syncRecordEntities result — proven by
+ * scripts/verify-governor-wrap.js): paper row → entity upserts (author, venue,
+ * institution) → publication edges → venue indexation flags (depend on the
+ * published_in edges) → emit `ingestion.completed`.
  *
- * Actor: ingestion is largely a system/job act (no logged-in editor on the
- * refetch/batch paths), so callers pass `systemActor(tenantId)` unless a real
- * actor is on hand. withTenant arrives in the RLS phase.
+ * The 4-source fetch + normalize stays in store.js (Dispatcher concern); this
+ * workflow takes the normalized record + derives the canonical tag-shaped array.
  * ──────────────────────────────────────────────────────────── */
 
 import type { ActorContext } from "../../substrate/actor";
 import { eventBus } from "../EventBus";
-import { publicationGovernor } from "../catalog/PublicationGovernor";
-import type { UpsertPublicationInput } from "../catalog/PublicationGovernor";
+import { canonTags } from "../catalog/PublicationLogic";
+import { publicationGovernor, type UpsertPublicationInput } from "../catalog/PublicationGovernor";
+import { authorGovernor } from "../catalog/AuthorGovernor";
+import { venueGovernor } from "../catalog/VenueGovernor";
+import { institutionGovernor } from "../catalog/InstitutionGovernor";
+const { indexationForIssn } = require("../../lib/indexed-journals");
 
 class IngestionWorkflow {
-  /** Store one normalized DOI: upsert the paper + its edges via
-   *  PublicationGovernor, then emit `ingestion.completed`. Returns the
-   *  publications.id. */
+  /** Store one normalized DOI through the per-table governors, then emit
+   *  `ingestion.completed`. Returns the publications.id. */
   async run(ctx: ActorContext, input: UpsertPublicationInput): Promise<number> {
-    const publicationId = await publicationGovernor.upsert(ctx, input);
+    const { record } = input;
+    const tags = canonTags(record);
+
+    // 1. Paper row (need its id + the stored tenant for the entity writes).
+    const { id, tenantId } = await publicationGovernor.upsertRow(ctx, input);
+    const tctx: ActorContext = { ...ctx, tenantId };
+
+    // 2. Entity tables — each governor is the sole writer of its own.
+    await authorGovernor.upsertFromTags(tctx, tags);
+    await venueGovernor.upsertFromTags(tctx, tags);
+    await institutionGovernor.upsertFromTags(tctx, tags, record);
+
+    // 3. Publication edges (link the entities just upserted), emits publication.upserted.
+    await publicationGovernor.linkEdges(tctx, id, tenantId, record, tags);
+
+    // 4. Venue indexation flags — OR onto the venues this paper published in
+    //    (depends on the published_in edges from step 3).
+    const sources = await indexationForIssn(record.issnL);
+    await venueGovernor.applyRecordFlags(tctx, id, sources);
+
     eventBus.emit("ingestion.completed", {
-      tenantId: ctx.tenantId, publicationId, doi: input.record.doi,
+      tenantId, publicationId: id, doi: record.doi,
       actorUserId: ctx.userId, actorKind: ctx.actorKind,
     });
-    return publicationId;
+    return id;
   }
 }
 

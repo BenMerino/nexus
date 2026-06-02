@@ -13,7 +13,7 @@
 
 import { BaseGovernor } from "../BaseGovernor";
 import type { ActorContext } from "../../substrate/actor";
-import { claimAuthorship } from "../../lib/db-entities";
+const { claimAuthorship, upsertAuthors } = require("../../lib/db-entities");
 
 export interface ClaimInput {
   publicationId: number;
@@ -22,6 +22,14 @@ export interface ClaimInput {
 }
 
 class AuthorGovernor extends BaseGovernor {
+  /** Sole writer of the `authors` table on ingest: upsert every author tag for a
+   *  record (idempotent by orcid). Called by IngestionWorkflow before edges are
+   *  linked. Quiet by design — no per-row event on bulk ingest (the publication/
+   *  ingestion events mark the change; see PLAN-ingest-sole-writer-split). */
+  async upsertFromTags(ctx: ActorContext, tags: Array<Record<string, unknown>>): Promise<void> {
+    await upsertAuthors(ctx.tenantId, tags);
+  }
+
   /** Bind the acting researcher (ctx.orcid) to a publication as an authorship
    *  edge. Idempotent: re-claiming is a no-op. Returns whether the edge was new. */
   async claim(ctx: ActorContext, input: ClaimInput): Promise<{ created: boolean }> {
