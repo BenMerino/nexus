@@ -11,11 +11,11 @@ DGA roles now own a tenant's data lifecycle — provision → load → keep-fres
 - **Endpoint** `handlers/lifecycle.js` (`/api/lifecycle`): `assess`/`refresh`/`maintain`/`merge-institutions`/`status`/`suggest-ror`. Gated superadmin or tenant_admin.
 - Events added: `tenant.provisioned`, `roster.imported`. `roster.imported` emitted from `users-import`.
 
-## ⚠️ REMAINING infra step (not code — do after deploy)
-**Create the Railway worker service** (use the `use-railway` skill). Both services build the same `dist/`:
-- New service in project **believable-creation** (same repo): build `npm run build --workspace=@nexus/api`, **start `node dist/worker.js`** (i.e. `npm run start:worker --workspace=@nexus/api`), same `DATABASE_URL`/`POSTGRES_URL` env as Nexus.
-- Until that service exists, the **web process fills `event_outbox` but nothing drains it** (rows accumulate harmlessly). The scheduler/refresh do NOT run automatically until the worker is up. Manual `/api/lifecycle?action=refresh` still works (runs in the web process). So deploy is safe without the worker; the worker turns on the *automatic* half.
-- Optional env on the worker: `LIFECYCLE_TICK_MS` (default 6h), `LIFECYCLE_MIN_INTERVAL_H` (20h), `LIFECYCLE_MAX_ORCIDS` (25).
+## Infra (DONE 2026-06-02)
+**Railway worker service `Nexus-Worker` is live** (project believable-creation): repo `BenMerino/nexus`@main, build `npm run build --workspace=@nexus/api`, start `npm run start:worker --workspace=@nexus/api` (`node dist/worker.js`), `restartPolicyType: ON_FAILURE`, `DATABASE_URL`/`POSTGRES_URL` → `${{Postgres.DATABASE_URL}}` (shared, private network). Verified up: logs show `[bootstrap] DGA wired`, `[OutboxRelay] LISTENing on nexus_events`, `[LifecycleScheduler] started (tick 6h, min-interval 20h)`.
+- **`nexus-cron` was RETIRED** (deleted) — it ran `scripts/daily-ingest.js` nightly, which the worker's scheduler now subsumes (and the worker also reacts in real time). Both `railway.cron.json` and `apps/api/scripts/daily-ingest.js` removed as dead.
+- Tunable env on the worker (Railway vars): `LIFECYCLE_TICK_MS` (default 6h), `LIFECYCLE_MIN_INTERVAL_H` (20h), `LIFECYCLE_MAX_ORCIDS` (25).
+- The web process still fills `event_outbox`; the worker drains it (LISTEN + 30s poll). Manual `/api/lifecycle?action=refresh` also works in the web process.
 
 ## Verification (railway ssh + endpoints)
 1. **009 applied:** `railway ssh --service Nexus "cd /app/apps/api && node -e \"require('./dist/src/lib/sql').sql\\\`SELECT to_regclass('event_outbox')\\\`.then(r=>console.log(r.rows))\""` → non-null.
