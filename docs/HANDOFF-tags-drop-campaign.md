@@ -27,6 +27,19 @@ Tenant-scoped; edges FK `publications(id)`.
 - `publications`: `type`, `is_repository` (per-paper exclusion signals), `citation_count`, `open_access`, `journal` (denorm name).
 - Normalizers: `normOrcid`/`normRor` (strip URL prefix), `journalNameKey` (`journal-canon.js`).
 
+## STATUS 2026-06-02 — P0 (reader migration) DONE & VERIFIED, live on prod
+Every `tags` READER now reads entities, each diff-gated (scripts/diff-*.js, all green; only deltas are the proven sibling-ISSN recovery + merge survivors):
+- dashboard-stats, db-list (+ search/records/[id]/portfolio handlers), node-detail-resolvers + author-detail (via new `lib/entity-detail.js`), public-authors, org-tree, auth-helpers, public-graph, claustro, portfolio-coauthors + portfolio.findCollaborators.
+- **AuthorGovernor.claim** built (`services/catalog/AuthorGovernor.ts`, 2nd governor) — claim now writes the authorship EDGE, not just a tag.
+- Shared helpers: `lib/stats-scope.js` (scopedPubFilter/personalPaperFilter), `lib/entity-detail.js`, `scripts/entity-diff-helpers.js`.
+- **Proven equivalences (reuse):** affiliations-JSON ROR filter == `affiliation` edge (1947=1947); `indexed_in` tag == `venues.in_*` flag (claustro 18=18).
+- **Bugs the migration caught:** `SUBSTRING(...) AS year` (prod), claim→authorship gap, aggregateAuthors duplicate-tag over-count.
+- **LEFTOVER reader:** `graph-meta.js` (builds `category:ext_id` node-metadata) — deferred to P2, do it from `entityGraphRows`.
+- **DEAD code (left untouched):** `lib/institution-detail.js`, `lib/node-detail-helpers.js` — only node-detail-resolvers is handler-wired.
+
+## P1 — surgical scope (decided 2026-06-02): move ONLY the data-shape contract, re-export for back-compat
+DON'T move the whole `apps/web/architect/graph-composer.types.ts` web — `GraphDirective` drags a huge cone of FRONTEND render-runtime types (`fold-atoms`, `place-atoms`, `__buckets`, `seriesWeights`, `graph-features`, …) the backend must never see, and it's imported by ~30 graph-engine files. The clean cut: **move only `graph-data.types.ts`** (pure `GraphDataPoint`/`StackedGraphDataPoint`/`ChartData` — zero deps, exactly what a backend Composer emits) into `@nexus/shared`, then **re-export it from the old `apps/web/architect/graph-data.types.ts` path** so the ~30 importers need ZERO changes. Build wiring needed (verify all three): (1) `packages/shared/package.json` name `@nexus/shared` + a tsconfig; (2) web is Vite with NO tsconfig/alias today — add a Vite `resolve.alias` for `@nexus/shared` (or rely on the npm-workspace symlink); (3) API tsc `paths` for `@nexus/shared`; (4) Railway builds both — confirm the shared pkg builds/resolves in CI before relying on it. A broken `@nexus/shared` resolution takes down the web build, so wire + verify in isolation first.
+
 ## Grounded facts (decide once, apply everywhere)
 - **Zero name-only entities** (tenant 1): every author tag has a bare ORCID, every institution tag a `https://ror.org/`-prefixed ROR. → the detail-page `value`-path branches (`papersByTag(cat, null, value)`, `tagAggregate` value-paths) never hit real data; the **ext_id/orcid/ror entity joins are fully sufficient**. Don't build name-only fallbacks.
 - **`source` tag = vestigial** (3 values: Crossref 338 / DOAJ 48 / "indexed" 301 pubs). No domain (DGA_DESIGN §"deliberately dissolving startup shortcuts": `source` was ingestion provenance, not a domain). `publications.source_indices` is **100% NULL** (never populated). **Decision: DROP the source dimension** from `dashboard-stats.getByYearAndSource` → publications-per-year only. If provenance-by-year is ever wanted, it's a future Publication property, not a resurrected tag.
