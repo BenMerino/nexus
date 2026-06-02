@@ -2,7 +2,7 @@ const { sql } = require("../src/lib/sql");
 const { requireRole } = require("../src/lib/auth");
 const { ensureSchema, getAllRecords } = require("../src/lib/db");
 const { requireScope, isPersonalScope } = require("../src/lib/scope");
-const { getSummary, getByYearAndSource, getCollaborations, getCountries, getTopJournals, getRecentPapers } = require("../src/lib/dashboard-stats");
+const { statistician } = require("../src/services/catalog/Statistician");
 const { fetchInstitutionWorks, fetchInstitutionInfo } = require("../src/lib/fetchers-institution");
 const { importWorksBatch } = require("../src/lib/store-openalex");
 const { getResearcherPortfolio } = require("../src/lib/portfolio");
@@ -52,9 +52,12 @@ module.exports = async function handler(req, res) {
     const effectiveScope = targetOrcid
       ? { ...scope, orcid: targetOrcid, role: "user" }
       : scope;
+    // Delegate the dashboard reads to the Statistician resolver (DGA read role).
+    // effectiveScope is ctx-shaped {tenantId,orcid,ror,role}; the resolver reads
+    // only those. Same entity-backed lib functions underneath, behind the role.
     const [totals, yearSource, collabs, countries, topJournals, recentPapers] = await Promise.all([
-      getSummary(effectiveScope), getByYearAndSource(effectiveScope), getCollaborations(effectiveScope),
-      getCountries(effectiveScope), getTopJournals(effectiveScope), getRecentPapers(effectiveScope),
+      statistician.summary(effectiveScope), statistician.byYear(effectiveScope), statistician.collaborations(effectiveScope),
+      statistician.countries(effectiveScope), statistician.topJournals(effectiveScope), statistician.recentPapers(effectiveScope),
     ]);
     const base = { ...totals, yearSource, collabs, countries, topJournals, recentPapers };
     if (personalOrcid) {
