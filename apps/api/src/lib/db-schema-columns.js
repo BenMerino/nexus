@@ -17,9 +17,6 @@ async function addMissingColumns() {
   await safe("ALTER TABLE submissions ADD COLUMN IF NOT EXISTS tenant_id INTEGER DEFAULT 1");
   await safe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS primary_color TEXT DEFAULT '#333333'");
   await safe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS secondary_color TEXT DEFAULT '#1565c0'");
-  await safe("ALTER TABLE tag_synonyms ADD COLUMN IF NOT EXISTS tenant_id INTEGER DEFAULT 1");
-  await safe("ALTER TABLE tag_synonyms ADD COLUMN IF NOT EXISTS ror_id TEXT");
-  await safe("ALTER TABLE tags ADD COLUMN IF NOT EXISTS ext_id TEXT");
   await safe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES tenants(id)");
   await safe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS slug TEXT");
   await safe("CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_slug ON tenants(slug)");

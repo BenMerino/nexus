@@ -36,25 +36,6 @@ async function getAllRecords(scope) {
   return r.rows;
 }
 
-async function getAllTags(scope) {
-  if (!scope) throw new Error("getAllTags requires scope");
-  if (isPersonalScope(scope)) {
-    const r = await sql`
-      SELECT t.category, t.value, t.ext_id, d.doi, d.title, d.published
-      FROM tags t JOIN doi_records d ON t.doi_record_id = d.id
-      WHERE d.id IN (
-        SELECT s.publication_id FROM authorship s JOIN authors a ON a.id=s.author_id
-        WHERE a.orcid=${normOrcid(scope.orcid)}
-      ) AND t.category IN ('journal', 'author', 'institution', 'repository', 'type')`;
-    return r.rows;
-  }
-  const r = await sql`
-    SELECT t.category, t.value, t.ext_id, d.doi, d.title, d.published
-    FROM tags t JOIN doi_records d ON t.doi_record_id = d.id
-    WHERE d.tenant_id = ${scope.tenantId}`;
-  return r.rows;
-}
-
 async function getRecordByDoi(doi, scope) {
   if (scope && isPersonalScope(scope)) {
     const r = await sql`SELECT id FROM doi_records WHERE doi = ${doi}
@@ -106,21 +87,6 @@ async function upsertRecord(submissionId, doi, title, authors, published, journa
       raw_responses=EXCLUDED.raw_responses`;
 }
 
-async function resolveByExtId(category, extId) {
-  if (!extId) return null;
-  const r = await sql`SELECT value FROM tags WHERE category = ${category} AND ext_id = ${extId} LIMIT 1`;
-  return r.rows[0]?.value || null;
-}
-
-async function insertTag(recordId, category, value, extId) {
-  const resolved = await resolveByExtId(category, extId);
-  const finalValue = resolved || value;
-  await sql`INSERT INTO tags (doi_record_id, category, value, ext_id) VALUES (${recordId}, ${category}, ${finalValue}, ${extId || null})`;
-}
-
-async function deleteTagsForRecord(id) {
-  await sql`DELETE FROM tags WHERE doi_record_id = ${id}`;
-}
 
 async function deleteRecord(id) {
   await sql`DELETE FROM publications WHERE id = ${id}`;
@@ -142,8 +108,8 @@ async function setSetting(key, value) {
 }
 
 module.exports = {
-  ensureSchema, insertSubmission, upsertRecord, insertTag,
-  deleteTagsForRecord, deleteRecord, deleteSubmissionsForDoi,
-  getRecordByDoi, getAllRecords, getAllTags, getSubmissions,
+  ensureSchema, insertSubmission, upsertRecord,
+  deleteRecord, deleteSubmissionsForDoi,
+  getRecordByDoi, getAllRecords, getSubmissions,
   getSetting, setSetting,
 };

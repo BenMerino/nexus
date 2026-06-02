@@ -1,5 +1,5 @@
 const { sql } = require("../../src/lib/sql");
-const { ensureSchema, deleteTagsForRecord, deleteRecord, deleteSubmissionsForDoi } = require("../../src/lib/db");
+const { ensureSchema, deleteRecord, deleteSubmissionsForDoi } = require("../../src/lib/db");
 const { getScope, requireScope, isPersonalScope } = require("../../src/lib/scope");
 const { normOrcid } = require("../../src/lib/entity-normalize");
 
@@ -41,7 +41,8 @@ module.exports = async function handler(req, res) {
     const { rows } = await sql`SELECT doi FROM doi_records WHERE id = ${id} AND tenant_id = ${scope.tenantId}`;
     if (!rows[0]) return res.status(404).json({ error: "Record not found" });
 
-    await deleteTagsForRecord(id);
+    // Entity edges (authorship/published_in/affiliation/affiliated_with) cascade
+    // on the publications delete via ON DELETE CASCADE — no manual tag cleanup.
     await deleteRecord(id);
     await deleteSubmissionsForDoi(rows[0].doi);
     res.json({ deleted: true, doi: rows[0].doi });

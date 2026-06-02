@@ -58,13 +58,8 @@ async function createTables() {
       tenant_id INTEGER DEFAULT 1
     )`;
   await sql`CREATE OR REPLACE VIEW doi_records AS SELECT * FROM publications`;
-  await sql`
-    CREATE TABLE IF NOT EXISTS tags (
-      id SERIAL PRIMARY KEY,
-      doi_record_id INTEGER NOT NULL REFERENCES publications(id),
-      category TEXT NOT NULL,
-      value TEXT NOT NULL
-    )`;
+  // (the generic `tags` EAV table was dropped — migration 008 — replaced by the
+  // entity tables created in createEntityTables() below.)
   await sql`
     CREATE TABLE IF NOT EXISTS doi_citations_by_year (
       doi_record_id INTEGER NOT NULL REFERENCES publications(id) ON DELETE CASCADE,
@@ -88,32 +83,12 @@ async function createTables() {
       value TEXT NOT NULL
     )`;
   await sql`
-    CREATE TABLE IF NOT EXISTS tag_synonyms (
-      id SERIAL PRIMARY KEY,
-      category TEXT NOT NULL,
-      variant TEXT NOT NULL,
-      canonical TEXT NOT NULL,
-      source TEXT DEFAULT 'manual',
-      tenant_id INTEGER DEFAULT 1,
-      created_at TIMESTAMPTZ DEFAULT NOW(),
-      UNIQUE(category, variant, tenant_id)
-    )`;
-  await sql`
     CREATE TABLE IF NOT EXISTS indexed_journals (
       issn_l TEXT NOT NULL,
       source TEXT NOT NULL,
       journal_name TEXT,
       added_at TIMESTAMPTZ DEFAULT NOW(),
       PRIMARY KEY (issn_l, source)
-    )`;
-  await sql`
-    CREATE TABLE IF NOT EXISTS tag_dismissed_pairs (
-      id SERIAL PRIMARY KEY,
-      category TEXT NOT NULL,
-      value_a TEXT NOT NULL,
-      value_b TEXT NOT NULL,
-      tenant_id INTEGER DEFAULT 1,
-      UNIQUE(category, value_a, value_b, tenant_id)
     )`;
 
   await createEntityTables();
