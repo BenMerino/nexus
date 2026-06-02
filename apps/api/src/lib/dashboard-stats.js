@@ -34,7 +34,7 @@ async function getByYearAndSource(scope) {
   if (!scope) throw new Error("getByYearAndSource requires scope");
   const f = scopedPubFilter(scope);
   const r = await sql.query(
-    `SELECT SUBSTRING(p.published FROM 1 FOR 4) year, 'All' source, COUNT(*) count
+    `SELECT SUBSTRING(p.published FROM 1 FOR 4) AS year, 'All' AS source, COUNT(*) AS count
      FROM publications p WHERE p.published IS NOT NULL AND ${f.where}
      GROUP BY SUBSTRING(p.published FROM 1 FOR 4) ORDER BY year`, f.params);
   return r.rows;
