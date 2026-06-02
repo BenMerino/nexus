@@ -27,7 +27,13 @@ Tenant-scoped; edges FK `publications(id)`.
 - `publications`: `type`, `is_repository` (per-paper exclusion signals), `citation_count`, `open_access`, `journal` (denorm name).
 - Normalizers: `normOrcid`/`normRor` (strip URL prefix), `journalNameKey` (`journal-canon.js`).
 
-## STATUS 2026-06-02 — P0 (reader migration) DONE & VERIFIED, live on prod
+## STATUS 2026-06-02 — P0+P1+P2+P3 DONE & VERIFIED (full-resolution); only P4+P5 (the actual DROP) remain
+- **P1** `@nexus/shared` types-only pkg (graph-data.types moved + re-exported; web Vite + API tsc + both Railway deploys green).
+- **P2** Statistician resolver (`services/catalog/Statistician.ts` + manifest, scanner "Discovered 5 resolvers"); dashboard delegates.
+- **P3** StatComposer (`services/architect/StatComposer.ts`, `GET /api/architect/charts`) — backend `kind→compose→GraphDirective` over the Statistician, typed via @nexus/shared. DGA Resolver→Composer→GraphRender chain exists end-to-end.
+- **NEXT: P4** (VenueGovernor.merge + setIndexation; retire synonym subsystem + indexed_in/venue-type tag WRITES — **OPEN: keep or retire tag-manager admin page?**) then **P5** (stop insertTag, migration 008 DROP).
+
+### (historical) P0 reader migration — DONE & VERIFIED, live on prod
 Every `tags` READER now reads entities, each diff-gated (scripts/diff-*.js, all green; only deltas are the proven sibling-ISSN recovery + merge survivors):
 - dashboard-stats, db-list (+ search/records/[id]/portfolio handlers), node-detail-resolvers + author-detail (via new `lib/entity-detail.js`), public-authors, org-tree, auth-helpers, public-graph, claustro, portfolio-coauthors + portfolio.findCollaborators.
 - **AuthorGovernor.claim** built (`services/catalog/AuthorGovernor.ts`, 2nd governor) — claim now writes the authorship EDGE, not just a tag.
