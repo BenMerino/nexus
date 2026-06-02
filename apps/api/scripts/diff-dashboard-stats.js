@@ -28,21 +28,38 @@ async function oldSummary(scope, personal) {
   return { totalPubs: +r.rows[0].total_pubs, totalCitations: +r.rows[0].total_citations,
     oaCount: +r.rows[0].oa_count, authorCount: +a.rows[0].count };
 }
-async function oldCollab(scope, personal) {
+// Full per-name-key paper-count map from OLD tags, collapsing ISSN siblings the
+// SAME way venues do (journalNameKey + COUNT(DISTINCT paper)). Compared against
+// the NEW full map — apples-to-apples, unbounded (top-N capping is presentation).
+const { journalNameKey } = require("../src/lib/journal-canon");
+async function oldVenueMap(scope, personal, category) {
   const { w, p } = oldWhere(scope, personal);
-  const r = await sql.query(`SELECT MAX(t.value) value, COUNT(*) count FROM tags t JOIN doi_records d ON d.id=t.doi_record_id
-    WHERE t.category='institution' AND ${w} GROUP BY COALESCE(t.ext_id,t.value) ORDER BY count DESC LIMIT 20`, p);
-  return r.rows.map((x) => `${x.value}|${x.count}`).sort();
+  const r = await sql.query(`SELECT t.value, t.doi_record_id pub FROM tags t JOIN doi_records d ON d.id=t.doi_record_id
+    WHERE t.category='${category}' AND ${w}`, p);
+  const byKey = new Map(); // nameKey -> Set(pub)
+  for (const x of r.rows) {
+    const k = journalNameKey(x.value);
+    if (!byKey.has(k)) byKey.set(k, new Set());
+    byKey.get(k).add(x.pub);
+  }
+  const m = {}; for (const [k, s] of byKey) m[k] = s.size;
+  return m;
 }
-async function oldJournals(scope, personal) {
-  const { w, p } = oldWhere(scope, personal);
-  const r = await sql.query(`SELECT MAX(t.value) value, COUNT(*) count FROM tags t JOIN doi_records d ON d.id=t.doi_record_id
-    WHERE t.category='journal' AND ${w} GROUP BY COALESCE(t.ext_id,t.value) ORDER BY count DESC LIMIT 10`, p);
-  return r.rows.map((x) => `${x.value}|${x.count}`).sort();
+// NEW full map from the migrated reader's underlying tables (venue/institution
+// by name_key, COUNT(DISTINCT pub)) — mirrors getTopJournals/getCollaborations
+// minus the LIMIT.
+async function newVenueMap(scope, vtype) {
+  const { scopedPubFilter } = require("../src/lib/stats-scope");
+  const f = scopedPubFilter(scope);
+  const tbl = vtype === "institution"
+    ? `affiliated_with aw JOIN institutions e ON e.id=aw.institution_id JOIN publications p ON p.id=aw.publication_id WHERE e.tenant_id=$${f.params.length+1} AND ${f.where}`
+    : `venues e JOIN published_in pi ON pi.venue_id=e.id JOIN publications p ON p.id=pi.publication_id WHERE e.tenant_id=$${f.params.length+1} AND e.venue_type='journal' AND ${f.where}`;
+  const r = await sql.query(`SELECT e.name, COUNT(DISTINCT p.id) c FROM ${tbl} GROUP BY e.id, e.name`, [...f.params, scope.tenantId]);
+  const m = {}; for (const x of r.rows) m[journalNameKey(x.name)] = (m[journalNameKey(x.name)] || 0) + +x.c;
+  return m;
 }
 
 // ---- comparison helpers ----
-const sortByKey = (rows, k) => rows.map((r) => `${r[k]}|${r.count}`).sort();
 function cmp(label, a, b) {
   const A = JSON.stringify(a), B = JSON.stringify(b);
   const ok = A === B;
@@ -62,11 +79,13 @@ async function main() {
   ];
   for (const { label, scope, personal } of scopes) {
     if (!cmp(`${label} getSummary`, await oldSummary(scope, personal), await NEW.getSummary(scope))) drift++;
-    if (!cmp(`${label} getCollaborations`, await oldCollab(scope, personal), sortByKey(await NEW.getCollaborations(scope), "value"))) drift++;
-    if (!cmp(`${label} getTopJournals`, await oldJournals(scope, personal), sortByKey(await NEW.getTopJournals(scope), "value"))) drift++;
+    // Journals/collaborations: compare FULL per-name-key paper-count maps (OLD
+    // collapses ISSN siblings in JS like venues do) — apples-to-apples, unbounded.
+    if (!cmp(`${label} journals(full map)`, await oldVenueMap(scope, personal, "journal"), await newVenueMap(scope, "journal"))) drift++;
+    if (!cmp(`${label} collaborations(full map)`, await oldVenueMap(scope, personal, "institution"), await newVenueMap(scope, "institution"))) drift++;
     // getByYearAndSource: source dim dropped by design — compare year→count totals only.
     const { w, p } = oldWhere(scope, personal);
-    const oldYr = {}; for (const r of (await sql.query(`SELECT SUBSTRING(d.published FROM 1 FOR 4) year, COUNT(*) c FROM doi_records d
+    const oldYr = {}; for (const r of (await sql.query(`SELECT SUBSTRING(d.published FROM 1 FOR 4) AS year, COUNT(*) AS c FROM doi_records d
       WHERE d.published IS NOT NULL AND ${w} GROUP BY 1`, p)).rows) oldYr[r.year] = +r.c;
     const newYr = {}; for (const r of await NEW.getByYearAndSource(scope)) newYr[r.year] = (newYr[r.year] || 0) + +r.count;
     if (!cmp(`${label} byYear (source-agnostic)`, oldYr, newYr)) drift++;
