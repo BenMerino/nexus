@@ -1,4 +1,7 @@
-# Campaign — retire `tags` (drop the EAV table) + full DGA resolution.
+# Campaign — retire `tags` (drop the EAV table) + full DGA resolution. ✅ COMPLETE 2026-06-02.
+
+## ✅ DONE — `tags`, `tag_synonyms`, `tag_dismissed_pairs` DROPPED (migration 008, verified)
+Every reader+writer migrated to the entity model (authors/venues/institutions + authorship/published_in/affiliation/affiliated_with + publications.type/is_repository + venues.in_* flags), each cluster diff-gated. DGA layer built: Statistician resolver, StatComposer (+`/api/architect/charts`), `@nexus/shared` types, AuthorGovernor.claim, entity institution-merge (replaced synonyms). Synonym/tag-manager UI retired. Migration 008 dropped the 3 tag tables; schema-creation/indexes/`db.js` tag code removed; dead files deleted (legacy graph-builder.js, institution-detail.js, node-detail-helpers.js). **Verified post-drop: tables gone (`to_regclass`=null), dashboard/graph healthy on entities.** Backup of 1.45M tag rows at `/tmp/tags-backup-20260602.json` (local) if ever needed. The `doi_records` compat VIEW was deliberately KEPT (independent of tags; ~26 readers use it — repointing to `publications` is separate future work). RLS rollout also remains future.
 
 **As of 2026-06-02.** Companion to `HANDOFF-tags-migration.md` (Steps 0–4 + graph-builder cutover, DONE). Sequenced plan to migrate every `tags` reader/writer, wrap reads in DGA Governors/Resolvers, route stats through a backend Composer feeding the EXISTING shared render engine, and finally **DROP `tags`/`tag_synonyms`/`tag_dismissed_pairs`**. Surveyed via 5 agent passes + DB grounding + Zincro reference ([[zincro-dga-reference]]).
 
