@@ -28,10 +28,11 @@ async function main() {
   for (const n of sample) {
     const m = tagMeta[n.id];
     if (!m) { console.log(`DRIFT  ${n.id}: no meta`); drift++; continue; }
-    // independent recompute: avg/max citations over this author's non-preprint papers
-    const r = (await sql`SELECT AVG(COALESCE(d.citation_count,0))::float avg, MAX(COALESCE(d.citation_count,0))::int max
-      FROM doi_records d JOIN authorship s ON s.publication_id=d.id JOIN authors a ON a.id=s.author_id
-      WHERE a.orcid=${n.ext_id} AND a.tenant_id=1 AND d.is_repository=FALSE AND (d.type IS DISTINCT FROM 'preprint')`).rows[0];
+    // independent recompute over publications (is_repository lives there, not on
+    // the doi_records compat view); exclude preprint/repository like the graph.
+    const r = (await sql`SELECT AVG(COALESCE(p.citation_count,0))::float avg, MAX(COALESCE(p.citation_count,0))::int max
+      FROM publications p JOIN authorship s ON s.publication_id=p.id JOIN authors a ON a.id=s.author_id
+      WHERE a.orcid=${n.ext_id} AND a.tenant_id=1 AND p.is_repository=FALSE AND (p.type IS DISTINCT FROM 'preprint')`).rows[0];
     const ok = Math.abs((+r.avg || 0) - m.avgCitations) <= 0.2 && (+r.max || 0) === m.maxCitations;
     if (!ok) { console.log(`DRIFT  ${n.id}: recompute avg=${(+r.avg).toFixed(1)}/max=${r.max} vs meta avg=${m.avgCitations}/max=${m.maxCitations}`); drift++; }
     else console.log(`OK   ${n.id}: avg=${m.avgCitations} max=${m.maxCitations}`);
