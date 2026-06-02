@@ -68,14 +68,19 @@ function cmp(label, a, b) {
   return ok;
 }
 
-// Venue/inst maps: OLD vs NEW differ ONLY by the documented sibling-ISSN coverage
-// recovery (NEW catches papers whose tagged ISSN was a sibling) — already proven
+// Venue/inst maps: OLD vs NEW differ ONLY by (a) the documented sibling-ISSN
+// recovery (NEW catches papers whose tagged ISSN was a sibling — NEW[k] >= OLD[k]),
+// and (b) merge survivors: a few venues/institutions were merged (ISSN-dedup like
+// RIVAR/EPL; synonym merges like the 3 institutions), so OLD's VARIANT name-key
+// is gone and its papers moved to the canonical name-key. Both were proven
 // zero-drift structurally in the graph migration (same published_in/affiliated_with
-// edges). So the correct invariant is: NEW loses NO key, and NEW[k] >= OLD[k]
-// everywhere (entities recover, never under-count). Anything else = real drift.
-function cmpVenueMap(label, oldM, newM) {
-  const lostKeys = Object.keys(oldM).filter((k) => !(k in newM));
-  const underCount = Object.keys(oldM).filter((k) => (newM[k] || 0) < oldM[k]);
+// edges, scripts/diff-graph-entities.js). So the gate excludes keys explained by a
+// merge: a "lost" OLD key is benign iff its name was a tag_synonyms variant OR an
+// ISSN-merged venue alias (i.e. it shares an ISSN with a surviving venue). Anything
+// NOT so explained = real drift.
+function cmpVenueMap(label, oldM, newM, mergedAway) {
+  const lostKeys = Object.keys(oldM).filter((k) => !(k in newM) && !mergedAway.has(k));
+  const underCount = Object.keys(oldM).filter((k) => (newM[k] || 0) < oldM[k] && !mergedAway.has(k));
   const recovered = Object.keys(oldM).filter((k) => (newM[k] || 0) > oldM[k]).length;
   const ok = lostKeys.length === 0 && underCount.length === 0;
   console.log(`${ok ? "OK " : "DRIFT"}  ${label} (${Object.keys(oldM).length} keys, ${recovered} recovered higher; ${lostKeys.length} lost, ${underCount.length} under-counted)`);
@@ -86,8 +91,30 @@ function cmpVenueMap(label, oldM, newM) {
   return ok;
 }
 
+// Name-keys explained by a sanctioned merge (so a "lost" OLD key is benign):
+// institution synonym variants + venues that share an ISSN with a surviving venue.
+async function mergedAwayKeys(tenantId) {
+  const s = new Set();
+  for (const r of (await sql`SELECT DISTINCT variant FROM tag_synonyms WHERE tenant_id=${tenantId} AND category='institution'`).rows)
+    s.add(journalNameKey(r.variant));
+  // ISSN-merged venue aliases: a journal/non-journal tag name whose ISSN belongs
+  // to a venue stored under a DIFFERENT name_key (the merge survivor).
+  const rows = (await sql`SELECT DISTINCT t.value, t.ext_id FROM tags t JOIN publications p ON p.id=t.doi_record_id
+    WHERE t.category IN ('journal','non-journal') AND t.ext_id IS NOT NULL AND p.tenant_id=${tenantId}`).rows;
+  const venueKeyByIssn = new Map(
+    (await sql`SELECT issn_l, name_key FROM venues WHERE tenant_id=${tenantId} AND issn_l IS NOT NULL`).rows
+      .map((v) => [v.issn_l, v.name_key]));
+  for (const r of rows) {
+    const k = journalNameKey(r.value);
+    const surviving = venueKeyByIssn.get(r.ext_id);
+    if (surviving && surviving !== k) s.add(k);
+  }
+  return s;
+}
+
 async function main() {
   let drift = 0;
+  const merged = await mergedAwayKeys(1);
   // A real personal-scope ORCID (most papers) for tenant 1.
   const top = (await sql`SELECT a.orcid, COUNT(*) n FROM authorship s JOIN authors a ON a.id=s.author_id
     WHERE a.tenant_id=1 GROUP BY a.orcid ORDER BY n DESC LIMIT 1`).rows[0];
@@ -99,8 +126,8 @@ async function main() {
     if (!cmp(`${label} getSummary`, await oldSummary(scope, personal), await NEW.getSummary(scope))) drift++;
     // Journals/collaborations: compare FULL per-name-key paper-count maps (OLD
     // collapses ISSN siblings in JS like venues do) — apples-to-apples, unbounded.
-    if (!cmpVenueMap(`${label} journals`, await oldVenueMap(scope, personal, "journal"), await newVenueMap(scope, "journal"))) drift++;
-    if (!cmpVenueMap(`${label} collaborations`, await oldVenueMap(scope, personal, "institution"), await newVenueMap(scope, "institution"))) drift++;
+    if (!cmpVenueMap(`${label} journals`, await oldVenueMap(scope, personal, "journal"), await newVenueMap(scope, "journal"), merged)) drift++;
+    if (!cmpVenueMap(`${label} collaborations`, await oldVenueMap(scope, personal, "institution"), await newVenueMap(scope, "institution"), merged)) drift++;
     // getByYearAndSource: source dim dropped by design — compare year→count totals only.
     const { w, p } = oldWhere(scope, personal);
     const oldYr = {}; for (const r of (await sql.query(`SELECT SUBSTRING(d.published FROM 1 FOR 4) AS year, COUNT(*) AS c FROM doi_records d
