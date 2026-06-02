@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { GraphRender } from '../ui/graph-engine/index';
+import React, { useState, useEffect, useMemo } from 'react';
+import { DirectiveChart } from '../ui/graph-engine/index';
 import type { GraphDirective } from '../architect/graph-composer.types';
 import type { TagNode, DoiRecord } from './relationship-types';
 import { TAG_CATEGORIES, COLORS } from './relationship-types';
@@ -8,7 +8,7 @@ import { FilteredPaperList } from './filtered-paper-list';
 function ChartCard({ chart }: { chart: GraphDirective }) {
   return (
     <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', padding: '14px 16px 10px', overflow: 'hidden', minHeight: 220 }}>
-      <GraphRender chart={chart} />
+      <DirectiveChart seed={chart} />
     </div>
   );
 }
@@ -88,13 +88,14 @@ export function FilteredCharts({ matchingDois, totalDois }: { matchingDois: Set<
       .catch(() => setLoaded(true));
   }, []);
 
-  const filtered = records.filter(r => matchingDois.has(r.doi));
+  const filtered = useMemo(() => records.filter(r => matchingDois.has(r.doi)), [records, matchingDois]);
   const isFiltered = matchingDois.size < totalDois;
+  // Stable seed identity so a legend toggle inside DirectiveChart doesn't
+  // rebuild the directive and re-seed the engine's activeSet.
+  const charts = useMemo(() => buildCharts(filtered), [filtered]);
 
   if (!loaded) return <div style={{ padding: 12, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>Loading charts…</div>;
   if (!filtered.length) return <div style={{ padding: 12, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>No matching papers for current selection.</div>;
-
-  const charts = buildCharts(filtered);
 
   return (
     <div>

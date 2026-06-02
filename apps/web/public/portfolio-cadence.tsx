@@ -1,5 +1,5 @@
-import React from 'react';
-import { GraphRender } from '../ui/graph-engine/index';
+import React, { useMemo } from 'react';
+import { DirectiveChart } from '../ui/graph-engine/index';
 import type { GraphDirective } from '../architect/graph-composer.types';
 import { TYPE_DISPLAY_LABELS } from './type-labels';
 import { typeColor, typeRank } from './type-metals';
@@ -50,6 +50,10 @@ export function buildCadenceChart(c: Cadence, title: string, typeLabel: (t: stri
 export function CadencePanel({ cadence, labels = DEFAULT_LABELS, typeLabel = defaultTypeLabel }: {
   cadence: Cadence; labels?: CadenceLabels; typeLabel?: (t: string) => string;
 }) {
+  const seed = useMemo(
+    () => buildCadenceChart(cadence, labels.avgPerYear, typeLabel),
+    [cadence, labels.avgPerYear, typeLabel],
+  );
   if (!cadence.series.length) {
     return <p style={{ color: 'var(--fg-muted)' }}>No publication years on record.</p>;
   }
@@ -59,7 +63,7 @@ export function CadencePanel({ cadence, labels = DEFAULT_LABELS, typeLabel = def
         <div style={FIGURE}>{cadence.meanPerYear.toFixed(1)}</div>
         <div style={CAPTION}>{labels.avgPerYear}</div>
       </div>
-      <GraphRender chart={buildCadenceChart(cadence, labels.avgPerYear, typeLabel)} />
+      <DirectiveChart seed={seed} />
     </div>
   );
 }

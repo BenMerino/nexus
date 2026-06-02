@@ -1,5 +1,5 @@
-import React from 'react';
-import { GraphRender } from '../ui/graph-engine/index';
+import React, { useMemo } from 'react';
+import { DirectiveChart } from '../ui/graph-engine/index';
 import type { GraphDirective } from '../architect/graph-composer.types';
 
 export type VelocityPoint = { year: number; total: number; projected?: number; partial?: boolean };
@@ -56,6 +56,7 @@ export function buildVelocityChart(v: Velocity, title: string): GraphDirective {
 }
 
 export function VelocityPanel({ velocity, labels = DEFAULT_LABELS }: { velocity: Velocity; labels?: VelocityLabels }) {
+  const seed = useMemo(() => buildVelocityChart(velocity, labels.actual), [velocity, labels.actual]);
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 4 }}>
@@ -67,7 +68,7 @@ export function VelocityPanel({ velocity, labels = DEFAULT_LABELS }: { velocity:
           {TREND_SYMBOL[velocity.trend]} {labels.trend[velocity.trend]}
         </div>
       </div>
-      <GraphRender chart={buildVelocityChart(velocity, labels.actual)} />
+      <DirectiveChart seed={seed} />
     </div>
   );
 }

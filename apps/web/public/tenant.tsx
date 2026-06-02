@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { GraphRender } from '../ui/graph-engine/index';
+import { DirectiveChart } from '../ui/graph-engine/index';
 import { AuthorsTable } from './tenant-authors';
 import { TenantGraph } from './tenant-graph';
 import { buildTenantCharts } from './tenant-builders';
@@ -8,7 +8,6 @@ import { VelocityPanel } from './portfolio-velocity';
 import { CadencePanel } from './portfolio-cadence';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
 import { SummaryCards, SectionPlaceholder, TabPane } from './tenant-summary';
-import { ReplayChart } from './tenant-replay-chart';
 import { TenantOrgTree } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { ES, typeLabelEs, VELOCITY_LABELS_ES, CADENCE_LABELS_ES } from './tenant-i18n';
@@ -60,7 +59,14 @@ function App() {
     return <div className="public-app"><main className="public-main" style={{ color: 'var(--fg-dim)' }}>{statsError ? `${ES.failedPrefix}: ${statsError}` : ES.loading}</main></div>;
   }
 
-  const charts = buildTenantCharts(statsPayload.stats, statsPayload.tenant.id);
+  // Memoize so the directive seeds keep stable identity across re-renders;
+  // a legend toggle inside DirectiveChart must not rebuild the seed (that
+  // re-seeds the engine's activeSet and "reloads" the chart). Controller
+  // owns current state thereafter.
+  const charts = useMemo(
+    () => buildTenantCharts(statsPayload.stats, statsPayload.tenant.id),
+    [statsPayload],
+  );
   const paneProps = { active, seen };
 
   return (
@@ -90,8 +96,8 @@ function App() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
               {charts.map((chart, i) => (
-                <div key={i} className="card" style={{ minHeight: 400 }}>
-                  {chart.query ? <ReplayChart initial={chart} /> : <GraphRender chart={chart} />}
+                <div key={chart.persistKey ?? i} className="card" style={{ minHeight: 400 }}>
+                  <DirectiveChart seed={chart} />
                 </div>
               ))}
             </div>

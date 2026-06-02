@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { GraphRender } from '../ui/graph-engine/index';
+import { GraphRender, DirectiveChart } from '../ui/graph-engine/index';
 import type { GraphDirective } from '../architect/graph-composer.types';
 import { SectionHead } from './ui-primitives';
 
@@ -39,11 +39,13 @@ export function ServerCharts() {
       {items.map((chart, i) => (
         <section className="card card-chart" key={chart?.title || i}>
           <SectionHead eyebrow={chart ? (EYEBROW[chart.title] || 'Stats') : 'Stats'} title={chart?.title || '…'} />
-          <GraphRender
-            chart={chart || ({ type: 'bar', title: '', data: [] } as GraphDirective)}
-            isLoading={loading}
-            error={error}
-          />
+          {chart
+            // Real server-composed directive → blessed controller path.
+            ? <DirectiveChart seed={chart} />
+            // Placeholder card while loading/error: a bare render of an empty
+            // directive carrying the page-level fetch state, so the grid
+            // doesn't reflow. No controller needed for a non-interactive stub.
+            : <GraphRender chart={{ type: 'bar', title: '', data: [] } as GraphDirective} isLoading={loading} error={error} />}
         </section>
       ))}
     </>

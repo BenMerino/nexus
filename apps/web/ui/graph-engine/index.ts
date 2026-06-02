@@ -1,4 +1,6 @@
 export { GraphRender } from './GraphRender.js';
+export { DirectiveChart } from './DirectiveChart.js';
+export type { DirectiveChartProps } from './DirectiveChart.js';
 export { useContainerSize } from './useContainerSize.js';
 export { useChartLegibility } from './useChartLegibility.js';
 export { useToggleFilters } from './useToggleFilters.js';
