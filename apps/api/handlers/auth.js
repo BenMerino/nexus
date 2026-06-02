@@ -1,6 +1,6 @@
 const { ensureSchema, getAllRecords } = require("../src/lib/db");
 const { getUser, requireRole, makeSessionCookie } = require("../src/lib/auth");
-const { getUserByUsername, getUserById, listTenants, listSubtenants, listUsers, createUser, updateUser, updateTenant, createTenant } = require("../src/lib/db-users");
+const { getUserByUsername, getUserById, listTenants, listSubtenants, listUsers, createUser, updateUser, updateTenant } = require("../src/lib/db-users");
 const { seedUsers } = require("../src/lib/seed-users");
 const { buildProfile, computeHIndex, countPapersByOrcid, countPapersByRor, researcherNameByOrcid } = require("../src/lib/auth-helpers");
 const { getScope } = require("../src/lib/scope");
@@ -78,7 +78,11 @@ module.exports = async function handler(req, res) {
     if (req.method === "POST") {
       const { name, ror_id, parent_id, slug } = req.body;
       if (!ror_id) return res.status(400).json({ error: "ROR ID is required" });
-      const id = await createTenant(name, ror_id, parent_id, slug);
+      // Governed provision: InstitutionGovernor is the sole writer of the tenant
+      // row and emits tenant.provisioned (→ lifecycle scheduler kicks first load).
+      const { institutionGovernor } = require("../src/services/catalog/InstitutionGovernor");
+      const ctx = { tenantId: sa.tenantId, userId: String(sa.id), displayName: sa.username, actorKind: "user", role: sa.role };
+      const id = await institutionGovernor.provision(ctx, { name, ror: ror_id, parentId: parent_id, slug });
       return res.json({ ok: true, id });
     }
     if (req.method === "PUT") {

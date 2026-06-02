@@ -72,4 +72,4 @@ async function runLoop(tenantId, label) {
   }
 }
 
-module.exports = { startTenantIngest, getTenantIngestStatus };
+module.exports = { startTenantIngest, getTenantIngestStatus, isRunning };

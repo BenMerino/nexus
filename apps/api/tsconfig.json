@@ -24,6 +24,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["index.js", "handlers/**/*.js", "scripts/**/*.js", "src/**/*.js", "src/**/*.ts"],
+  "include": ["index.js", "worker.js", "handlers/**/*.js", "scripts/**/*.js", "src/**/*.js", "src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.js", "**/*.test.ts"]
 }

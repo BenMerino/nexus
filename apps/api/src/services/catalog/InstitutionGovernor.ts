@@ -8,14 +8,38 @@
  * `institution.merged` AFTER the write. Per-paper pub↔institution edges are
  * written by PublicationGovernor; this governor owns only the merge.
  * withTenant arrives in the RLS phase.
+ *
+ * NOTE (reviewers): `provision` makes this governor ALSO the sole writer of the
+ * `tenants` row at creation — the organizational half of the managed institution
+ * (DGA_DESIGN §Institution: the tenant is promoted to a domain). That's a
+ * lifecycle aggregate, not the catalog `institutions` entity it merges; both
+ * legitimately live here because both are "the managed institution acting".
  * ──────────────────────────────────────────────────────────── */
 
 import { BaseGovernor } from "../BaseGovernor";
 import type { ActorContext } from "../../substrate/actor";
 const { mergeInstitution, mergeInstitutionSynonym } = require("../../lib/db-institution-merge");
 const { upsertInstitutions } = require("../../lib/db-entities");
+const { createTenant } = require("../../lib/db-users");
+
+export interface ProvisionInput {
+  name: string; ror: string | null; parentId?: number | null; slug?: string | null;
+}
 
 class InstitutionGovernor extends BaseGovernor {
+  /** Provision a new managed tenant (the governed replacement for the raw
+   *  createTenant insert). Emits `tenant.provisioned` AFTER the write — the
+   *  lifecycle scheduler listens to kick the tenant's first data load. */
+  async provision(ctx: ActorContext, input: ProvisionInput): Promise<number> {
+    if (!input.name) throw new Error("name required");
+    const id = await createTenant(input.name, input.ror, input.parentId ?? null, input.slug ?? null);
+    this.emitEvent("tenant.provisioned", {
+      tenantId: id, ror: input.ror, actorUserId: ctx.userId, actorKind: ctx.actorKind,
+    });
+    await this.logToLedger(id, `tenant:${id}`, "tenant.provisioned", ctx.userId, { ror: input.ror });
+    return id;
+  }
+
   /** Sole writer of the `institutions` table on ingest: upsert institutions from
    *  this record's institution tags AND author-mediated affiliations (idempotent
    *  by ror). Called by IngestionWorkflow before edges. Quiet by design. */

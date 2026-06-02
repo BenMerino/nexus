@@ -14,6 +14,7 @@
  * ──────────────────────────────────────────────────────────── */
 
 import { EventEmitter } from "events";
+const { enqueueEvent } = require("../lib/db-outbox");
 
 /** Every write event is tenant-scoped. */
 export interface TenantPayload {
@@ -50,18 +51,39 @@ export interface GovernorEventMap {
   "institution.merged": TenantPayload & { intoId?: number; variantsMerged: number } & ActorIdentityTail;
   // Ingestion — one DOI fetched/normalized/stored through the IngestionWorkflow.
   "ingestion.completed": TenantPayload & { publicationId: number; doi: string } & ActorIdentityTail;
+  // Lifecycle — a tenant was provisioned (→ scheduler kicks its first refresh).
+  "tenant.provisioned": TenantPayload & { ror: string | null } & ActorIdentityTail;
+  // Lifecycle — a tenant's roster was imported (→ scheduler kicks a refresh).
+  "roster.imported": TenantPayload & { added: number } & ActorIdentityTail;
   // Future domains add their channels here (see docs/DGA_DESIGN.md):
-  //   publication.deleted | venue.upserted/merged | roster.imported
+  //   publication.deleted | venue.upserted/merged
 }
 
 export type GovernorEvent = keyof GovernorEventMap;
 
 class TypedEventBus {
   private emitter = new EventEmitter();
+  /** When true, emit ALSO persists to the outbox + NOTIFYs (cross-process). The
+   *  worker's OutboxRelay sets this false on itself: relayed events re-enter the
+   *  worker's bus as IN-PROCESS only, so they don't loop back into the outbox. */
+  private persist = true;
+
+  setPersist(on: boolean): void {
+    this.persist = on;
+  }
 
   emit<K extends GovernorEvent>(event: K, payload: GovernorEventMap[K]): void {
     console.log(`[EventBus] ${String(event)}:`, payload);
+    // In-process delivery (synchronous) — existing listeners, unchanged contract.
     this.emitter.emit(event as string, payload);
+    // Durable cross-process delivery: enqueue to the outbox + NOTIFY. Fire-and-
+    // forget on the pool (emit stays sync). The relay + scheduler tick are the
+    // at-least-once safety net, so a dropped enqueue is recoverable, not fatal.
+    if (this.persist) {
+      const tenantId = (payload as TenantPayload).tenantId;
+      Promise.resolve(enqueueEvent(null, tenantId, String(event), payload))
+        .catch((err: Error) => console.warn(`[EventBus] outbox enqueue failed for ${String(event)}:`, err.message));
+    }
   }
 
   on<K extends GovernorEvent>(

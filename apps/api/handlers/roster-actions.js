@@ -74,6 +74,11 @@ async function handleRosterAction(req, res) {
     if (imp.created > 0 || imp.updated > 0) {
       const { startTenantIngest } = require("../src/lib/ingest-runner");
       ingest = startTenantIngest(tid, "roster-import:" + scope.username);
+      // Durable cross-process signal: the worker's lifecycle scheduler kicks a
+      // governed refresh for this tenant (the in-process startTenantIngest above
+      // is the immediate path; the event survives if the worker was busy/down).
+      const { eventBus } = require("../src/services/EventBus");
+      eventBus.emit("roster.imported", { tenantId: tid, added: imp.created + imp.updated });
     }
     res.json({ ok: true, parsed: rows.length, ...imp, autoIngest: ingest });
     return true;

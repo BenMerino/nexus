@@ -4,11 +4,13 @@ const { insertSubmission } = require("./db");
 const { fetchAndStore } = require("./store");
 
 // Collect every DOI for an ORCID across OpenAlex's paged works response.
-async function doisForOrcid(orcid) {
+// `since` (ISO date, optional) restricts to works indexed on/after it — the
+// incremental "what's new" pull the lifecycle refresh uses; omit for a full walk.
+async function doisForOrcid(orcid, since = null) {
   const all = new Set();
   let page = 1;
   while (page <= 20) {
-    const { dois, hasMore } = await fetchWorksByOrcid(orcid, page);
+    const { dois, hasMore } = await fetchWorksByOrcid(orcid, page, since);
     dois.forEach(d => all.add(d.toLowerCase()));
     if (!hasMore) break;
     page++;
@@ -66,4 +68,4 @@ async function ingestResolved(tenantId, uploader, limit = 25, offset = 0) {
   return result;
 }
 
-module.exports = { ingestResolved };
+module.exports = { ingestResolved, doisForOrcid };

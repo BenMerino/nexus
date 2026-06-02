@@ -46,8 +46,13 @@ async function searchAuthorsAtInstitution(query, rorId, perPage = 5) {
     .filter(a => a.orcid); // only candidates we can actually link
 }
 
-async function fetchWorksByOrcid(orcid, page = 1) {
-  const url = `${BASE}/works?filter=author.orcid:${orcid}&per_page=50&page=${page}&select=doi`;
+// `since` (ISO date, optional) restricts to works OpenAlex INDEXED on/after that
+// date (from_created_date) — "what's new since I last looked", which catches
+// late-indexed old papers (a 2019 paper added to OpenAlex last week). Omit for a
+// full re-walk (used when an author has never been synced).
+async function fetchWorksByOrcid(orcid, page = 1, since = null) {
+  const sinceFilter = since ? `,from_created_date:${String(since).slice(0, 10)}` : "";
+  const url = `${BASE}/works?filter=author.orcid:${orcid}${sinceFilter}&per_page=50&page=${page}&select=doi`;
   const resp = await fetch(url);
   if (!resp.ok) return { dois: [], totalCount: 0, page, hasMore: false };
   const data = await resp.json();
