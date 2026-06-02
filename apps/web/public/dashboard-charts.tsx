@@ -3,7 +3,8 @@ import { createRoot, type Root } from 'react-dom/client';
 import { useCurrentUser } from './shell-helpers';
 import { Stat, SectionHead } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders';
-import { yearlyCounts, BarChart, TopJournals, PartnerInstitutions, RecentlyIndexed } from './dashboard-panels';
+import { RecentlyIndexed } from './dashboard-panels';
+import { ServerCharts } from './dashboard-server-charts';
 import { ClaimPaperPanel } from './claim-paper-panel';
 import { CoAuthorGraphPanel } from './coauthor-graph-preview';
 import { VelocityPanel } from './portfolio-velocity';
@@ -17,7 +18,6 @@ import { ProjectsGanttPanel } from './projects-gantt';
 function DashboardContent({ data }: { data: DashboardData }) {
   const { me } = useCurrentUser();
   const viewed = data.viewedUser || null;
-  const years = yearlyCounts(data);
   const tenantName = me?.tenant || 'Institution';
   const subject = viewed
     ? { profile: viewed.profile, user: viewed.user, hIndex: viewed.hIndex, hIndexByType: viewed.hIndexByType }
@@ -81,16 +81,13 @@ function DashboardContent({ data }: { data: DashboardData }) {
               <SectionHead eyebrow="Field" title="What you're known for" />
               <ConceptsPanel concepts={p.concepts || []} />
             </section>
-            <TopJournals data={data} />
-            <PartnerInstitutions data={data} />
+            <ServerCharts />
             {isOwnDashboard && <ClaimPaperPanel onClaimed={() => window.location.reload()} />}
           </>
         ) : (
           <>
-            {years.length > 0 ? <BarChart rows={years} title="Publications per year" /> : <div className="card card-chart"><div className="muted">No year data.</div></div>}
+            <ServerCharts />
             <CoAuthorGraphPanel graph={p?.coauthorGraph} />
-            <TopJournals data={data} />
-            <PartnerInstitutions data={data} />
             <ProjectsGanttPanel />
             <RecentlyIndexed data={data} />
           </>
