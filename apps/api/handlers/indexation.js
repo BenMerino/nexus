@@ -3,7 +3,7 @@ const { requireRole } = require("../src/lib/auth");
 const { sql } = require("../src/lib/sql");
 const { listCounts } = require("../src/lib/indexed-journals");
 const { runSeed, runOpenAlexSeed } = require("../src/lib/indexation-seed");
-const { backfillIndexationTags } = require("../src/lib/indexed-backfill");
+const { rebuildVenueFlags } = require("../src/lib/venue-flags-rebuild");
 
 module.exports = async function handler(req, res) {
   await ensureSchema();
@@ -24,9 +24,12 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === "POST" && req.query.action === "reconcile") {
-    await sql`DELETE FROM tags WHERE category = 'indexed_in'`;
-    const backfill = await backfillIndexationTags();
-    return res.json({ ok: true, backfill });
+    // Rebuild venue in_* flags from the indexed_journals registry (entity model;
+    // no indexed_in tags). Per tenant. Sibling-aware (matches by issn_l + name).
+    const tenants = (await sql`SELECT DISTINCT tenant_id FROM venues`).rows.map((r) => r.tenant_id);
+    let updated = 0;
+    for (const t of tenants) updated += await rebuildVenueFlags(t);
+    return res.json({ ok: true, venuesFlagged: updated });
   }
 
   if (req.method === "POST" && req.query.action === "seed") {
