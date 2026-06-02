@@ -5,39 +5,47 @@ import { narrowQueryToBucket, narrowQueryToPeriod, narrowQueryToAtomRange } from
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
 
 /* ── DirectiveChart ─────────────────────────────────────────
- * THE single, blessed way to render a chart in Nexus. Every page wraps
- * its directive seed in this component; no page touches <GraphRender>
- * directly anymore.
+ * THE single, blessed way to render a chart in Nexus. Pages wrap their
+ * directive seed in this component; no page touches <GraphRender> directly.
  *
- * Why this exists: GraphRender is a PURE render of whatever directive it
- * receives. If a page builds the directive inline and passes it, every
- * parent re-render hands GraphRender a fresh object → the engine re-folds
- * and `useToggleFilters` re-seeds its activeSet → legend toggles "reload".
- * DirectiveChart fixes that at the root: `useDirectiveController` takes the
- * seed ONCE into state and owns it. Toggles mutate controller-owned state,
- * never the seed, so the directive passed to GraphRender stays referentially
- * stable across toggle-driven re-renders.
+ * It branches on whether the seed is REPLAYABLE (carries `query`):
  *
- * To reset a chart (e.g. tenant change), the PAGE remounts via React `key`.
- * Replayable seeds (carrying `query`) get the slider + server recompose for
- * free; one-shot seeds (no `query`) render as a stable snapshot.
+ *   • query-LESS (legacy snapshot, e.g. the stacked "Publicaciones por año"):
+ *     render a BARE <GraphRender>. There is nothing to recompose, no stream to
+ *     subscribe, no query toggle — the controller can only add overhead and
+ *     identity churn. The legend toggle is handled ENTIRELY inside the engine
+ *     (`useToggleFilters`), byte-for-byte like Zincro: deselecting a series is a
+ *     pure render-time weight tween, no reload. The seed is memoized at the
+ *     call-site, so its identity is already stable.
+ *
+ *   • query-FULL (replayable): the controller owns the directive in state and
+ *     drives slider/recompose/stream/drill. Wrapping is what makes those work.
+ *
+ * Splitting into two child components keeps hooks unconditional — each child
+ * calls its own hooks every render; only WHICH child mounts varies. (A single
+ * component calling useDirectiveController conditionally would violate the
+ * rules-of-hooks.) To reset a chart, the page remounts via React `key`.
  * ──────────────────────────────────────────────────────────── */
 
 export interface DirectiveChartProps {
-    /** The directive seed. Memoize at the call-site so its identity is
-     *  stable; the controller takes it into state on mount regardless, but
-     *  a stable seed avoids needless initial-effect churn. */
+    /** The directive seed. Memoize at the call-site so identity is stable. */
     seed: GraphDirective;
     isLive?: boolean;
 }
 
 export function DirectiveChart({ seed }: DirectiveChartProps) {
+    // query-less → bare engine render (no controller layer); else → controller.
+    return seed.query ? <ControlledChart seed={seed} /> : <GraphRender chart={seed} />;
+}
+
+/** The controlled path — only for replayable seeds. Owns the directive in
+ *  state via the controller and wires slider/recompose/stream/drill. */
+function ControlledChart({ seed }: { seed: GraphDirective }) {
     const ctrl = useDirectiveController<GraphDirective, GraphQuery>(seed);
 
-    // Replayable seed that arrived WITHOUT atoms (the server gave a
-    // pre-folded snapshot): pull the all-time atom set once so the slider
-    // can fold locally — what the old ReplayChart did on mount. Static seeds
-    // (no `query`) and seeds that already carry atoms skip this.
+    // Replayable seed that arrived WITHOUT atoms (server gave a pre-folded
+    // snapshot): pull the all-time atom set once so the slider folds locally —
+    // what the old ReplayChart did on mount. Seeds with atoms skip this.
     const loadedRef = useRef(false);
     useEffect(() => {
         if (loadedRef.current) return;
@@ -48,9 +56,9 @@ export function DirectiveChart({ seed }: DirectiveChartProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Drill: translate a bucket/cell/period click into a child query, then
-    // push it onto the controller's breadcrumb stack. No-op when the click
-    // doesn't narrow (helpers return null) or the directive isn't replayable.
+    // Drill: translate a bucket/cell/period click into a child query, then push
+    // it onto the controller's breadcrumb stack. No-op when the click doesn't
+    // narrow (helpers return null).
     const handleBucketClick = (
         idx: number,
         label: string,
