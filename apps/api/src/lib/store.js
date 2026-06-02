@@ -1,10 +1,9 @@
-const { upsertRecord, getRecordByDoi } = require("./db");
-const { normalize, extractTags, canonicalize } = require("./normalize");
+const { normalize, extractTags } = require("./normalize");
 const { fetchCrossRef, fetchOpenAlex, fetchSemanticScholar, fetchDataCite, unwrap } = require("./fetchers");
 const { upsertCitationsByYear, upsertConcepts, deleteConceptsForRecord } = require("./db-portfolio");
 const { extractKeywords } = require("./nlp-keywords");
-const { syncRecordEntities } = require("./db-entities");
-const { sql } = require("./sql");
+const { systemActor } = require("../substrate/actor");
+const { ingestionWorkflow } = require("../services/ingestion/IngestionWorkflow");
 
 async function fetchAndStore(doi, submissionId) {
   const results = await Promise.allSettled([
@@ -16,35 +15,24 @@ async function fetchAndStore(doi, submissionId) {
   };
   const record = normalize(doi, sources);
 
-  await upsertRecord(
-    submissionId, record.doi, record.title,
-    record.authorNames ? JSON.stringify(record.authorNames) : null,
-    record.published, record.journal, record.publisher, record.type,
-    record.citationCount, record.openAccess || false, record.openAccessUrl,
-    record.abstract, record.venue, record.url,
-    record.authors ? JSON.stringify(record.authors) : null,
-    JSON.stringify(sources)
-  );
+  // The paper row + all entity edges (authors/venues/institutions + edges +
+  // venue flags) are now the publication aggregate's governed write, driven
+  // through the IngestionWorkflow → PublicationGovernor (the sole writer).
+  const dbId = await ingestionWorkflow.run(systemActor(1), { submissionId, record, sources });
 
-  const dbRecord = await getRecordByDoi(record.doi);
-  // The `tags` table is no longer written (P5) — entities are the sole store.
-  // extractTags still runs because syncRecordEntities derives the entity writes
-  // (authors/venues/institutions + edges) from this canonical tag-shaped array.
-  const tags = extractTags(record);
-
-  // Write entities + edges from the tag-shaped array. Uses canonicalized values.
-  const canonTags = tags.map((t) => ({ ...t, value: canonicalize(t.category, t.value) }));
-  const tRow = await sql`SELECT tenant_id FROM publications WHERE id = ${dbRecord.id}`;
-  await syncRecordEntities(dbRecord.id, tRow.rows[0]?.tenant_id ?? 1, record, canonTags);
-
-  await upsertCitationsByYear(dbRecord.id, record.countsByYear);
-  await deleteConceptsForRecord(dbRecord.id);
-  await upsertConcepts(dbRecord.id, record.concepts);
+  // Citations / concepts / keywords are not part of the publication aggregate's
+  // edge sync — they stay here (portfolio-stat tables, written as before).
+  await upsertCitationsByYear(dbId, record.countsByYear);
+  await deleteConceptsForRecord(dbId);
+  await upsertConcepts(dbId, record.concepts);
   if (record.abstract) {
-    await upsertConcepts(dbRecord.id, extractKeywords(record.abstract));
+    await upsertConcepts(dbId, extractKeywords(record.abstract));
   }
 
-  return { record, sources, tags };
+  // `tags` in the return is the post-ingest tag-chip preview the submit UI
+  // renders (admin-doi-submit.js); the `tags` TABLE is gone (P5), this array
+  // is computed for display only and never persisted.
+  return { record, sources, tags: extractTags(record) };
 }
 
 module.exports = { fetchAndStore };

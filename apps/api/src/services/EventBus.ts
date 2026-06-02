@@ -38,12 +38,20 @@ export interface GovernorEventMap {
   // Author domain — claim binds a substrate user (by ORCID) to a publication
   // as an authorship edge (the entity form of the legacy author-tag claim).
   "author.claimed": TenantPayload & { orcid: string; publicationId: number } & ActorIdentityTail;
+  // Author merge — two author identities folded into one (entity resolution).
+  "author.merged": TenantPayload & { fromId: number; intoId: number } & ActorIdentityTail;
+  // Publication domain — a paper + its edges (authorship/published_in/affiliation)
+  // upserted by PublicationGovernor (the ingestion write path's sole writer).
+  "publication.upserted": TenantPayload & { publicationId: number; doi: string } & ActorIdentityTail;
+  // Venue domain — indexation flags (in_wos/scopus/doaj/scielo) rebuilt from
+  // the indexed_journals registry.
+  "venue.indexationUpdated": TenantPayload & { updated: number } & ActorIdentityTail;
+  // Institution domain — duplicate institution identities folded into one.
+  "institution.merged": TenantPayload & { intoId?: number; variantsMerged: number } & ActorIdentityTail;
+  // Ingestion — one DOI fetched/normalized/stored through the IngestionWorkflow.
+  "ingestion.completed": TenantPayload & { publicationId: number; doi: string } & ActorIdentityTail;
   // Future domains add their channels here (see docs/DGA_DESIGN.md):
-  //   publication.upserted | publication.deleted
-  //   author.upserted | author.merged
-  //   venue.upserted | venue.indexationUpdated
-  //   institution.provisioned | institution.policyChanged
-  //   ingestion.completed | roster.imported
+  //   publication.deleted | venue.upserted/merged | roster.imported
 }
 
 export type GovernorEvent = keyof GovernorEventMap;

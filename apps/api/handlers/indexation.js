@@ -3,7 +3,7 @@ const { requireRole } = require("../src/lib/auth");
 const { sql } = require("../src/lib/sql");
 const { listCounts } = require("../src/lib/indexed-journals");
 const { runSeed, runOpenAlexSeed } = require("../src/lib/indexation-seed");
-const { rebuildVenueFlags } = require("../src/lib/venue-flags-rebuild");
+const { venueGovernor } = require("../src/services/catalog/VenueGovernor");
 
 module.exports = async function handler(req, res) {
   await ensureSchema();
@@ -28,7 +28,11 @@ module.exports = async function handler(req, res) {
     // no indexed_in tags). Per tenant. Sibling-aware (matches by issn_l + name).
     const tenants = (await sql`SELECT DISTINCT tenant_id FROM venues`).rows.map((r) => r.tenant_id);
     let updated = 0;
-    for (const t of tenants) updated += await rebuildVenueFlags(t);
+    for (const t of tenants) {
+      updated += await venueGovernor.setIndexation({
+        tenantId: t, userId: String(sa.id), displayName: sa.username, actorKind: "user", role: sa.role,
+      });
+    }
     return res.json({ ok: true, venuesFlagged: updated });
   }
 
