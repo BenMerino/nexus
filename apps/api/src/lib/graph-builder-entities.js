@@ -12,15 +12,18 @@
 const { getAllRecords } = require("./db");
 const { assembleGraph } = require("./graph-assemble");
 const { entityGraphRows } = require("./entity-graph-rows");
-const { loadSynonymMap, affiliationsFromNodes } = require("./graph-builder");
+const { affiliationsFromNodes } = require("./graph-builder");
 
 async function buildGraphFromEntities(scope) {
-  const [rows, records, synonymMap] = await Promise.all([
+  // No synonym map: institution merges are applied in the ENTITY model
+  // (mergeInstitutionSynonym), so entity rows already carry canonical names —
+  // a read-time tag_synonyms relabel is redundant. Severs the last
+  // tag_synonyms reader (verified: 0 structural drift; 5 cosmetic inst labels).
+  const [rows, records] = await Promise.all([
     entityGraphRows(scope),
     getAllRecords(scope),
-    loadSynonymMap(scope.tenantId),
   ]);
-  const { nodes, edges } = assembleGraph(rows, { synonymMap });
+  const { nodes, edges } = assembleGraph(rows, {});
   const affiliations = affiliationsFromNodes(nodes, records);
   return { nodes: Array.from(nodes.values()), edges, affiliations };
 }
