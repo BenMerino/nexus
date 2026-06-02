@@ -30,8 +30,12 @@ async function oldByAuthor(tenantId, tenantRor) {
   const tags = (await sql`SELECT t.doi_record_id pid, t.ext_id orcid FROM tags t JOIN doi_records d ON d.id=t.doi_record_id
     WHERE t.category='author' AND t.ext_id IS NOT NULL AND d.tenant_id=${tenantId}`).rows;
   const m = new Map(); // orcid -> {n, cites}
+  const seen = new Set(); // dedup (orcid,paper) — OLD had duplicate author-tag rows
   for (const t of tags) {
     if (!allow.get(t.pid)?.has(t.orcid)) continue;
+    const k = `${t.orcid}|${t.pid}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
     if (!m.has(t.orcid)) m.set(t.orcid, { n: 0, c: 0 });
     m.get(t.orcid).n++; m.get(t.orcid).c += cites.get(t.pid);
   }
