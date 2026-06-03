@@ -17,6 +17,7 @@
 
 import { arcScale } from './scales.js';
 import { decimateByMinSlot } from './label-decimate.js';
+import { abbreviateLabel } from './label-abbreviate.js';
 import { foldHeatmapColumns } from './heatmap-fold-columns.js';
 import { weightOf, fmtValue } from './svg-parts.js';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
@@ -43,6 +44,11 @@ export interface RadialLayout {
 const CALLOUT_GAP = 10;          // anchor offset past outerR (see radialChrome)
 const CALLOUT_LABEL_PX = 52;     // room for the widest callout glyph run
 const CALLOUT_MARGIN = CALLOUT_GAP + CALLOUT_LABEL_PX;
+/* Char budget the callout text is abbreviated to. The reserved px band
+ *  (CALLOUT_LABEL_PX) at the 8px callout font (~4.3px/glyph) holds ~12
+ *  glyphs; abbreviateLabel folds long names ("Universidad de Talca" →
+ *  "U. de Talca") to fit rather than letting them overrun the viewBox. */
+const CALLOUT_MAX_CHARS = Math.floor(CALLOUT_LABEL_PX / 4.3);
 
 export function buildRadialLayout(chart: GraphDirective, size: number): RadialLayout {
     const t = chart.type;
@@ -85,7 +91,7 @@ export function radialChrome(chart: GraphDirective, layout: RadialLayout): Chart
             const ly = layout.cy + (layout.outerR + CALLOUT_GAP) * sinM;
             elements.push({
                 kind: 'text', x: lx, y: ly - 1,
-                text: labels[i],
+                text: abbreviateLabel(labels[i], CALLOUT_MAX_CHARS),
                 anchor: onRight ? 'start' : 'end',
                 fontSize: 8, fontWeight: 600,
                 color: 'var(--text-main)',
@@ -236,7 +242,7 @@ export function gridChrome(chart: GraphDirective, width: number, height: number)
                     kind: 'text',
                     x: x + w / 2,
                     y: height / 2,
-                    text: String(n.name ?? n.label ?? ''),
+                    text: abbreviateLabel(String(n.name ?? n.label ?? ''), Math.floor(w / 4.4)),
                     anchor: 'middle', baseline: 'central',
                     fontSize: 8, fontWeight: 600, halo: true,
                 });
@@ -251,7 +257,7 @@ export function gridChrome(chart: GraphDirective, width: number, height: number)
                 kind: 'text',
                 x: width / 2,
                 y: i * stepH + stepH / 2,
-                text: String(data[i].label ?? data[i].stage ?? ''),
+                text: abbreviateLabel(String(data[i].label ?? data[i].stage ?? ''), Math.floor(width / 5)),
                 anchor: 'middle', baseline: 'central',
                 fontSize: 9, fontWeight: 600, halo: true,
             });

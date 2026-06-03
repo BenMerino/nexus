@@ -11,6 +11,7 @@
 import React from 'react';
 import type { ChromeElement } from './chart-chrome.types.js';
 import { decimateByMinSlot } from './label-decimate.js';
+import { abbreviateLabel } from './label-abbreviate.js';
 
 export type LabelHover = { rowIdx: number; labelIdx: number } | null;
 
@@ -64,14 +65,15 @@ export function xAxisLabelLayout(el: Extract<ChromeElement, { kind: 'x-axis-band
     /* The decimator is the SINGLE spatial authority: a label places only
      *  if it clears neighbour labels AND its own bucket's boundary
      *  dividers, so dates never render on top of the grid ticks. The
-     *  clearance test uses the label's MINIMUM rendered footprint — the
-     *  ellipsis-truncation floor (`X_LABEL_MIN_CHARS` glyphs) — because
-     *  a label that doesn't fit whole is shortened (and may rotate)
-     *  before it is dropped. So we only drop a label when even its
-     *  truncated form would overrun a divider. Dividers always render
-     *  (they're the grid); the label yields. */
+     *  clearance test uses the label's FULL rendered width (floored at
+     *  `X_LABEL_MIN_CHARS`). The previous hard 4-glyph CAP under-measured
+     *  wide labels — a 5-char "1850s" that never truncates was treated as
+     *  4 glyphs, so it cleared the test while really overrunning its
+     *  divider by a glyph. Truncation (`maxChars`, computed post-place)
+     *  only ever NARROWS a label, so testing the full width is the
+     *  conservative bound and can't itself cause a collision. */
     const minRenderedHalfWidth = (i: number) => {
-        const chars = Math.min(labels[i].length, X_LABEL_MIN_CHARS);
+        const chars = Math.max(X_LABEL_MIN_CHARS, labels[i].length);
         return (chars * TICK_FONT_AVG_CHAR_PX) / 2;
     };
     const clearsDividers = (i: number): boolean => {
@@ -141,7 +143,7 @@ export function XAxisBand({
                 const l = labels[i];
                 const cx = at(i);
                 if (cx < range[0] - 1 || cx > range[1] + 1) return null;
-                const display = l.length > maxChars ? l.slice(0, maxChars - 1) + '…' : l;
+                const display = abbreviateLabel(l, maxChars);
                 const key = keys?.[i] ?? l;
                 /* Edge-aware anchoring. For curves the first/last points sit
                  *  AT the plot edges (xR[0]/xR[1]); a centered label there
