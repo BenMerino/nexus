@@ -18,7 +18,7 @@ const H3: React.CSSProperties = { fontFamily: 'var(--display)', fontWeight: 400,
 export function TenantChartsTab({ stats, tenantId, charts }: { stats: PublicStats; tenantId: number; charts: GraphDirective[] }) {
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 16, marginBottom: 16 }}>
         {stats.velocity ? (
           <section className="card" style={{ padding: 18 }}>
             <h3 style={H3}>{ES.charts.citationVelocity}</h3>
@@ -32,7 +32,7 @@ export function TenantChartsTab({ stats, tenantId, charts }: { stats: PublicStat
           </section>
         ) : null}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
         {charts.map((chart, i) => (
           <div key={chart.persistKey ?? i} className="card" style={{ minHeight: 400 }}>
             <DirectiveChart seed={chart} />
