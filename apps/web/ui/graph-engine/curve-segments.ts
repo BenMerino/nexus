@@ -63,7 +63,15 @@ export function buildCurveSegments(
     xMax: number,
 ): CurveSegment[] {
     /* 1. Split the defined points into raw runs. A run is a maximal
-     *    stretch of consecutive defined points sharing one dash. */
+     *    stretch of consecutive defined points sharing one dash.
+     *
+     *    DASH-BOUNDARY BRIDGE: when the dash changes between two adjacent
+     *    DEFINED points (e.g. solid observed → dashed projected), the new
+     *    run starts with the previous run's last point so the connecting
+     *    edge is drawn. Without this the curve visibly breaks at the
+     *    transition. A gap (`!defined`) gets no bridge — there the break
+     *    is intended. The bridge edge carries the NEW run's dash, so the
+     *    transition reads as the start of the projected/dashed stretch. */
     const rawRuns: { points: Pt[]; dash?: [number, number] }[] = [];
     let cur: { points: Pt[]; dash?: [number, number] } | null = null;
     for (let i = 0; i < pts.length; i++) {
@@ -72,7 +80,8 @@ export function buildCurveSegments(
         if (cur && sameDash(cur.dash, p.dash)) {
             cur.points.push({ x: p.x, y: p.y });
         } else {
-            cur = { points: [{ x: p.x, y: p.y }], dash: p.dash };
+            const bridge = cur && cur.points.length ? cur.points[cur.points.length - 1] : null;
+            cur = { points: bridge ? [bridge, { x: p.x, y: p.y }] : [{ x: p.x, y: p.y }], dash: p.dash };
             rawRuns.push(cur);
         }
     }
