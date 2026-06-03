@@ -31,6 +31,11 @@ export function useTenantData(slug: string | null) {
   useEffect(() => {
     if (!slug) return;
     const base = `/api/public/${encodeURIComponent(slug)}`;
+    // chrome (gates the shell) and analytics (fills the charts tab) are
+    // INDEPENDENT reads — fire them in PARALLEL. Previously analytics was
+    // chained inside chrome's .then, so it couldn't start until chrome's full
+    // round-trip finished (~1.3s wasted). Now both race; chrome still paints
+    // the shell the instant it lands, analytics merges whenever it arrives.
     fetch(`${base}/stats?chrome=1`)
       .then(async r => {
         if (r.status === 404) throw new Error(ES.tenantNotFound);
@@ -42,20 +47,24 @@ export function useTenantData(slug: string | null) {
         // the chrome phase (charts render empty until the analytics fetch
         // merges in); components already guard on `.length`/optional fields.
         const seeded: StatsPayload = { ...d, stats: { yearSource: [], yearByIndex: [], ...d.stats } };
-        setStatsPayload(seeded);
+        setStatsPayload(prev => prev ? { ...prev, ...seeded, stats: { ...seeded.stats, ...prev.stats } } : seeded);
         if (d.tenant.primary_color) document.body.style.setProperty('--primary', d.tenant.primary_color);
         if (d.tenant.secondary_color) document.body.style.setProperty('--secondary', d.tenant.secondary_color);
         document.title = `${d.tenant.name} — ${ES.research}`;
-        // Phase 2: heavy analytics, merged onto the chrome stats once they land.
-        fetch(`${base}/stats?analytics=1`)
-          .then(r => (r.ok ? r.json() as Promise<StatsPayload> : Promise.reject(r.status)))
-          .then(a => setStatsPayload(prev => prev ? { ...prev, stats: { ...prev.stats, ...a.stats } } : prev))
-          .catch(() => { /* charts tab shows empty; shell already painted */ });
       })
       .catch(e => {
         if (e.message === ES.tenantNotFound) setFatalError(e.message);
         else setStatsError(e.message);
       });
+
+    // Heavy analytics — fired alongside chrome, not after it. Merges onto
+    // whatever stats are present (chrome may land first or this may).
+    fetch(`${base}/stats?analytics=1`)
+      .then(r => (r.ok ? r.json() as Promise<StatsPayload> : Promise.reject(r.status)))
+      .then(a => setStatsPayload(prev => prev
+        ? { ...prev, stats: { ...prev.stats, ...a.stats } }
+        : { ...a, stats: { yearSource: [], yearByIndex: [], ...a.stats } }))
+      .catch(() => { /* charts tab shows empty; shell already painted */ });
 
     fetch(`${base}/graph`)
       .then(async r => {
