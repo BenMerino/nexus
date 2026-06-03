@@ -22,6 +22,7 @@ async function getTopJournals(tenantId, limit = 10) {
     JOIN published_in pi ON pi.venue_id = v.id
     JOIN publications d ON d.id = pi.publication_id
     WHERE v.tenant_id = ${tenantId} AND v.venue_type = 'journal' AND d.tenant_id = ${tenantId}
+      AND TRIM(COALESCE(v.name, '')) <> ''
     GROUP BY v.id, v.name
     ORDER BY count DESC LIMIT ${limit}`;
   return r.rows.map(row => ({ journal: row.journal, count: parseInt(row.count) }));
