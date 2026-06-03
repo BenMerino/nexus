@@ -1,6 +1,7 @@
 import type { GraphDirective } from '../architect/graph-composer.types';
 import type { Velocity } from './portfolio-velocity';
 import type { Cadence } from './portfolio-cadence';
+import { buildYearChart } from './tenant-year-chart';
 
 export interface YearSourceRow { year: string; source: string; count: string; }
 export interface CollabRow { value: string; count: string; }
@@ -22,73 +23,15 @@ export interface PublicStats {
   yearByIndex: YearIndexRow[];
   velocity?: Velocity;
   cadence?: Cadence;
+  /** Per-series DAILY atoms for the indexation stacked chart (real ISO per
+   *  day, per-index siblings). When present, the year chart renders as a real
+   *  time-series so the legend toggle animates a uniform drop. */
+  indexAtoms?: { atoms: IndexAtom[]; series: string[] };
 }
 
-const INDEXES = ['WoS', 'Scopus', 'SciELO', 'DOAJ'];
-
-// Window toggle positions for the publications timeline. windowDays is the
-// engine's unit; academic output is decade-scale, so offer year-equivalents.
-function pubWindowToggle(tenantId: number) {
-  return {
-    id: 'windowDays',
-    field: 'windowDays' as const,
-    valueType: 'numberOrNull' as const,
-    current: 'null',
-    options: [
-      { value: '1825', label: '5y' },
-      { value: '3650', label: '10y' },
-      { value: '7305', label: '20y' },
-      { value: 'null', label: 'All' },
-    ],
-  };
-}
-
-function buildYearChart(stats: PublicStats, tenantId?: number): GraphDirective | null {
-  const byYearTotal = new Map<string, number>();
-  for (const row of stats.yearSource) byYearTotal.set(row.year, (byYearTotal.get(row.year) || 0) + parseInt(row.count));
-  const years = [...byYearTotal.keys()].filter(Boolean).sort();
-  if (years.length <= 1) return null;
-
-  // Replay slider attaches only to the PLAIN-bar (total) chart. The
-  // stacked-bar variant reads per-series fields off each atom; our publications
-  // atoms carry only a flat `value`, so enabling the slider there empties every
-  // series (bars vanish). Per-series atoms are a follow-up (recompose would need
-  // to emit WoS/Scopus/SciELO/DOAJ counts per day). Until then, stacked = static.
-  // `persistKey` makes the window-toggle selection survive across sessions
-  // (controller mirrors it to localStorage). Stable per chart + tenant so two
-  // tenants' sliders don't share state.
-  const replay = tenantId != null
-    ? { query: { kind: 'publications', tenantId: String(tenantId), windowDays: null as number | null }, toggles: [pubWindowToggle(tenantId)], persistKey: `tenant:${tenantId}:publications` }
-    : {};
-
-  const hasIndexData = (stats.yearByIndex || []).some(r => INDEXES.includes(r.bucket));
-  if (!hasIndexData) {
-    return { type: 'bar', title: 'Publicaciones por año', xLabel: 'Año', yLabel: 'Artículos', ...replay,
-      data: years.map(y => ({ label: y, value: byYearTotal.get(y) || 0 })) };
-  }
-
-  const presentIndexes = INDEXES.filter(k =>
-    (stats.yearByIndex || []).some(r => r.bucket === k && r.count > 0));
-
-  const grid = new Map<string, Record<string, number>>();
-  for (const y of years) {
-    const z: Record<string, number> = {};
-    for (const k of presentIndexes) z[k] = 0;
-    grid.set(y, z);
-  }
-  for (const r of stats.yearByIndex) {
-    if (!r.year || !grid.has(r.year)) continue;
-    if (!presentIndexes.includes(r.bucket)) continue;
-    grid.get(r.year)![r.bucket] += r.count;
-  }
-  return {
-    type: 'stacked-bar',
-    title: 'Publicaciones por año',
-    xLabel: 'Año',
-    yLabel: 'Artículos',
-    series: presentIndexes,
-    data: years.map(y => ({ label: y, ...grid.get(y)! })),
-  };
+export interface IndexAtom {
+  key: number; iso: string; label: string; value: number;
+  [series: string]: number | string;
 }
 
 function buildTypeChart(stats: PublicStats): GraphDirective | null {

@@ -254,19 +254,6 @@ function pairSegmentsForFold(prev: StackedBarSegment[], target: StackedBarSegmen
                 if (t.isoEnd && p.iso >= t.iso && p.iso < t.isoEnd) { matchIdx = j; break; }
                 if (p.iso === t.iso) { matchIdx = j; break; }
             }
-        } else {
-            /* Data-based stacked bars (no atoms) carry NO iso — match on the
-             *  stable (seriesId, bucketIdx) instead. Without this, the iso-only
-             *  matcher pairs nothing for a data chart, so a legend toggle
-             *  (a series fading to weight 0) reads as EXIT+ENTER and animates
-             *  as a left-to-right staggered wave (`perBarAlpha` by x-rank)
-             *  instead of every bar dropping together. Matching by bucketIdx
-             *  routes it through the uniform lerp → the whole stack drops at
-             *  once, like a value change should. */
-            for (const { seg: p, idx: j } of pool) {
-                if (usedPrev.has(j) || p.iso) continue;
-                if (p.bucketIdx === t.bucketIdx) { matchIdx = j; break; }
-            }
         }
         if (matchIdx >= 0) {
             matched[i] = prev[matchIdx];

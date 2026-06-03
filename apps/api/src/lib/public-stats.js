@@ -2,6 +2,7 @@ const { sql } = require("./sql");
 const { getSummary, getByYearAndSource, getCollaborations, getCountries } = require("./dashboard-stats");
 const { listSourceIds } = require("./indexation-sources");
 const { buildTenantVelocity, buildTenantCadence } = require("./public-tenant-velocity");
+const { buildIndexationAtoms } = require("./public-stats-atoms");
 
 async function getPublicationTypes(tenantId) {
   const r = await sql`
@@ -80,7 +81,7 @@ async function getYearRange(tenantId) {
 }
 
 async function getPublicStats(scope) {
-  const [summary, yearSource, collabs, countries, types, journals, yearRange, typeByYear, yearByIndex, velocity, cadence] = await Promise.all([
+  const [summary, yearSource, collabs, countries, types, journals, yearRange, typeByYear, yearByIndex, velocity, cadence, indexAtoms] = await Promise.all([
     getSummary(scope),
     getByYearAndSource(scope),
     getCollaborations(scope),
@@ -92,8 +93,9 @@ async function getPublicStats(scope) {
     getYearByIndexation(scope.tenantId),
     buildTenantVelocity(scope.tenantId),
     buildTenantCadence(scope.tenantId),
+    buildIndexationAtoms(scope.tenantId),
   ]);
-  return { summary, yearSource, collabs, countries, types, journals, yearRange, typeByYear, yearByIndex, velocity, cadence };
+  return { summary, yearSource, collabs, countries, types, journals, yearRange, typeByYear, yearByIndex, velocity, cadence, indexAtoms };
 }
 
 module.exports = {
