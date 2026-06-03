@@ -9,7 +9,7 @@ import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import { defaultInteraction } from '../../architect/graph-composer.types.js';
 import type { ChartChrome, ChromeElement } from './chart-chrome.types.js';
 import { niceDomain } from './scales.js';
-import type { CartesianLayout } from './chart-primitives-cartesian.js';
+import { type CartesianLayout, isCurve } from './chart-primitives-cartesian.js';
 import { xAxisLabelLayout } from './ChromeXAxisBand.js';
 import { valueLabelElements } from './chrome-value-labels.js';
 import { annotationElements, annotatedIndices } from './chrome-annotations.js';
@@ -48,15 +48,33 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
             return iso ?? `idx-${i}`;
         });
         const plotW = layout.xR[1] - layout.xR[0];
+        /* Divider edges per bucket. For BARS the bucket is the band
+         *  (`positionAt`). For CURVES (line/area) the points use a
+         *  point-scale that pins the endpoints at the plot edges — a
+         *  different x-model than the band — so band edges would be
+         *  OFFSET from the point a label sits on, and `clearsDividers`
+         *  (which tests the label's point-center against its bucket
+         *  edges) wrongly drops labels near the offset boundaries. For
+         *  curves we instead build each point's bucket from the MIDPOINTS
+         *  to its neighbours, so edges and label centers share one model. */
+        const isCurveX = isCurve(chart.type);
         const baseLeadingEdgeXs = baseData.map((d: any, i: number) => {
             if (typeof d?.__xStart === 'number') {
                 return layout.xR[0] + Math.max(0, Math.min(1, d.__xStart)) * plotW;
+            }
+            if (isCurveX) {
+                const c = layout.pointAt(i);
+                return i > 0 ? (layout.pointAt(i - 1) + c) / 2 : c;
             }
             return layout.positionAt(i).x;
         });
         const baseTrailingEdgeXs = baseData.map((d: any, i: number) => {
             if (typeof d?.__xEnd === 'number') {
                 return layout.xR[0] + Math.max(0, Math.min(1, d.__xEnd)) * plotW;
+            }
+            if (isCurveX) {
+                const c = layout.pointAt(i);
+                return i < baseData.length - 1 ? (c + layout.pointAt(i + 1)) / 2 : c;
             }
             const pos = layout.positionAt(i);
             return pos.x + pos.width;
