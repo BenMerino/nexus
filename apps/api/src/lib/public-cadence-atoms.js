@@ -13,14 +13,8 @@ const { scopedPubFilter } = require("./stats-scope");
 
 const HOURS_PER_DAY = 24;
 
-function todayIso() {
-  return new Date().toISOString().split("T")[0];
-}
 function daysBetween(aIso, bIso) {
   return Math.round((Date.parse(`${bIso}T00:00:00Z`) - Date.parse(`${aIso}T00:00:00Z`)) / 86_400_000);
-}
-function addDaysIso(iso, n) {
-  return new Date(Date.parse(`${iso}T00:00:00Z`) + n * 86_400_000).toISOString().split("T")[0];
 }
 
 // Per-(day, type) counts over the full span, real ISO dates. Preprints excluded
@@ -52,18 +46,20 @@ async function buildCadenceAtoms(scope) {
   if (minIso === null) return { atoms: [], series: [], meanPerYear: 0 };
   const series = [...typesSeen].sort();
 
-  const today = todayIso();
-  const span = daysBetween(minIso, today);
-  const atoms = [];
-  for (let i = 0; i <= span; i++) {
-    const iso = addDaysIso(minIso, i);
+  // SPARSE atoms (Zincro time-series contract): one atom per day WITH data,
+  // not per calendar day. The engine's fold (bucket-sequence.ts) calendar-walks
+  // between the first and last atom and synthesizes the empty buckets itself —
+  // so pre-materializing empties only bloats the payload (utalca spans ~169y;
+  // dense was ~62k atoms, 84% empty). key = hours-since-minIso keeps the first/
+  // last real atoms anchoring the same span the dense stream did.
+  const atoms = [...byDay.keys()].sort().map((iso) => {
     const day = byDay.get(iso);
-    const atom = { key: i * HOURS_PER_DAY, iso, label: iso, value: 0 };
+    const atom = { key: daysBetween(minIso, iso) * HOURS_PER_DAY, iso, label: iso, value: 0 };
     let t = 0;
-    for (const s of series) { const n = day ? (day[s] || 0) : 0; atom[s] = n; t += n; }
+    for (const s of series) { const n = day[s] || 0; atom[s] = n; t += n; }
     atom.value = t;
-    atoms.push(atom);
-  }
+    return atom;
+  });
   // Mean per year — over the RECENT window (last MEAN_WINDOW_YEARS), matching the
   // canonical cadence methodology (portfolio-aggregates.buildCadence: total in
   // window / window). A full-span mean would divide by ~169 years of mostly-empty

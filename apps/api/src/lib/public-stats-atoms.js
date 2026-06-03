@@ -11,14 +11,8 @@ const { listSourceIds } = require("./indexation-sources");
 
 const HOURS_PER_DAY = 24;
 
-function todayIso() {
-  return new Date().toISOString().split("T")[0];
-}
 function daysBetween(aIso, bIso) {
   return Math.round((Date.parse(`${bIso}T00:00:00Z`) - Date.parse(`${aIso}T00:00:00Z`)) / 86_400_000);
-}
-function addDaysIso(iso, n) {
-  return new Date(Date.parse(`${iso}T00:00:00Z`) + n * 86_400_000).toISOString().split("T")[0];
 }
 
 // One row per (publication, day) carrying its venue's index flags. A paper counts
@@ -65,24 +59,24 @@ async function buildIndexationAtoms(tenantId) {
   const series = INDEXES.filter(k => presentSet.has(k));
   if (!series.length || minIso === null) return { atoms: [], series: [] };
 
-  // Emit one atom per DAY from earliest publication to today (zero days included),
-  // so the engine's calendar fold never has to synthesize gaps.
-  const today = todayIso();
-  const span = daysBetween(minIso, today);
-  const atoms = [];
-  for (let i = 0; i <= span; i++) {
-    const iso = addDaysIso(minIso, i);
+  // SPARSE atoms (Zincro time-series contract): one atom per day WITH data, not
+  // per calendar day. The engine's fold (bucket-sequence.ts) calendar-walks
+  // between the first and last atom and synthesizes empty buckets itself, so
+  // emitting empties only bloats the payload (utalca spans ~169y; dense was
+  // ~62k atoms, 94% empty). key = hours-since-minIso keeps the first/last real
+  // atoms anchoring the same span the dense stream did.
+  const atoms = [...byDay.keys()].sort().map((iso) => {
     const day = byDay.get(iso);
-    const atom = { key: i * HOURS_PER_DAY, iso, label: iso, value: 0 };
+    const atom = { key: daysBetween(minIso, iso) * HOURS_PER_DAY, iso, label: iso, value: 0 };
     let total = 0;
     for (const s of series) {
-      const n = day ? (day[s] || 0) : 0;
+      const n = day[s] || 0;
       atom[s] = n;
       total += n;
     }
     atom.value = total;
-    atoms.push(atom);
-  }
+    return atom;
+  });
   return { atoms, series };
 }
 
