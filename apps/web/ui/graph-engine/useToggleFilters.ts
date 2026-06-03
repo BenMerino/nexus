@@ -41,6 +41,7 @@ export function useToggleFilters(chart: GraphDirective) {
         [seriesKeys, activeSet],
     );
     const weights = useTweenedMap(targetWeights);
+    chartTrace('weights frame', { w: Object.fromEntries([...weights].map(([k, v]) => [k, +v.toFixed(2)])) }, 'weights');
 
     const filters: ToggleFilter[] = useMemo(() => {
         /* Display order: `legendOrder` first (in its order), then any
