@@ -135,12 +135,16 @@ export function GraphRender({ chart, onToggle, isLoading = false, error, onBucke
                     border: contextBorder,
                     background: contextBg,
                     backdropFilter: isChat ? 'blur(12px)' : undefined,
-                    /* `overflow: visible` so the chart canvas's
-                     * bloom-margin can paint past the card border into
-                     * surrounding space — halos visibly bleed onto
-                     * adjacent elements instead of clipping at the card
-                     * edge. */
-                    overflow: 'visible',
+                    /* Clip to the card. This was `visible` only so the
+                     * bloom halo could bleed past the border; bloom is
+                     * disabled now (BLOOM_MARGIN_PX = 0, glow default 0),
+                     * so `visible` just leaks chart content — axis labels,
+                     * radial callouts, the canvas — out of the wrapper.
+                     * The hover tooltip renders in a `position:fixed`
+                     * portal, so it still escapes regardless of clipping.
+                     * Re-enabling bloom means flipping this back to
+                     * `visible` alongside BLOOM_MARGIN_PX. */
+                    overflow: 'hidden',
                 }}
             >
                 <CardProvider cardRef={containerRef}>
