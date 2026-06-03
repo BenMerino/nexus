@@ -27,11 +27,14 @@ Light/dark follows OS `prefers-color-scheme`. A synchronous boot script (injecte
 ## N7 — Single-Language Chrome
 All user-facing UI is **English**. Exempt: proper nouns (Fondecyt, CORFO, CNA, ANID, real university/journal names), stored DB data, and CSV column matchers that must match a Spanish export header. When translating, don't break data matching — flag the migration instead of silently desyncing.
 
+## N8 — Analytics Catalog as single source
+Graphable metrics are declared **once** in `apps/api/src/services/analytics/AnalyticsCatalog.ts` (`ANALYTICS_METRICS`); the recompose registry is **generated** from it. Three sub-rules, all hard-blocked: **(a)** no chart `GraphDirective.data` shaped in `apps/web/public/**` — a chart is a server-side `compose` catalog kind rendered via `<RecomposeChart kind=…>`; **(b)** no hand-maintained kind→composer map (`PUBLIC_KINDS`/`COMPOSERS Record<string,…>`) outside the catalog — adding a chart is one catalog entry; **(c)** atom builders (`*-atoms.js`) emit **sparse** atoms (one per real-data row), never a `for(…<=span…) atoms.push` per-calendar-day walk — the fold engine synthesizes empties. Sanctioned exception: the no-index `buildYearChart` fallback (replay-slider seed, not static data) carries `arch-audit-ignore: N8`.
+
 ## Deploy
 After a task, commit and push `main` (Railway auto-deploys both services). Ask before destructive git ops (force push, `reset --hard`, branch deletion).
 
 ## Enforcement
-`scripts/arch-audit.sh` runs at pre-commit (via `.git/hooks/pre-commit` → `hooks/pre-commit-audit.sh`). **Hard-blocks:** N2 (dead-tree edits), N4 (`@vercel/postgres` / frontend DB driver), N5 (≤150 lines). **Soft-warns:** N1 (handler missing a gate), N3 (new hex / `--chart-N`). Per-file opt-out: comment `arch-audit-ignore: N1` (etc.). Run manually: `bash scripts/arch-audit.sh`. On a fresh clone, install with `cp hooks/pre-commit-audit.sh .git/hooks/pre-commit` (git hooks aren't version-controlled).
+`scripts/arch-audit.sh` runs at pre-commit (via `.git/hooks/pre-commit` → `hooks/pre-commit-audit.sh`). **Hard-blocks:** N2 (dead-tree edits), N4 (`@vercel/postgres` / frontend DB driver), N5 (≤150 lines), N8 (client chart data / off-catalog kind / dense atoms). **Soft-warns:** N1 (handler missing a gate), N3 (new hex / `--chart-N`). Per-file opt-out: comment `arch-audit-ignore: N1` (etc.). Run manually: `bash scripts/arch-audit.sh`. On a fresh clone, install with `cp hooks/pre-commit-audit.sh .git/hooks/pre-commit` (git hooks aren't version-controlled).
 
 ## On-demand subsystem guides
 Read from `.claude/rules/` when touching the area (not auto-loaded): `scope-model.md`, `db-layer.md`, `design-dna.md`, `theme.md`, `claustro-feature.md`. Doctrine: `docs/PHILOSOPHY.md`, `docs/ANTI_PATTERNS.md`, `docs/HEURISTICS.md`.

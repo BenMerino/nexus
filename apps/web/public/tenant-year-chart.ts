@@ -1,3 +1,7 @@
+// arch-audit-ignore: N8 — buildYearChart's `type:'bar'` is the SANCTIONED
+// exception: the no-index plain-bar fallback that seeds a replay-slider
+// directive (query/toggles/persistKey), whose interactive data flows through
+// the `publications` catalog kind. It is not static client-shaped chart data.
 import type { GraphDirective } from '../architect/graph-composer.types';
 import type { PublicStats } from './tenant-builders';
 

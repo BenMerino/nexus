@@ -79,6 +79,47 @@ done < <(staged | grep -E '^apps/web/.*\.(ts|tsx|js|css)$' \
                 | grep -vE '(shared|dna)\.css$' \
                 | grep -vE '(theme-config|tokens)\.ts$' || true)
 
+# ── N8 — Analytics foundation (catalog-as-source / sparse atoms) ───────────
+# N8a: client-side chart data-shaping. A GraphDirective literal with a chart
+#  `type:` in public web code means the browser is shaping chart data — it must
+#  be a server-COMPOSED catalog kind rendered via <RecomposeChart>. Opt-out
+#  (arch-audit-ignore: N8) sanctions the documented year-fallback seed.
+while IFS= read -r f; do
+  [ -z "$f" ] && continue; [ -f "$f" ] || continue
+  optout N8 "$f" && continue
+  added=$(git diff --cached -U0 -- "$f" | grep -E '^\+[^+]' || true)
+  if echo "$added" | grep -qE "type:[[:space:]]*['\"](bar|donut|line|stacked-bar|heatmap|area|pie)['\"]"; then
+    echo "N8 BLOCK  $f — chart directive shaped client-side; make it an AnalyticsCatalog compose kind + <RecomposeChart>."
+    HARD=$((HARD+1))
+  fi
+done < <(staged | grep -E '^apps/web/public/.*\.(ts|tsx)$' || true)
+
+# N8b: a chart kind registered OUTSIDE the catalog. A hand-maintained
+#  kind→composer map reintroduces the monolith the generated registry replaced.
+#  The catalog files themselves are exempt.
+while IFS= read -r f; do
+  [ -z "$f" ] && continue; [ -f "$f" ] || continue
+  optout N8 "$f" && continue
+  case "$f" in *AnalyticsCatalog.ts|*analytics-catalog.types.ts) continue;; esac
+  added=$(git diff --cached -U0 -- "$f" | grep -E '^\+[^+]' || true)
+  if echo "$added" | grep -qE "(PUBLIC_KINDS|COMPOSERS)[[:space:]]*[:=].*Record<string"; then
+    echo "N8 BLOCK  $f — chart kinds belong in ANALYTICS_METRICS; the registry derives from it (one entry, not a new map)."
+    HARD=$((HARD+1))
+  fi
+done < <(staged | grep -E '^apps/api/.*\.(ts|js)$' || true)
+
+# N8c: a dense atom builder. A `for (…; i <= span; i++) { … atoms.push }` walk
+#  pre-materializes empty calendar days the fold engine already synthesizes —
+#  composers must emit SPARSE atoms (one per real-data row).
+while IFS= read -r f; do
+  [ -z "$f" ] && continue; [ -f "$f" ] || continue
+  optout N8 "$f" && continue
+  if grep -qE "for[[:space:]]*\(.*<=[[:space:]]*span" "$f" && grep -qE "atoms\.push" "$f"; then
+    echo "N8 BLOCK  $f — dense per-day atom walk (for…<=span + atoms.push); emit sparse atoms (map real rows), the engine folds empties."
+    HARD=$((HARD+1))
+  fi
+done < <(staged | grep -E '.*-atoms\.js$' || true)
+
 [ "$SOFT" -gt 0 ] && echo "" && echo "$SOFT soft warning(s) (N1/N3) — not blocking."
 if [ "$HARD" -gt 0 ]; then
   echo ""
