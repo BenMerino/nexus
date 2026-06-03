@@ -32,10 +32,17 @@ const CAPTION: React.CSSProperties = { fontSize: 10, textTransform: 'uppercase',
 // are `observed` (solid, filled); the still-filling current year is `partial`
 // and forecast years are `projected` — the engine's status→style table dashes
 // the tail. `valueLabels` prints each count above its point.
+//
+// The partial year plots its OBSERVED `total`, not the year-fraction
+// projection: the line height, value-label, and hover tooltip must all
+// report the real count (the tooltip reads the plotted value verbatim, so
+// substituting the projection there showed an inflated number with no
+// "projected" caveat). The `partial` dashed/hollow style already signals
+// "still filling"; the trajectory lives in the dashed `projected` forecast.
 export function buildVelocityChart(v: Velocity, title: string, labels: VelocityLabels = DEFAULT_LABELS): GraphDirective {
   const hist = v.series.map(p => ({
     label: String(p.year),
-    value: p.partial && p.projected != null ? p.projected : p.total,
+    value: p.total,
     status: p.partial ? ('partial' as const) : ('observed' as const),
   }));
   const fc = (v.forecast || []).map(p => ({
