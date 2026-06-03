@@ -93,7 +93,7 @@ export function buildCartesianLayout(
     const yDom = niceDomain(0, Math.max(yMaxFromAtoms, ...allVals, 1));
     const yS = linearScale([yDom.min, yDom.max], [yR[1], yR[0]]);
 
-    const band = bandScale(labels.length, xR, isCurve ? 0 : 0.2);
+    const band = bandScale(labels, xR, isCurve ? 0 : 0.2);
     const points = pointScale(labels.length, xR);
 
     /* Atomic-flow temporal-x: when buckets carry __x (0..1 fraction
@@ -120,10 +120,10 @@ export function buildCartesianLayout(
                 return { x: x0 + pad, width: Math.max(0, w - 2 * pad) };
             }
             const cx = fromTemporalX(d.__x);
-            const w = band(i).width;
+            const w = band(labels[i]).width;
             return { x: cx - w / 2, width: w };
         }
-        return band(i);
+        return band(labels[i]);
     };
 
     const pointAt = (i: number): number => {

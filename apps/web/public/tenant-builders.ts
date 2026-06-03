@@ -44,7 +44,7 @@ function buildJournalChart(stats: PublicStats): GraphDirective | null {
     xLabel: 'Revista',
     yLabel: 'Artículos',
     data: stats.journals.map(j => ({
-      label: (j.journal || '').substring(0, 18),
+      label: j.journal || '',
       value: j.count,
     })),
   };
@@ -58,7 +58,7 @@ function buildCollabChart(stats: PublicStats): GraphDirective | null {
     title: 'Principales instituciones colaboradoras',
     xLabel: 'Institución',
     yLabel: 'Artículos en colaboración',
-    data: top.map(c => ({ label: (c.value || '').substring(0, 30), value: parseInt(c.count) })),
+    data: top.map(c => ({ label: c.value || '', value: parseInt(c.count) })),
   };
 }
 
