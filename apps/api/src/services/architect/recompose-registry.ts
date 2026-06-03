@@ -19,6 +19,7 @@
 import type { ActorContext } from "../../substrate/actor";
 import { statComposer, type ServerGraphDirective } from "./StatComposer";
 import { streamKeyOf } from "./stream-key-server";
+import { composeCadence, composeByIndex } from "./PublicationCharts";
 
 // architect-replay is legacy JS in lib/; the whole app compiles to dist/ 1:1
 // so this require resolves to the compiled sibling at runtime (tsconfig
@@ -45,9 +46,21 @@ function unknownKind(kind: string): Error & { code: string } {
 }
 
 /** Public kinds: composed from a query carrying its own tenantId, reading only
- *  tenant-public data. Delegates to the existing atom-replay builder. */
+ *  tenant-public data. `publications` is the single-series timeline (replay
+ *  slider); the time-series stacked charts (cadence, by-index) are composed by
+ *  PublicationCharts — the only path that builds them, always atom-bearing, so a
+ *  year-collapsed (scanning) shape cannot be produced. */
+// A tenant-public ActorContext: tenantId only, NO orcid → `scopedPubFilter`
+// narrows to the whole tenant (not a personal scope). The public page acts under
+// this; the researcher dashboard passes a real orcid-bearing ctx via the scoped
+// path. One composer, scope flows through ctx.
+const publicCtx = (query: PublicQuery): ActorContext =>
+  ({ tenantId: parseInt(query.tenantId, 10), orcid: null, ror: null, role: "public" } as unknown as ActorContext);
+
 const PUBLIC_KINDS: Record<string, (query: PublicQuery) => Promise<unknown>> = {
   publications: (query) => replay.recompose(query),
+  "publications.cadence": (query) => composeCadence(publicCtx(query)),
+  "publications.byIndex": (query) => composeByIndex(parseInt(query.tenantId, 10)),
 };
 
 /** Scoped kinds: composed under an ActorContext (requireScope narrowing).

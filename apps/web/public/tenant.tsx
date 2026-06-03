@@ -92,7 +92,7 @@ function App() {
               {statsPayload.stats.cadence ? (
                 <section className="card" style={{ padding: 18 }}>
                   <h3 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 16, margin: '0 0 12px' }}>{ES.charts.publicationCadence}</h3>
-                  <CadencePanel cadence={statsPayload.stats.cadence} labels={CADENCE_LABELS_ES} typeLabel={typeLabelEs} />
+                  <CadencePanel cadence={statsPayload.stats.cadence} tenantId={statsPayload.tenant.id} labels={CADENCE_LABELS_ES} typeLabel={typeLabelEs} />
                 </section>
               ) : null}
             </div>

@@ -1,8 +1,6 @@
-import React, { useMemo } from 'react';
-import { DirectiveChart } from '../ui/graph-engine/index';
-import type { GraphDirective } from '../architect/graph-composer.types';
+import React from 'react';
+import { RecomposeChart } from './recompose-chart';
 import { TYPE_DISPLAY_LABELS } from './type-labels';
-import { typeColor, typeRank } from './type-metals';
 
 export type CadenceSegment = { type: string; count: number };
 export type CadencePoint = { year: number; count: number; segments: CadenceSegment[] };
@@ -16,44 +14,15 @@ const DEFAULT_LABELS: CadenceLabels = { avgPerYear: 'papers / year (avg)' };
 const FIGURE: React.CSSProperties = { fontFamily: 'var(--display)', fontSize: 42, letterSpacing: '-0.02em', color: 'var(--accent)', lineHeight: 1 };
 const CAPTION: React.CSSProperties = { fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 };
 
-// Publication cadence — stacked bar by work type per year. Colors bind to the
-// type IDENTITY via `seriesColorMap`; `series`/`legendOrder` sort by metal rank;
-// the mean rides in as a threshold. Each point carries a flat `value` = year
-// total so the engine's single-series value label prints the stack total.
-export function buildCadenceChart(c: Cadence, title: string, typeLabel: (t: string) => string): GraphDirective {
-  const ordered = [...c.types].sort((a, b) => typeRank(a) - typeRank(b));
-  const data = c.series.map(p => {
-    const row: Record<string, string | number> = { label: String(p.year), value: p.count };
-    for (const seg of p.segments) row[seg.type] = seg.count;
-    return row;
-  });
-  return {
-    type: 'stacked-bar',
-    title,
-    xLabel: 'Year',
-    yLabel: 'Papers',
-    series: ordered,
-    legendOrder: ordered,
-    legendLabels: Object.fromEntries(ordered.map(t => [t, typeLabel(t)])),
-    colorScheme: {
-      sentiment: 'neutral',
-      primary: typeColor(ordered[0] || 'unknown'),
-      fill: typeColor(ordered[0] || 'unknown'),
-      seriesColorMap: Object.fromEntries(ordered.map(t => [t, typeColor(t)])),
-    },
-    thresholds: [{ value: c.meanPerYear, label: c.meanPerYear.toFixed(1), color: 'var(--fg-dim)' }],
-    valueLabels: true,
-    data: data as any,
-  };
-}
-
-export function CadencePanel({ cadence, labels = DEFAULT_LABELS, typeLabel = defaultTypeLabel }: {
-  cadence: Cadence; labels?: CadenceLabels; typeLabel?: (t: string) => string;
+// Publication cadence — papers per period by work-type. The CHART directive is
+// SERVER-COMPOSED (PublicationCharts.composeCadence → per-day ISO atoms), fetched
+// by kind via RecomposeChart. The panel owns only the headline figure (mean per
+// year, from stats); it no longer builds the chart, so it cannot down-sample the
+// date into a year-collapsed (scanning) shape.
+export function CadencePanel({ cadence, tenantId, labels = DEFAULT_LABELS, typeLabel = defaultTypeLabel }: {
+  cadence: Cadence; tenantId?: number; labels?: CadenceLabels; typeLabel?: (t: string) => string;
 }) {
-  const seed = useMemo(
-    () => buildCadenceChart(cadence, labels.avgPerYear, typeLabel),
-    [cadence, labels.avgPerYear, typeLabel],
-  );
+  void typeLabel;
   if (!cadence.series.length) {
     return <p style={{ color: 'var(--fg-muted)' }}>No publication years on record.</p>;
   }
@@ -63,7 +32,13 @@ export function CadencePanel({ cadence, labels = DEFAULT_LABELS, typeLabel = def
         <div style={FIGURE}>{cadence.meanPerYear.toFixed(1)}</div>
         <div style={CAPTION}>{labels.avgPerYear}</div>
       </div>
-      <DirectiveChart seed={seed} />
+      {/* Public tenant page passes tenantId → tenant-wide composed cadence.
+          The authenticated researcher dashboard's per-ORCID cadence routes
+          through the scoped /charts path (a follow-up); until then it shows
+          only the headline figure. */}
+      {tenantId != null
+        ? <RecomposeChart kind="publications.cadence" tenantId={tenantId} />
+        : null}
     </div>
   );
 }
