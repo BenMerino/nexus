@@ -76,21 +76,45 @@ day/week/month/year honestly, no synthetic-date hacks. The current year-only
 charts are purely an artifact of the query slicing `SUBSTRING(published,1,4)`;
 the fix is to read the full date. The 3 non-full rows are filtered out.
 
-## STATUS (paused 2026-05-25)
+## STATUS (re-verified 2026-06-03 — earlier "paused" status was stale)
+
+The 2026-05-25 pause note below is **superseded**: later, undocumented work
+solved the stacked blocker AND built all of Phase 5. Verified state today:
 
 Done + deployed:
 - White charts fixed (palette tokens in shared.css).
 - Backend live: `GET /api/architect/timeline-span/:tenantId/:kind`,
-  `POST /api/architect/recompose` (publications kind, day→hour-key atoms).
-- Slider wired on PLAIN-bar publications charts via `tenant-replay-chart.tsx`
-  (loads all-time atoms once, folds locally).
+  `POST /api/architect/recompose` via a **kind registry**
+  (`apps/api/src/services/architect/recompose-registry.ts`) with three kinds:
+  `publications` (flat atoms), `publications.byIndex` (**per-series atoms** —
+  WoS/Scopus/SciELO/DOAJ siblings, `public-stats-atoms.js:49-87`), and
+  `publications.cadence`.
+- **The "stacked blocker" is SOLVED.** `publications.byIndex` already emits the
+  per-series atom shape (`atom[seriesKey]`) the stacked renderer needs
+  (`place-atoms.ts` `seriesValues`). It just renders via one-shot `RecomposeChart`
+  with no slider/toggles wired — the data is ready, the controller wiring isn't.
+- **Phase 5 is DONE**: migration `010_user_ui_prefs.sql`, `GET/PUT
+  /api/user-ui-prefs/:scopeKey`, `db-ui-prefs.js`, and the `useUserUiPref` hook
+  all exist and are live.
 
-Paused here. Known gap: the slider is attached only to plain-bar charts.
-**UTalca's year chart is STACKED (WoS/Scopus/SciELO/DOAJ)** so it has NO slider —
-flat-value atoms empty the stacked series. To finish: add a per-series recompose
-variant emitting per-day counts per index (data is per-record via `indexed_in`
-tags, date-joinable), so stacked charts get a working slider with series intact.
-Then resume phases 5 (user-ui-prefs) and 6 (other charts, drill-down).
+Actual remaining work (see this session's plan):
+- **A. Toggle builder** — Nexus has NO `graph-toggles.ts`; port Zincro's
+  `rangeToggle`/`granularityToggle`/`rangeAndGranularityToggles` (types
+  `ToggleSpec`/`GraphQuery` + `eligibleFoldUnits` already exist locally). Adds
+  the granularity/fold pills (today only a hand-built range toggle exists).
+- **B. Wire the stacked byIndex chart** through the controlled `DirectiveChart`
+  path (give it `query` + toggles) instead of `RecomposeChart` → slider on the
+  UTalca year chart.
+- **C. New temporal sources** — citation velocity is still a static directive;
+  needs a citations-by-day atom builder + kind. Type-by-year heatmap can gain
+  year↔decade fold toggles.
+- **D. Persist toggle/feature state** via the existing `useUserUiPref` (auth
+  pages only — public tenant page is anonymous).
+- **PREREQUISITE for the velocity score**: the engine has no flat single-value
+  `metric`/`stat` chart type (gauge/progress-ring need an arc max; a raw score
+  like 140405.50 has none). The "Citation velocity / 140405.50 / score" block is
+  hand-built JSX in `VelocityPanel`, outside the engine — port Zincro's KPI/stat
+  type first so it becomes a directive that inherits title + caption mechanics.
 
 ## Risk / honesty
 - Largest risk is Phase 4 wiring: the engine's `sliderActive` needs
