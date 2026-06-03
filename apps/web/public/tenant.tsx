@@ -1,14 +1,10 @@
-import React, { useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { AuthorsTable } from './tenant-authors';
-// Lazy: TenantGraph pulls in d3-force (~0.8s of bundle parse). The graph tab
-// is seen-gated and rarely the first view, so keep it OFF the critical path —
-// it loads only when the tab is actually opened.
-const TenantGraph = lazy(() => import('./tenant-graph').then(m => ({ default: m.TenantGraph })));
 import { buildTenantCharts } from './tenant-builders';
 import { TenantChartsTab } from './tenant-charts-tab';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
-import { SummaryCards, SectionPlaceholder, TabPane } from './tenant-summary';
+import { SummaryCards, TabPane } from './tenant-summary';
 import { TenantOrgTree } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { ES } from './tenant-i18n';
@@ -20,7 +16,6 @@ perfMark('boot'); // module evaluated — bundles parsed, app about to mount
 const NAV: PublicNavItem[] = [
   { id: 'overview',  label: ES.nav.overview },
   { id: 'charts',    label: ES.nav.charts },
-  { id: 'graph',     label: ES.nav.graph },
   { id: 'org-tree',  label: ES.nav.orgTree },
   { id: 'authors',   label: ES.nav.authors },
 ];
@@ -33,7 +28,7 @@ function initialTabFromHash(): string {
 
 function App() {
   const [slug] = useState<string | null>(() => readSlugFromUrl());
-  const { statsPayload, graphPayload, statsError, graphError, fatalError } = useTenantData(slug);
+  const { statsPayload, statsError, fatalError } = useTenantData(slug);
   const [active, setActive] = useState<string>(initialTabFromHash);
   const [seen, setSeen] = useState<Set<string>>(() => new Set([active]));
 
@@ -101,14 +96,6 @@ function App() {
 
           <TabPane id="charts" {...paneProps}>
             <TenantChartsTab stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} />
-          </TabPane>
-
-          <TabPane id="graph" {...paneProps}>
-            {graphPayload
-              ? <Suspense fallback={<SectionPlaceholder label={ES.collaborationGraph} />}>
-                  <TenantGraph nodes={graphPayload.graph.nodes} edges={graphPayload.graph.edges} />
-                </Suspense>
-              : <SectionPlaceholder label={ES.collaborationGraph} error={graphError} />}
           </TabPane>
 
           <TabPane id="org-tree" {...paneProps}>
