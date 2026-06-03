@@ -10,6 +10,9 @@ import { TenantOrgTree } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { ES } from './tenant-i18n';
 import { bootStreamBridge } from '../architect/websocket-connector';
+import { perfMark, perfAutoFlush } from './perf-beacon';
+
+perfMark('boot'); // module evaluated — bundles parsed, app about to mount
 
 const NAV: PublicNavItem[] = [
   { id: 'overview',  label: ES.nav.overview },
@@ -41,6 +44,18 @@ function App() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  // Perf beacon: 'shell' = first paint with chrome (header/nav/overview),
+  // 'analytics' = heavy chart data merged in. The gap between them, and how
+  // long after 'analytics' the page settles, is the load story we're capturing.
+  useEffect(() => {
+    if (!statsPayload) return;
+    perfMark('shell');
+    // velocity arrives only with the analytics merge — use it as the marker
+    // that the heavy phase landed (chrome seed has no velocity).
+    if (statsPayload.stats.velocity) perfMark('analytics');
+    if (slug) perfAutoFlush(slug);
+  }, [statsPayload, slug]);
 
   const navigate = (id: string) => {
     setActive(id);

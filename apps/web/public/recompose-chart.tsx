@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { DirectiveChart } from '../ui/graph-engine/index';
 import type { GraphDirective } from '../architect/graph-composer.types';
+import { perfMark } from './perf-beacon';
 
 /* Renders a SERVER-COMPOSED chart directive — the blessed path for time-series
  * charts: the directive (per-day ISO atoms) is built by the Composer
@@ -43,6 +44,9 @@ export function RecomposeChart({ kind, tenantId, minHeight = 360 }: { kind: stri
     }),
     [kind, tenantId],
   );
+  // Perf beacon: mark when THIS chart's directive resolves — the per-kind
+  // timing exposes the "charts fill one by one" stagger.
+  useEffect(() => { if (directive || failed) perfMark(`chart:${kind}`); }, [directive, failed, kind]);
   return <ComposedView directive={directive} failed={failed} minHeight={minHeight} />;
 }
 
