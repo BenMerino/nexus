@@ -45,7 +45,13 @@ export function useContainerSize(ref: React.RefObject<HTMLElement | null>): Cont
     useLayoutEffect(() => {
         const el = ref.current;
         if (!el) return;
-        const w = Math.round(el.getBoundingClientRect().width);
+        // Measure the CONTENT box (clientWidth) to match the ResizeObserver,
+        // which reads entry.contentRect.width. getBoundingClientRect() returns
+        // the BORDER box — with the container's 1px border that's 2px wider, so
+        // the first paint measured border-box then the observer corrected to
+        // content-box → a phantom resize that SNAPped every chart ~600ms after
+        // load (the "bounce"). Both paths now read content-box; no settle.
+        const w = Math.round(el.clientWidth);
         if (w > 0) {
             setSize(prev => {
                 const next = dimsFromWidth(w);
