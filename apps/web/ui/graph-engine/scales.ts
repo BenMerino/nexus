@@ -23,20 +23,20 @@ export function pointScale(n: number, range: [number, number]) {
     return (i: number) => r0 + i * step;
 }
 
-/** Band scale: maps categorical labels → { x, width } bands. Inner gap
- * between bands is `padding` × bandWidth; the first band's left edge
- * sits at r0 and the last band's right edge at r1 (no outer padding),
- * so bars touch the plot-area walls. */
-export function bandScale(labels: string[], range: [number, number], padding = 0.2) {
+/** Band scale: maps a categorical slot INDEX → { x, width } band. Inner gap
+ * between bands is `padding` × bandWidth; the first band's left edge sits at
+ * r0 and the last band's right edge at r1 (no outer padding), so bars touch
+ * the plot-area walls. Keyed by index, not label: two slots with identical
+ * labels (e.g. titles truncated to the same prefix) must still get distinct
+ * bands rather than collapsing onto one. */
+export function bandScale(n: number, range: [number, number], padding = 0.2) {
     const [r0, r1] = range;
-    const n = labels.length;
-    if (n === 0) return (_label: string) => ({ x: r0, width: 0 });
+    if (n === 0) return (_i: number) => ({ x: r0, width: 0 });
     const total = r1 - r0;
     const innerCount = Math.max(0, n - 1);
     const bandW = total / (n + innerCount * padding);
     const gap = bandW * padding;
-    const map = new Map(labels.map((l, i) => [l, { x: r0 + i * (bandW + gap), width: bandW }]));
-    return (label: string) => map.get(label) ?? { x: r0, width: bandW };
+    return (i: number) => ({ x: r0 + i * (bandW + gap), width: bandW });
 }
 
 
