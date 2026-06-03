@@ -143,12 +143,25 @@ export function XAxisBand({
                 if (cx < range[0] - 1 || cx > range[1] + 1) return null;
                 const display = l.length > maxChars ? l.slice(0, maxChars - 1) + '…' : l;
                 const key = keys?.[i] ?? l;
+                /* Edge-aware anchoring. For curves the first/last points sit
+                 *  AT the plot edges (xR[0]/xR[1]); a centered label there
+                 *  overhangs — left into the y-axis gutter, right past the
+                 *  plot. When a non-rotated label's center is within half
+                 *  its rendered width of an edge, anchor it INWARD so the
+                 *  glyphs stay inside the plot: `start` at the left edge,
+                 *  `end` at the right. Interior labels stay centered. */
+                const halfW = (display.length * TICK_FONT_AVG_CHAR_PX) / 2;
+                const anchor = rotate
+                    ? 'end'
+                    : cx - halfW < range[0] ? 'start'
+                    : cx + halfW > range[1] ? 'end'
+                    : 'middle';
                 const transform = rotate
                     ? `translate(${cx}px, ${y + 14}px) rotate(-40deg)`
                     : `translate(${cx}px, ${y + 14}px)`;
                 return (
                     <text key={key}
-                        textAnchor={rotate ? 'end' : 'middle'}
+                        textAnchor={anchor}
                         fill={TICK_COLOR} fontSize={TICK_FONT} fontWeight={TICK_WEIGHT}
                         style={{ transform, transition: LABEL_TRANSITION }}>
                         {display}
