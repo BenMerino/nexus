@@ -19,25 +19,14 @@
 import type { ActorContext } from "../../substrate/actor";
 import { statComposer, type ServerGraphDirective } from "./StatComposer";
 import { streamKeyOf } from "./stream-key-server";
-import { composeCadence, composeByIndex } from "./PublicationCharts";
-
-// architect-replay is legacy JS in lib/; the whole app compiles to dist/ 1:1
-// so this require resolves to the compiled sibling at runtime (tsconfig
-// allowJs). Typed loosely — it predates the TS migration.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const replay = require("../../lib/architect-replay") as {
-  recompose: (query: PublicQuery) => Promise<ServerGraphDirective & { atoms: unknown[]; query: PublicQuery }>;
-};
+import { ANALYTICS_METRICS } from "../analytics/AnalyticsCatalog";
+import type { CatalogQuery } from "../analytics/analytics-catalog.types";
 
 export type AccessClass = "public" | "scoped";
 
-export interface PublicQuery {
-  kind: string;
-  tenantId: string;
-  windowDays?: number | null;
-  asOf?: string;
-  foldUnit?: string;
-}
+// The wire query is the catalog query; alias kept for the existing handler
+// imports (PublicQuery) so call sites don't churn.
+export type PublicQuery = CatalogQuery;
 
 function unknownKind(kind: string): Error & { code: string } {
   const e = new Error(`Unknown chart kind: ${kind}`) as Error & { code: string };
@@ -45,23 +34,14 @@ function unknownKind(kind: string): Error & { code: string } {
   return e;
 }
 
-/** Public kinds: composed from a query carrying its own tenantId, reading only
- *  tenant-public data. `publications` is the single-series timeline (replay
- *  slider); the time-series stacked charts (cadence, by-index) are composed by
- *  PublicationCharts — the only path that builds them, always atom-bearing, so a
- *  year-collapsed (scanning) shape cannot be produced. */
-// A tenant-public ActorContext: tenantId only, NO orcid → `scopedPubFilter`
-// narrows to the whole tenant (not a personal scope). The public page acts under
-// this; the researcher dashboard passes a real orcid-bearing ctx via the scoped
-// path. One composer, scope flows through ctx.
-const publicCtx = (query: PublicQuery): ActorContext =>
-  ({ tenantId: parseInt(query.tenantId, 10), orcid: null, ror: null, role: "public" } as unknown as ActorContext);
-
-const PUBLIC_KINDS: Record<string, (query: PublicQuery) => Promise<unknown>> = {
-  publications: (query) => replay.recompose(query),
-  "publications.cadence": (query) => composeCadence(publicCtx(query)),
-  "publications.byIndex": (query) => composeByIndex(parseInt(query.tenantId, 10)),
-};
+/** Public kinds, GENERATED from the AnalyticsCatalog — the registry is derived,
+ *  not hand-maintained, so a chart cannot exist outside the catalog and no
+ *  monolithic stat blob can re-form. Adding a public chart = one catalog entry.
+ *  Each entry's `compose` reads only tenant-public data (its query carries
+ *  tenantId); a scoped kind hitting the public endpoint is refused below. */
+const PUBLIC_KINDS: Record<string, (query: CatalogQuery) => Promise<unknown>> = Object.fromEntries(
+  ANALYTICS_METRICS.filter((m) => m.access === "public").map((m) => [m.kind, m.compose]),
+);
 
 /** Scoped kinds: composed under an ActorContext (requireScope narrowing).
  *  Delegates to the existing StatComposer registry — single source of the

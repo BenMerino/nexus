@@ -1,0 +1,75 @@
+import { composeCadence, composeByIndex } from "../architect/PublicationCharts";
+import type { ActorContext } from "../../substrate/actor";
+import type { AnalyticsMetric, CatalogQuery } from "./analytics-catalog.types";
+
+export type { AnalyticsMetric, AnalyticsSurface } from "./analytics-catalog.types";
+
+/* ── AnalyticsCatalog ───────────────────────────────────────
+ * Single source of truth for "what metrics can this platform graph?"
+ *
+ * Each entry is one row of the catalog that previously lived scattered across
+ * recompose-registry's PUBLIC_KINDS map and StatComposer's COMPOSERS map.
+ * Collapsing those into one manifest makes adding a chart a one-entry change:
+ * the recompose registry is GENERATED from this array, so no kind can exist
+ * outside it and no monolithic stat blob can re-form.
+ *
+ * The catalog stays a manifest, not a Logic file — compose functions live in
+ * their domain homes (PublicationCharts, StatComposer); this file references
+ * them. `legacyReplay` resolves the compiled JS replay composer at runtime
+ * (architect-replay.js predates the TS migration).
+ *
+ * Ordered: `overview`-surfaced rows render in this order.
+ * ──────────────────────────────────────────────────────────── */
+
+// architect-replay is legacy JS in lib/; the whole app compiles to dist/ 1:1,
+// so this require resolves to the compiled sibling at runtime (tsconfig allowJs).
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const replay = require("../../lib/architect-replay") as {
+  recompose: (query: CatalogQuery) => Promise<unknown>;
+};
+
+// A tenant-public ActorContext from a wire query: tenantId only, no orcid →
+// the composer's scope filter narrows to the whole tenant (not a person).
+const publicCtx = (q: CatalogQuery): ActorContext =>
+  ({ tenantId: parseInt(q.tenantId, 10), orcid: null, ror: null, role: "public" } as unknown as ActorContext);
+
+export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
+  {
+    kind: "publications",
+    domain: "publication",
+    title: "Publications by Year",
+    description: "Per-day publication counts as a replayable timeline (window slider).",
+    queryShape: "range",
+    access: "public",
+    compose: (q) => replay.recompose(q),
+    invalidatedBy: ["publication.upserted", "ingestion.completed"],
+    surfaces: ["overview"],
+  },
+  {
+    kind: "publications.cadence",
+    domain: "publication",
+    title: "Publication Cadence",
+    description: "Papers per period by work-type, as per-day atoms folded at render.",
+    queryShape: "none",
+    access: "public",
+    compose: (q) => composeCadence(publicCtx(q)),
+    invalidatedBy: ["publication.upserted", "ingestion.completed"],
+    surfaces: ["overview"],
+  },
+  {
+    kind: "publications.byIndex",
+    domain: "publication",
+    title: "Publicaciones por año (indexed)",
+    description: "Per-day publication counts stacked by index source (WoS/Scopus/SciELO/DOAJ).",
+    queryShape: "none",
+    access: "public",
+    compose: (q) => composeByIndex(parseInt(q.tenantId, 10)),
+    invalidatedBy: ["publication.upserted", "ingestion.completed", "venue.indexationUpdated"],
+    surfaces: ["overview"],
+  },
+];
+
+/** Lookup one metric by kind. */
+export function getMetric(kind: string): AnalyticsMetric | undefined {
+  return ANALYTICS_METRICS.find((m) => m.kind === kind);
+}
