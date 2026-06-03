@@ -34,6 +34,15 @@ export function useUserUiPref<T>(
 
     useEffect(() => {
         let cancelled = false;
+        /* Empty scopeKey → nothing to persist (e.g. a client-built chart with
+         *  no `query.kind`, so no per-chart feature namespace). Skip the fetch
+         *  entirely; `/api/user-ui-prefs/` with no key 404s. Stay on the
+         *  default, report 'ready' (there IS no server pref to load). */
+        if (!scopeKey) {
+            setValue(defaultRef.current);
+            setStatus('ready');
+            return;
+        }
         setStatus('loading');
         apiGet<PrefResponse<T> | null>(`/api/user-ui-prefs/${encodeURIComponent(scopeKey)}`)
             .then(res => {
@@ -55,6 +64,7 @@ export function useUserUiPref<T>(
 
     const update = useCallback((next: T) => {
         setValue(next);
+        if (!scopeKey) return; // no namespace → local-only, never PUT to /…/
         if (writeTimer.current) clearTimeout(writeTimer.current);
         writeTimer.current = setTimeout(() => {
             apiPut(`/api/user-ui-prefs/${encodeURIComponent(scopeKey)}`, { value: next })
