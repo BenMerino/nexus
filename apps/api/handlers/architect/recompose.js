@@ -14,7 +14,11 @@ const { recomposePublic } = require("../../src/services/architect/recompose-regi
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   await ensureSchema();
-  const query = req.body || {};
+  // Accept BOTH shapes: the body AS the query ({kind, tenantId, ...}) and the
+  // wrapped form ({query: {...}}). Two callers historically disagreed — the
+  // controller's recompose-client wraps; the public RecomposeChart sends flat.
+  const body = req.body || {};
+  const query = body.query && typeof body.query === "object" ? body.query : body;
   if (!query.kind || query.tenantId == null) {
     return res.status(400).json({ error: "query.kind and query.tenantId are required" });
   }

@@ -16,10 +16,11 @@ export function RecomposeChart({ kind, tenantId, minHeight = 360 }: { kind: stri
     let cancelled = false;
     // Tenant-public only. Researcher-scoped charts go through the authenticated
     // /charts path, never this anonymous endpoint (no orcid param honored here).
+    // The handler reads the body AS the query (unwrapped {kind, tenantId, ...}).
     fetch('/api/architect/recompose', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: { kind, tenantId: String(tenantId) } }),
+      body: JSON.stringify({ kind, tenantId: String(tenantId) }),
     })
       .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((d: GraphDirective | null) => { if (!cancelled) setDirective(d && (d as any).atoms ? d : null); })
