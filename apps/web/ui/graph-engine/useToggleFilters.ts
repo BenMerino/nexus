@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { cs, seriesColorFor } from './svg-parts.js';
 import { useTweenedMap } from '../primitives/tween.js';
-import { traceEvent } from './chart-trace.js';
+import { chartTrace } from './chart-trace.js';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import type { ToggleFilter } from './graph-spatial.types.js';
 
@@ -29,10 +29,10 @@ export function useToggleFilters(chart: GraphDirective) {
     ), [chart.series, chart.type, chart.data]);
 
     const [activeSet, setActiveSet] = useState<Set<string>>(() => {
-        // TRACE: runs once per MOUNT of useToggleFilters. If this fires on a
-        // toggle, useToggleFilters remounted → activeSet reset to all-active
-        // (= the "reload" + lost deselection).
-        traceEvent('useToggleFilters INIT activeSet', `keys=${seriesKeys.join(',')}`);
+        // Runs once per MOUNT of useToggleFilters. If this fires on a toggle,
+        // the hook remounted → activeSet reset to all-active (= the "reload" +
+        // lost deselection).
+        chartTrace('toggleFilters INIT activeSet', { keys: seriesKeys }, 'charts');
         return new Set(seriesKeys);
     });
 
@@ -61,13 +61,13 @@ export function useToggleFilters(chart: GraphDirective) {
     }, [seriesKeys, activeSet, scheme, chart.legendOrder, chart.legendLabels]);
 
     const toggle = useCallback((key: string) => {
-        traceEvent('legend TOGGLE click', `key=${key}`);
+        chartTrace('legend TOGGLE click', { key }, 'charts');
         setActiveSet(prev => {
             const next = new Set(prev);
             if (next.has(key)) next.delete(key);
             else next.add(key);
             if (next.size === 0) return prev;
-            traceEvent('activeSet updated', `active=${[...next].join(',')}`);
+            chartTrace('activeSet updated', { active: [...next] }, 'charts');
             return next;
         });
     }, []);

@@ -12,8 +12,6 @@ import { TenantOrgTree } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { ES, typeLabelEs, VELOCITY_LABELS_ES, CADENCE_LABELS_ES } from './tenant-i18n';
 import { bootStreamBridge } from '../architect/websocket-connector';
-import { ChartTraceOverlay } from '../ui/graph-engine/ChartTraceOverlay';
-import { traceInstallFetchProbe } from '../ui/graph-engine/chart-trace';
 
 const NAV: PublicNavItem[] = [
   { id: 'overview',  label: ES.nav.overview },
@@ -75,7 +73,6 @@ function App() {
 
   return (
     <div className="public-app">
-      <ChartTraceOverlay />
       <TenantPublicHeader tenant={statsPayload.tenant} items={NAV} currentId={active}
         onNavigate={navigate} yearRange={statsPayload.stats.yearRange} />
       <main className="public-main">
@@ -141,6 +138,3 @@ mount();
 // Open the directive Stream bridge so charts go live (isLive) and re-push on
 // ingestion. Idempotent; falls back to HTTP recompose when the socket is down.
 bootStreamBridge();
-// TEMP diagnostic: with ?charttrace=1, log /api fetches + WS opens so a toggle
-// reveals whether it hits the network. No-op otherwise. Remove with chart-trace.
-traceInstallFetchProbe();

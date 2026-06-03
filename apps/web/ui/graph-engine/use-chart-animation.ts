@@ -21,7 +21,12 @@ import {
     computeCurrentEasedChrome,
 } from './chart-animation-phase.js';
 import { classifyGesture, pickDurations } from './chart-animation-setup.js';
-import { traceEvent, traceMountId } from './chart-trace.js';
+import { chartTrace } from './chart-trace.js';
+
+/* Monotonic instance counter — a NEW mountId in the trace on a toggle means
+ * the component remounted (refs discarded, useState re-init → snap, not
+ * tween): the "reload". Same mountId across a toggle = it animated. */
+let __mountSeq = 0;
 
 export interface ChartAnimationOpts<State> {
     family: AnimatedFamily<State>;
@@ -117,13 +122,10 @@ export function useChartAnimation<State>(opts: ChartAnimationOpts<State>): Chart
      * semantic. Series/data changes still tween normally. */
     const prevWHRef = useRef<{ w: number; h: number }>({ w: width, h: height });
 
-    /* TRACE: this ref is created once per MOUNT. If a legend toggle makes a
-     *  NEW mountId appear, the component remounted (= the "reload": refs
-     *  discarded, useState initializer re-run, snap instead of tween). */
     const mountIdRef = useRef<number>(0);
-    if (mountIdRef.current === 0) mountIdRef.current = traceMountId();
+    if (mountIdRef.current === 0) mountIdRef.current = ++__mountSeq;
     const [primitives, setPrimitives] = useState<Primitive[]>(() => {
-        traceEvent('useChartAnimation MOUNT', `mountId=${mountIdRef.current} type=${(chart as { type?: string }).type ?? '?'}`);
+        chartTrace('animation MOUNT', { mountId: mountIdRef.current, type: (chart as { type?: string }).type ?? '?' }, 'anim');
         const t = family.sample(chart, layout);
         startRef.current = t;
         targetRef.current = t;
@@ -158,7 +160,7 @@ export function useChartAnimation<State>(opts: ChartAnimationOpts<State>): Chart
         /* First mount and resize always snap — no prior state to tween
          *  from. */
         if (isFirstEffectRef.current || sizeChanged) {
-            traceEvent('anim SNAP', `mountId=${mountIdRef.current} ${isFirstEffectRef.current ? 'firstEffect' : 'sizeChanged'}`);
+            chartTrace('animation SNAP', { mountId: mountIdRef.current, reason: isFirstEffectRef.current ? 'firstEffect' : 'sizeChanged' }, 'anim');
             isFirstEffectRef.current = false;
             if (rafRef.current != null) {
                 cancelAnimationFrame(rafRef.current);
@@ -183,7 +185,7 @@ export function useChartAnimation<State>(opts: ChartAnimationOpts<State>): Chart
         const foldChanged = prevFoldUnitRef.current !== undefined && currentFoldUnit !== prevFoldUnitRef.current;
         prevFoldUnitRef.current = currentFoldUnit;
         const gesture = classifyGesture(isInstant, foldChanged, inGestureRef.current);
-        traceEvent('anim TWEEN', `mountId=${mountIdRef.current} ${gesture.continues ? 'continue' : gesture.discrete ? 'discrete' : 'start/end'} instant=${isInstant}`);
+        chartTrace('animation TWEEN', { mountId: mountIdRef.current, kind: gesture.continues ? 'continue' : gesture.discrete ? 'discrete' : 'start/end', instant: isInstant }, 'anim');
         inGestureRef.current = isInstant && !foldChanged;
 
         let durations: PhaseDurations;
