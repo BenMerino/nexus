@@ -40,9 +40,13 @@ async function upsertInstitutions(tenantId, tags, record) {
     for (const aff of a.affiliations) {
       const ror = aff && typeof aff === "object" ? normRor(aff.ror) : null;
       if (!ror) continue;
+      // Normalize country onto the institution (the donut's source — replaces
+      // shredding the affiliations JSON at read time). COALESCE on conflict so
+      // a later record lacking country never clears a known one.
+      const country = aff.country || null;
       await sql`
-        INSERT INTO institutions (ror, name, tenant_id) VALUES (${ror}, ${aff.name || ror}, ${tenantId})
-        ON CONFLICT (ror, tenant_id) DO UPDATE SET name = EXCLUDED.name`;
+        INSERT INTO institutions (ror, name, country, tenant_id) VALUES (${ror}, ${aff.name || ror}, ${country}, ${tenantId})
+        ON CONFLICT (ror, tenant_id) DO UPDATE SET name = EXCLUDED.name, country = COALESCE(institutions.country, EXCLUDED.country)`;
     }
   }
 }

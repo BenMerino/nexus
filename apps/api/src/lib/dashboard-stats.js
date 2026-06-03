@@ -56,25 +56,20 @@ async function getCollaborations(scope) {
 
 async function getCountries(scope) {
   if (!scope) throw new Error("getCountries requires scope");
+  // Country counts via the NORMALIZED entity model: publications → affiliated_with
+  // → institutions.country, a plain indexed join + GROUP BY. Replaces the old
+  // path that shredded the 57MB denormalized `affiliations` JSON on every read
+  // (~1s). Country is now persisted on `institutions` at ingest by the
+  // InstitutionGovernor, so reading it is the same cheap join as collaborators.
   const f = scopedPubFilter(scope);
-  // Country counts computed IN SQL — unnest the affiliations JSON (array of
-  // authors, each with an affiliations[] carrying a country) via
-  // jsonb_array_elements and GROUP BY, instead of JSON.parse-ing every row in
-  // JS (was the slowest public chart: ~3s on a wide tenant). `affiliations` is
-  // TEXT holding JSON; cast to jsonb. Malformed rows are skipped by the
-  // `jsonb_typeof = 'array'` guards rather than a try/catch.
   const r = await sql.query(
-    `SELECT aff->>'country' AS country, COUNT(*) AS count
-       FROM publications p,
-            jsonb_array_elements(p.affiliations::jsonb) AS author,
-            jsonb_array_elements(
-              CASE WHEN jsonb_typeof(author->'affiliations') = 'array'
-                   THEN author->'affiliations' ELSE '[]'::jsonb END) AS aff
-      WHERE p.affiliations IS NOT NULL
-        AND jsonb_typeof(p.affiliations::jsonb) = 'array'
-        AND aff->>'country' IS NOT NULL
+    `SELECT i.country AS country, COUNT(DISTINCT p.id) AS count
+       FROM publications p
+       JOIN affiliated_with aw ON aw.publication_id = p.id
+       JOIN institutions i ON i.id = aw.institution_id
+      WHERE i.country IS NOT NULL AND i.country <> ''
         AND ${f.where}
-      GROUP BY aff->>'country'
+      GROUP BY i.country
       ORDER BY count DESC
       LIMIT 20`, f.params);
   return r.rows.map((row) => ({ country: row.country, count: parseInt(row.count) }));
