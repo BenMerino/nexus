@@ -179,7 +179,7 @@ export const animatedArea: AnimatedFamily<AreaState> = {
         }
         appendHoverRails(out, state.xs, state.plotYR, (i) => ({
             idx: i, label: state.labels[i], value: state.values[i],
-        }));
+        }), ys);
         return out;
     },
 };

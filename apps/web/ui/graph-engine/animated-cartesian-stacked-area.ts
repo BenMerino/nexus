@@ -221,12 +221,23 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
         const out: Primitive[] = [...fills, ...strokes];
         const first = state.layers[0];
         if (first) {
+            /* Anchor the rail's crosshair/tooltip to the top of the whole
+             *  stack at each bucket (smallest pixel-y across layers' cumulative
+             *  tops), so the marker rides the stack's upper edge — not mid-plot. */
+            const anchorYs = first.xs.map((_x, i) => {
+                let best = Infinity;
+                for (const l of state.layers) {
+                    const y = yS(l.topVs[i]);
+                    if (Number.isFinite(y) && y < best) best = y;
+                }
+                return Number.isFinite(best) ? best : yS(first.topVs[i]);
+            });
             appendHoverRails(out, first.xs, state.plotYR, (i) => {
                 const row = state.rowValues?.[i] ?? {};
                 const merged: Record<string, number> = { ...row };
                 for (const l of state.layers) if (!(l.id in merged)) merged[l.id] = 0;
                 return { idx: i, label: state.labels?.[i] ?? '', rowValues: merged };
-            });
+            }, anchorYs);
         }
         return out;
     },
