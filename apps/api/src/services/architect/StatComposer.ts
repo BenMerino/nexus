@@ -15,6 +15,7 @@
 import type { ActorContext } from "../../substrate/actor";
 import type { GraphDataPoint } from "@nexus/shared/graph-data.types";
 import { statistician } from "../catalog/Statistician";
+import { composeCadence } from "./PublicationCharts";
 
 /** Minimal server-emitted chart directive (the contract GraphRender reads).
  *  The frontend GraphDirective is a superset with render-runtime fields the
@@ -29,7 +30,14 @@ export interface ServerGraphDirective {
 const top = (s: string, n = 30) => (s || "").slice(0, n);
 
 // kind → async compose(ctx) → directive. Pure reads via the Statistician.
-const COMPOSERS: Record<string, (ctx: ActorContext) => Promise<ServerGraphDirective | null>> = {
+// `unknown` return so atom-bearing time-series directives (PublicationCharts)
+// register alongside the simple category directives — both are GraphDirectives
+// the frontend GraphRenders; the difference is data vs atoms.
+const COMPOSERS: Record<string, (ctx: ActorContext) => Promise<unknown>> = {
+  // Per-researcher cadence (scoped by ctx.orcid) — the same Composer the public
+  // tenant page uses, here under the authenticated scope. Atom-bearing → uniform
+  // legend-toggle drop, like the public one.
+  "publications.cadence": (ctx) => composeCadence(ctx),
   async publicationsByYear(ctx) {
     const rows: Array<{ year: string; count: string | number }> = await statistician.byYear(ctx);
     const byYear = new Map<string, number>();
@@ -61,14 +69,17 @@ const COMPOSERS: Record<string, (ctx: ActorContext) => Promise<ServerGraphDirect
 
 class StatComposer {
   kinds() { return Object.keys(COMPOSERS); }
-  async compose(ctx: ActorContext, kind: string): Promise<ServerGraphDirective | null> {
+  async compose(ctx: ActorContext, kind: string): Promise<unknown> {
     const fn = COMPOSERS[kind];
     if (!fn) { const e: any = new Error(`Unknown chart kind: ${kind}`); e.code = "UNKNOWN_KIND"; throw e; }
     return fn(ctx);
   }
-  /** Compose all dashboard charts (nulls dropped). */
+  /** Compose all DASHBOARD charts (the simple category set). Dotted kinds
+   *  (e.g. `publications.cadence`) are explicit-fetch only — not part of the
+   *  all-charts sweep — so the dashboard grid keeps its fixed card set. */
   async dashboard(ctx: ActorContext): Promise<ServerGraphDirective[]> {
-    const out = await Promise.all(this.kinds().map((k) => this.compose(ctx, k)));
+    const dashKinds = this.kinds().filter((k) => !k.includes("."));
+    const out = await Promise.all(dashKinds.map((k) => this.compose(ctx, k)));
     return out.filter((d): d is ServerGraphDirective => d !== null);
   }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { RecomposeChart } from './recompose-chart';
+import { RecomposeChart, ScopedChart } from './recompose-chart';
 import { TYPE_DISPLAY_LABELS } from './type-labels';
 
 export type CadenceSegment = { type: string; count: number };
@@ -19,8 +19,8 @@ const CAPTION: React.CSSProperties = { fontSize: 10, textTransform: 'uppercase',
 // by kind via RecomposeChart. The panel owns only the headline figure (mean per
 // year, from stats); it no longer builds the chart, so it cannot down-sample the
 // date into a year-collapsed (scanning) shape.
-export function CadencePanel({ cadence, tenantId, labels = DEFAULT_LABELS, typeLabel = defaultTypeLabel }: {
-  cadence: Cadence; tenantId?: number; labels?: CadenceLabels; typeLabel?: (t: string) => string;
+export function CadencePanel({ cadence, tenantId, orcid, labels = DEFAULT_LABELS, typeLabel = defaultTypeLabel }: {
+  cadence: Cadence; tenantId?: number; orcid?: string | null; labels?: CadenceLabels; typeLabel?: (t: string) => string;
 }) {
   void typeLabel;
   if (!cadence.series.length) {
@@ -32,13 +32,13 @@ export function CadencePanel({ cadence, tenantId, labels = DEFAULT_LABELS, typeL
         <div style={FIGURE}>{cadence.meanPerYear.toFixed(1)}</div>
         <div style={CAPTION}>{labels.avgPerYear}</div>
       </div>
-      {/* Public tenant page passes tenantId → tenant-wide composed cadence.
-          The authenticated researcher dashboard's per-ORCID cadence routes
-          through the scoped /charts path (a follow-up); until then it shows
-          only the headline figure. */}
+      {/* Both surfaces render the SAME server-composed cadence (atom directive,
+          uniform-drop toggle), differing only in scope:
+          - public tenant page → RecomposeChart (anonymous, tenant-wide)
+          - authenticated dashboard → ScopedChart (session + orcid narrowing). */}
       {tenantId != null
         ? <RecomposeChart kind="publications.cadence" tenantId={tenantId} />
-        : null}
+        : <ScopedChart kind="publications.cadence" orcid={orcid} />}
     </div>
   );
 }

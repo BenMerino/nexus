@@ -66,7 +66,7 @@ const PUBLIC_KINDS: Record<string, (query: PublicQuery) => Promise<unknown>> = {
 /** Scoped kinds: composed under an ActorContext (requireScope narrowing).
  *  Delegates to the existing StatComposer registry — single source of the
  *  dashboard kinds, now reachable through the unified dispatch. */
-async function composeScoped(ctx: ActorContext, kind: string): Promise<ServerGraphDirective | null> {
+async function composeScoped(ctx: ActorContext, kind: string): Promise<unknown> {
   if (!statComposer.kinds().includes(kind)) throw unknownKind(kind);
   return statComposer.compose(ctx, kind);
 }
@@ -93,7 +93,7 @@ export async function recomposePublic(query: PublicQuery): Promise<unknown> {
 }
 
 /** Scoped entry — the authenticated GET endpoint, under a resolved ctx. */
-export async function recomposeScoped(ctx: ActorContext, kind: string): Promise<ServerGraphDirective | null> {
+export async function recomposeScoped(ctx: ActorContext, kind: string): Promise<unknown> {
   return composeScoped(ctx, kind);
 }
 

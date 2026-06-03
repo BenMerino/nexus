@@ -69,7 +69,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
             </section>
             <section className="card card-chart">
               <SectionHead title="Publication cadence" />
-              {p.cadence && <CadencePanel cadence={p.cadence} />}
+              {p.cadence && <CadencePanel cadence={p.cadence} orcid={subjectOrcid} />}
             </section>
             <ProjectsGanttPanel filterOrcid={subjectOrcid} />
             <CoAuthorGraphPanel graph={p?.coauthorGraph} />
