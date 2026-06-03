@@ -1,7 +1,7 @@
 import React from 'react';
 import type { GraphDirective } from '../architect/graph-composer.types';
 import { DirectiveChart } from '../ui/graph-engine/index';
-import { RecomposeChart } from './recompose-chart';
+import { BatchedCharts } from './recompose-chart';
 import { VelocityPanel } from './portfolio-velocity';
 import { CadencePanel } from './portfolio-cadence';
 import { hasYearIndex } from './tenant-year-chart';
@@ -33,26 +33,22 @@ export function TenantChartsTab({ stats, tenantId, charts }: { stats: PublicStat
         ) : null}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
-        {/* Indexation stacked "Publicaciones por año" — server-composed
-            (publications.byIndex) so it's a real time-series and the legend
-            toggle drops uniformly. No client builder for this chart. */}
-        {hasYearIndex(stats) && (
-          <div className="card" style={{ minHeight: 400 }}>
-            <RecomposeChart kind="publications.byIndex" tenantId={tenantId} minHeight={400} />
-          </div>
-        )}
         {charts.map((chart, i) => (
           <div key={chart.persistKey ?? i} className="card" style={{ minHeight: 400 }}>
             <DirectiveChart seed={chart} />
           </div>
         ))}
-        {/* Categorical charts — server-COMPOSED catalog kinds (no client-side
-            GraphDirective.data). Each is one AnalyticsCatalog entry. */}
-        {['publications.typeByYear', 'publications.topJournals', 'publications.collaborators', 'publications.countries'].map(kind => (
-          <div key={kind} className="card" style={{ minHeight: 400 }}>
-            <RecomposeChart kind={kind} tenantId={tenantId} minHeight={400} />
-          </div>
-        ))}
+        {/* All server-COMPOSED catalog charts in ONE round-trip (no per-chart
+            stagger). byIndex (stacked time-series) is included only when the
+            tenant has indexation data. Each is one AnalyticsCatalog entry. */}
+        <BatchedCharts
+          kinds={[
+            ...(hasYearIndex(stats) ? ['publications.byIndex'] : []),
+            'publications.typeByYear', 'publications.topJournals',
+            'publications.collaborators', 'publications.countries',
+          ]}
+          tenantId={tenantId}
+        />
       </div>
     </>
   );

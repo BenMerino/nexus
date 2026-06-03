@@ -72,6 +72,28 @@ export async function recomposePublic(query: PublicQuery): Promise<unknown> {
   return directive;
 }
 
+/** Batch public entry — compose several public kinds in ONE call so the
+ *  charts tab fetches all its directives in a single round-trip instead of N
+ *  parallel ones (which fill in staggered, the "charts appear one-by-one"
+ *  symptom). Composition stays per-kind via the same catalog `compose`; this
+ *  only collapses the transport. Unknown/failed kinds yield a null entry so
+ *  one bad kind never sinks the batch. */
+export async function recomposePublicBatch(
+  tenantId: string, kinds: string[],
+): Promise<Record<string, unknown | null>> {
+  const unique = [...new Set(kinds)].filter((k) => k in PUBLIC_KINDS);
+  const entries = await Promise.all(
+    unique.map(async (kind) => {
+      try {
+        return [kind, await recomposePublic({ kind, tenantId } as PublicQuery)] as const;
+      } catch {
+        return [kind, null] as const;
+      }
+    }),
+  );
+  return Object.fromEntries(entries);
+}
+
 /** Scoped entry — the authenticated GET endpoint, under a resolved ctx. */
 export async function recomposeScoped(ctx: ActorContext, kind: string): Promise<unknown> {
   return composeScoped(ctx, kind);

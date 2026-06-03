@@ -79,7 +79,9 @@ function App() {
     return <div className="public-app"><main className="public-main" style={{ color: 'var(--danger, #c00)' }}>{fatalError}</main></div>;
   }
   if (!statsPayload) {
-    return <div className="public-app"><main className="public-main" style={{ color: 'var(--fg-dim)' }}>{statsError ? `${ES.failedPrefix}: ${statsError}` : ES.loading}</main></div>;
+    // Chrome lands in ~0.5s, so show a quiet blank shell, not a "Loading…"
+    // flash. An error still surfaces (it's not transient).
+    return <div className="public-app"><main className="public-main" style={{ color: 'var(--fg-dim)' }}>{statsError ? `${ES.failedPrefix}: ${statsError}` : ''}</main></div>;
   }
 
   const paneProps = { active, seen };

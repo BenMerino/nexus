@@ -50,6 +50,44 @@ export function RecomposeChart({ kind, tenantId, minHeight = 360 }: { kind: stri
   return <ComposedView directive={directive} failed={failed} minHeight={minHeight} />;
 }
 
+/** Several public charts composed in ONE round-trip (POST /recompose-batch) and
+ *  rendered together — no per-chart stagger. Replaces N <RecomposeChart>s whose
+ *  parallel fetches filled in one-by-one. Composition stays per-kind on the
+ *  server; only the transport collapses. */
+export function BatchedCharts({ kinds, tenantId, minHeight = 400 }: { kinds: string[]; tenantId: number; minHeight?: number }) {
+  const [map, setMap] = useState<Record<string, GraphDirective | null> | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/architect/recompose-batch', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantId: String(tenantId), kinds }),
+    })
+      .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((d: { directives: Record<string, GraphDirective | null> }) => {
+        if (cancelled) return;
+        setMap(d.directives || {});
+        for (const k of kinds) perfMark(`chart:${k}`);
+      })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId, kinds.join(',')]);
+  return (
+    <>
+      {kinds.map(kind => {
+        const d = map ? map[kind] : null;
+        const ok = d && ((d as any).atoms || (d as any).data);
+        return (
+          <div key={kind} className="card" style={{ minHeight }}>
+            <ComposedView directive={ok ? d : null} failed={failed} minHeight={minHeight} />
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 /** Authenticated, scope-narrowed composed chart. The session provides the
  *  tenant; `orcid` (optional) views a specific researcher (admin override).
  *  ctx + orcid narrowing happen server-side in the /charts handler. */
