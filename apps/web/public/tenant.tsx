@@ -1,7 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { AuthorsTable } from './tenant-authors';
-import { TenantGraph } from './tenant-graph';
+// Lazy: TenantGraph pulls in d3-force (~0.8s of bundle parse). The graph tab
+// is seen-gated and rarely the first view, so keep it OFF the critical path —
+// it loads only when the tab is actually opened.
+const TenantGraph = lazy(() => import('./tenant-graph').then(m => ({ default: m.TenantGraph })));
 import { buildTenantCharts } from './tenant-builders';
 import { TenantChartsTab } from './tenant-charts-tab';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
@@ -102,7 +105,9 @@ function App() {
 
           <TabPane id="graph" {...paneProps}>
             {graphPayload
-              ? <TenantGraph nodes={graphPayload.graph.nodes} edges={graphPayload.graph.edges} />
+              ? <Suspense fallback={<SectionPlaceholder label={ES.collaborationGraph} />}>
+                  <TenantGraph nodes={graphPayload.graph.nodes} edges={graphPayload.graph.edges} />
+                </Suspense>
               : <SectionPlaceholder label={ES.collaborationGraph} error={graphError} />}
           </TabPane>
 
