@@ -41,7 +41,7 @@ export function useTenantData(slug: string | null) {
         // Seed the heavy chart arrays empty so `stats` is shape-complete for
         // the chrome phase (charts render empty until the analytics fetch
         // merges in); components already guard on `.length`/optional fields.
-        const seeded: StatsPayload = { ...d, stats: { yearSource: [], types: [], typeByYear: [], yearByIndex: [], ...d.stats } };
+        const seeded: StatsPayload = { ...d, stats: { yearSource: [], yearByIndex: [], ...d.stats } };
         setStatsPayload(seeded);
         if (d.tenant.primary_color) document.body.style.setProperty('--primary', d.tenant.primary_color);
         if (d.tenant.secondary_color) document.body.style.setProperty('--secondary', d.tenant.secondary_color);

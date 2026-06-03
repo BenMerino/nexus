@@ -1,5 +1,5 @@
 import { composeCadence, composeByIndex } from "../architect/PublicationCharts";
-import { composeTopJournals, composeCollaborators, composeCountries } from "../architect/PublicCategoryCharts";
+import { composeTopJournals, composeCollaborators, composeCountries, composeTypeByYear } from "../architect/PublicCategoryCharts";
 import type { ActorContext } from "../../substrate/actor";
 import type { AnalyticsMetric, CatalogQuery } from "./analytics-catalog.types";
 
@@ -98,6 +98,17 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     queryShape: "none",
     access: "public",
     compose: (q) => composeCountries(parseInt(q.tenantId, 10)),
+    invalidatedBy: ["publication.upserted", "ingestion.completed"],
+    surfaces: ["overview"],
+  },
+  {
+    kind: "publications.typeByYear",
+    domain: "publication",
+    title: "Publicaciones por tipo",
+    description: "Work-type × year heatmap (top 6 types).",
+    queryShape: "none",
+    access: "public",
+    compose: (q) => composeTypeByYear(parseInt(q.tenantId, 10)),
     invalidatedBy: ["publication.upserted", "ingestion.completed"],
     surfaces: ["overview"],
   },

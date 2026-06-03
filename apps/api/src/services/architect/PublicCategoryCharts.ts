@@ -1,4 +1,4 @@
-import { getTopJournals } from "../../lib/public-stats";
+import { getTopJournals, getTypeByYear, getPublicationTypes } from "../../lib/public-stats";
 const { getCollaborations, getCountries } = require("../../lib/dashboard-stats");
 
 /* ── PublicCategoryCharts (Composer) ────────────────────────
@@ -19,6 +19,15 @@ export interface CategoryDirective {
   xLabel?: string;
   yLabel?: string;
   data: { label: string; value: number }[];
+}
+
+/** Heatmap directive — row/col cells (type × year). */
+export interface HeatmapDirective {
+  type: "heatmap";
+  title: string;
+  xLabel: string;
+  yLabel: string;
+  data: { row: string; col: string; value: number; label: string }[];
 }
 
 /** publications.topJournals — top journals by paper count (ranked bar).
@@ -63,4 +72,17 @@ export async function composeCountries(tenantId: number): Promise<CategoryDirect
     title: "Publicaciones por país",
     data: rows.slice(0, 12).map((c) => ({ label: c.country, value: Number(c.count) })),
   };
+}
+
+/** publications.typeByYear — work-type × year heatmap (top 6 types). Ports the
+ *  client buildTypeChart's slice/filter/map to the server. */
+export async function composeTypeByYear(tenantId: number): Promise<HeatmapDirective | null> {
+  const [types, typeByYear] = await Promise.all([getPublicationTypes(tenantId), getTypeByYear(tenantId)]);
+  if (!typeByYear.length) return null;
+  const top = new Set(types.slice(0, 6).map((t) => t.type));
+  const cells = typeByYear
+    .filter((r) => top.has(r.type) && r.year)
+    .map((r) => ({ row: r.type, col: r.year, value: r.count, label: `${r.type} ${r.year}` }));
+  if (!cells.length) return null;
+  return { type: "heatmap", title: "Publicaciones por tipo", xLabel: "Año", yLabel: "Tipo", data: cells };
 }

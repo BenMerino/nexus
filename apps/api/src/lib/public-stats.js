@@ -82,19 +82,17 @@ async function getPublicChrome(scope) {
 // flag (EXISTS); the byIndex chart's data is composed on demand via the
 // publications.byIndex recompose kind, not shipped here.
 async function getPublicAnalytics(scope) {
-  // journals/collabs/countries are no longer shipped — those charts are
-  // server-COMPOSED catalog kinds (publications.topJournals/.collaborators/
-  // .countries) fetched per-kind via recompose. What remains feeds the
-  // still-client-built charts (type heatmap, year) + velocity/cadence gates.
-  const [yearSource, types, typeByYear, yearByIndex, velocity, cadence] = await Promise.all([
+  // Categorical charts (journals/collabs/countries/types/typeByYear) are
+  // server-COMPOSED catalog kinds fetched per-kind via recompose — not shipped
+  // here. What remains: yearSource + yearByIndex (the buildYearChart no-index
+  // fallback), velocity/cadence (panel gates; their charts also self-fetch).
+  const [yearSource, yearByIndex, velocity, cadence] = await Promise.all([
     getByYearAndSource(scope),
-    getPublicationTypes(scope.tenantId),
-    getTypeByYear(scope.tenantId),
     getYearByIndexation(scope.tenantId),
     buildTenantVelocity(scope.tenantId),
     buildTenantCadence(scope.tenantId),
   ]);
-  return { yearSource, types, typeByYear, yearByIndex, velocity, cadence };
+  return { yearSource, yearByIndex, velocity, cadence };
 }
 
 // Full payload — chrome + analytics. Kept for any caller wanting everything in
