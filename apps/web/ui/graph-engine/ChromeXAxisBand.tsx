@@ -50,11 +50,23 @@ const LABEL_TRANSITION = 'none';
  *  rest fill in source order, skipping any that would crash an existing
  *  placement (< minSlot gap). Output sorted ascending. */
 export function xAxisLabelLayout(el: Extract<ChromeElement, { kind: 'x-axis-band' }>) {
-    const { labels, range, xAt, anchors, leadingEdgeXs, trailingEdgeXs } = el;
+    const { labels, range, xAt, anchors, leadingEdgeXs, trailingEdgeXs, keepAll } = el;
     const n = labels.length;
     const plotWidth = Math.max(1, range[1] - range[0]);
     const uniformStep = plotWidth / Math.max(1, n);
     const at = xAt ?? ((i: number) => range[0] + i * uniformStep + uniformStep / 2);
+
+    /* Categorical x (institutions, journals): every bar's label IS its
+     *  identity, so keep ALL of them and rotate to fit — never decimate a
+     *  bar's name away. Abbreviation (`abbreviateLabel`, applied at render)
+     *  shrinks each to its per-slot budget; rotation buys the vertical room.
+     *  This bypasses the pixel-min-slot decimator that (correctly) thins
+     *  TEMPORAL axes, where labels are samples, not identities. */
+    if (keepAll && n > 0) {
+        const allIdx = labels.map((_, i) => i);
+        const maxChars = Math.max(X_LABEL_MIN_CHARS, Math.floor(uniformStep / TICK_FONT_AVG_CHAR_PX));
+        return { indices: allIdx, at, step: uniformStep, stride: 1, maxChars, rotate: true, range };
+    }
 
     /* Per-row min-slot — widest label width + breathing room. Narrow
      *  tier rows ("W3", "May") stay dense; wide day labels still get

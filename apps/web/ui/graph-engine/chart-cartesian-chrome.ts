@@ -95,6 +95,12 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
          *  point's slot survives crowding (value labels + annotations
          *  share this one decimation pass). */
         const annAnchors = chart.annotations ? Array.from(annotatedIndices(chart)) : undefined;
+        /* Categorical x: a non-curve bar chart with no temporal fold unit —
+         *  its labels are named entities (institutions, journals), not time
+         *  samples. Such labels must all render (rotated), never decimate to
+         *  first/last. Temporal bars (year/month, carry __foldUnit) keep the
+         *  pixel-min-slot decimator. */
+        const isCategorical = !isCurveX && !chart.__foldUnit;
         baseBand = {
             kind: 'x-axis-band',
             labels: layout.labels,
@@ -105,6 +111,7 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
             leadingEdgeXs: baseLeadingEdgeXs,
             trailingEdgeXs: baseTrailingEdgeXs,
             plotYR: layout.yR,
+            ...(isCategorical ? { keepAll: true } : {}),
             ...(annAnchors && annAnchors.length ? { anchors: annAnchors } : {}),
         };
         elements.push(baseBand);

@@ -43,6 +43,13 @@ export interface ChartChromeAxisX {
      *  renderer paint a hover-highlight band spanning the chart's full
      *  vertical extent above the data for whichever label is hovered. */
     plotYR?: [number, number];
+    /** Categorical x-axis: every bar IS a distinct named entity (institution,
+     *  journal), so its label carries identity and must not be dropped. When
+     *  set, the decimator keeps ALL labels and rotates them to fit instead of
+     *  thinning to a pixel min-slot (which would silently erase most bars'
+     *  identity, leaving only the first/last anchors). Unset for temporal x
+     *  (year/month samples), where decimation is correct. */
+    keepAll?: boolean;
 }
 
 export interface ChartChromeAxisXLinear {

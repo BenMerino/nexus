@@ -70,7 +70,10 @@ export function buildCartesianLayout(
      *  on top; they never rotate. Plot-width estimate uses the 36px L/R
      *  gutters this same margin sets below. */
     const baseLabels = (chart.data as any[]).map((d: any) => String(d.label ?? ''));
-    const baseReserve = baseXAxisReserve(baseLabels, Math.max(1, width - 72));
+    /* Categorical x (named entities, no temporal fold) always rotates every
+     *  label — must match cartesianChrome's `isCategorical`. */
+    const categorical = !isCurve(t) && !chart.__foldUnit;
+    const baseReserve = baseXAxisReserve(baseLabels, Math.max(1, width - 72), categorical);
     const defaultBottom = baseReserve + renderedTiers * 14;
     /* `right` matches `left` so the plot rect sits horizontally centered
      *  inside the chart canvas (left gutter holds y-axis tick labels;

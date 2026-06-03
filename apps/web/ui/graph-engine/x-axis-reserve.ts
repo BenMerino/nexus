@@ -47,11 +47,18 @@ function basRowRotates(labels: string[], plotWidthEstimate: number, n: number): 
 /** Bottom-margin px the BASE label row needs. Rotated rows reserve the
  *  diagonal drop of the widest (capped) label below the anchor baseline;
  *  flat rows reserve the legacy single-line height. Tier rows are added
- *  on top of this by the caller (they're always short, never rotate). */
-export function baseXAxisReserve(labels: string[], plotWidthEstimate: number): number {
+ *  on top of this by the caller (they're always short, never rotate).
+ *
+ *  `forceRotate` short-circuits the width prediction: categorical axes
+ *  (institutions/journals) ALWAYS rotate every label (ChromeXAxisBand's
+ *  keepAll path), so the margin must reserve the rotated drop regardless of
+ *  whether the labels would also have rotated under the pixel-min-slot
+ *  heuristic. Without this the bottom-clip bug returns for exactly the
+ *  charts the keepAll fix targets. */
+export function baseXAxisReserve(labels: string[], plotWidthEstimate: number, forceRotate = false): number {
     const n = labels.length;
     if (n === 0) return FLAT_BASE_RESERVE;
-    if (!basRowRotates(labels, plotWidthEstimate, n)) return FLAT_BASE_RESERVE;
+    if (!forceRotate && !basRowRotates(labels, plotWidthEstimate, n)) return FLAT_BASE_RESERVE;
     const widestChars = Math.min(ROTATED_CHARS_CAP, labels.reduce((m, l) => Math.max(m, l.length), 0));
     const widestPx = widestChars * TICK_FONT_AVG_CHAR_PX;
     const drop = Math.sin((ROTATE_DEG * Math.PI) / 180) * widestPx;
