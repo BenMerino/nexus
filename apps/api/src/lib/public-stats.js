@@ -1,6 +1,5 @@
 const { sql } = require("./sql");
 const { getSummary, getByYearAndSource, getCollaborations, getCountries } = require("./dashboard-stats");
-const { listSourceIds } = require("./indexation-sources");
 const { buildTenantVelocity, buildTenantCadence } = require("./public-tenant-velocity");
 
 async function getPublicationTypes(tenantId) {
@@ -38,35 +37,22 @@ async function getTypeByYear(tenantId) {
   return r.rows.map(row => ({ type: row.type, year: row.year, count: parseInt(row.count) }));
 }
 
+// Presence flag: does this tenant have ANY indexed-venue publication? The
+// charts tab gates the stacked "Publicaciones por año" chart on this
+// (hasYearIndex); the chart's actual data is composed on demand via the
+// publications.byIndex recompose kind, never shipped here. So we only need a
+// boolean — a SELECT EXISTS (~1ms), not a 93k-row per-(paper,year) reduce in
+// JS (~170ms + the GC of all those rows). Returned as a 0-or-1-length array of
+// {bucket} so the existing hasYearIndex() reader is unchanged.
 async function getYearByIndexation(tenantId) {
-  const INDEXES = listSourceIds();
-  // Entity model: a paper is "indexed in X" when its venue carries the in_X flag
-  // (published_in → venues). One row per (paper, year) with the venue's index
-  // sources; counted per (year, index). Replaces the legacy indexed_in tag join.
   const r = await sql`
-    SELECT d.id, SUBSTRING(d.published FROM 1 FOR 4) AS year,
-           bool_or(v.in_wos) AS wos, bool_or(v.in_scopus) AS scopus,
-           bool_or(v.in_doaj) AS doaj, bool_or(v.in_scielo) AS scielo
-    FROM doi_records d
-    LEFT JOIN published_in pi ON pi.publication_id = d.id
-    LEFT JOIN venues v ON v.id = pi.venue_id AND v.tenant_id = ${tenantId}
-    WHERE d.tenant_id = ${tenantId} AND d.published IS NOT NULL AND d.published <> ''
-    GROUP BY d.id, SUBSTRING(d.published FROM 1 FOR 4)`;
-  const flagFor = { WoS: "wos", Scopus: "scopus", DOAJ: "doaj", SciELO: "scielo" };
-  const counts = new Map();
-  for (const row of r.rows) {
-    if (!row.year) continue;
-    for (const idx of INDEXES) {
-      const col = flagFor[idx];
-      if (!col || !row[col]) continue;
-      const key = `${row.year}|${idx}`;
-      counts.set(key, (counts.get(key) || 0) + 1);
-    }
-  }
-  return [...counts.entries()].map(([k, count]) => {
-    const [year, bucket] = k.split("|");
-    return { year, bucket, count };
-  });
+    SELECT EXISTS (
+      SELECT 1 FROM published_in pi
+      JOIN venues v ON v.id = pi.venue_id AND v.tenant_id = ${tenantId}
+      JOIN doi_records d ON d.id = pi.publication_id AND d.tenant_id = ${tenantId}
+      WHERE (v.in_wos OR v.in_scopus OR v.in_doaj OR v.in_scielo)
+    ) AS has_index`;
+  return r.rows[0] && r.rows[0].has_index ? [{ bucket: "WoS" }] : [];
 }
 
 async function getYearRange(tenantId) {
@@ -79,28 +65,47 @@ async function getYearRange(tenantId) {
   return { minYear: row.min_year || null, maxYear: row.max_year || null };
 }
 
-async function getPublicStats(scope) {
-  // NB: the indexation stacked chart's ATOMS are no longer shipped in this
-  // payload — the page fetches them server-COMPOSED via publications.byIndex
-  // (recompose). `yearByIndex` stays only as the cheap presence-flag the page
-  // uses (hasYearIndex) to decide whether to render that composed chart.
-  const [summary, yearSource, collabs, countries, types, journals, yearRange, typeByYear, yearByIndex, velocity, cadence] = await Promise.all([
+// CHROME — the cheap fields the page shell needs to paint immediately: the
+// summary cards (overview tab) + the header's year range. Both are sub-10ms
+// aggregates. The shell renders from these alone; it never blocks on the heavy
+// analytics, which the charts tab fetches separately (getPublicAnalytics).
+async function getPublicChrome(scope) {
+  const [summary, yearRange] = await Promise.all([
     getSummary(scope),
+    getYearRange(scope.tenantId),
+  ]);
+  return { summary, yearRange };
+}
+
+// ANALYTICS — the heavy chart aggregates, fetched lazily when the charts tab
+// opens (not on the shell's critical path). yearByIndex is now a cheap presence
+// flag (EXISTS); the byIndex chart's data is composed on demand via the
+// publications.byIndex recompose kind, not shipped here.
+async function getPublicAnalytics(scope) {
+  const [yearSource, collabs, countries, types, journals, typeByYear, yearByIndex, velocity, cadence] = await Promise.all([
     getByYearAndSource(scope),
     getCollaborations(scope),
     getCountries(scope),
     getPublicationTypes(scope.tenantId),
     getTopJournals(scope.tenantId),
-    getYearRange(scope.tenantId),
     getTypeByYear(scope.tenantId),
     getYearByIndexation(scope.tenantId),
     buildTenantVelocity(scope.tenantId),
     buildTenantCadence(scope.tenantId),
   ]);
-  return { summary, yearSource, collabs, countries, types, journals, yearRange, typeByYear, yearByIndex, velocity, cadence };
+  return { yearSource, collabs, countries, types, journals, typeByYear, yearByIndex, velocity, cadence };
+}
+
+// Full payload — chrome + analytics. Kept for any caller wanting everything in
+// one shot; the public page now fetches chrome and analytics separately so the
+// shell is never gated on analytics.
+async function getPublicStats(scope) {
+  const [chrome, analytics] = await Promise.all([getPublicChrome(scope), getPublicAnalytics(scope)]);
+  return { ...chrome, ...analytics };
 }
 
 module.exports = {
   getPublicationTypes, getTopJournals, getYearRange,
-  getTypeByYear, getYearByIndexation, getPublicStats,
+  getTypeByYear, getYearByIndexation,
+  getPublicChrome, getPublicAnalytics, getPublicStats,
 };

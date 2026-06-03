@@ -1,12 +1,13 @@
 const { ensureSchema } = require("../../../src/lib/db");
 const { getTenantBySlug } = require("../../../src/lib/db-users");
-const { getPublicStats } = require("../../../src/lib/public-stats");
+const { getPublicChrome, getPublicAnalytics, getPublicStats } = require("../../../src/lib/public-stats");
 
 // GET /api/public/:slug/stats
-// Returns the tenant chrome (id/name/branding) plus every chart aggregate.
-// Independent from /graph and /authors so the SPA can render the summary
-// cards and chart strip as soon as this resolves, without waiting on the
-// graph or directory.
+// Three modes so the shell never blocks on heavy analytics:
+//   ?chrome=1    → tenant + {summary, yearRange} only (cheap, paints the shell)
+//   ?analytics=1 → the heavy chart aggregates only (fetched when charts tab opens)
+//   (default)    → full payload (chrome + analytics), kept for back-compat.
+// Independent from /graph and /authors so the SPA renders independently.
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
   await ensureSchema();
@@ -15,7 +16,9 @@ module.exports = async function handler(req, res) {
 
   try {
     const scope = { tenantId: tenant.id, orcid: null, ror: tenant.ror_id, role: "public" };
-    const stats = await getPublicStats(scope);
+    const stats = req.query.analytics ? await getPublicAnalytics(scope)
+      : req.query.chrome ? await getPublicChrome(scope)
+      : await getPublicStats(scope);
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
     res.json({
       tenant: {
