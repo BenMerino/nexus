@@ -195,7 +195,18 @@ export function XAxisBandTapTargets({
             {indices.map((i) => {
                 const cx = at(i);
                 if (cx < range[0] - 1 || cx > range[1] + 1) return null;
-                const tapW = Math.max(step * stride, 24);
+                /* Tap rect is one decimated slot wide (step * stride), but
+                 *  CLAMPED to the plot range. With sparse data a slot can be
+                 *  a third of the plot wide; an unclamped rect centered near
+                 *  an edge then hangs hundreds of px off the side (the rect
+                 *  overflow bug). The hit-area is a convenience — it must never
+                 *  extend past the plot edges. Build [left,right] from the
+                 *  ideal slot, clamp both ends, derive width from the clamped
+                 *  span. */
+                const idealHalf = Math.max(step * stride, 24) / 2;
+                const left = Math.max(range[0], cx - idealHalf);
+                const right = Math.min(range[1], cx + idealHalf);
+                const tapW = Math.max(0, right - left);
                 const key = keys?.[i] ?? labels[i];
                 return (
                     <rect key={key}
@@ -203,7 +214,7 @@ export function XAxisBandTapTargets({
                         fill="transparent" pointerEvents="all"
                         style={{
                             cursor,
-                            transform: `translate(${cx - tapW / 2}px, ${y + 2}px)`,
+                            transform: `translate(${left}px, ${y + 2}px)`,
                             transition: LABEL_TRANSITION,
                         }}
                         onMouseEnter={() => onLabelHover({ rowIdx, labelIdx: i })}
