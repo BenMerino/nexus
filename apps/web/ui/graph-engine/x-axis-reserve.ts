@@ -44,21 +44,44 @@ function basRowRotates(labels: string[], plotWidthEstimate: number, n: number): 
     return labels.some(l => l.length > maxChars);
 }
 
-/** Bottom-margin px the BASE label row needs. Rotated rows reserve the
- *  diagonal drop of the widest (capped) label below the anchor baseline;
- *  flat rows reserve the legacy single-line height. Tier rows are added
- *  on top of this by the caller (they're always short, never rotate).
- *
- *  `forceRotate` short-circuits the width prediction: categorical axes
- *  (institutions/journals) ALWAYS rotate every label (ChromeXAxisBand's
- *  keepAll path), so the margin must reserve the rotated drop regardless of
- *  whether the labels would also have rotated under the pixel-min-slot
- *  heuristic. Without this the bottom-clip bug returns for exactly the
- *  charts the keepAll fix targets. */
-export function baseXAxisReserve(labels: string[], plotWidthEstimate: number, forceRotate = false): number {
+/** Per-line height + max lines for wrapped categorical labels. Must match
+ *  ChromeXAxisBand's LINE_H and label-wrap's MAX_LINES. */
+const WRAP_LINE_H = 10;
+const WRAP_MAX_LINES = 3;
+
+/** Words-to-lines count for a label at the given per-line char budget —
+ *  the same greedy pack `wrapLabel` does, but we only need the LINE COUNT
+ *  to size the reserve (not the strings). Capped at WRAP_MAX_LINES. */
+function wrappedLineCount(label: string, budget: number): number {
+    const words = label.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return 1;
+    let lines = 1;
+    let curLen = 0;
+    for (const w of words) {
+        if (curLen === 0) { curLen = w.length; }
+        else if (curLen + 1 + w.length <= budget) { curLen += 1 + w.length; }
+        else { lines++; curLen = w.length; }
+    }
+    return Math.min(WRAP_MAX_LINES, lines);
+}
+
+/** Bottom-margin px the BASE label row needs. Three modes:
+ *   • categorical (institutions/journals) → labels WRAP onto upright lines
+ *     (ChromeXAxisBand keepAll path); reserve baseline + N·lineHeight for the
+ *     worst label's line count. The margin must match or the lowest line
+ *     clips under the container's overflow:hidden.
+ *   • temporal that would rotate → reserve the -40° diagonal drop.
+ *   • otherwise → flat single line.
+ *  Tier rows are added on top by the caller (always short, never wrap). */
+export function baseXAxisReserve(labels: string[], plotWidthEstimate: number, categorical = false): number {
     const n = labels.length;
     if (n === 0) return FLAT_BASE_RESERVE;
-    if (!forceRotate && !basRowRotates(labels, plotWidthEstimate, n)) return FLAT_BASE_RESERVE;
+    if (categorical) {
+        const budget = Math.max(1, Math.floor((plotWidthEstimate / n) / TICK_FONT_AVG_CHAR_PX));
+        const maxLines = labels.reduce((m, l) => Math.max(m, wrappedLineCount(l, budget)), 1);
+        return Math.ceil(LABEL_BASELINE_OFFSET + maxLines * WRAP_LINE_H);
+    }
+    if (!basRowRotates(labels, plotWidthEstimate, n)) return FLAT_BASE_RESERVE;
     const widestChars = Math.min(ROTATED_CHARS_CAP, labels.reduce((m, l) => Math.max(m, l.length), 0));
     const widestPx = widestChars * TICK_FONT_AVG_CHAR_PX;
     const drop = Math.sin((ROTATE_DEG * Math.PI) / 180) * widestPx;

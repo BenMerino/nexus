@@ -12,6 +12,7 @@ import React from 'react';
 import type { ChromeElement } from './chart-chrome.types.js';
 import { decimateByMinSlot } from './label-decimate.js';
 import { abbreviateLabel } from './label-abbreviate.js';
+import { wrapLabel } from './label-wrap.js';
 
 export type LabelHover = { rowIdx: number; labelIdx: number } | null;
 
@@ -65,7 +66,9 @@ export function xAxisLabelLayout(el: Extract<ChromeElement, { kind: 'x-axis-band
     if (keepAll && n > 0) {
         const allIdx = labels.map((_, i) => i);
         const maxChars = Math.max(X_LABEL_MIN_CHARS, Math.floor(uniformStep / TICK_FONT_AVG_CHAR_PX));
-        return { indices: allIdx, at, step: uniformStep, stride: 1, maxChars, rotate: true, range };
+        /* Categorical labels WRAP onto multiple upright lines (label-wrap)
+         *  rather than rotate — easier to read and no edge overhang. */
+        return { indices: allIdx, at, step: uniformStep, stride: 1, maxChars, rotate: false, wrap: true, range };
     }
 
     /* Per-row min-slot — widest label width + breathing room. Narrow
@@ -116,7 +119,7 @@ export function xAxisLabelLayout(el: Extract<ChromeElement, { kind: 'x-axis-band
     }
     const maxChars = Math.max(X_LABEL_MIN_CHARS, Math.floor(minNeighborGap / TICK_FONT_AVG_CHAR_PX));
     const rotate = stride === 1 && labels.some(l => l.length > maxChars);
-    return { indices, at, step: uniformStep, stride, maxChars, rotate, range };
+    return { indices, at, step: uniformStep, stride, maxChars, rotate, wrap: false, range };
 }
 
 export function XAxisBand({
@@ -126,7 +129,8 @@ export function XAxisBand({
     hoveredIdx: number | null;
 }) {
     const { labels, y, keys, leadingEdgeXs, trailingEdgeXs } = el;
-    const { indices, at, maxChars, rotate, range } = xAxisLabelLayout(el);
+    const { indices, at, maxChars, rotate, wrap, range } = xAxisLabelLayout(el);
+    const LINE_H = 10;
     const DIVIDER_TOP_OFFSET = 6;
     const DIVIDER_H = 12;
     const hoverLeftX = hoveredIdx != null ? leadingEdgeXs?.[hoveredIdx] : undefined;
@@ -155,8 +159,27 @@ export function XAxisBand({
                 const l = labels[i];
                 const cx = at(i);
                 if (cx < range[0] - 1 || cx > range[1] + 1) return null;
-                const display = abbreviateLabel(l, maxChars);
                 const key = keys?.[i] ?? l;
+                /* Categorical: wrap the REAL words onto upright centered lines
+                 *  (Universidad / de Talca) instead of rotating or folding to
+                 *  initials. The slot's char budget decides the breaks; each
+                 *  line is a <tspan> stacked by LINE_H, block centered on the
+                 *  bar. wrapLabel keeps whole words, ellipsising only a single
+                 *  word that alone overruns the slot. */
+                if (wrap) {
+                    const lines = wrapLabel(l, maxChars);
+                    return (
+                        <text key={key}
+                            textAnchor="middle"
+                            fill={TICK_COLOR} fontSize={TICK_FONT} fontWeight={TICK_WEIGHT}
+                            style={{ transform: `translate(${cx}px, ${y + 12}px)`, transition: LABEL_TRANSITION }}>
+                            {lines.map((ln, li) => (
+                                <tspan key={li} x={0} dy={li === 0 ? 0 : LINE_H}>{ln}</tspan>
+                            ))}
+                        </text>
+                    );
+                }
+                const display = abbreviateLabel(l, maxChars);
                 /* Edge-aware anchoring. For curves the first/last points sit
                  *  AT the plot edges (xR[0]/xR[1]); a centered label there
                  *  overhangs — left into the y-axis gutter, right past the

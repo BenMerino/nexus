@@ -78,9 +78,12 @@ export function abbreviateLabel(text: string, maxChars: number): string {
 }
 
 /** Head-truncate with a trailing ellipsis, never emitting more than
- *  `maxChars` glyphs. `…` counts as one. Floors at 1 visible glyph. */
+ *  `maxChars` glyphs. `…` counts as one. Floors at 1 visible glyph.
+ *  Exported as `ellipsiseWord` for label-wrap (a single slot-overrun word). */
 function ellipsise(text: string, maxChars: number): string {
     if (text.length <= maxChars) return text;
     const keep = Math.max(1, maxChars - 1);
     return text.slice(0, keep) + '…';
 }
+
+export { ellipsise as ellipsiseWord };
