@@ -23,15 +23,6 @@ export interface PublicStats {
   yearByIndex: YearIndexRow[];
   velocity?: Velocity;
   cadence?: Cadence;
-  /** Per-series DAILY atoms for the indexation stacked chart (real ISO per
-   *  day, per-index siblings). When present, the year chart renders as a real
-   *  time-series so the legend toggle animates a uniform drop. */
-  indexAtoms?: { atoms: IndexAtom[]; series: string[] };
-}
-
-export interface IndexAtom {
-  key: number; iso: string; label: string; value: number;
-  [series: string]: number | string;
 }
 
 function buildTypeChart(stats: PublicStats): GraphDirective | null {

@@ -1,16 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { DirectiveChart } from '../ui/graph-engine/index';
 import { AuthorsTable } from './tenant-authors';
 import { TenantGraph } from './tenant-graph';
 import { buildTenantCharts } from './tenant-builders';
-import { VelocityPanel } from './portfolio-velocity';
-import { CadencePanel } from './portfolio-cadence';
+import { TenantChartsTab } from './tenant-charts-tab';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
 import { SummaryCards, SectionPlaceholder, TabPane } from './tenant-summary';
 import { TenantOrgTree } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
-import { ES, typeLabelEs, VELOCITY_LABELS_ES, CADENCE_LABELS_ES } from './tenant-i18n';
+import { ES } from './tenant-i18n';
 import { bootStreamBridge } from '../architect/websocket-connector';
 
 const NAV: PublicNavItem[] = [
@@ -82,27 +80,7 @@ function App() {
           </TabPane>
 
           <TabPane id="charts" {...paneProps}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-              {statsPayload.stats.velocity ? (
-                <section className="card" style={{ padding: 18 }}>
-                  <h3 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 16, margin: '0 0 12px' }}>{ES.charts.citationVelocity}</h3>
-                  <VelocityPanel velocity={statsPayload.stats.velocity} labels={VELOCITY_LABELS_ES} />
-                </section>
-              ) : null}
-              {statsPayload.stats.cadence ? (
-                <section className="card" style={{ padding: 18 }}>
-                  <h3 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 16, margin: '0 0 12px' }}>{ES.charts.publicationCadence}</h3>
-                  <CadencePanel cadence={statsPayload.stats.cadence} tenantId={statsPayload.tenant.id} labels={CADENCE_LABELS_ES} typeLabel={typeLabelEs} />
-                </section>
-              ) : null}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
-              {charts.map((chart, i) => (
-                <div key={chart.persistKey ?? i} className="card" style={{ minHeight: 400 }}>
-                  <DirectiveChart seed={chart} />
-                </div>
-              ))}
-            </div>
+            <TenantChartsTab stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} />
           </TabPane>
 
           <TabPane id="graph" {...paneProps}>

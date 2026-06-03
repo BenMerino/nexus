@@ -40,7 +40,7 @@ async function buildCadenceAtoms(scope) {
 
   const byDay = new Map(); // iso -> { type: n }
   const typesSeen = new Set();
-  let minIso = null, total = 0;
+  let minIso = null;
   for (const row of r.rows) {
     if (!row.iso || isPreprint(row)) continue;
     if (minIso === null || row.iso < minIso) minIso = row.iso;
@@ -48,7 +48,6 @@ async function buildCadenceAtoms(scope) {
     if (!d) { d = {}; byDay.set(row.iso, d); }
     d[row.type] = (d[row.type] || 0) + 1;
     typesSeen.add(row.type);
-    total += 1;
   }
   if (minIso === null) return { atoms: [], series: [], meanPerYear: 0 };
   const series = [...typesSeen].sort();
@@ -65,9 +64,19 @@ async function buildCadenceAtoms(scope) {
     atom.value = t;
     atoms.push(atom);
   }
-  // Mean per year over the spanned window (real derivation, not a stored value).
-  const years = Math.max(1, (span + 1) / 365.25);
-  const meanPerYear = Math.round((total / years) * 10) / 10;
+  // Mean per year — over the RECENT window (last MEAN_WINDOW_YEARS), matching the
+  // canonical cadence methodology (portfolio-aggregates.buildCadence: total in
+  // window / window). A full-span mean would divide by ~169 years of mostly-empty
+  // history and read far too low (and disagree with the headline figure).
+  const MEAN_WINDOW_YEARS = 8;
+  const currentYear = new Date().getUTCFullYear();
+  const startYear = currentYear - MEAN_WINDOW_YEARS + 1;
+  let windowTotal = 0;
+  for (const a of atoms) {
+    const y = parseInt(a.iso.slice(0, 4), 10);
+    if (y >= startYear && y <= currentYear) windowTotal += a.value;
+  }
+  const meanPerYear = Math.round((windowTotal / MEAN_WINDOW_YEARS) * 10) / 10;
   return { atoms, series, meanPerYear };
 }
 

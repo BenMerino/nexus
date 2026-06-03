@@ -2,7 +2,6 @@ const { sql } = require("./sql");
 const { getSummary, getByYearAndSource, getCollaborations, getCountries } = require("./dashboard-stats");
 const { listSourceIds } = require("./indexation-sources");
 const { buildTenantVelocity, buildTenantCadence } = require("./public-tenant-velocity");
-const { buildIndexationAtoms } = require("./public-stats-atoms");
 
 async function getPublicationTypes(tenantId) {
   const r = await sql`
@@ -81,7 +80,11 @@ async function getYearRange(tenantId) {
 }
 
 async function getPublicStats(scope) {
-  const [summary, yearSource, collabs, countries, types, journals, yearRange, typeByYear, yearByIndex, velocity, cadence, indexAtoms] = await Promise.all([
+  // NB: the indexation stacked chart's ATOMS are no longer shipped in this
+  // payload — the page fetches them server-COMPOSED via publications.byIndex
+  // (recompose). `yearByIndex` stays only as the cheap presence-flag the page
+  // uses (hasYearIndex) to decide whether to render that composed chart.
+  const [summary, yearSource, collabs, countries, types, journals, yearRange, typeByYear, yearByIndex, velocity, cadence] = await Promise.all([
     getSummary(scope),
     getByYearAndSource(scope),
     getCollaborations(scope),
@@ -93,9 +96,8 @@ async function getPublicStats(scope) {
     getYearByIndexation(scope.tenantId),
     buildTenantVelocity(scope.tenantId),
     buildTenantCadence(scope.tenantId),
-    buildIndexationAtoms(scope.tenantId),
   ]);
-  return { summary, yearSource, collabs, countries, types, journals, yearRange, typeByYear, yearByIndex, velocity, cadence, indexAtoms };
+  return { summary, yearSource, collabs, countries, types, journals, yearRange, typeByYear, yearByIndex, velocity, cadence };
 }
 
 module.exports = {
