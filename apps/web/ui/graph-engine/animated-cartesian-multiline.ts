@@ -185,12 +185,23 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
         }
         const first = state.series[0];
         if (first) {
+            /* Anchor the rail's crosshair/tooltip to the topmost series'
+             *  point at each bucket (smallest pixel-y = highest on screen),
+             *  so the marker sits on a real datum rather than mid-plot. */
+            const anchorYs = first.xs.map((_x, i) => {
+                let best = Infinity;
+                for (const s of state.series) {
+                    const y = yS(s.vs[i]);
+                    if (s.defined[i] !== false && y < best) best = y;
+                }
+                return Number.isFinite(best) ? best : yS(first.vs[i]);
+            });
             appendHoverRails(out, first.xs, state.plotYR, (i) => {
                 const row = state.rowValues?.[i] ?? {};
                 const merged: Record<string, number> = { ...row };
                 for (const s of state.series) if (!(s.id in merged)) merged[s.id] = 0;
                 return { idx: i, label: state.labels?.[i] ?? '', rowValues: merged };
-            });
+            }, anchorYs);
         }
         return out;
     },

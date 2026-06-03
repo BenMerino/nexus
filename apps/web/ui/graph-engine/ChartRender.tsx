@@ -156,7 +156,11 @@ export function ChartRender({ chart, width, height, axesOverride, onBucketClick,
         if (!rect || !target.getBBox) return;
         const bb = target.getBBox();
         const cx = bb.x + bb.width / 2;
-        const cy = bb.y + bb.height / 2;
+        /* Full-height hover rails (line/area families) report a bbox center
+         *  at mid-plot — wrong for the crosshair + tooltip anchor. When the
+         *  rail carries the datum's pixel-y (`pointY`), anchor to it. */
+        const pointY = (data as { pointY?: number } | null)?.pointY;
+        const cy = typeof pointY === 'number' ? pointY : bb.y + bb.height / 2;
         const sx = rect.width / layoutSize.w;
         const sy = rect.height / layoutSize.h;
         const tipState = tipStateFromHover(chart, data, cx, cy, sx, sy);

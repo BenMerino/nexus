@@ -138,7 +138,7 @@ export const animatedLine: AnimatedFamily<LineState> = {
         appendMarkers(out, state.xs, ys, state.statuses, state.defined, state.color, layout.xR[0], layout.xR[1]);
         appendHoverRails(out, state.xs, state.plotYR, (i) => ({
             idx: i, label: state.labels[i], value: state.values[i],
-        }));
+        }), ys);
         return out;
     },
 };
