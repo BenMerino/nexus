@@ -49,7 +49,7 @@ export function valueLabelElements(
             baseline: 'alphabetic',
             fontSize: LABEL_FONT,
             fontWeight: LABEL_WEIGHT,
-            color: 'var(--text-secondary)',
+            color: 'var(--text-muted)',
             halo: true,
         });
     }

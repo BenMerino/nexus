@@ -11,7 +11,7 @@
 import type { Primitive } from '../chart-primitive.types.js';
 import type { FeatureModule, FeatureResolver } from './feature.types.js';
 
-const TRENDLINE_COLOR = 'var(--text-secondary)';
+const TRENDLINE_COLOR = 'var(--text-muted)';
 const TRENDLINE_OPACITY = 0.65;
 const TRENDLINE_STROKE_PX = 1.5;
 
