@@ -11,6 +11,7 @@
 import { linearScale, bandScale, pointScale, niceDomain } from './scales.js';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import { activeTierCount } from './chart-tier-groups.js';
+import { baseXAxisReserve } from './x-axis-reserve.js';
 
 /** The maximum number of tier rows any fold can render — `day` fold
  *  shows 4 rows (day + week + month + year). The plot reserves space
@@ -59,7 +60,18 @@ export function buildCartesianLayout(
      *  'year' empty (no year transition inside 90 days) → 1 base + 2
      *  tiers = 48px, not 1 + 3 = 62px. */
     const renderedTiers = activeTierCount(chart);
-    const defaultBottom = 20 + renderedTiers * 14;
+    /* Base-label row reserve: a flat row is ~20px, but when the base labels
+     *  are too wide to fit horizontally the renderer rotates them to -40°
+     *  (ChromeXAxisBand) and they drop well below a flat strip. Size the
+     *  base reserve from the SAME rotation prediction the renderer uses
+     *  (x-axis-reserve, the shared authority) so long category labels —
+     *  journal/country names — aren't clipped by the container's
+     *  overflow:hidden. Tier rows (always short: W3/May/2024) add 14px each
+     *  on top; they never rotate. Plot-width estimate uses the 36px L/R
+     *  gutters this same margin sets below. */
+    const baseLabels = (chart.data as any[]).map((d: any) => String(d.label ?? ''));
+    const baseReserve = baseXAxisReserve(baseLabels, Math.max(1, width - 72));
+    const defaultBottom = baseReserve + renderedTiers * 14;
     /* `right` matches `left` so the plot rect sits horizontally centered
      *  inside the chart canvas (left gutter holds y-axis tick labels;
      *  right gets the same width for visual symmetry, kept empty).
