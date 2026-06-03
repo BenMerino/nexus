@@ -11,6 +11,8 @@
 import { linearScale, bandScale, pointScale, niceDomain } from './scales.js';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import { activeTierCount } from './chart-tier-groups.js';
+import { chartTrace } from './chart-trace.js';
+const chartTraceLayout = (tag: string, p: unknown) => chartTrace(tag, p, 'layout');
 
 /** The maximum number of tier rows any fold can render — `day` fold
  *  shows 4 rows (day + week + month + year). The plot reserves space
@@ -92,6 +94,7 @@ export function buildCartesianLayout(
     const yMaxFromAtoms = typeof chart.__yMax === 'number' ? chart.__yMax : 0;
     const yDom = niceDomain(0, Math.max(yMaxFromAtoms, ...allVals, 1));
     const yS = linearScale([yDom.min, yDom.max], [yR[1], yR[0]]);
+    chartTraceLayout('layout yDom', { type: t, yMax: yDom.max, series: series.length, __yMax: yMaxFromAtoms });
 
     const band = bandScale(labels, xR, isCurve ? 0 : 0.2);
     const points = pointScale(labels.length, xR);
