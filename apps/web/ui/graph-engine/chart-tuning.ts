@@ -45,7 +45,7 @@ export interface ChartTuning {
  *  marks were perceptibly muted against the dark surface; 1.5 lands
  *  closer to the OKLCH-authored palette intent. */
 export const DEFAULT_CHART_TUNING: ChartTuning = {
-    glow: 0.15,
+    glow: 0,
     iridescence: 0,
     edgeSoftness: 1,
     saturation: 1.5,
