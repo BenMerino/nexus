@@ -70,9 +70,13 @@ export function buildCartesianLayout(
      *  on top; they never rotate. Plot-width estimate uses the 36px L/R
      *  gutters this same margin sets below. */
     const baseLabels = (chart.data as any[]).map((d: any) => String(d.label ?? ''));
-    /* Categorical x (named entities, no temporal fold) always rotates every
-     *  label — must match cartesianChrome's `isCategorical`. */
-    const categorical = !isCurve(t) && !chart.__foldUnit;
+    /* Curve check, computed up here so the categorical test (which gates the
+     *  bottom-margin reserve below) can use it. Inlined rather than calling
+     *  the exported `isCurve(t)` fn so there's no name collision with this
+     *  local. Categorical x = a non-curve bar with no temporal fold unit
+     *  (named entities); must match cartesianChrome's `isCategorical`. */
+    const isCurveX = t === 'line' || t === 'multi-line' || t === 'area' || t === 'stacked-area' || spark;
+    const categorical = !isCurveX && !chart.__foldUnit;
     const baseReserve = baseXAxisReserve(baseLabels, Math.max(1, width - 72), categorical);
     const defaultBottom = baseReserve + renderedTiers * 14;
     /* `right` matches `left` so the plot rect sits horizontally centered
@@ -92,7 +96,6 @@ export function buildCartesianLayout(
     const data = chart.data as any[];
     const labels = data.map((d: any) => String(d.label ?? ''));
 
-    const isCurve = t === 'line' || t === 'multi-line' || t === 'area' || t === 'stacked-area' || spark;
     const isStacked = t === 'stacked-bar' || t === 'stacked-area';
     const isMulti = t === 'multi-line';
     const series = chart.series || [];
@@ -108,7 +111,7 @@ export function buildCartesianLayout(
     const yDom = niceDomain(0, Math.max(yMaxFromAtoms, ...allVals, 1));
     const yS = linearScale([yDom.min, yDom.max], [yR[1], yR[0]]);
 
-    const band = bandScale(labels, xR, isCurve ? 0 : 0.2);
+    const band = bandScale(labels, xR, isCurveX ? 0 : 0.2);
     const points = pointScale(labels.length, xR);
 
     /* Atomic-flow temporal-x: when buckets carry __x (0..1 fraction
@@ -131,7 +134,7 @@ export function buildCartesianLayout(
                 /* Bar padding 10% (was 20% per side in the old code; halving
                  * keeps the visual density similar with slightly thicker
                  * bars). Curves use no padding. */
-                const pad = isCurve ? 0 : w * 0.1;
+                const pad = isCurveX ? 0 : w * 0.1;
                 return { x: x0 + pad, width: Math.max(0, w - 2 * pad) };
             }
             const cx = fromTemporalX(d.__x);
@@ -144,7 +147,7 @@ export function buildCartesianLayout(
     const pointAt = (i: number): number => {
         const d = data[i] as any;
         if (hasTemporalX && typeof d.__x === 'number') return fromTemporalX(d.__x);
-        if (isCurve) return points(i);
+        if (isCurveX) return points(i);
         const pos = positionAt(i);
         return pos.x + pos.width / 2;
     };
