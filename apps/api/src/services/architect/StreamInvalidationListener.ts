@@ -19,6 +19,7 @@
  * ──────────────────────────────────────────────────────────── */
 
 import { streamRegistry } from "./StreamRegistry";
+import { directiveCache } from "./DirectiveCache";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { Client } = require("pg");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -50,6 +51,9 @@ class StreamInvalidationListener {
     try {
       const row = await peekEvent(payload);
       if (!row || !INVALIDATING.has(row.channel)) return;
+      // Bust the HTTP directive cache (whole tenant — the NOTIFY carries no
+      // kind) AND re-push live WS streams.
+      directiveCache.invalidateTenant(Number(row.tenant_id));
       await streamRegistry.invalidateTenant(Number(row.tenant_id));
     } catch (e) {
       console.warn("[StreamInvalidation] peek/invalidate failed:", (e as Error).message);

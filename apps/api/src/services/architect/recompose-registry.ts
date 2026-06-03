@@ -21,6 +21,7 @@ import { statComposer, type ServerGraphDirective } from "./StatComposer";
 import { streamKeyOf } from "./stream-key-server";
 import { ANALYTICS_METRICS } from "../analytics/AnalyticsCatalog";
 import type { CatalogQuery } from "../analytics/analytics-catalog.types";
+import { directiveCache } from "./DirectiveCache";
 
 export type AccessClass = "public" | "scoped";
 
@@ -63,7 +64,10 @@ export function accessOf(kind: string): AccessClass | null {
 export async function recomposePublic(query: PublicQuery): Promise<unknown> {
   const fn = PUBLIC_KINDS[query.kind];
   if (!fn) throw unknownKind(query.kind);
-  const directive = await fn(query) as Record<string, unknown>;
+  // Compute-once: the directive is identical for every anonymous viewer of
+  // this (kind, tenant, window) until an invalidatedBy event fires. Shared
+  // with the WS StreamRegistry via the same cache.
+  const directive = await directiveCache.getOrCompute(query, () => fn(query)) as Record<string, unknown>;
   // Stamp the canonical stream key from the directive's own (normalized)
   // query so the Phase-C client can subscribe without re-canonicalizing.
   if (directive && directive.query && typeof directive.query === "object") {

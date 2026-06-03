@@ -15,11 +15,17 @@ import { BaseGovernor } from "./BaseGovernor";
 import { auditLedger } from "./AuditLedger";
 import { scanActions } from "./actions/action-scanner";
 import { scanResolvers } from "./resolvers/resolver-scanner";
+import { directiveCache } from "./architect/DirectiveCache";
 
 export function bootstrap(): void {
   BaseGovernor.configure({ ledger: auditLedger });
   scanActions();
   require("./conversation-bindings"); // side-effect: domains self-register
   scanResolvers();
-  console.log("[bootstrap] DGA wired (ledger + scanners)");
+  // Wire the analytics directive cache's invalidatedBy hooks (in-process
+  // events). Independent of the WS layer, so the HTTP recompose path gets
+  // compute-once caching even when /api/stream is down. The cross-process
+  // path (worker ingestion → outbox) is wired in StreamInvalidationListener.
+  directiveCache.wireInvalidation();
+  console.log("[bootstrap] DGA wired (ledger + scanners + directive cache)");
 }
