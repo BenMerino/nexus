@@ -42,6 +42,9 @@ export interface TimeChartDirective {
   atoms: unknown[];
   data: never[];
   thresholds?: { value: number; label: string; color: string }[];
+  /** KPI headline. `reduce:'mean'` derives papers/year from the plotted
+   *  buckets in the engine, so it tracks window/fold (cosmetic path). */
+  kpi?: { caption: string; reduce?: "mean" | "sum" | "last" | "first" | "min" | "max" | "count" | "slope"; figure?: string; trend?: "auto" | { direction: "rising" | "flat" | "falling"; label: string } };
 }
 
 /** publications.cadence — papers per period by work-type, as a time-series.
@@ -60,6 +63,9 @@ export async function composeCadence(ctx: ActorContext): Promise<TimeChartDirect
     atoms,
     data: [],
     thresholds: [{ value: meanPerYear, label: meanPerYear.toFixed(1), color: "var(--fg-dim)" }],
+    // Headline = mean papers/year, DERIVED from the plotted buckets so it
+    // tracks window/fold (cosmetic reduction, not a hand-typed figure).
+    kpi: { caption: "papers / year (avg)", reduce: "mean" },
   };
 }
 

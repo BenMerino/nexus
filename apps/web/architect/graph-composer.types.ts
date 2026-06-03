@@ -148,6 +148,33 @@ export type GraphToggleSpec = ToggleSpec<GraphQuery>;
 export interface GraphDirective extends ReplayableDirective<GraphQuery> {
     type: GraphType;
     title: string;
+    /** Optional KPI headline rendered ABOVE the chart: a large figure with
+     *  an uppercase caption and an optional rising/flat/falling trend chip.
+     *  Off by default. Two governed sources, split on the authoritative-vs-
+     *  cosmetic line (ANTI_PATTERNS §1):
+     *
+     *   • `reduce` — a COSMETIC reduction of the plotted series (mean/sum/
+     *     slope/…). The engine derives the figure from the chart's own
+     *     `__buckets` in `resolveAtomicDirective`, so it recomputes on
+     *     window/fold and can never drift from what's on screen. Use for
+     *     view-local headlines ("avg/year", "total visible").
+     *   • `figure` — an AUTHORITATIVE value the composer owns server-side
+     *     (a "score", a booked revenue total). Pre-formatted, presented
+     *     as-is; never re-derived client-side.
+     *
+     *  `trend.auto` classifies the reduction's slope into rising/flat/
+     *  falling (cosmetic path only). `trend` literal sets it explicitly. */
+    kpi?: {
+        /** Short uppercase caption under the figure, e.g. "score". */
+        caption: string;
+        /** Cosmetic path: which reduction of the plotted series to surface. */
+        reduce?: import('../ui/graph-engine/reduction.js').ReductionKind;
+        /** Authoritative path: composer-owned pre-formatted value. */
+        figure?: string;
+        /** Trend chip. `'auto'` derives direction from the reduction's
+         *  slope (cosmetic path); a literal sets it explicitly. */
+        trend?: 'auto' | { direction: 'rising' | 'flat' | 'falling'; label: string };
+    };
     /** Pre-bucketed render data. Legacy field — directives that have NOT
      *  migrated to the atomic foundation still populate this directly.
      *  Migrated directives leave it empty; the renderer folds `atoms`
@@ -262,6 +289,11 @@ export interface GraphDirective extends ReplayableDirective<GraphQuery> {
     /** Visible y-domain maximum derived from per-bucket stack-tops at
      *  the current fold. */
     __yMax?: number;
+    /** Resolved KPI reduction for `kpi.reduce` — computed over `__buckets`
+     *  in `resolveAtomicDirective` (the same clock as the buckets, so the
+     *  headline tracks window/fold). Absent when `kpi` is unset or uses the
+     *  authoritative `figure` path. `ChartKpiHeader` reads this. */
+    __kpiReduction?: import('../ui/graph-engine/reduction.js').Reduction;
     /** Off-window neighbor points — see EdgeNeighbors in
      *  `graph-edge-neighbors.types.ts`. */
     __edgeNeighbors?: import('./graph-edge-neighbors.types.js').EdgeNeighbors;

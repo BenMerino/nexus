@@ -6,6 +6,7 @@
 
 import type { Primitive } from '../chart-primitive.types.js';
 import type { FeatureModule, FeatureResolver } from './feature.types.js';
+import { reduce } from '../reduction.js';
 
 const AVG_COLOR = 'var(--text-tertiary)';
 const AVG_OPACITY = 0.55;
@@ -15,9 +16,9 @@ const resolve: FeatureResolver<{ kind: 'averageLine' }> = (
     data, layout,
 ) => {
     if (data.length === 0) return [];
-    let sum = 0;
-    for (const d of data) sum += d.value;
-    const avg = sum / data.length;
+    /* The overlay is the `mean` reduction projected into the plot — the
+     *  same scalar a KPI headline reads, computed by the one kernel. */
+    const avg = reduce('mean', data).value;
     const y = layout.yS(avg);
     if (y < layout.yR[0] || y > layout.yR[1]) return [];
     const overlay: Primitive = {

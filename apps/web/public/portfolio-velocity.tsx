@@ -11,8 +11,6 @@ export type Velocity = {
   trend: 'rising' | 'flat' | 'falling';
 };
 
-const TREND_SYMBOL: Record<Velocity['trend'], string> = { rising: '▲', flat: '→', falling: '▼' };
-const TREND_COLOR: Record<Velocity['trend'], string> = { rising: 'var(--ok)', flat: 'var(--fg-dim)', falling: 'var(--err)' };
 
 export interface VelocityLabels {
   score: string;
@@ -34,7 +32,7 @@ const CAPTION: React.CSSProperties = { fontSize: 10, textTransform: 'uppercase',
 // are `observed` (solid, filled); the still-filling current year is `partial`
 // and forecast years are `projected` — the engine's status→style table dashes
 // the tail. `valueLabels` prints each count above its point.
-export function buildVelocityChart(v: Velocity, title: string): GraphDirective {
+export function buildVelocityChart(v: Velocity, title: string, labels: VelocityLabels = DEFAULT_LABELS): GraphDirective {
   const hist = v.series.map(p => ({
     label: String(p.year),
     value: p.partial && p.projected != null ? p.projected : p.total,
@@ -51,26 +49,22 @@ export function buildVelocityChart(v: Velocity, title: string): GraphDirective {
     xLabel: 'Year',
     yLabel: 'Citations',
     valueLabels: true,
+    // Headline rides the graph-engine `kpi`. `score` is an AUTHORITATIVE
+    // composed metric (not a reduction of the plotted citation series), so
+    // it takes the composer-owned `figure` path — presented as-is, never
+    // re-derived client-side. Trend is supplied explicitly alongside it.
+    kpi: {
+      figure: v.score.toFixed(2),
+      caption: labels.score,
+      trend: { direction: v.trend, label: labels.trend[v.trend] },
+    },
     data: [...hist, ...fc] as any,
   };
 }
 
 export function VelocityPanel({ velocity, labels = DEFAULT_LABELS }: { velocity: Velocity; labels?: VelocityLabels }) {
-  const seed = useMemo(() => buildVelocityChart(velocity, labels.actual), [velocity, labels.actual]);
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 4 }}>
-        <div>
-          <div style={FIGURE}>{velocity.score.toFixed(2)}</div>
-          <div style={CAPTION}>{labels.score}</div>
-        </div>
-        <div style={{ color: TREND_COLOR[velocity.trend], fontSize: 16, fontFamily: 'var(--mono)' }}>
-          {TREND_SYMBOL[velocity.trend]} {labels.trend[velocity.trend]}
-        </div>
-      </div>
-      <DirectiveChart seed={seed} />
-    </div>
-  );
+  const seed = useMemo(() => buildVelocityChart(velocity, labels.actual, labels), [velocity, labels]);
+  return <DirectiveChart seed={seed} />;
 }
 
 export function VelocityPanelSkeleton() {

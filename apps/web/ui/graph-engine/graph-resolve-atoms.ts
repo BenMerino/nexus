@@ -21,6 +21,7 @@ import { bucketSequence } from '../../architect/bucket-sequence.js';
 import { formatLabel } from '../../architect/fold-atoms-calendar.js';
 import type { GraphDirective, ChartData, GraphQuery } from '../../architect/graph-composer.types.js';
 import { maxLookbackForDirective } from './graph-features/index.js';
+import { reduce } from './reduction.js';
 
 /** ISO YYYY-MM-DD → whole-day count between that date and today (UTC).
  *  Returns 0 when ISO is today or in the future. */
@@ -280,5 +281,10 @@ export function resolveAtomicDirective(
         __yMax: yMax,
         __priorBuckets: priorBuckets,
         __edgeNeighbors: (edgeNeighbors.left || edgeNeighbors.right) ? edgeNeighbors : undefined,
+        /* Cosmetic KPI reduction over the SAME visible buckets — so the
+         *  headline tracks window/fold and never drifts. Only the
+         *  `reduce` (cosmetic) path resolves here; the authoritative
+         *  `figure` path is presented as-is by `ChartKpiHeader`. */
+        ...(chart.kpi?.reduce ? { __kpiReduction: reduce(chart.kpi.reduce, seq) } : {}),
     } as GraphDirective;
 }

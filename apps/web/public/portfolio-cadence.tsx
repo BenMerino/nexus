@@ -26,12 +26,11 @@ export function CadencePanel({ cadence, tenantId, orcid, labels = DEFAULT_LABELS
   if (!cadence.series.length) {
     return <p style={{ color: 'var(--fg-muted)' }}>No publication years on record.</p>;
   }
+  // Headline (mean papers/year) now rides the chart's `kpi.reduce`,
+  // derived server-side-declared but engine-computed over the plotted
+  // buckets — so it tracks the window instead of being hand-rendered here.
   return (
     <div>
-      <div style={{ marginBottom: 4 }}>
-        <div style={FIGURE}>{cadence.meanPerYear.toFixed(1)}</div>
-        <div style={CAPTION}>{labels.avgPerYear}</div>
-      </div>
       {/* Both surfaces render the SAME server-composed cadence (atom directive,
           uniform-drop toggle), differing only in scope:
           - public tenant page → RecomposeChart (anonymous, tenant-wide)

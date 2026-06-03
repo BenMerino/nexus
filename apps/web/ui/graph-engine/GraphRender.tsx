@@ -8,6 +8,7 @@ import { useToggleFilters } from './useToggleFilters.js';
 import { ValueLegend, HoverProbeProvider, useColorClip } from './ValueLegend.js';
 import { defaultLegendMode } from '../../architect/graph-composer.types.js';
 import { ChartBody } from './ChartBody.js';
+import { ChartKpiHeader } from './ChartKpiHeader.js';
 import { CardProvider } from './CardContext.js';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import { resolveAtomicDirective } from './graph-resolve-atoms.js';
@@ -145,6 +146,7 @@ export function GraphRender({ chart, onToggle, isLoading = false, error, onBucke
                 <CardProvider cardRef={containerRef}>
                 {container && (
                 <BaseBox style={{ position: 'relative', zIndex: 1, padding: isCompact ? '0.375rem 0.5rem' : '0.5rem 0.5rem 0.25rem' }}>
+                    {resolved.kpi && <ChartKpiHeader chart={resolved} />}
                     <ChartBody
                         chart={chart}
                         resolved={resolved}
