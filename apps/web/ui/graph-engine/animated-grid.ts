@@ -7,6 +7,7 @@
 import { rampColor } from './scales.js';
 import { foldHeatmapColumns } from './heatmap-fold-columns.js';
 import { cs, getSeriesPalette, weightOf, seriesColorFor } from './svg-parts.js';
+import { radarMaxR } from './chart-primitives-radial.js';
 import type { Primitive } from './chart-primitive.types.js';
 import { lerpNumber, lerpNumberArray, type AnimatedFamily } from './animated-family.js';
 
@@ -23,7 +24,7 @@ export const animatedRadar: AnimatedFamily<RadarState> = {
         const series = chart.series || [];
         const c = cs(chart);
         if (data.length < 3 || series.length === 0) return { series: [] };
-        const cx = size / 2, cy = size / 2, maxR = size * 0.42;
+        const cx = size / 2, cy = size / 2, maxR = radarMaxR(size);
         const axes = data.length;
         const angleStep = (Math.PI * 2) / axes;
         const allVals = data.flatMap((d: any) => series.map(s => d[s] ?? 0));

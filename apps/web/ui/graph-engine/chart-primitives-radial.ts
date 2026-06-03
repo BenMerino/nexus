@@ -32,12 +32,33 @@ export interface RadialLayout {
     innerR: number;
 }
 
+/* Pie/donut wedges sprout callout labels just outside `outerR`
+ *  (`radialChrome` anchors text at `outerR + CALLOUT_GAP` and the glyphs
+ *  run further outward). The chrome SVG clips at the square viewBox, so
+ *  the radius MUST leave an absolute margin wide enough for that text —
+ *  a proportional reserve clips on small charts and wastes space on
+ *  large ones because label width is in px, not a fraction of size.
+ *  Gauge/progress-ring have no outward labels (only centred text), so
+ *  they keep the near-full radius. */
+const CALLOUT_GAP = 10;          // anchor offset past outerR (see radialChrome)
+const CALLOUT_LABEL_PX = 52;     // room for the widest callout glyph run
+const CALLOUT_MARGIN = CALLOUT_GAP + CALLOUT_LABEL_PX;
+
 export function buildRadialLayout(chart: GraphDirective, size: number): RadialLayout {
     const t = chart.type;
     const cx = size / 2, cy = size / 2;
-    const outerR = size * 0.48;
+    const hasCallouts = t === 'pie' || t === 'donut';
+    /* Clamp the reserve to a fraction of the half-size so tiny inline
+     *  charts still render a sensible wedge instead of collapsing. */
+    const outerR = hasCallouts
+        ? Math.max(size * 0.30, size / 2 - CALLOUT_MARGIN)
+        : size * 0.48;
     const donut = t === 'donut' || t === 'gauge' || t === 'progress-ring';
-    const innerR = donut ? (t === 'donut' ? size * 0.29 : size * 0.32) : 0;
+    /* Inner radius tracks outerR so the band stays proportional even
+     *  when callouts shrink the wedge. */
+    const innerR = donut
+        ? (t === 'donut' ? outerR * 0.60 : outerR * 0.67)
+        : 0;
     return { size, cx, cy, outerR, innerR };
 }
 
@@ -60,8 +81,8 @@ export function radialChrome(chart: GraphDirective, layout: RadialLayout): Chart
             const mid = (arc.startAngle + arc.endAngle) / 2;
             const cosM = Math.cos(mid), sinM = Math.sin(mid);
             const onRight = cosM >= 0;
-            const lx = layout.cx + (layout.outerR + 10) * cosM + (onRight ? 4 : -4);
-            const ly = layout.cy + (layout.outerR + 10) * sinM;
+            const lx = layout.cx + (layout.outerR + CALLOUT_GAP) * cosM + (onRight ? 4 : -4);
+            const ly = layout.cy + (layout.outerR + CALLOUT_GAP) * sinM;
             elements.push({
                 kind: 'text', x: lx, y: ly - 1,
                 text: labels[i],
@@ -124,17 +145,28 @@ export function radialChrome(chart: GraphDirective, layout: RadialLayout): Chart
     }
     return { elements };
 }
+/* Radar axis labels are middle-anchored at `radarMaxR + RADAR_LABEL_GAP`,
+ *  so their glyphs straddle that point and the left/right/top/bottom axes
+ *  run past the square viewBox unless the polygon radius reserves room.
+ *  Geometry (animated-grid) and chrome (radarChrome) both read this so
+ *  the data and its labels can never drift. */
+export const RADAR_LABEL_GAP = 12;
+const RADAR_LABEL_PX = 30;       // half-label slop on the widest axis text
+export function radarMaxR(size: number): number {
+    return Math.max(size * 0.30, size / 2 - RADAR_LABEL_GAP - RADAR_LABEL_PX);
+}
+
 export function radarChrome(chart: GraphDirective, size: number): ChartChrome {
     const data = chart.data as any[];
     if (data.length < 3) return { elements: [] };
-    const cx = size / 2, cy = size / 2, maxR = size * 0.42;
+    const cx = size / 2, cy = size / 2, maxR = radarMaxR(size);
     const axes = data.length;
     const angleStep = (Math.PI * 2) / axes;
     const elements: ChromeElement[] = [];
     for (let i = 0; i < axes; i++) {
         const a = -Math.PI / 2 + i * angleStep;
-        const lx = cx + (maxR + 12) * Math.cos(a);
-        const ly = cy + (maxR + 12) * Math.sin(a);
+        const lx = cx + (maxR + RADAR_LABEL_GAP) * Math.cos(a);
+        const ly = cy + (maxR + RADAR_LABEL_GAP) * Math.sin(a);
         elements.push({
             kind: 'text', x: lx, y: ly,
             text: String(data[i].label ?? ''),

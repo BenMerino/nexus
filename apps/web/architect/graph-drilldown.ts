@@ -21,6 +21,38 @@ function isoToday(): string {
     return new Date().toISOString().split('T')[0];
 }
 
+const DAY_MS = 86_400_000;
+
+/** Inclusive day-range `[startMs, endMs]` a query window covers.
+ *  `asOf` (or today) is the inclusive right edge; the left edge is
+ *  `windowDays - 1` days earlier. `windowDays == null` ⇒ all-time, so
+ *  the left edge is -∞. */
+function windowRange(q: GraphQuery): { startMs: number; endMs: number } {
+    const endMs = Date.parse(`${q.asOf ?? isoToday()}T00:00:00Z`);
+    const startMs = q.windowDays == null
+        ? -Infinity
+        : endMs - (q.windowDays - 1) * DAY_MS;
+    return { startMs, endMs };
+}
+
+/** A drill is legitimate only when the child window is *strictly inside*
+ *  the parent window — i.e. it actually descends the containment
+ *  hierarchy. This is what keeps the breadcrumb honest: clicking a
+ *  sibling period (Q1 → Q2), an ancestor (inside Q1, click the year),
+ *  or the same period twice are all NOT drills and must be rejected so
+ *  they never push a misleading crumb. Pure size comparison can't tell
+ *  a sibling from a child (two quarters are ~equal width); containment
+ *  can. The `asOf`-from-today fallback means an all-time parent still
+ *  contains any bounded child ending on/before "now". */
+function isContained(child: GraphQuery, parent: GraphQuery): boolean {
+    const c = windowRange(child);
+    const p = windowRange(parent);
+    const insideLeft = c.startMs >= p.startMs;
+    const insideRight = c.endMs <= p.endMs;
+    const strictlyNarrower = c.startMs > p.startMs || c.endMs < p.endMs;
+    return insideLeft && insideRight && strictlyNarrower;
+}
+
 /** Compute the end-of-bucket ISO date for the clicked index. Bucket N-1
  *  ends at `parentEnd`; earlier buckets step back by `daysPerBucket`. */
 function computeBucketEnd(parent: GraphQuery, bucketIndex: number, totalBuckets: number, daysPerBucket: number): string {
@@ -39,7 +71,8 @@ export function narrowQueryToBucket(
     if (daysPerBucket <= 1) return null; // already at finest granularity
     if (bucketIndex < 0 || bucketIndex >= totalBuckets) return null;
     const asOf = computeBucketEnd(parent, bucketIndex, totalBuckets, daysPerBucket);
-    return { ...parent, windowDays: Math.max(1, Math.round(daysPerBucket)), asOf };
+    const child = { ...parent, windowDays: Math.max(1, Math.round(daysPerBucket)), asOf };
+    return isContained(child, parent) ? child : null;
 }
 
 /** Calendar-period drill-down. Decodes a chrome tier-group's `key`
@@ -58,16 +91,28 @@ export function narrowQueryToBucket(
 export function narrowQueryToPeriod(parent: GraphQuery, periodKey: string): GraphQuery | null {
     const bounds = periodBounds(periodKey);
     if (!bounds) return null;
-    const { startISO, endISO } = bounds;
-    const startMs = Date.parse(`${startISO}T00:00:00Z`);
-    const endMs = Date.parse(`${endISO}T00:00:00Z`);
-    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return null;
-    const spanDays = Math.max(1, Math.round((endMs - startMs) / 86_400_000));
-    if (parent.windowDays != null && spanDays >= parent.windowDays) return null;
-    /* `asOf` is the period's last day (inclusive end - 1). */
-    const asOfMs = endMs - 86_400_000;
-    const asOf = new Date(asOfMs).toISOString().split('T')[0];
-    return { ...parent, windowDays: spanDays, asOf };
+    const periodStartMs = Date.parse(`${bounds.startISO}T00:00:00Z`);
+    /* Inclusive last day of the period (`endISO` is the half-open upper
+     *  bound). */
+    const periodEndMs = Date.parse(`${bounds.endISO}T00:00:00Z`) - DAY_MS;
+    if (!Number.isFinite(periodStartMs) || !Number.isFinite(periodEndMs)) return null;
+    /* Clamp the period to the parent window. Drilling "2026" from a view
+     *  anchored in June must land on Jan 1 → Jun 3 (the part of 2026
+     *  actually on screen), never Jan → Dec — a window full of months
+     *  that haven't happened is exactly the "impossible view" we're
+     *  fixing. The clamp keeps `asOf` from ever jumping past the data. */
+    const p = windowRange(parent);
+    const startMs = Math.max(periodStartMs, p.startMs);
+    const endMs = Math.min(periodEndMs, p.endMs);
+    if (endMs < startMs) return null; // period sits entirely outside the view
+    const spanDays = Math.max(1, Math.round((endMs - startMs) / DAY_MS) + 1);
+    const asOf = new Date(endMs).toISOString().split('T')[0];
+    const child = { ...parent, windowDays: spanDays, asOf };
+    /* Containment — not size — is the gate. A sibling period (Q1 → Q2)
+     *  has the same width but a disjoint range, and clicking the year
+     *  while inside a quarter widens; both must be rejected so the
+     *  breadcrumb only ever descends. */
+    return isContained(child, parent) ? child : null;
 }
 
 /** Parse a tier-group key into half-open calendar bounds. Key shapes
@@ -162,9 +207,9 @@ export function narrowQueryToAtomRange(
     if (endKey < startKey) return null;
     const spanHours = endKey - startKey + 1;
     const spanDays = Math.max(1, Math.round(spanHours / HOURS_PER_DAY));
-    // No-op if we'd be widening or staying put.
-    if (parent.windowDays != null && spanDays >= parent.windowDays) return null;
-    return { ...parent, windowDays: spanDays, asOf: anchorISO };
+    const child = { ...parent, windowDays: spanDays, asOf: anchorISO };
+    // Drill only when the cell's window sits strictly inside the parent.
+    return isContained(child, parent) ? child : null;
 }
 
 /** Inverse: given a child query that was the result of drilling, return the
