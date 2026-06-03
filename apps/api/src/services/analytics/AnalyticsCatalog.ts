@@ -1,4 +1,5 @@
 import { composeCadence, composeByIndex } from "../architect/PublicationCharts";
+import { composeTopJournals, composeCollaborators, composeCountries } from "../architect/PublicCategoryCharts";
 import type { ActorContext } from "../../substrate/actor";
 import type { AnalyticsMetric, CatalogQuery } from "./analytics-catalog.types";
 
@@ -65,6 +66,39 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     access: "public",
     compose: (q) => composeByIndex(parseInt(q.tenantId, 10)),
     invalidatedBy: ["publication.upserted", "ingestion.completed", "venue.indexationUpdated"],
+    surfaces: ["overview"],
+  },
+  {
+    kind: "publications.topJournals",
+    domain: "publication",
+    title: "Principales revistas",
+    description: "Top journals by publication count (ranked bar).",
+    queryShape: "none",
+    access: "public",
+    compose: (q) => composeTopJournals(parseInt(q.tenantId, 10)),
+    invalidatedBy: ["publication.upserted", "ingestion.completed"],
+    surfaces: ["overview"],
+  },
+  {
+    kind: "publications.collaborators",
+    domain: "publication",
+    title: "Principales instituciones colaboradoras",
+    description: "Top collaborating institutions by co-authored paper count (ranked bar).",
+    queryShape: "none",
+    access: "public",
+    compose: (q) => composeCollaborators(parseInt(q.tenantId, 10)),
+    invalidatedBy: ["publication.upserted", "ingestion.completed"],
+    surfaces: ["overview"],
+  },
+  {
+    kind: "publications.countries",
+    domain: "publication",
+    title: "Publicaciones por país",
+    description: "Publications by author-affiliation country (donut).",
+    queryShape: "none",
+    access: "public",
+    compose: (q) => composeCountries(parseInt(q.tenantId, 10)),
+    invalidatedBy: ["publication.upserted", "ingestion.completed"],
     surfaces: ["overview"],
   },
 ];

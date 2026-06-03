@@ -24,7 +24,9 @@ function useComposed(doFetch: () => Promise<Response>, deps: unknown[]) {
     let cancelled = false;
     doFetch()
       .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((d: GraphDirective | null) => { if (!cancelled) setDirective(d && (d as any).atoms ? d : null); })
+      // Accept time-series (atoms) AND categorical (data) directives — both are
+      // valid server-composed kinds; only an empty/null payload is dropped.
+      .then((d: GraphDirective | null) => { if (!cancelled) setDirective(d && ((d as any).atoms || (d as any).data) ? d : null); })
       .catch(() => { if (!cancelled) setFailed(true); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps

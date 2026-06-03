@@ -46,6 +46,13 @@ export function TenantChartsTab({ stats, tenantId, charts }: { stats: PublicStat
             <DirectiveChart seed={chart} />
           </div>
         ))}
+        {/* Categorical charts — server-COMPOSED catalog kinds (no client-side
+            GraphDirective.data). Each is one AnalyticsCatalog entry. */}
+        {['publications.topJournals', 'publications.collaborators', 'publications.countries'].map(kind => (
+          <div key={kind} className="card" style={{ minHeight: 400 }}>
+            <RecomposeChart kind={kind} tenantId={tenantId} minHeight={400} />
+          </div>
+        ))}
       </div>
     </>
   );
