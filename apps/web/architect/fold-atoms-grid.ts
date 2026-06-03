@@ -36,10 +36,13 @@ export interface GridBucket {
  *  7×24 = 168 cells at the narrowest zoom, scaling down as the window
  *  widens.
  *
- *    span ≤ 14d   → day × hour     (Busy Hours — current heatmap)
- *    span ≤ 90d   → week × day     (this quarter, pattern by weekday)
- *    span ≤ 400d  → month × day    (this year, day-of-month grid)
- *    otherwise    → year × month   (multi-year roll-up)
+ *    span ≤ 14d    → day × hour     (Busy Hours — current heatmap)
+ *    span ≤ 90d    → week × day     (this quarter, pattern by weekday)
+ *    span ≤ 400d   → month × day    (this year, day-of-month grid)
+ *    span ≤ 40y    → year × month   (multi-year roll-up)
+ *    otherwise     → decade × year  (multi-decade roll-up — keeps the
+ *                                    column count readable when a span
+ *                                    runs 40+ years)
  *
  *  Both axes obey the unit ladder; coarser-than-row col never appears.
  *  `hasHourly` gates the finest pair — daily-only atoms get the day×week
@@ -48,7 +51,8 @@ export function pickAutoUnitPair(visibleDays: number, hasHourly: boolean = false
     if (hasHourly && visibleDays <= 14) return ['day', 'hour'];
     if (visibleDays <= 90) return ['week', 'day'];
     if (visibleDays <= 400) return ['month', 'day'];
-    return ['year', 'month'];
+    if (visibleDays <= 365 * 40) return ['year', 'month'];
+    return ['decade', 'year'];
 }
 
 /** Calendar-aligned 2D fold. Walks rowUnit boundaries; inside each
@@ -199,5 +203,6 @@ export function cellSpanDays(rowUnit: Exclude<FoldUnit, 'auto'>, colUnit: Exclud
     if (colUnit === 'week') return 7;
     if (colUnit === 'month') return 30;
     if (colUnit === 'quarter') return 91;
-    return 365;
+    if (colUnit === 'year') return 365;
+    return 3650;
 }

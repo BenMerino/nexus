@@ -5,6 +5,7 @@
  */
 
 import { rampColor } from './scales.js';
+import { foldHeatmapColumns } from './heatmap-fold-columns.js';
 import { cs, getSeriesPalette, weightOf, seriesColorFor } from './svg-parts.js';
 import type { Primitive } from './chart-primitive.types.js';
 import { lerpNumber, lerpNumberArray, type AnimatedFamily } from './animated-family.js';
@@ -95,7 +96,7 @@ export const animatedHeatmap: AnimatedFamily<HeatmapState> = {
         const layout = layoutRaw as HeatmapLayoutInput;
         const c = cs(chart);
         const ramp = c.gradient ?? ['var(--status-success)', 'var(--status-warning)', 'var(--status-error)'];
-        const cellsData = chart.data as any[];
+        const cellsData = foldHeatmapColumns(chart.data as any[]);
         const rows = [...new Set(cellsData.map((d: any) => d.row))];
         const cols = [...new Set(cellsData.map((d: any) => d.col))];
         const cellMap = new Map(cellsData.map((d: any) => [`${d.row}|${d.col}`, d.value]));

@@ -37,12 +37,17 @@ export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
  * on the visible-pixel budget; the rest are explicit user choices.
  *
  * Ordered ladder (fine → coarse):
- *   hour < day < week < month < quarter < year
+ *   hour < day < week < month < quarter < year < decade
  *
  * `'hour'` enables sub-day resolution for builders that ship hourly
  * atoms (`Atom.hour` set). Daily-only builders never reach this rung —
- * `eligibleFoldUnits` filters it out unless atoms expose hour data. */
-export type FoldUnit = 'auto' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year';
+ * `eligibleFoldUnits` filters it out unless atoms expose hour data.
+ *
+ * `'decade'` is the coarsest rung — 10 calendar years per bucket,
+ * aligned to the …0 year (1990, 2000). It only earns its place over
+ * multi-decade spans (academic publication histories, founding-to-now
+ * timelines) where even `year` produces 40+ unreadable buckets. */
+export type FoldUnit = 'auto' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year' | 'decade';
 
 /** Atom key resolution. `key` is hours-since-anchor (integer). Daily
  * atoms occupy hour 0 of each day (`key = dayIdx * HOURS_PER_DAY`);
@@ -118,7 +123,8 @@ export function pickAutoFoldUnit(visibleDays: number, hasHourly: boolean = false
     if (visibleDays <= 365 * 1.2) return 'week';
     if (visibleDays <= 365 * 4) return 'month';
     if (visibleDays <= 365 * 12) return 'quarter';
-    return 'year';
+    if (visibleDays <= 365 * 40) return 'year';
+    return 'decade';
 }
 
 /** Which fold units make sense for a given visible window?
@@ -132,12 +138,14 @@ export function pickAutoFoldUnit(visibleDays: number, hasHourly: boolean = false
  * about zooming in: "show me yearly, then monthly, then weekly". */
 export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = false): Array<Exclude<FoldUnit, 'auto'> | 'auto'> {
     const out: Array<Exclude<FoldUnit, 'auto'> | 'auto'> = ['auto'];
+    const decadal = visibleDays / 3650;
     const yearly = visibleDays / 365;
     const quarterly = visibleDays / 91;
     const monthly = visibleDays / 30;
     const weekly = visibleDays / 7;
     const daily = visibleDays;
     const hourly = visibleDays * HOURS_PER_DAY;
+    if (decadal >= 3 && decadal <= 120) out.push('decade');
     if (yearly >= 3 && yearly <= 120) out.push('year');
     if (quarterly >= 3 && quarterly <= 120) out.push('quarter');
     if (monthly >= 3 && monthly <= 120) out.push('month');

@@ -10,6 +10,7 @@
 
 import React from 'react';
 import type { ChromeElement } from './chart-chrome.types.js';
+import { decimateByMinSlot } from './label-decimate.js';
 
 export type LabelHover = { rowIdx: number; labelIdx: number } | null;
 
@@ -82,33 +83,18 @@ export function xAxisLabelLayout(el: Extract<ChromeElement, { kind: 'x-axis-band
         return (c - hw) >= lead && (c + hw) <= trail;
     };
 
-    const placed = new Set<number>();
-    /* `priority` placements (axis edges + semantic anchors) are
-     *  navigationally important and bypass the divider-clearance test —
-     *  they always show even in a clipped sliver bucket. Interior
-     *  mid-period labels DO yield to dividers, which is where crowding
-     *  actually happens. All placements still respect label↔label
-     *  `minSlot` so priorities never overlap each other. */
-    const tryPlace = (i: number, priority = false): boolean => {
-        if (i < 0 || i >= n) return false;
-        if (placed.has(i)) return true;
-        if (!priority && !clearsDividers(i)) return false;
-        const ci = at(i);
-        for (const p of placed) {
-            if (Math.abs(at(p) - ci) < minSlot) return false;
-        }
-        placed.add(i);
-        return true;
-    };
-
-    if (n > 0) tryPlace(0, true);
-    if (n > 1) tryPlace(n - 1, true);
-    if (anchors) {
-        for (const a of anchors) tryPlace(a, true);
-    }
-    for (let i = 1; i < n - 1; i++) tryPlace(i);
-
-    const indices = [...placed].sort((a, b) => a - b);
+    /* The shared decimator is the single spatial authority. `priority`
+     *  (axis edges + semantic anchors) place first and bypass the
+     *  divider-clearance test — they always show even in a clipped sliver
+     *  bucket. Interior mid-period labels DO yield to dividers via
+     *  `clears`, which is where crowding actually happens. All placements
+     *  respect label↔label `minSlot` so priorities never overlap. */
+    const indices = decimateByMinSlot({
+        centers: labels.map((_, i) => at(i)),
+        minSlotPx: minSlot,
+        priority: anchors ? [...anchors] : [],
+        clears: clearsDividers,
+    });
     const stride = indices.length > 1 ? Math.max(1, Math.round(n / indices.length)) : 1;
     let minNeighborGap = plotWidth;
     for (let i = 1; i < indices.length; i++) {

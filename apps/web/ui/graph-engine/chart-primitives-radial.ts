@@ -16,6 +16,8 @@
  */
 
 import { arcScale } from './scales.js';
+import { decimateByMinSlot } from './label-decimate.js';
+import { foldHeatmapColumns } from './heatmap-fold-columns.js';
 import { weightOf, fmtValue } from './svg-parts.js';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import type { ChartChrome, ChromeElement } from './chart-chrome.types.js';
@@ -146,7 +148,7 @@ export function radarChrome(chart: GraphDirective, size: number): ChartChrome {
 export function gridChrome(chart: GraphDirective, width: number, height: number): ChartChrome {
     const elements: ChromeElement[] = [];
     if (chart.type === 'heatmap') {
-        const cells = chart.data as any[];
+        const cells = foldHeatmapColumns(chart.data as any[]);
         const rows = [...new Set(cells.map((d: any) => d.row))];
         const cols = [...new Set(cells.map((d: any) => d.col))];
         const labelW = 30, labelH = 14;
@@ -154,10 +156,23 @@ export function gridChrome(chart: GraphDirective, width: number, height: number)
         const gridH = height - labelH;
         const cellW = Math.max(8, gridW / cols.length);
         const cellH = Math.max(8, gridH / rows.length);
+        /* Column labels (years) decimate through the SAME spatial
+         *  authority as the cartesian x-axis. With 30-50 year-columns the
+         *  cell pitch collapses below the ~7px-glyph label width, so every
+         *  label would overlap; the decimator thins them to a legible set
+         *  (first/last always shown). minSlot mirrors the axis sizing:
+         *  widest label * avg glyph width + gutter. */
+        const HEATMAP_TICK_CHAR_PX = 4.5;   // ~7px font (chrome uses fontSize 7)
+        const HEATMAP_LABEL_GUTTER_PX = 6;
+        const widestColChars = cols.reduce((m, c) => Math.max(m, String(c).length), 0);
+        const colMinSlot = widestColChars * HEATMAP_TICK_CHAR_PX + HEATMAP_LABEL_GUTTER_PX;
+        const colCenters = cols.map((_, ci) => labelW + ci * cellW + cellW / 2);
+        const visibleCols = new Set(decimateByMinSlot({ centers: colCenters, minSlotPx: colMinSlot }));
         for (let ci = 0; ci < cols.length; ci++) {
+            if (!visibleCols.has(ci)) continue;
             elements.push({
                 kind: 'text',
-                x: labelW + ci * cellW + cellW / 2,
+                x: colCenters[ci],
                 y: 10,
                 text: String(cols[ci]),
                 anchor: 'middle', fontSize: 7, fontWeight: 600,
