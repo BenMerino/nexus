@@ -1,6 +1,7 @@
 const { sql } = require("./sql");
 const { isPersonalScope } = require("./scope");
 const { scopedPubFilter } = require("./stats-scope");
+const { getAuthorCount } = require("./public-authors");
 
 // Dashboard stats — entity-backed (tags → entities migration). Personal scope
 // narrows to the user's own publications via authorship; admin scope is the
@@ -13,17 +14,31 @@ async function getSummary(scope) {
     `SELECT COUNT(*) total_pubs, COALESCE(SUM(citation_count),0) total_citations,
             COUNT(DISTINCT CASE WHEN open_access THEN doi END) oa_count
      FROM publications p WHERE ${f.where}`, f.params);
-  // Distinct authors on those publications.
-  const a = await sql.query(
-    `SELECT COUNT(DISTINCT s.author_id) count
-     FROM authorship s JOIN publications p ON p.id = s.publication_id WHERE ${f.where}`, f.params);
   const row = r.rows[0];
   return {
     totalPubs: parseInt(row.total_pubs),
     totalCitations: parseInt(row.total_citations),
     oaCount: parseInt(row.oa_count),
-    authorCount: parseInt(a.rows[0].count),
+    authorCount: await authorCountFor(scope),
   };
+}
+
+// "Authors" means different populations by scope, and the overview card MUST
+// agree with the /authors tab:
+//   • admin/public → the tenant's RESEARCHERS — authors affiliated with the
+//     tenant's own institution (ROR), the same ROR-filtered aggregate the
+//     /authors tab shows (getAuthorCount, cached). Counting raw `authorship`
+//     here instead inflated this to every external co-author in the corpus
+//     (126k for UTalca vs the real faculty count).
+//   • personal → the user's OWN collaborators: distinct authors on the user's
+//     own papers (scopedPubFilter already narrows to those), NOT the tenant total.
+async function authorCountFor(scope) {
+  if (!isPersonalScope(scope)) return getAuthorCount(scope.tenantId, scope.ror);
+  const f = scopedPubFilter(scope);
+  const a = await sql.query(
+    `SELECT COUNT(DISTINCT s.author_id) count
+     FROM authorship s JOIN publications p ON p.id = s.publication_id WHERE ${f.where}`, f.params);
+  return parseInt(a.rows[0].count);
 }
 
 // Publications per year. The legacy `source` tag (vestigial provenance, no
