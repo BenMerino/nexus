@@ -61,7 +61,11 @@ export function buildVelocityChart(v: Velocity, title: string, labels: VelocityL
     // it takes the composer-owned `figure` path — presented as-is, never
     // re-derived client-side. Trend is supplied explicitly alongside it.
     kpi: {
-      figure: v.score.toFixed(2),
+      // Thousands-grouped, ≤2 decimals — score can reach the hundreds of
+      // thousands (raw `.toFixed(2)` showed "140405.50" in the title). The
+      // authoritative `figure` path renders this string verbatim, so the
+      // grouping must happen here, not in the header.
+      figure: v.score.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
       caption: labels.score,
       trend: { direction: v.trend, label: labels.trend[v.trend] },
     },
