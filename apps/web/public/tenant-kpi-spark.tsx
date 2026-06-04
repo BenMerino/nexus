@@ -76,13 +76,12 @@ function Bars({ accent, series: raw }: { accent: string; series: SparkPoint[] })
     <svg className="kpi-spark" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
       {series.map((s, i) => {
         const bh = Math.max(2, (s.value / max) * (H - 4));
-        // Projected/partial bars read as hollow (outline) so the forecast tail
-        // is visually distinct from observed bars, like the dashed line.
+        // Projected/partial bars are solid but faded — a lower-opacity bar reads
+        // as "forecast" without the noise of a dashed outline at this size.
         const projected = (s.status ?? 'observed') !== 'observed';
         const x = (i * gap + (gap - bw) / 2).toFixed(1);
-        return projected
-          ? <rect key={i} x={x} y={(H - bh).toFixed(1)} width={bw.toFixed(1)} height={bh.toFixed(1)} fill="none" stroke={accent} strokeWidth="1" strokeDasharray="1.5 1.2" opacity="0.7" />
-          : <rect key={i} x={x} y={(H - bh).toFixed(1)} width={bw.toFixed(1)} height={bh.toFixed(1)} fill={accent} opacity={(0.45 + 0.55 * (i / (n - 1))).toFixed(2)} />;
+        const opacity = projected ? 0.3 : (0.45 + 0.55 * (i / (n - 1)));
+        return <rect key={i} x={x} y={(H - bh).toFixed(1)} width={bw.toFixed(1)} height={bh.toFixed(1)} fill={accent} opacity={opacity.toFixed(2)} />;
       })}
     </svg>
   );
