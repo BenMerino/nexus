@@ -37,11 +37,6 @@ export const ES = {
     authors: 'Authors',
   },
 
-  /* Unit scope note (Overview) — the picker itself is now the org rail. */
-  unitPicker: {
-    scopedNote: (name: string) => `Showing ${name}. Time-series charts (cadence, indexation) remain university-wide.`,
-  },
-
   /* Biggest-contributors ranking (Overview, university scope) */
   contributors: {
     title: 'Biggest contributors',

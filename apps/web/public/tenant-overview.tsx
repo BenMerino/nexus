@@ -5,14 +5,13 @@ import { TenantChartsTab } from './tenant-charts-tab';
 import { TenantContributors } from './tenant-contributors';
 import type { UnitScope } from './tenant-org-tree';
 import type { PublicStats } from './tenant-builders';
-import { ES } from './tenant-i18n';
 
 /* The Overview content (KPIs + charts). Scope is owned by the org rail (the
  * picker); this just renders it. Philosophy #1 — "scope is sovereign": when a
  * unit is selected in the rail the whole dashboard re-narrows in place (the way
  * personal scope narrows by ORCID). Time-series charts (cadence/indexation/
- * velocity) are not yet unit-scoped on the server, so when a unit is active we
- * say so rather than show university-wide data under a unit heading. */
+ * velocity) are not yet unit-scoped on the server, so they are hidden when a
+ * unit is active (TenantChartsTab) rather than shown university-wide. */
 
 // Fetch the unit-scoped summary KPIs; null unit → the tenant-wide summary in
 // `stats` (no extra request).
@@ -39,11 +38,6 @@ export function TenantOverview({ slug, stats, tenantId, charts, unit }: {
 
   return (
     <>
-      {unitKey ? (
-        <div style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>
-          {ES.unitPicker.scopedNote(unit!.name)}
-        </div>
-      ) : null}
       <SummaryCards summary={summary} />
       {/* Biggest-contributors ranking — a whole-university comparison; shown only
           at "All organization" scope (meaningless narrowed to one unit). */}
