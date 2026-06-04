@@ -73,7 +73,7 @@ export const ES = {
 
   /* Org tree (now the contributors ranking + the scope picker) */
   orgTree: {
-    allOrganization: 'All organization',
+    allOrganization: 'Entire organization',
     noRoster: 'No academic staff loaded for this organization yet.',
     kindLabel: { faculty: 'Faculty', institute: 'Institute', other: 'Other' } as const,
     paperOne: 'paper',
