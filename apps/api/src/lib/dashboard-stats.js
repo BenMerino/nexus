@@ -1,6 +1,6 @@
 const { sql } = require("./sql");
 const { isPersonalScope } = require("./scope");
-const { scopedPubFilter } = require("./stats-scope");
+const { resolvePubFilter } = require("./stats-scope");
 const { getAuthorCount } = require("./public-authors");
 const { normRor } = require("./entity-normalize");
 
@@ -10,7 +10,7 @@ const { normRor } = require("./entity-normalize");
 
 async function getSummary(scope) {
   if (!scope) throw new Error("getSummary requires scope");
-  const f = scopedPubFilter(scope); // { where, params } over publications p
+  const f = await resolvePubFilter(scope); // { where, params } over publications p
   const r = await sql.query(
     `SELECT COUNT(*) total_pubs, COALESCE(SUM(citation_count),0) total_citations,
             COUNT(DISTINCT CASE WHEN open_access THEN doi END) oa_count
@@ -34,8 +34,12 @@ async function getSummary(scope) {
 //   • personal → the user's OWN collaborators: distinct authors on the user's
 //     own papers (scopedPubFilter already narrows to those), NOT the tenant total.
 async function authorCountFor(scope) {
-  if (!isPersonalScope(scope)) return getAuthorCount(scope.tenantId, scope.ror);
-  const f = scopedPubFilter(scope);
+  // Tenant/public (no unit) → the cached ROR-filtered researcher count.
+  if (!isPersonalScope(scope) && !(scope && scope.unitKey)) return getAuthorCount(scope.tenantId, scope.ror);
+  // Personal OR unit-scoped → distinct authors on the in-scope papers. For a
+  // unit this is the unit's collaborating authors on its output (consistent
+  // with how the personal card counts a researcher's own collaborators).
+  const f = await resolvePubFilter(scope);
   const a = await sql.query(
     `SELECT COUNT(DISTINCT s.author_id) count
      FROM authorship s JOIN publications p ON p.id = s.publication_id WHERE ${f.where}`, f.params);
@@ -48,7 +52,7 @@ async function authorCountFor(scope) {
 // property (publications.source_indices), not a tag.
 async function getByYearAndSource(scope) {
   if (!scope) throw new Error("getByYearAndSource requires scope");
-  const f = scopedPubFilter(scope);
+  const f = await resolvePubFilter(scope);
   const r = await sql.query(
     `SELECT SUBSTRING(p.published FROM 1 FOR 4) AS year, 'All' AS source, COUNT(*) AS count
      FROM publications p WHERE p.published IS NOT NULL AND ${f.where}
@@ -66,7 +70,7 @@ async function getByYearAndSource(scope) {
 // filter is a no-op — callers that want the exclusion must pass it.
 async function getCollaborations(scope) {
   if (!scope) throw new Error("getCollaborations requires scope");
-  const f = scopedPubFilter(scope);
+  const f = await resolvePubFilter(scope);
   const homeRor = normRor(scope.ror);
   const params = [...f.params, scope.tenantId];
   let homeFilter = "";
@@ -90,7 +94,7 @@ async function getCountries(scope) {
   // path that shredded the 57MB denormalized `affiliations` JSON on every read
   // (~1s). Country is now persisted on `institutions` at ingest by the
   // InstitutionGovernor, so reading it is the same cheap join as collaborators.
-  const f = scopedPubFilter(scope);
+  const f = await resolvePubFilter(scope);
   const r = await sql.query(
     `SELECT i.country AS country, COUNT(DISTINCT p.id) AS count
        FROM publications p
@@ -108,7 +112,7 @@ async function getCountries(scope) {
 // collapsed into one venue by name_key). key = venue id.
 async function getTopJournals(scope) {
   if (!scope) throw new Error("getTopJournals requires scope");
-  const f = scopedPubFilter(scope);
+  const f = await resolvePubFilter(scope);
   const r = await sql.query(
     `SELECT v.name value, v.id::text key, COUNT(DISTINCT p.id) count
      FROM venues v JOIN published_in pi ON pi.venue_id = v.id
@@ -120,7 +124,7 @@ async function getTopJournals(scope) {
 
 async function getRecentPapers(scope) {
   if (!scope) throw new Error("getRecentPapers requires scope");
-  const f = scopedPubFilter(scope);
+  const f = await resolvePubFilter(scope);
   const r = await sql.query(
     `SELECT p.doi, p.title, p.published, p.citation_count, p.type,
        (SELECT v.name FROM published_in pi JOIN venues v ON v.id = pi.venue_id

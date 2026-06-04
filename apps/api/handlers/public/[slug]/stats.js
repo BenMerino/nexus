@@ -15,7 +15,11 @@ module.exports = async function handler(req, res) {
   if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
   try {
-    const scope = { tenantId: tenant.id, orcid: null, ror: tenant.ror_id, role: "public" };
+    // ?unit=<unitKey> narrows the summary KPIs to one org unit (faculty/dept).
+    // Safe by construction: the key only ever matches this tenant's own roster
+    // literals (resolvePubFilter), so a forged key matches nothing (N1).
+    const unitKey = typeof req.query.unit === "string" ? req.query.unit : null;
+    const scope = { tenantId: tenant.id, orcid: null, ror: tenant.ror_id, role: "public", unitKey };
     const stats = req.query.analytics ? await getPublicAnalytics(scope)
       : req.query.chrome ? await getPublicChrome(scope)
       : await getPublicStats(scope);

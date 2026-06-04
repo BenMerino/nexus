@@ -15,12 +15,14 @@ module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   await ensureSchema();
   const body = req.body || {};
-  const { tenantId, kinds } = body;
+  const { tenantId, kinds, unit } = body;
   if (tenantId == null || !Array.isArray(kinds) || !kinds.length) {
     return res.status(400).json({ error: "tenantId and kinds[] are required" });
   }
   try {
-    const directives = await recomposePublicBatch(String(tenantId), kinds.map(String));
+    // unit (org-tree node unitKey) narrows every composed kind to one org unit;
+    // safe by construction (resolves only against this tenant's roster literals).
+    const directives = await recomposePublicBatch(String(tenantId), kinds.map(String), typeof unit === "string" ? unit : null);
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
     res.json({ directives });
   } catch (err) {

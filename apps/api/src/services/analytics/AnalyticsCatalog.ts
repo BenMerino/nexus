@@ -30,9 +30,11 @@ const replay = require("../../lib/architect-replay") as {
 };
 
 // A tenant-public ActorContext from a wire query: tenantId only, no orcid →
-// the composer's scope filter narrows to the whole tenant (not a person).
+// the composer's scope filter narrows to the whole tenant (not a person), or to
+// one org unit when the query carries a drill-down `unit` key. Single fan-out
+// point: every public metric flows through here, so all charts inherit unit scope.
 const publicCtx = (q: CatalogQuery): ActorContext =>
-  ({ tenantId: parseInt(q.tenantId, 10), orcid: null, ror: null, role: "public" } as unknown as ActorContext);
+  ({ tenantId: parseInt(q.tenantId, 10), orcid: null, ror: null, role: "public", unitKey: q.unit ?? null } as unknown as ActorContext);
 
 export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
   {
@@ -75,7 +77,7 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     description: "Top journals by publication count (ranked bar).",
     queryShape: "none",
     access: "public",
-    compose: (q) => composeTopJournals(parseInt(q.tenantId, 10)),
+    compose: (q) => composeTopJournals(parseInt(q.tenantId, 10), q.unit),
     invalidatedBy: ["publication.upserted", "ingestion.completed"],
     surfaces: ["overview"],
   },
@@ -86,7 +88,7 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     description: "Top collaborating institutions by co-authored paper count (ranked bar).",
     queryShape: "none",
     access: "public",
-    compose: (q) => composeCollaborators(parseInt(q.tenantId, 10)),
+    compose: (q) => composeCollaborators(parseInt(q.tenantId, 10), q.unit),
     invalidatedBy: ["publication.upserted", "ingestion.completed"],
     surfaces: ["overview"],
   },
@@ -97,7 +99,7 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     description: "Publications by author-affiliation country (donut).",
     queryShape: "none",
     access: "public",
-    compose: (q) => composeCountries(parseInt(q.tenantId, 10)),
+    compose: (q) => composeCountries(parseInt(q.tenantId, 10), q.unit),
     invalidatedBy: ["publication.upserted", "ingestion.completed"],
     surfaces: ["overview"],
   },

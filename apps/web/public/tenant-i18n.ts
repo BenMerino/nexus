@@ -70,6 +70,10 @@ export const ES = {
     academicOne: 'academic',
     academicMany: 'academics',
     orcidNone: 'no ORCID',
+    viewAnalytics: 'View analytics',
+    backToTree: '← Back to organization',
+    unitAuthors: 'Academics',
+    unitAnalyticsFor: (name: string) => `Analytics — ${name}`,
   },
 
   /* Charts panel section titles */

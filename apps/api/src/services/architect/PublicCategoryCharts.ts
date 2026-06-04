@@ -1,5 +1,5 @@
-import { getTopJournals, getTypeByYear, getPublicationTypes } from "../../lib/public-stats";
-const { getCollaborations, getCountries } = require("../../lib/dashboard-stats");
+import { getTypeByYear, getPublicationTypes } from "../../lib/public-stats";
+const { getCollaborations, getCountries, getTopJournals } = require("../../lib/dashboard-stats");
 const { getTenantRor } = require("../../lib/db-users");
 
 /* ── PublicCategoryCharts (Composer) ────────────────────────
@@ -35,28 +35,33 @@ export interface HeatmapDirective {
  *  Reuses getTopJournals' entity-model SQL (venues + published_in, one row per
  *  journal, distinct publications). Full names: the engine ellipsizes/decimates
  *  labels at render, so the composer never truncates (which would collide). */
-export async function composeTopJournals(tenantId: number): Promise<CategoryDirective | null> {
-  const rows = await getTopJournals(tenantId);
+export async function composeTopJournals(tenantId: number, unitKey?: string | null): Promise<CategoryDirective | null> {
+  // dashboard-stats.getTopJournals honors org-unit scope via resolvePubFilter
+  // (rows: {value: name, key: id, count}); the public-stats variant was
+  // tenant-only. Same entity-model SQL, now unit-aware.
+  const rows: Array<{ value: string; count: string | number }> = await getTopJournals(publicScope(tenantId, unitKey));
   if (!rows.length) return null;
   return {
     type: "bar",
     title: "Principales revistas",
     xLabel: "Revista",
     yLabel: "Artículos",
-    data: rows.map((j) => ({ label: j.journal || "", value: j.count })),
+    data: rows.map((j) => ({ label: j.value || "", value: Number(j.count) })),
   };
 }
 
 // A tenant-public scope: tenantId only, no orcid → scopedPubFilter narrows to
-// the whole tenant (the public page's read scope).
-const publicScope = (tenantId: number) => ({ tenantId, orcid: null, ror: null, role: "public" });
+// the whole tenant (the public page's read scope). An optional unitKey narrows
+// further to one org unit (resolvePubFilter applies it in the stats readers).
+const publicScope = (tenantId: number, unitKey?: string | null) =>
+  ({ tenantId, orcid: null, ror: null, role: "public", unitKey: unitKey ?? null });
 
 /** publications.collaborators — top collaborating institutions (ranked bar).
  *  Passes the tenant's home ROR so getCollaborations excludes the tenant from
  *  its own collaborators list (a tenant isn't its own collaborator). */
-export async function composeCollaborators(tenantId: number): Promise<CategoryDirective | null> {
+export async function composeCollaborators(tenantId: number, unitKey?: string | null): Promise<CategoryDirective | null> {
   const ror: string | null = await getTenantRor(tenantId);
-  const rows: Array<{ value: string; count: string | number }> = await getCollaborations({ ...publicScope(tenantId), ror });
+  const rows: Array<{ value: string; count: string | number }> = await getCollaborations({ ...publicScope(tenantId, unitKey), ror });
   if (!rows.length) return null;
   return {
     type: "bar",
@@ -68,8 +73,8 @@ export async function composeCollaborators(tenantId: number): Promise<CategoryDi
 }
 
 /** publications.countries — publications by author-affiliation country (donut). */
-export async function composeCountries(tenantId: number): Promise<CategoryDirective | null> {
-  const rows: Array<{ country: string; count: number }> = await getCountries(publicScope(tenantId));
+export async function composeCountries(tenantId: number, unitKey?: string | null): Promise<CategoryDirective | null> {
+  const rows: Array<{ country: string; count: number }> = await getCountries(publicScope(tenantId, unitKey));
   if (!rows.length) return null;
   return {
     type: "donut",

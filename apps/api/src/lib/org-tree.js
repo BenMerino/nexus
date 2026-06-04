@@ -1,4 +1,5 @@
 const { sql } = require("./sql");
+const { OTHER, classifyUnit, unitKeyForNode } = require("./org-units");
 
 // Organization scheme: the tenant's roster as a Faculty -> Department -> people
 // hierarchy with metrics per node. Read-only; any authenticated user of the
@@ -25,22 +26,14 @@ async function queryOrgTree(tenantId) {
 
   // Per the official UTalca org chart (RU N°1053-2025), the academic tier is
   // Facultades + Institutos as peers; Programas / Direcciones belong to the
-  // administrative branch. Classify each unit so the academic units render as
-  // the chart shows them and non-academic units fall into one "Otras unidades"
-  // group rather than masquerading as faculties.
-  const OTHER = "Otras unidades (no académicas)";
-  function classify(faculty) {
-    const s = (faculty || "").toLowerCase();
-    if (s.startsWith("facultad")) return { group: faculty, kind: "faculty" };
-    if (s.startsWith("instituto")) return { group: faculty, kind: "institute" };
-    return { group: OTHER, kind: "other", sub: faculty }; // Programas, Direcciones
-  }
-
+  // administrative branch. `classifyUnit` (shared with the stats unitKey
+  // derivation in org-units.js) groups academic units as the chart shows them
+  // and folds non-academic units into one "Otras unidades" group.
   const UNFILED = "(sin unidad)";
   const facMap = new Map(); // group name -> { name, kind, depts: Map }
 
   for (const r of rows) {
-    const c = classify(r.faculty);
+    const c = classifyUnit(r.faculty);
     const fac = c.group;
     // self-referential leaf (person filed at faculty level) -> "(sin unidad)".
     // For "Otras unidades", keep the real program/direccion name as the dept.
@@ -50,7 +43,10 @@ async function queryOrgTree(tenantId) {
 
     if (!facMap.has(fac)) facMap.set(fac, { name: fac, kind: c.kind, depts: new Map() });
     const f = facMap.get(fac);
-    if (!f.depts.has(dep)) f.depts.set(dep, { name: dep, people: [] });
+    // The department literal that the unitKey must encode: for "other" units the
+    // node IS the program/direccion (its own literal); otherwise the department.
+    const depLiteral = c.kind === "other" ? (c.sub || UNFILED) : dep;
+    if (!f.depts.has(dep)) f.depts.set(dep, { name: dep, unitKey: unitKeyForNode(c.kind, fac, depLiteral), people: [] });
     f.depts.get(dep).people.push({
       name: r.full_name,
       category: r.profile_category,
@@ -69,11 +65,14 @@ async function queryOrgTree(tenantId) {
       const head = d.people.length;
       const withOrcid = d.people.filter((x) => x.orcid).length;
       const papers = d.people.reduce((s, x) => s + x.paperCount, 0);
-      depts.push({ name: d.name, headcount: head, withOrcid, papers, people: d.people });
+      depts.push({ name: d.name, unitKey: d.unitKey, headcount: head, withOrcid, papers, people: d.people });
       fHead += head; fOrcid += withOrcid; fPapers += papers;
     }
     depts.sort((a, b) => b.headcount - a.headcount || a.name.localeCompare(b.name));
-    faculties.push({ name: f.name, kind: f.kind, headcount: fHead, withOrcid: fOrcid, papers: fPapers, departments: depts });
+    // "Otras unidades" is a synthetic grouping, not a real unit — no faculty-level
+    // key (its children carry their own oth:* keys); academic faculties get fac:*.
+    const facUnitKey = f.kind === "other" ? null : unitKeyForNode(f.kind, f.name, null);
+    faculties.push({ name: f.name, kind: f.kind, unitKey: facUnitKey, headcount: fHead, withOrcid: fOrcid, papers: fPapers, departments: depts });
     tHead += fHead; tOrcid += fOrcid; tPapers += fPapers;
   }
   // chart order: Facultades, then Institutos, then "Otras unidades" last;

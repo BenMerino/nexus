@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { ES } from './tenant-i18n';
+import { TenantUnitPanel, type UnitSelection } from './tenant-unit-panel';
 
 interface Person { name: string; category: string | null; orcid: string | null; paperCount: number; }
-interface Department { name: string; headcount: number; withOrcid: number; papers: number; people: Person[]; }
+interface Department { name: string; unitKey: string; headcount: number; withOrcid: number; papers: number; people: Person[]; }
 interface Faculty {
   name: string;
   kind: 'faculty' | 'institute' | 'other';
+  unitKey: string | null;
   headcount: number; withOrcid: number; papers: number;
   departments: Department[];
 }
@@ -44,8 +46,9 @@ function PersonRow({ p }: { p: Person }) {
   );
 }
 
-function Branch({ label, cls, head, withOrcid, papers, children }: {
-  label: React.ReactNode; cls: string; head: number; withOrcid: number; papers: number; children: React.ReactNode;
+function Branch({ label, cls, head, withOrcid, papers, onView, children }: {
+  label: React.ReactNode; cls: string; head: number; withOrcid: number; papers: number;
+  onView?: () => void; children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -54,15 +57,25 @@ function Branch({ label, cls, head, withOrcid, papers, children }: {
         <span className={`org-twist${open ? ' open' : ''}`}>▶</span>
         <span className={`org-name ${cls}`}>{label}</span>
         <Metrics head={head} withOrcid={withOrcid} papers={papers} />
+        {onView ? (
+          <button type="button" className="org-view-btn"
+            onClick={e => { e.stopPropagation(); onView(); }}
+            style={{ marginLeft: 8, background: 'none', border: '1px solid var(--border)', borderRadius: 5, padding: '2px 8px', cursor: 'pointer', color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 11, whiteSpace: 'nowrap' }}>
+            {ES.orgTree.viewAnalytics}
+          </button>
+        ) : null}
       </div>
       <div className={`org-children${open ? ' open' : ''}`}>{children}</div>
     </div>
   );
 }
 
-export function TenantOrgTree({ slug }: { slug: string }) {
+export function TenantOrgTree({ slug, tenantId }: { slug: string; tenantId: number }) {
   const [data, setData] = useState<OrgTree | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Drill-down: a selected unit + the people belonging to it. Faculty selection
+  // aggregates all its departments' people; department selection uses its own.
+  const [selected, setSelected] = useState<{ unit: UnitSelection; people: Person[] } | null>(null);
 
   useEffect(() => {
     fetch(`/api/public/${encodeURIComponent(slug)}/org-tree`)
@@ -78,6 +91,19 @@ export function TenantOrgTree({ slug }: { slug: string }) {
   if (!data) return <div style={{ padding: 14, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>{ES.loadingLabel(ES.orgSchemeLoading)}</div>;
   if (!data.faculties.length) return <div className="text-muted text-small" style={{ padding: 14 }}>{ES.orgTree.noRoster}</div>;
 
+  if (selected) {
+    return <TenantUnitPanel slug={slug} tenantId={tenantId} unit={selected.unit}
+      people={selected.people} onBack={() => setSelected(null)} />;
+  }
+
+  const selectFaculty = (f: Faculty) => {
+    if (!f.unitKey) return;
+    const people = f.departments.flatMap(d => d.people);
+    setSelected({ unit: { unitKey: f.unitKey, name: f.name, kind: f.kind }, people });
+  };
+  const selectDept = (f: Faculty, d: Department) =>
+    setSelected({ unit: { unitKey: d.unitKey, name: `${f.name} · ${d.name}`, kind: f.kind }, people: d.people });
+
   return (
     <>
       <div style={{ display: 'flex', gap: 18, fontSize: 12, color: 'var(--fg-muted)', fontFamily: 'var(--mono)', padding: '6px 0 14px', flexWrap: 'wrap' }}>
@@ -92,10 +118,12 @@ export function TenantOrgTree({ slug }: { slug: string }) {
           <Branch key={f.name}
             label={<>{f.name}{KIND_LABEL[f.kind] ? <span className="org-kind"> {KIND_LABEL[f.kind]}</span> : null}</>}
             cls="fac"
-            head={f.headcount} withOrcid={f.withOrcid} papers={f.papers}>
+            head={f.headcount} withOrcid={f.withOrcid} papers={f.papers}
+            onView={f.unitKey ? () => selectFaculty(f) : undefined}>
             {f.departments.map(d => (
               <Branch key={d.name} label={d.name} cls="dep"
-                head={d.headcount} withOrcid={d.withOrcid} papers={d.papers}>
+                head={d.headcount} withOrcid={d.withOrcid} papers={d.papers}
+                onView={() => selectDept(f, d)}>
                 {d.people.map((p, i) => <PersonRow key={`${p.orcid || p.name}-${i}`} p={p} />)}
               </Branch>
             ))}

@@ -29,6 +29,11 @@ export interface ActorContext {
    *  scope-narrowed reads — e.g. node-detail renders a researcher's OWN
    *  institution differently. Part of the scope→ctx seam. */
   ror?: string | null;
+  /** Org-unit drill-down key — narrows scope-narrowed READS to one
+   *  faculty/department (org-tree node `unitKey`). Read-only dimension owned by
+   *  the Statistician; never a write scope. Absent ⇒ whole tenant.
+   *  See lib/org-units.js + lib/stats-scope.js (resolvePubFilter). */
+  unitKey?: string | null;
   /** Effective timestamp for the write (ISO). Absent ⇒ "now". Lets
    *  backfills/replays stamp historical writes deterministically. */
   asOf?: string;

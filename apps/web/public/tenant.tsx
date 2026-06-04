@@ -102,7 +102,7 @@ function App() {
           </TabPane>
 
           <TabPane id="org-tree" {...paneProps}>
-            <TenantOrgTree slug={slug} />
+            <TenantOrgTree slug={slug} tenantId={statsPayload.tenant.id} />
           </TabPane>
 
           <TabPane id="authors" {...paneProps}>

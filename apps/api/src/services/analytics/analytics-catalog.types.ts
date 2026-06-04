@@ -47,6 +47,9 @@ export interface CatalogQuery {
   asOf?: string;
   foldUnit?: string;
   scope?: "today" | "week" | "month";
+  /** Org-unit drill-down key (org-tree node's `unitKey`). Narrows the read to
+   *  one faculty/department; absent ⇒ whole tenant. See lib/org-units.js. */
+  unit?: string | null;
   /** Resolved ActorContext for scoped kinds; absent for public dispatch. */
   ctx?: unknown;
 }

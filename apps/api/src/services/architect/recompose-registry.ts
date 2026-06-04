@@ -83,13 +83,13 @@ export async function recomposePublic(query: PublicQuery): Promise<unknown> {
  *  only collapses the transport. Unknown/failed kinds yield a null entry so
  *  one bad kind never sinks the batch. */
 export async function recomposePublicBatch(
-  tenantId: string, kinds: string[],
+  tenantId: string, kinds: string[], unit?: string | null,
 ): Promise<Record<string, unknown | null>> {
   const unique = [...new Set(kinds)].filter((k) => k in PUBLIC_KINDS);
   const entries = await Promise.all(
     unique.map(async (kind) => {
       try {
-        return [kind, await recomposePublic({ kind, tenantId } as PublicQuery)] as const;
+        return [kind, await recomposePublic({ kind, tenantId, unit: unit ?? null } as PublicQuery)] as const;
       } catch {
         return [kind, null] as const;
       }

@@ -35,14 +35,15 @@ function useComposed(doFetch: () => Promise<Response>, deps: unknown[]) {
   return { directive, failed };
 }
 
-/** Tenant-public composed chart (anonymous). No orcid honored here. */
-export function RecomposeChart({ kind, tenantId, minHeight = 360 }: { kind: string; tenantId: number; minHeight?: number }) {
+/** Tenant-public composed chart (anonymous). No orcid honored here. An optional
+ *  `unit` (org-tree node unitKey) narrows the chart to one faculty/department. */
+export function RecomposeChart({ kind, tenantId, unit, minHeight = 360 }: { kind: string; tenantId: number; unit?: string | null; minHeight?: number }) {
   const { directive, failed } = useComposed(
     () => fetch('/api/architect/recompose', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind, tenantId: String(tenantId) }),
+      body: JSON.stringify({ kind, tenantId: String(tenantId), ...(unit ? { unit } : {}) }),
     }),
-    [kind, tenantId],
+    [kind, tenantId, unit],
   );
   // Perf beacon: mark when THIS chart's directive resolves — the per-kind
   // timing exposes the "charts fill one by one" stagger.
@@ -54,14 +55,14 @@ export function RecomposeChart({ kind, tenantId, minHeight = 360 }: { kind: stri
  *  rendered together — no per-chart stagger. Replaces N <RecomposeChart>s whose
  *  parallel fetches filled in one-by-one. Composition stays per-kind on the
  *  server; only the transport collapses. */
-export function BatchedCharts({ kinds, tenantId, minHeight = 400 }: { kinds: string[]; tenantId: number; minHeight?: number }) {
+export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400 }: { kinds: string[]; tenantId: number; unit?: string | null; minHeight?: number }) {
   const [map, setMap] = useState<Record<string, GraphDirective | null> | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     let cancelled = false;
     fetch('/api/architect/recompose-batch', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenantId: String(tenantId), kinds }),
+      body: JSON.stringify({ tenantId: String(tenantId), kinds, ...(unit ? { unit } : {}) }),
     })
       .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((d: { directives: Record<string, GraphDirective | null> }) => {
@@ -72,7 +73,7 @@ export function BatchedCharts({ kinds, tenantId, minHeight = 400 }: { kinds: str
       .catch(() => { if (!cancelled) setFailed(true); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, kinds.join(',')]);
+  }, [tenantId, kinds.join(','), unit]);
   return (
     <>
       {kinds.map(kind => {
