@@ -24,7 +24,7 @@ export function TenantOverview({ slug, stats, tenantId, charts, unit }: {
       {/* Chart grid: contributors hero (left, tall) + velocity/cadence/byIndex
           panels. The contributors ranking is a whole-university comparison —
           shown only at "All units" scope (meaningless narrowed to one unit). */}
-      <TenantChartsTab stats={stats} tenantId={tenantId} charts={charts} unit={unitKey}
+      <TenantChartsTab slug={slug} stats={stats} tenantId={tenantId} charts={charts} unit={unitKey}
         contributors={unitKey ? null : <TenantContributors slug={slug} />} />
       {/* Author directory, scoped to the selected unit (all authors at the
           university/main scope; a faculty's roster when a unit is selected). */}

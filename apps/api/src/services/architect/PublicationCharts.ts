@@ -31,7 +31,7 @@ const cadenceLib = require("../../lib/public-cadence-atoms") as {
 };
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const indexLib = require("../../lib/public-stats-atoms") as {
-  buildIndexationAtoms: (tenantId: number) => Promise<{ atoms: unknown[]; series: string[] }>;
+  buildIndexationAtoms: (scope: Scope) => Promise<{ atoms: unknown[]; series: string[] }>;
 };
 
 export interface TimeChartDirective {
@@ -98,10 +98,12 @@ export async function composeCadence(ctx: ActorContext, query?: CatalogQuery): P
 }
 
 /** publications.byIndex — papers per period by indexation source, time-series.
+ *  Scope-narrowed via ctx (unitKey → one faculty/department), like cadence.
  *  Replayable: stamps the window slider + drill from the wire query. */
-export async function composeByIndex(q: CatalogQuery): Promise<TimeChartDirective | null> {
-  const tenantId = parseInt(q.tenantId, 10);
-  const { atoms, series } = await indexLib.buildIndexationAtoms(tenantId);
+export async function composeByIndex(ctx: ActorContext, query?: CatalogQuery): Promise<TimeChartDirective | null> {
+  const tenantId = ctx.tenantId;
+  const q = query ?? ({ tenantId: String(tenantId) } as CatalogQuery);
+  const { atoms, series } = await indexLib.buildIndexationAtoms(scopeOf(ctx));
   if (!atoms.length || !series.length) return null;
   return {
     type: "stacked-bar",

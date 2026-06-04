@@ -1,6 +1,6 @@
 const { sql } = require("./sql");
 const { isPreprint } = require("./h-index");
-const { scopedPubFilter } = require("./stats-scope");
+const { resolvePubFilter } = require("./stats-scope");
 
 // Data layer (N4) for the publication-CADENCE chart as a real time-series.
 // "Cadence" is a methodologic interpretation of publication data — papers per
@@ -18,12 +18,13 @@ function daysBetween(aIso, bIso) {
 }
 
 // Per-(day, type) counts over the full span, real ISO dates. Preprints excluded
-// (matching the legacy cadence methodology). Scope-narrowed via scopedPubFilter:
-// a personal (researcher) scope counts only that author's papers, an admin/public
-// scope the whole tenant — one builder, scope flows through ctx (DGA scope model).
+// (matching the legacy cadence methodology). Scope-narrowed via resolvePubFilter:
+// a personal (researcher) scope counts only that author's papers; a public scope
+// with a unitKey narrows to that faculty/department's authors; otherwise the
+// whole tenant — one builder, scope flows through ctx (DGA scope model).
 // Returns { atoms, series, meanPerYear }.
 async function buildCadenceAtoms(scope) {
-  const f = scopedPubFilter(scope); // { where, params } over a `publications p` alias
+  const f = await resolvePubFilter(scope); // { where, params } over a `publications p` alias
   const r = await sql.query(
     `SELECT SUBSTRING(p.published FROM 1 FOR 10) AS iso,
             COALESCE(NULLIF(p.type, ''), 'unknown') AS type

@@ -1,5 +1,6 @@
 const { sql } = require("./sql");
 const { listSourceIds } = require("./indexation-sources");
+const { resolvePubFilter } = require("./stats-scope");
 
 // Per-series DAILY atoms for the public "Publicaciones por año" stacked chart —
 // mirrors Zincro's time-series atom architecture (OrderTimeSeriesLogic) so the
@@ -16,28 +17,34 @@ function daysBetween(aIso, bIso) {
 }
 
 // One row per (publication, day) carrying its venue's index flags. A paper counts
-// toward each index its venue is flagged for, on its published day.
-async function indexedByDay(tenantId) {
-  const r = await sql`
-    SELECT SUBSTRING(d.published FROM 1 FOR 10) AS iso,
-           bool_or(v.in_wos) AS wos, bool_or(v.in_scopus) AS scopus,
-           bool_or(v.in_doaj) AS doaj, bool_or(v.in_scielo) AS scielo
-    FROM doi_records d
-    LEFT JOIN published_in pi ON pi.publication_id = d.id
-    LEFT JOIN venues v ON v.id = pi.venue_id AND v.tenant_id = ${tenantId}
-    WHERE d.tenant_id = ${tenantId}
-      AND d.published ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
-    GROUP BY d.id, SUBSTRING(d.published FROM 1 FOR 10)`;
+// toward each index its venue is flagged for, on its published day. Scope-narrowed
+// via resolvePubFilter (alias `p`): a public scope with a unitKey narrows to that
+// faculty/department's authors, otherwise the whole tenant. The venue join uses
+// the tenant param appended after the filter's params.
+async function indexedByDay(scope) {
+  const f = await resolvePubFilter(scope); // over `publications p`
+  const tenantIdx = f.params.length + 1;
+  const r = await sql.query(
+    `SELECT SUBSTRING(p.published FROM 1 FOR 10) AS iso,
+            bool_or(v.in_wos) AS wos, bool_or(v.in_scopus) AS scopus,
+            bool_or(v.in_doaj) AS doaj, bool_or(v.in_scielo) AS scielo
+     FROM publications p
+     LEFT JOIN published_in pi ON pi.publication_id = p.id
+     LEFT JOIN venues v ON v.id = pi.venue_id AND v.tenant_id = $${tenantIdx}
+     WHERE ${f.where}
+       AND p.published ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+     GROUP BY p.id, SUBSTRING(p.published FROM 1 FOR 10)`,
+    [...f.params, scope.tenantId]);
   return r.rows;
 }
 
 // Build the full-span daily atom array. Each atom: { key, iso, label, value, <Index>: n }.
 // `present` is the subset of indexes that actually have data (matches the chart's
 // presentIndexes so the legend shows only real series).
-async function buildIndexationAtoms(tenantId) {
+async function buildIndexationAtoms(scope) {
   const INDEXES = listSourceIds();
   const flagFor = { WoS: "wos", Scopus: "scopus", DOAJ: "doaj", SciELO: "scielo" };
-  const rows = await indexedByDay(tenantId);
+  const rows = await indexedByDay(scope);
   if (!rows.length) return { atoms: [], series: [] };
 
   // Per-day, per-index counts.

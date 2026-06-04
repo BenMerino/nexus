@@ -66,7 +66,7 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     description: "Per-day publication counts stacked by index source (WoS/Scopus/SciELO/DOAJ).",
     queryShape: "range",
     access: "public",
-    compose: (q) => composeByIndex(q),
+    compose: (q) => composeByIndex(publicCtx(q), q),
     invalidatedBy: ["publication.upserted", "ingestion.completed", "venue.indexationUpdated"],
     surfaces: ["overview"],
   },

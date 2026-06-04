@@ -89,8 +89,8 @@ async function getPublicAnalytics(scope) {
   const [yearSource, yearByIndex, velocity, cadence] = await Promise.all([
     getByYearAndSource(scope),
     getYearByIndexation(scope.tenantId),
-    buildTenantVelocity(scope.tenantId),
-    buildTenantCadence(scope.tenantId),
+    buildTenantVelocity(scope),
+    buildTenantCadence(scope),
   ]);
   return { yearSource, yearByIndex, velocity, cadence };
 }
