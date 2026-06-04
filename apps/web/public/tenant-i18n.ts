@@ -44,6 +44,19 @@ export const ES = {
     noMatch: 'No matching unit',
     scopedNote: (name: string) => `Showing ${name}. Time-series charts (cadence, indexation) remain university-wide.`,
   },
+
+  /* Biggest-contributors ranking (Overview, university scope) */
+  contributors: {
+    title: 'Biggest contributors',
+    titleIn: (name: string) => `Contributors — ${name}`,
+    volume: 'Publications',
+    perCapita: 'Per academic',
+    citations: 'Citations',
+    backToFaculties: '← All faculties',
+    drillHint: 'Click to see this unit’s departments',
+    noData: 'No data for this metric',
+    footnote: 'A paper co-authored across units counts for each, so unit totals can sum above the university total.',
+  },
   subtitle: (pubs: string, authors: string) =>
     `Public research profile · ${pubs} publications · ${authors} authors`,
 

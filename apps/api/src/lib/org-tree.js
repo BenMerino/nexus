@@ -12,13 +12,22 @@ const { OTHER, classifyUnit, unitKeyForNode } = require("./org-units");
 async function queryOrgTree(tenantId) {
   const { rows } = await sql`
     SELECT u.faculty, u.department, u.full_name, u.profile_category, u.orcid,
-           COALESCE(p.n, 0)::int AS paper_count
+           COALESCE(p.n, 0)::int AS paper_count,
+           COALESCE(p.cites, 0)::int AS citation_count
     FROM users u
     LEFT JOIN (
-      SELECT a.orcid, COUNT(DISTINCT s.publication_id) AS n
-      FROM authorship s JOIN authors a ON a.id = s.author_id
-      WHERE a.tenant_id = ${tenantId}
-      GROUP BY a.orcid
+      -- One row per (author, publication): COUNT papers + SUM their citations.
+      -- DISTINCT publication_id first so a duplicate authorship edge can't
+      -- double-count a paper or its citations.
+      SELECT orcid, COUNT(*) AS n, COALESCE(SUM(citation_count), 0) AS cites
+      FROM (
+        SELECT DISTINCT a.orcid, s.publication_id, pub.citation_count
+        FROM authorship s
+        JOIN authors a ON a.id = s.author_id
+        JOIN publications pub ON pub.id = s.publication_id
+        WHERE a.tenant_id = ${tenantId}
+      ) per_pub
+      GROUP BY orcid
     ) p ON p.orcid = u.orcid
     WHERE u.tenant_id = ${tenantId} AND u.role = 'academic'
       AND u.profile_category IS NOT NULL
@@ -52,28 +61,30 @@ async function queryOrgTree(tenantId) {
       category: r.profile_category,
       orcid: r.orcid || null,
       paperCount: r.paper_count,
+      citationCount: r.citation_count,
     });
   }
 
   // roll metrics up: per-node headcount, ORCID coverage, paper total.
   const faculties = [];
-  let tHead = 0, tOrcid = 0, tPapers = 0;
+  let tHead = 0, tOrcid = 0, tPapers = 0, tCites = 0;
   for (const f of facMap.values()) {
     const depts = [];
-    let fHead = 0, fOrcid = 0, fPapers = 0;
+    let fHead = 0, fOrcid = 0, fPapers = 0, fCites = 0;
     for (const d of f.depts.values()) {
       const head = d.people.length;
       const withOrcid = d.people.filter((x) => x.orcid).length;
       const papers = d.people.reduce((s, x) => s + x.paperCount, 0);
-      depts.push({ name: d.name, unitKey: d.unitKey, headcount: head, withOrcid, papers, people: d.people });
-      fHead += head; fOrcid += withOrcid; fPapers += papers;
+      const citations = d.people.reduce((s, x) => s + x.citationCount, 0);
+      depts.push({ name: d.name, unitKey: d.unitKey, headcount: head, withOrcid, papers, citations, people: d.people });
+      fHead += head; fOrcid += withOrcid; fPapers += papers; fCites += citations;
     }
     depts.sort((a, b) => b.headcount - a.headcount || a.name.localeCompare(b.name));
     // "Otras unidades" is a synthetic grouping, not a real unit — no faculty-level
     // key (its children carry their own oth:* keys); academic faculties get fac:*.
     const facUnitKey = f.kind === "other" ? null : unitKeyForNode(f.kind, f.name, null);
-    faculties.push({ name: f.name, kind: f.kind, unitKey: facUnitKey, headcount: fHead, withOrcid: fOrcid, papers: fPapers, departments: depts });
-    tHead += fHead; tOrcid += fOrcid; tPapers += fPapers;
+    faculties.push({ name: f.name, kind: f.kind, unitKey: facUnitKey, headcount: fHead, withOrcid: fOrcid, papers: fPapers, citations: fCites, departments: depts });
+    tHead += fHead; tOrcid += fOrcid; tPapers += fPapers; tCites += fCites;
   }
   // chart order: Facultades, then Institutos, then "Otras unidades" last;
   // within a kind, larger headcount first.
@@ -87,7 +98,7 @@ async function queryOrgTree(tenantId) {
 
   return {
     totals: {
-      headcount: tHead, withOrcid: tOrcid, papers: tPapers,
+      headcount: tHead, withOrcid: tOrcid, papers: tPapers, citations: tCites,
       faculties: facultyCount, institutes: instituteCount, units: faculties.length,
     },
     faculties,
