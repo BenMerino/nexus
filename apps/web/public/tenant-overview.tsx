@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { GraphDirective } from '../architect/graph-composer.types';
 import { SummaryCards } from './tenant-summary';
 import { TenantChartsTab } from './tenant-charts-tab';
+import { TenantContributors } from './tenant-contributors';
 import type { UnitScope } from './tenant-org-tree';
 import type { PublicStats } from './tenant-builders';
 import { ES } from './tenant-i18n';
@@ -44,6 +45,9 @@ export function TenantOverview({ slug, stats, tenantId, charts, unit }: {
         </div>
       ) : null}
       <SummaryCards summary={summary} />
+      {/* Biggest-contributors ranking — a whole-university comparison; shown only
+          at "All organization" scope (meaningless narrowed to one unit). */}
+      {unitKey ? null : <TenantContributors slug={slug} />}
       <TenantChartsTab stats={stats} tenantId={tenantId} charts={charts} unit={unitKey} />
     </>
   );

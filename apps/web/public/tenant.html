@@ -124,6 +124,14 @@
     /* Departments' bars a touch dimmer so faculty bars read as the primary tier. */
     .org-children .org-bar-fill { background: var(--secondary); }
 
+    /* Biggest-contributors ranking rows (right-side chart). Name takes the slack
+       so every bar aligns into a column; drillable rows highlight on hover. */
+    .contrib-row { display: flex; align-items: center; gap: 12px; padding: 5px 6px; border-radius: 6px; }
+    .contrib-row.drillable { cursor: pointer; }
+    .contrib-row.drillable:hover { background: var(--bg-inset); }
+    .contrib-name { flex: 1; min-width: 0; font-size: 13px; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .contrib-row .org-bar { width: 180px; }
+
     /* Top-level faculties: light card stripe so they read as roots. */
     .org-tree > .org-node { border-top: 1px solid var(--border-soft); }
     .org-tree > .org-node:first-child { border-top: none; }
