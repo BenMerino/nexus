@@ -41,8 +41,17 @@ function daysBetween(aIso, bIso) {
 }
 
 // Slider track: earliest record → today.
+// Kinds whose slider track is the tenant's publication timeline. The span is
+// the same MIN(published)→today range for all of them (cadence/byIndex fold the
+// SAME doi_records dates, just grouped differently), so they share one span
+// lookup. Without this the slider's span fetch threw unknownKind for the
+// replayable cadence/byIndex charts → span=null → slider never rendered.
+const PUBLICATION_TIMELINE_KINDS = new Set([
+  "publications", "publications.cadence", "publications.byIndex",
+]);
+
 async function timelineSpan(tenantId, kind) {
-  if (!KINDS[kind]) throw unknownKind(kind);
+  if (!KINDS[kind] && !PUBLICATION_TIMELINE_KINDS.has(kind)) throw unknownKind(kind);
   const { rows } = await sql`
     SELECT MIN(SUBSTRING(published FROM 1 FOR 10)) AS earliest
     FROM doi_records

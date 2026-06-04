@@ -4,7 +4,8 @@ const { timelineSpan } = require("../../../../src/lib/architect-replay");
 // GET /api/architect/timeline-span/:tenantId/:kind
 // Returns { earliest, today, totalDays } — the genesis→today track the chart
 // slider renders. Public/read-only and tenant-scoped (the tenant charts are
-// anonymous). `kind` selects which metric's timeline (only publications today).
+// anonymous). `kind` selects which metric's timeline; the publication.*
+// time-series (publications, .cadence, .byIndex) share the one publication span.
 // Cached 5min, matching the client's useTimelineSpan expectation.
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
