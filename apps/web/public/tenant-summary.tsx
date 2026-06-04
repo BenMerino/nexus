@@ -1,7 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { PublicStats } from './tenant-builders';
+import type { UnitScope } from './tenant-scope-rail';
 import { ES } from './tenant-i18n';
 import { KpiSpark } from './tenant-kpi-spark';
+
+// Fetch the unit-scoped summary KPIs; null unit → the tenant-wide summary in
+// `stats` (no extra request). Renders the KPI row. Used full-width above the
+// rail (mockup); the cards re-narrow when a unit is picked in the rail.
+const EMPTY_SUMMARY: PublicStats['summary'] = { totalPubs: 0, totalCitations: 0, oaCount: 0, authorCount: 0 };
+
+export function ScopedSummary({ slug, stats, unit }: { slug: string; stats: PublicStats; unit: UnitScope | null }) {
+  // stats.summary is absent if the analytics payload wins the load race (it
+  // carries no summary) — fall back to zeros so the cards never read undefined.
+  const [summary, setSummary] = useState<PublicStats['summary']>(stats.summary ?? EMPTY_SUMMARY);
+  useEffect(() => {
+    if (!unit?.unitKey) { setSummary(stats.summary ?? EMPTY_SUMMARY); return; }
+    let cancelled = false;
+    setSummary({ totalPubs: 0, totalCitations: 0, oaCount: 0, authorCount: 0 });
+    fetch(`/api/public/${encodeURIComponent(slug)}/stats?chrome=1&unit=${encodeURIComponent(unit.unitKey)}`)
+      .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((d: { stats: PublicStats }) => { if (!cancelled) setSummary(d.stats.summary); })
+      .catch(() => { if (!cancelled) setSummary(stats.summary); });
+    return () => { cancelled = true; };
+  }, [slug, unit?.unitKey, stats.summary]);
+  return <SummaryCards summary={summary} />;
+}
 
 // Each KPI owns a jewel accent (rail + dot) and a decorative sparkline shape.
 // The accent is a real token (--j-*), not per-card hex (N3).

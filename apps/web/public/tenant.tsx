@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { buildTenantCharts } from './tenant-builders';
 import { TenantOverview } from './tenant-overview';
+import { ScopedSummary } from './tenant-summary';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
-import { TenantOrgTree, type UnitScope } from './tenant-org-tree';
+import { type UnitScope } from './tenant-scope-rail';
+import { TenantScopeRail } from './tenant-scope-rail';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { GraphProviders } from '../ui/graph-engine-providers';
 import { ES } from './tenant-i18n';
@@ -79,14 +81,21 @@ function App() {
             <span>{unit ? ES.publicProfile : ES.pageHead.allUnitsNote}</span>
           </div>
         </div>
-        {/* Two-column: org scheme pinned as the left rail (the scope picker),
-            the scoped Overview (KPIs + charts + authors) on the right. */}
+        {/* KPI row spans the full width above the rail + chart grid (mockup). */}
+        <ScopedSummary slug={slug} stats={statsPayload.stats} unit={unit} />
+        {/* Two-column: scope rail (the picker) pinned left, the scoped chart
+            grid + author directory on the right. */}
         <div className="tenant-layout">
           <aside className="tenant-rail">
-            <h2 className="tenant-rail-title">{ES.nav.orgTree}</h2>
             {/* The rail IS the scope picker: selecting a unit re-scopes the
-                right-side Overview; the "All organization" row resets it. */}
-            <TenantOrgTree slug={slug} tenantName={statsPayload.tenant.name} selected={unit} onSelect={setUnit} />
+                right-side Overview; the "All units" row resets it. */}
+            <div className="tenant-rail-head">
+              <h2 className="tenant-rail-title">{ES.scopeRail.title}</h2>
+              <p className="tenant-rail-note">{ES.scopeRail.note}</p>
+            </div>
+            <div className="tenant-rail-list">
+              <TenantScopeRail slug={slug} tenantName={statsPayload.tenant.name} selected={unit} onSelect={setUnit} />
+            </div>
           </aside>
           <div className="tenant-content">
             {/* KPI cards + charts + author directory — all re-scope in place to

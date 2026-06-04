@@ -34,9 +34,11 @@ export function TenantPublicHeader({
   items: PublicNavItem[];
   currentId: string;
   onNavigate: (id: string) => void;
-  yearRange: { minYear: string | null; maxYear: string | null };
+  yearRange?: { minYear: string | null; maxYear: string | null };
 }) {
-  const updated = yearRange.maxYear ? `${ES.updatedPrefix} ${yearRange.maxYear}` : ES.publicProfileBadge;
+  // yearRange may be absent if the analytics payload wins the load race (it
+  // carries no yearRange) — guard so the header never throws on .maxYear.
+  const updated = yearRange?.maxYear ? `${ES.updatedPrefix} ${yearRange.maxYear}` : ES.publicProfileBadge;
   return (
     <header className="public-header">
       <div className="public-brand">

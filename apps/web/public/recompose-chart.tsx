@@ -55,7 +55,7 @@ export function RecomposeChart({ kind, tenantId, unit, minHeight = 360 }: { kind
  *  rendered together — no per-chart stagger. Replaces N <RecomposeChart>s whose
  *  parallel fetches filled in one-by-one. Composition stays per-kind on the
  *  server; only the transport collapses. */
-export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400 }: { kinds: string[]; tenantId: number; unit?: string | null; minHeight?: number }) {
+export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400, bare = false, wrap }: { kinds: string[]; tenantId: number; unit?: string | null; minHeight?: number; bare?: boolean; wrap?: (kind: string, body: React.ReactNode) => React.ReactNode }) {
   const [map, setMap] = useState<Record<string, GraphDirective | null> | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -83,9 +83,14 @@ export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400 }: { kind
         // engine letterboxes to nothing); don't impose the generic minHeight
         // floor or its card would leave whitespace below the map.
         const isMap = kind === 'publications.countriesMap';
+        const body = <ComposedView directive={ok ? d : null} failed={failed} minHeight={isMap ? 0 : minHeight} />;
+        // `wrap` lets the caller frame each kind (e.g. a .panel) while keeping
+        // the single batch fetch; `bare` skips the default .card; else .card.
+        if (wrap) return <React.Fragment key={kind}>{wrap(kind, body)}</React.Fragment>;
+        const className = bare ? undefined : 'card';
         return (
-          <div key={kind} className="card" style={isMap ? undefined : { minHeight }}>
-            <ComposedView directive={ok ? d : null} failed={failed} minHeight={isMap ? 0 : minHeight} />
+          <div key={kind} className={className} style={isMap || bare ? undefined : { minHeight }}>
+            {body}
           </div>
         );
       })}

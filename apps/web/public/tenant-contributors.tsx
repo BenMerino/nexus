@@ -49,23 +49,23 @@ export function TenantContributors({ slug }: { slug: string }) {
   if (!tree || !tree.faculties.length) return null;
 
   const units: Unit[] = drill ? (drill.departments ?? []) : tree.faculties;
+  // Bare: rendered INSIDE a ChartPanel (which owns the title/frame), so this is
+  // just the metric toggle + ranked rows + drill — no card/title of its own.
   return (
-    <section className="card" style={{ padding: 18, marginBottom: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
-        <h3 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 16, margin: 0 }}>
-          {drill ? ES.contributors.titleIn(drill.name) : ES.contributors.title}
-        </h3>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {METRICS.map(m => (
-            <button key={m.id} type="button" onClick={() => setMetric(m.id)}
-              style={{ padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: 11,
-                border: '1px solid var(--border)',
-                background: metric === m.id ? 'var(--primary)' : 'transparent',
-                color: metric === m.id ? 'var(--bg)' : 'var(--fg-dim)' }}>
-              {m.label}
-            </button>
-          ))}
-        </div>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginBottom: 14, flexWrap: 'wrap' }}>
+        {drill ? (
+          <span style={{ marginRight: 'auto', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--fg-muted)' }}>{ES.contributors.titleIn(drill.name)}</span>
+        ) : null}
+        {METRICS.map(m => (
+          <button key={m.id} type="button" onClick={() => setMetric(m.id)}
+            style={{ padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: 11,
+              border: '1px solid var(--border)',
+              background: metric === m.id ? 'var(--primary)' : 'transparent',
+              color: metric === m.id ? 'var(--bg)' : 'var(--fg-dim)' }}>
+            {m.label}
+          </button>
+        ))}
       </div>
       {drill ? (
         <button type="button" onClick={() => setDrill(null)}
@@ -77,6 +77,6 @@ export function TenantContributors({ slug }: { slug: string }) {
       <div style={{ marginTop: 12, fontSize: 11, color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>
         {ES.contributors.footnote}
       </div>
-    </section>
+    </div>
   );
 }

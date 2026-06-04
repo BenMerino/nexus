@@ -25,6 +25,13 @@ export const ES = {
     allUnits: 'All units',
     allUnitsNote: 'complete institutional corpus',
   },
+
+  /* Scope rail head + the "all units" row label */
+  scopeRail: {
+    title: 'Scope · Faculties & Institutes',
+    note: 'Select a unit to focus every chart on its output.',
+    allUnitsKind: 'Institution-wide',
+  },
   nav: {
     overview: 'Overview',
     charts: 'Charts',
@@ -92,7 +99,10 @@ export const ES = {
   /* Charts panel section titles */
   charts: {
     citationVelocity: 'Citation velocity',
+    citationsPerYear: 'Citations received per year',
     publicationCadence: 'Publication cadence',
+    byDocType: 'Output by document type',
+    byIndexSource: 'Segmented by indexing source',
     yearAxis: 'Year',
     articles: 'Papers',
     pubsByYear: 'Publications per year',
