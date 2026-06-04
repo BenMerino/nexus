@@ -223,6 +223,11 @@ export interface GraphDirective extends ReplayableDirective<GraphQuery>, GraphDi
     /** Render a numeric label above each (decimated) point/bar. Off by
      *  default; rides the axis decimator so labels never collide. */
     valueLabels?: boolean;
+    /** Suppress the in-chart title text in the header row. For hosts that
+     *  render their own heading around the chart (a card/panel title), so the
+     *  title isn't shown twice. The header row's toggles/feature controls/live
+     *  badge still render; only the title text is hidden. Off by default. */
+    hideTitle?: boolean;
     /** Chart-wide RAW style override — bypasses the semantic status→style
      *  table for pure-aesthetic callers (a dashed target line, brand
      *  styling). Per-bucket variation goes through atom `status` /

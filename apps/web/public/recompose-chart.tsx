@@ -10,8 +10,11 @@ import { perfMark } from './perf-beacon';
  *   - ScopedChart:    authenticated GET /api/architect/charts?kind= (orcid-scoped)
  * Both render an atom directive via DirectiveChart (uniform-drop toggle). */
 
-function ComposedView({ directive, failed, minHeight }: { directive: GraphDirective | null; failed: boolean; minHeight: number }) {
-  const seed = useMemo(() => directive, [directive]);
+function ComposedView({ directive, failed, minHeight, hideTitle }: { directive: GraphDirective | null; failed: boolean; minHeight: number; hideTitle?: boolean }) {
+  // hideTitle: the chart sits inside a host card that renders its own heading,
+  // so suppress the engine's in-chart title (keep the directive's title for the
+  // host/key). Engine honors directive.hideTitle (synced from Zincro).
+  const seed = useMemo(() => (directive && hideTitle ? { ...directive, hideTitle: true } : directive), [directive, hideTitle]);
   if (failed || seed === null) {
     return <div style={{ minHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>—</div>;
   }
@@ -83,7 +86,9 @@ export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400, bare = f
         // engine letterboxes to nothing); don't impose the generic minHeight
         // floor or its card would leave whitespace below the map.
         const isMap = kind === 'publications.countriesMap';
-        const body = <ComposedView directive={ok ? d : null} failed={failed} minHeight={isMap ? 0 : minHeight} />;
+        // Every BatchedCharts chart is card-wrapped (wrap=ChartPanel or .card),
+        // which renders its own heading → suppress the engine's in-chart title.
+        const body = <ComposedView directive={ok ? d : null} failed={failed} minHeight={isMap ? 0 : minHeight} hideTitle />;
         // `wrap` lets the caller frame each kind (e.g. a .panel) while keeping
         // the single batch fetch; `bare` skips the default .card; else .card.
         if (wrap) return <React.Fragment key={kind}>{wrap(kind, body)}</React.Fragment>;
@@ -106,5 +111,7 @@ export function ScopedChart({ kind, orcid, minHeight = 360 }: { kind: string; or
     ? `/api/architect/charts?kind=${encodeURIComponent(kind)}&orcid=${encodeURIComponent(orcid)}`
     : `/api/architect/charts?kind=${encodeURIComponent(kind)}`;
   const { directive, failed } = useComposed(() => fetch(url, { credentials: 'include' }), [url]);
-  return <ComposedView directive={directive} failed={failed} minHeight={minHeight} />;
+  // Dashboard ScopedCharts sit in a card with its own SectionHead → hide the
+  // engine's in-chart title.
+  return <ComposedView directive={directive} failed={failed} minHeight={minHeight} hideTitle />;
 }

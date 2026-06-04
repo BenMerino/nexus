@@ -97,14 +97,26 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
         ? (idx: number, label: string, atomKeyRange?: [number, number], periodKey?: string) => onBucketClick(idx, label, visibleBuckets, daysPerBucket, atomKeyRange, periodKey)
         : undefined;
 
+    // The header row carries the title + drill breadcrumbs (left) and the
+    // toggles/feature controls/live badge (right). Skip it entirely when there
+    // is nothing to show — e.g. a hideTitle chart with no toggles — so the host
+    // card's own heading isn't trailed by an empty 0.25rem gap.
+    const showHeaderRow = (!chart.hideTitle && !!chart.title)
+        || (!!breadcrumbs && breadcrumbs.length > 0 && !!onDrillUp)
+        || (otherToggles.length > 0 && !!onToggle)
+        || (featuresAvailable.length > 0 && !!featureScopeKey)
+        || isLive !== undefined;
+
     return (
         <>
-            {t !== 'sparkline' && (
+            {t !== 'sparkline' && showHeaderRow && (
                 <BaseBox display="flex" direction="row" align="center" justify="between" style={{ marginBottom: '0.25rem', gap: 'var(--space-3, 0.75rem)' }}>
                     <BaseBox display="flex" direction="row" align="center" density="tight" style={{ minWidth: 0 }}>
-                        <BaseText variant="detail" weight="semibold" style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            {chart.title}
-                        </BaseText>
+                        {!chart.hideTitle && (
+                            <BaseText variant="detail" weight="semibold" style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {chart.title}
+                            </BaseText>
+                        )}
                         {breadcrumbs && breadcrumbs.length > 0 && onDrillUp && (
                             <DrillBreadcrumbChip crumbs={breadcrumbs} onUp={onDrillUp} />
                         )}

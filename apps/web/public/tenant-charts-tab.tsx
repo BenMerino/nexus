@@ -24,7 +24,7 @@ function YearPanel({ stats, tenantId, charts, unit }: { stats: PublicStats; tena
     <ChartPanel className="full" title={ES.charts.pubsByYear} sub={ES.charts.byIndexSource}>
       {hasYearIndex(stats)
         ? <BatchedCharts kinds={['publications.byIndex']} tenantId={tenantId} unit={unit} bare />
-        : charts.map((c, i) => <DirectiveChart key={c.persistKey ?? i} seed={c} />)}
+        : charts.map((c, i) => <DirectiveChart key={c.persistKey ?? i} seed={{ ...c, hideTitle: true }} />)}
     </ChartPanel>
   );
 }
