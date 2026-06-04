@@ -8,7 +8,7 @@ import { RecentlyIndexed } from './dashboard-panels';
 import { ServerCharts } from './dashboard-server-charts';
 import { ClaimPaperPanel } from './claim-paper-panel';
 import { CoAuthorGraphPanel } from './coauthor-graph-preview';
-import { VelocityPanel } from './portfolio-velocity';
+import { ScopedChart } from './recompose-chart';
 import { CadencePanel } from './portfolio-cadence';
 import { TopCitedPanel } from './portfolio-topcited';
 import { ConceptsPanel } from './portfolio-concepts';
@@ -66,7 +66,10 @@ function DashboardContent({ data }: { data: DashboardData }) {
           <>
             <section className="card card-chart">
               <SectionHead title="Citation velocity" />
-              <VelocityPanel velocity={p.velocity} />
+              {/* Server-COMPOSED (publications.velocity), orcid-scoped via the
+                  /charts path — same scope-driven core as the public kind. The
+                  panel renders, never shapes (N8). */}
+              <ScopedChart kind="publications.velocity" orcid={subjectOrcid} minHeight={240} />
             </section>
             <section className="card card-chart">
               <SectionHead title="Publication cadence" />

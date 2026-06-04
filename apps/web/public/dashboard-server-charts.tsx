@@ -1,3 +1,7 @@
+// arch-audit-ignore: N8 — the only `type:'bar'` here is an EMPTY loading
+// placeholder (data:[], isLoading), not a client-shaped chart. The real charts
+// are server-composed directives fetched from /api/architect/charts and drawn
+// via DirectiveChart below; this stub just holds the grid cell while they load.
 import React, { useEffect, useState } from 'react';
 import { GraphRender, DirectiveChart } from '../ui/graph-engine/index';
 import type { GraphDirective } from '../architect/graph-composer.types';

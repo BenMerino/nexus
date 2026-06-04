@@ -54,7 +54,13 @@ const TREND_LABEL = { rising: "rising", flat: "flat", falling: "falling" } as co
  *  continuous (no false dip); observed solid, partial+projected dashed (the
  *  engine's status→style); 'area' fills a gradient underneath. */
 export async function composeVelocity(tenantId: number, unitKey?: string | null): Promise<VelocityDirective | null> {
-  const scope = publicScope(tenantId, unitKey);
+  return velocityFromScope(publicScope(tenantId, unitKey));
+}
+
+/** The scope-driven core, shared by the public kind (tenant/unit scope) and the
+ *  scoped dashboard kind (orcid scope via StatComposer). `scope` flows through
+ *  citesByYear → resolvePubFilter, so personal/tenant/unit narrowing all work. */
+export async function velocityFromScope(scope: { tenantId: number; orcid: string | null; ror: string | null; role?: string; unitKey: string | null }): Promise<VelocityDirective | null> {
   const raw: Array<{ year: number; value: number }> = await citesByYear(scope);
   if (!raw.length) return null;
   const currentYear = new Date().getUTCFullYear();

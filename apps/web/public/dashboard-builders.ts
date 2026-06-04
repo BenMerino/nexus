@@ -1,4 +1,7 @@
-import type { GraphDirective } from '../architect/graph-composer.types';
+// Dashboard data + entity types. The chart BUILDERS that used to live here
+// (buildYearSourceChart/buildCollabChart/buildCountryChart) were removed once
+// the dashboard moved to server-composed charts (<ServerCharts> →
+// /api/architect/charts); this file is now types only.
 import type { Velocity } from './portfolio-velocity';
 import type { Cadence } from './portfolio-cadence';
 import type { TopCitedItem } from './portfolio-topcited';
@@ -52,58 +55,6 @@ interface DashboardData {
   recentPapers?: RecentPaper[];
   portfolio?: Portfolio;
   viewedUser?: ViewedUser | null;
-}
-
-function buildYearSourceChart(data: DashboardData): GraphDirective | null {
-  const byYear = new Map<string, Map<string, number>>();
-  for (const row of data.yearSource) {
-    if (!byYear.has(row.year)) byYear.set(row.year, new Map());
-    byYear.get(row.year)!.set(row.source, parseInt(row.count));
-  }
-  const years = [...byYear.keys()].sort();
-  if (years.length <= 1) return null;
-
-  return {
-    type: 'bar',
-    title: 'Publications by Year',
-    yLabel: 'Articles',
-    data: years.map(year => {
-      const sources = byYear.get(year)!;
-      let total = 0;
-      for (const c of sources.values()) total += c;
-      return { label: year, value: total };
-    }),
-  };
-}
-
-function buildCollabChart(data: DashboardData): GraphDirective | null {
-  const top = data.collabs.slice(0, 15);
-  if (!top.length) return null;
-  return {
-    type: 'bar',
-    title: 'Top Collaborating Institutions',
-    yLabel: 'Co-authored Papers',
-    data: top.map(c => ({ label: c.value.substring(0, 30), value: parseInt(c.count) })),
-  };
-}
-
-function buildCountryChart(data: DashboardData): GraphDirective | null {
-  if (!data.countries.length) return null;
-  return {
-    type: 'donut',
-    title: 'Publications by Country',
-    data: data.countries.slice(0, 12).map(c => ({
-      label: c.country, value: parseInt(c.count),
-    })),
-  };
-}
-
-export function buildDashboardCharts(data: DashboardData): GraphDirective[] {
-  return [
-    buildYearSourceChart(data),
-    buildCollabChart(data),
-    buildCountryChart(data),
-  ].filter((c): c is GraphDirective => c !== null);
 }
 
 export type { DashboardData };

@@ -16,6 +16,7 @@ import type { ActorContext } from "../../substrate/actor";
 import type { GraphDataPoint } from "@nexus/shared/graph-data.types";
 import { statistician } from "../catalog/Statistician";
 import { composeCadence } from "./PublicationCharts";
+import { velocityFromScope } from "./PublicSeriesCharts";
 
 /** Minimal server-emitted chart directive (the contract GraphRender reads).
  *  The frontend GraphDirective is a superset with render-runtime fields the
@@ -38,6 +39,12 @@ const COMPOSERS: Record<string, (ctx: ActorContext) => Promise<unknown>> = {
   // tenant page uses, here under the authenticated scope. Atom-bearing → uniform
   // legend-toggle drop, like the public one.
   "publications.cadence": (ctx) => composeCadence(ctx),
+  // Per-researcher citation velocity — the SAME scope-driven core the public
+  // kind uses (velocityFromScope), narrowed by ctx.orcid here. Area + forecast
+  // + score, server-composed (the dashboard panel renders, never shapes).
+  "publications.velocity": (ctx) => velocityFromScope({
+    tenantId: ctx.tenantId, orcid: ctx.orcid ?? null, ror: ctx.ror ?? null, role: ctx.role, unitKey: null,
+  }),
   async publicationsByYear(ctx) {
     const rows: Array<{ year: string; count: string | number }> = await statistician.byYear(ctx);
     const byYear = new Map<string, number>();
