@@ -9,6 +9,7 @@
  */
 
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
+import { cs, seriesColorFor } from './svg-color-schemes.js';
 
 export interface TooltipState {
     x: number; y: number; vbX: number; vbY: number;
@@ -76,10 +77,20 @@ export function tipStateFromHover(
      *  otherwise a stacked-bar segment whose `hit.value` equals one
      *  series' weighted contribution duplicates that series' row. */
     if (!expandedMultiSeries && typeof d.value === 'number') {
+        /* Stacked-segment hover on an ATOM directive (data:[] → the
+         *  multi-series branch above can't run, no chart.data row to read).
+         *  The hit still carries the segment's `series` name + `seriesIdx`,
+         *  so resolve its color through the SAME `seriesColorFor` the marks
+         *  use — otherwise the row falls to `d.color` (absent on the hit) →
+         *  `primary`, so every segment's tooltip row reads one flat color
+         *  instead of its series color. */
+        const segColor = (typeof d.series === 'string')
+            ? seriesColorFor(cs(chart as any), d.series, typeof d.seriesIdx === 'number' ? d.seriesIdx : 0)
+            : (d.color ?? primary);
         values.push({
             name: d.series ?? d.kind ?? 'value',
             value: d.value,
-            color: d.color ?? primary,
+            color: segColor,
         });
     }
     if (typeof d.x === 'number') {

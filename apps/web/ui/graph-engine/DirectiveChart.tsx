@@ -104,9 +104,16 @@ function ControlledChart({ seed }: { seed: GraphDirective }) {
         if (child) ctrl.drillDown(child, label);
     };
 
+    /* Re-normalize on EVERY controller directive — not just the seed. A
+     * refetch/recompose/slider/drill/stream push replaces ctrl.directive with a
+     * fresh SERVER directive that lacks seriesColors, so normalizing only the
+     * seed makes colors flash on first paint then revert to flat/black once the
+     * controller swaps in a refetched directive. */
+    const chart = useMemo(() => withSeriesColors(ctrl.directive), [ctrl.directive]);
+
     return (
         <GraphRender
-            chart={ctrl.directive}
+            chart={chart}
             onToggle={ctrl.setToggle}
             onWindowChange={({ windowDays, asOf }) => ctrl.setQueryFields({ windowDays, asOf: asOf ?? undefined })}
             onBucketClick={handleBucketClick}
