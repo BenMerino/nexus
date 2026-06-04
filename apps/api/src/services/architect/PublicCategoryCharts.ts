@@ -1,5 +1,6 @@
 import { getTopJournals, getTypeByYear, getPublicationTypes } from "../../lib/public-stats";
 const { getCollaborations, getCountries } = require("../../lib/dashboard-stats");
+const { getTenantRor } = require("../../lib/db-users");
 
 /* ── PublicCategoryCharts (Composer) ────────────────────────
  * Server-side composers for the public tenant page's CATEGORICAL charts
@@ -50,9 +51,12 @@ export async function composeTopJournals(tenantId: number): Promise<CategoryDire
 // the whole tenant (the public page's read scope).
 const publicScope = (tenantId: number) => ({ tenantId, orcid: null, ror: null, role: "public" });
 
-/** publications.collaborators — top collaborating institutions (ranked bar). */
+/** publications.collaborators — top collaborating institutions (ranked bar).
+ *  Passes the tenant's home ROR so getCollaborations excludes the tenant from
+ *  its own collaborators list (a tenant isn't its own collaborator). */
 export async function composeCollaborators(tenantId: number): Promise<CategoryDirective | null> {
-  const rows: Array<{ value: string; count: string | number }> = await getCollaborations(publicScope(tenantId));
+  const ror: string | null = await getTenantRor(tenantId);
+  const rows: Array<{ value: string; count: string | number }> = await getCollaborations({ ...publicScope(tenantId), ror });
   if (!rows.length) return null;
   return {
     type: "bar",

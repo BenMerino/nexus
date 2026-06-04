@@ -100,8 +100,15 @@ async function getTenantBySlug(slug) {
   return r.rows[0] || null;
 }
 
+// The tenant's own (home) ROR. Used to exclude a tenant from its own
+// "collaborating institutions" chart — a tenant isn't its own collaborator.
+async function getTenantRor(id) {
+  const r = await sql`SELECT ror_id FROM tenants WHERE id = ${id}`;
+  return r.rows[0]?.ror_id || null;
+}
+
 module.exports = {
   getUserByUsername, getUserById, listUsers,
   createUser, updateUser, listTenants, listSubtenants, updateTenant, createTenant,
-  getTenantBySlug, normalizeSlug,
+  getTenantBySlug, getTenantRor, normalizeSlug,
 };

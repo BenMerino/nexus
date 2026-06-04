@@ -2,6 +2,7 @@ const { sql } = require("./sql");
 const { isPersonalScope } = require("./scope");
 const { scopedPubFilter } = require("./stats-scope");
 const { getAuthorCount } = require("./public-authors");
+const { normRor } = require("./entity-normalize");
 
 // Dashboard stats — entity-backed (tags → entities migration). Personal scope
 // narrows to the user's own publications via authorship; admin scope is the
@@ -57,15 +58,28 @@ async function getByYearAndSource(scope) {
 
 // Top collaborating institutions — direct pub↔institution edges (affiliated_with,
 // the superset the graph/collab counts use). group_key = institution id.
+//
+// Excludes the tenant's OWN institution: a tenant is not its own collaborator,
+// and since it's on ~every one of its papers it would otherwise rank #1 and
+// dominate the chart. scope.ror is the home ROR (normalized to bare-id to match
+// how institutions.ror is stored at ingest). When scope.ror is absent the
+// filter is a no-op — callers that want the exclusion must pass it.
 async function getCollaborations(scope) {
   if (!scope) throw new Error("getCollaborations requires scope");
   const f = scopedPubFilter(scope);
+  const homeRor = normRor(scope.ror);
+  const params = [...f.params, scope.tenantId];
+  let homeFilter = "";
+  if (homeRor) {
+    params.push(homeRor);
+    homeFilter = ` AND i.ror IS DISTINCT FROM $${params.length}`;
+  }
   const r = await sql.query(
     `SELECT i.name value, i.id::text group_key, COUNT(DISTINCT p.id) count
      FROM affiliated_with aw JOIN institutions i ON i.id = aw.institution_id
      JOIN publications p ON p.id = aw.publication_id
-     WHERE i.tenant_id = $${f.params.length + 1} AND ${f.where}
-     GROUP BY i.id, i.name ORDER BY count DESC LIMIT 20`, [...f.params, scope.tenantId]);
+     WHERE i.tenant_id = $${f.params.length + 1} AND ${f.where}${homeFilter}
+     GROUP BY i.id, i.name ORDER BY count DESC LIMIT 20`, params);
   return r.rows;
 }
 
