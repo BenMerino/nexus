@@ -181,7 +181,10 @@ function fmtTick(v: number): string {
     const abs = Math.abs(v);
     if (abs >= 1_000_000) return `${+(v / 1_000_000).toPrecision(3)}M`;
     if (abs >= 10_000) return `${+(v / 1_000).toPrecision(3)}k`;
-    return String(v);
+    /* 1,000–9,999 fell through to String(v) → "2403" (no separator). Group
+     *  with a thousands separator so mid-range ticks read "2,403", matching
+     *  the comma-formatted value labels (fmtValue/toLocaleString). */
+    return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
 function ThresholdLine({ el }: { el: Extract<ChromeElement, { kind: 'threshold-line' }> }) {
