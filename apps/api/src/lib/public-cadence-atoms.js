@@ -32,19 +32,39 @@ async function buildCadenceAtoms(scope) {
     f.params);
   if (!r.rows.length) return { atoms: [], series: [], meanPerYear: 0 };
 
+  // Collapse to the TOP work-types + an 'other' bucket. A tenant can carry 26+
+  // CrossRef types, but the long tail is negligible (utalca: 20 types sum to
+  // <1% of papers) — shipping every type means a 26-series stacked bar that's
+  // both unreadable AND a ~5MB / 26-way fold (the "super slow" cadence). Top-N
+  // + other mirrors composeTypeByYear's slice(0,6). Compute totals first.
+  const TOP_TYPES = 6;
+  const typeTotals = new Map();
+  for (const row of r.rows) {
+    if (!row.iso || isPreprint(row)) continue;
+    typeTotals.set(row.type, (typeTotals.get(row.type) || 0) + 1);
+  }
+  const topTypes = new Set(
+    [...typeTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP_TYPES).map(([t]) => t),
+  );
+  const hasOther = typeTotals.size > topTypes.size;
+  const bucketType = (t) => (topTypes.has(t) ? t : "other");
+
   const byDay = new Map(); // iso -> { type: n }
   const typesSeen = new Set();
   let minIso = null;
   for (const row of r.rows) {
     if (!row.iso || isPreprint(row)) continue;
     if (minIso === null || row.iso < minIso) minIso = row.iso;
+    const type = bucketType(row.type);
     let d = byDay.get(row.iso);
     if (!d) { d = {}; byDay.set(row.iso, d); }
-    d[row.type] = (d[row.type] || 0) + 1;
-    typesSeen.add(row.type);
+    d[type] = (d[type] || 0) + 1;
+    typesSeen.add(type);
   }
   if (minIso === null) return { atoms: [], series: [], meanPerYear: 0 };
-  const series = [...typesSeen].sort();
+  // Top types sorted by total (desc), then 'other' last so it stacks at the top.
+  const series = [...topTypes].sort((a, b) => (typeTotals.get(b) || 0) - (typeTotals.get(a) || 0));
+  if (hasOther && typesSeen.has("other")) series.push("other");
 
   // SPARSE atoms (Zincro time-series contract): one atom per day WITH data,
   // not per calendar day. The engine's fold (bucket-sequence.ts) calendar-walks
