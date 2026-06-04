@@ -189,7 +189,10 @@ export function gridChrome(chart: GraphDirective, width: number, height: number)
         const cells = foldHeatmapColumns(chart.data as any[]);
         const rows = [...new Set(cells.map((d: any) => d.row))];
         const cols = [...new Set(cells.map((d: any) => d.col))];
-        const labelW = 30, labelH = 14;
+        /* labelW MUST equal animated-grid's labelW (36) — cells and these row
+         *  labels share this left origin; a mismatch misaligns them. Matches
+         *  the cartesian left margin so labels get a real y-axis-width gutter. */
+        const labelW = 36, labelH = 14;
         const gridW = width - labelW;
         const gridH = height - labelH;
         /* Fill the grid exactly — must match animated-grid's cell geometry.
