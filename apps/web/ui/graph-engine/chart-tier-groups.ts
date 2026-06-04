@@ -7,10 +7,9 @@
  */
 
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
-import { weekOfMonth } from '../../architect/fold-atoms-calendar.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 
-export type TierUnit = 'week' | 'month' | 'year';
+export type TierUnit = 'month' | 'year';
 
 /** A horizontal run of adjacent base buckets that share the same
  *  coarser-tier identity. `centerX` is the pixel-x where the label
@@ -56,8 +55,7 @@ export function activeTierCount(chart: GraphDirective): number {
 /** Coarser X-axis tiers to stack beneath the base labels, given the
  *  resolved fold unit. */
 export function coarserTiersFor(unit: GraphDirective['__foldUnit']): TierUnit[] {
-    if (unit === 'day') return ['week', 'month', 'year'];
-    if (unit === 'week') return ['month', 'year'];
+    if (unit === 'day') return ['month', 'year'];
     if (unit === 'month') return ['year'];
     return [];
 }
@@ -68,45 +66,20 @@ const TIER_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
  *  belongs to. Used by the decimator's anchor detection. Returns `null`
  *  for the year tier. */
 export function parentPeriodKey(tierKey: string, tier: TierUnit): string | null {
-    if (tier === 'week') return tierKey.slice(0, 7);
     if (tier === 'month') return tierKey.slice(0, 4);
     return null;
 }
 
-function tierKeyAndLabel(iso: string, tier: TierUnit, baseUnit: GraphDirective['__foldUnit']): { key: string; label: string } | null {
+function tierKeyAndLabel(iso: string, tier: TierUnit, _baseUnit: GraphDirective['__foldUnit']): { key: string; label: string } | null {
     if (!iso || iso.length < 10) return null;
     const yyyy = iso.slice(0, 4);
     const mm = iso.slice(5, 7);
-    const dd = iso.slice(8, 10);
-    /* Owner-date projection: week-base buckets are owned by the month
-     *  containing their Thursday (ISO convention). */
-    let ownerY = parseInt(yyyy, 10);
-    let ownerM = parseInt(mm, 10) - 1;
-    if (baseUnit === 'week') {
-        const monday = new Date(Date.UTC(ownerY, ownerM, parseInt(dd, 10)));
-        const thursday = new Date(monday);
-        thursday.setUTCDate(monday.getUTCDate() + 3);
-        ownerY = thursday.getUTCFullYear();
-        ownerM = thursday.getUTCMonth();
-    }
+    const ownerY = parseInt(yyyy, 10);
+    const ownerM = parseInt(mm, 10) - 1;
     if (tier === 'year') return { key: String(ownerY), label: String(ownerY) };
     if (!Number.isFinite(ownerM) || ownerM < 0 || ownerM > 11) return null;
     if (tier === 'month') return { key: `${ownerY}-${String(ownerM + 1).padStart(2, '0')}`, label: TIER_MONTHS[ownerM] };
-    const monthIdx = parseInt(mm, 10) - 1;
-    if (!Number.isFinite(monthIdx) || monthIdx < 0 || monthIdx > 11) return null;
-    const day = parseInt(dd, 10);
-    if (!Number.isFinite(day)) return null;
-    const d = new Date(Date.UTC(parseInt(yyyy, 10), monthIdx, day));
-    const dow = (d.getUTCDay() + 6) % 7;
-    const monday = new Date(d);
-    monday.setUTCDate(d.getUTCDate() - dow);
-    const thursday = new Date(monday);
-    thursday.setUTCDate(monday.getUTCDate() + 3);
-    const ownerMonth = thursday.getUTCMonth();
-    const ownerYear = thursday.getUTCFullYear();
-    const wOfMonth = weekOfMonth(monday);
-    const key = `${ownerYear}-${String(ownerMonth + 1).padStart(2, '0')}-W${wOfMonth}`;
-    return { key, label: `W${wOfMonth}` };
+    return null;
 }
 
 /** Walk visible data buckets, group adjacent ones sharing the same

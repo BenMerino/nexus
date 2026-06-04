@@ -6,8 +6,8 @@
  * as a quick jump. The toggle maps to `query.foldUnit`; the engine honors it
  * and `eligibleFoldUnits` (client) hides rungs that would over-bucket the span.
  *
- * Academic output is decade/century-scale, so the ladder runs Century→Week
- * (no day/hour level pill — drill into a month to reach days).
+ * Academic output is decade/century-scale, so the ladder runs Century→Month
+ * (no week/day/hour level pill — drill into a month to reach days).
  * ──────────────────────────────────────────────────────────── */
 
 export interface GranularityToggle {
@@ -34,7 +34,6 @@ export function pubGranularityToggle(currentFoldUnit: string | null = null): Gra
       { value: "decade", label: "Decade" },
       { value: "year", label: "Year" },
       { value: "month", label: "Month" },
-      { value: "week", label: "Week" },
     ],
   };
 }

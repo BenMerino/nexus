@@ -26,7 +26,7 @@ export interface GraphDirectiveRuntime {
     colorClip?: { lower: number; upper: number };
     /** Resolved fold unit (post-`pickAutoFoldUnit`); chrome builders
      *  read this for hierarchical X-axis tiers. */
-    __foldUnit?: 'hour' | 'day' | 'week' | 'month' | 'year' | 'decade' | 'century';
+    __foldUnit?: 'hour' | 'day' | 'month' | 'year' | 'decade' | 'century';
     /** Per-atom placement in window-normalized [0,1] coordinates.
      *  When present, families read atoms + placements (foundation-
      *  correct path) instead of pre-folded `data[]`. Indexed parallel

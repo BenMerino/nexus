@@ -37,8 +37,8 @@ export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
  * on the visible-pixel budget; the rest are explicit user choices.
  *
  * Ordered ladder (fine → coarse):
- *   hour < day < week < month < year < decade < century
- *   (quarter was removed — navigation goes year → month directly.)
+ *   hour < day < month < year < decade < century
+ *   (quarter + week removed — navigation goes year → month → day directly.)
  *
  * `'hour'` enables sub-day resolution for builders that ship hourly
  * atoms (`Atom.hour` set). Daily-only builders never reach this rung —
@@ -49,7 +49,7 @@ export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
  * earn their place over multi-decade / multi-century spans (academic
  * publication histories spanning 100+ years) where even `decade` produces
  * an unreadable number of buckets. */
-export type FoldUnit = 'auto' | 'hour' | 'day' | 'week' | 'month' | 'year' | 'decade' | 'century';
+export type FoldUnit = 'auto' | 'hour' | 'day' | 'month' | 'year' | 'decade' | 'century';
 
 /** Atom key resolution. `key` is hours-since-anchor (integer). Daily
  * atoms occupy hour 0 of each day (`key = dayIdx * HOURS_PER_DAY`);
@@ -121,8 +121,7 @@ export interface CalendarBucket extends FoldedAtom {
  * even when zoomed to a single day (their atoms have nothing finer). */
 export function pickAutoFoldUnit(visibleDays: number, hasHourly: boolean = false): Exclude<FoldUnit, 'auto'> {
     if (hasHourly && visibleDays <= 5) return 'hour';
-    if (visibleDays <= 60) return 'day';
-    if (visibleDays <= 365 * 1.2) return 'week';
+    if (visibleDays <= 90) return 'day';
     if (visibleDays <= 365 * 8) return 'month';
     if (visibleDays <= 365 * 40) return 'year';
     if (visibleDays <= 365 * 250) return 'decade';
@@ -144,14 +143,12 @@ export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = fals
     const decadal = visibleDays / 3650;
     const yearly = visibleDays / 365;
     const monthly = visibleDays / 30;
-    const weekly = visibleDays / 7;
     const daily = visibleDays;
     const hourly = visibleDays * HOURS_PER_DAY;
     if (centennial >= 3 && centennial <= 120) out.push('century');
     if (decadal >= 3 && decadal <= 120) out.push('decade');
     if (yearly >= 3 && yearly <= 120) out.push('year');
     if (monthly >= 3 && monthly <= 120) out.push('month');
-    if (weekly >= 3 && weekly <= 120) out.push('week');
     if (daily >= 3 && daily <= 120) out.push('day');
     if (hasHourly && hourly >= 3 && hourly <= 120) out.push('hour');
     return out;

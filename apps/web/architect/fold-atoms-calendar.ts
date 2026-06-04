@@ -10,7 +10,6 @@ import type { FoldUnit } from './fold-atoms';
 export function stepByUnit(d: Date, unit: Exclude<FoldUnit, 'auto'>): Date {
     if (unit === 'hour')     d.setUTCHours(d.getUTCHours() + 1);
     if (unit === 'day')      d.setUTCDate(d.getUTCDate() + 1);
-    if (unit === 'week')     d.setUTCDate(d.getUTCDate() + 7);
     if (unit === 'month')    d.setUTCMonth(d.getUTCMonth() + 1);
     if (unit === 'year')     d.setUTCFullYear(d.getUTCFullYear() + 1);
     if (unit === 'decade')   d.setUTCFullYear(d.getUTCFullYear() + 10);
@@ -29,11 +28,6 @@ export function alignToUnitStart(d: Date, unit: Exclude<FoldUnit, 'auto'>): Date
     }
     const r = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
     if (unit === 'day') return r;
-    if (unit === 'week') {
-        const dow = (r.getUTCDay() + 6) % 7; // Mon = 0
-        r.setUTCDate(r.getUTCDate() - dow);
-        return r;
-    }
     if (unit === 'month') return new Date(Date.UTC(r.getUTCFullYear(), r.getUTCMonth(), 1));
     if (unit === 'decade') {
         return new Date(Date.UTC(Math.floor(r.getUTCFullYear() / 10) * 10, 0, 1));
@@ -106,7 +100,6 @@ export function formatLabel(start: Date, unit: Exclude<FoldUnit, 'auto'>): strin
         const dow = DAYS[start.getUTCDay()];
         return `${dow} ${d}`;
     }
-    if (unit === 'week') return `W${weekOfMonth(start)}`;
     if (unit === 'month') return m;
     if (unit === 'decade') return `${Math.floor(yyyy / 10) * 10}s`;
     if (unit === 'century') return `${Math.floor(yyyy / 100) * 100}s`;

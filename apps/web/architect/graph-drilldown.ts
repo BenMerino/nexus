@@ -76,7 +76,7 @@ export function narrowQueryToBucket(
 }
 
 /** Calendar-period drill-down. Decodes a chrome tier-group's `key`
- *  (e.g. `2026-04` for April, `2026`, `2026-04-W2`) into
+ *  (e.g. `2026-04` for April, `2026`) into
  *  the period's `[start, end)` boundaries via pure date math, then
  *  emits a child query whose window covers exactly that period.
  *
@@ -138,29 +138,10 @@ export function periodKeyFor(startISO: string, unit: string): string | null {
  *  emitted by `chart-primitives-cartesian.ts` `tierKeyAndLabel`:
  *    year:    `YYYY`              → [YYYY-01-01, (YYYY+1)-01-01)
  *    month:   `YYYY-MM`           → [YYYY-MM-01,    next month-01)
- *    week:    `YYYY-MM-Wn`        → [Mon of Wn,     Mon of Wn+1)
  *    decade:  `YYYYs`             → [(…0)-01-01,    (…0+10)-01-01)
  *    century: `YYYYc`             → [(…00)-01-01,   (…00+100)-01-01)
  *  Returns null for unrecognized shapes. */
 function periodBounds(key: string): { startISO: string; endISO: string } | null {
-    /* Week: YYYY-MM-Wn — owner-month/year + week-of-month number.
-     *  The week's Monday is at `weekStart`; end is +7 days. */
-    const weekMatch = key.match(/^(\d{4})-(\d{2})-W(\d+)$/);
-    if (weekMatch) {
-        const yyyy = parseInt(weekMatch[1], 10);
-        const mm = parseInt(weekMatch[2], 10);
-        const wn = parseInt(weekMatch[3], 10);
-        if (!Number.isFinite(yyyy) || !Number.isFinite(mm) || !Number.isFinite(wn)) return null;
-        /* Find W1's Monday — week whose Thursday lands in (yyyy, mm).
-         *  Step forward (wn - 1) weeks for Wn's Monday. */
-        const w1Mon = firstWeekMondayOfMonth(yyyy, mm - 1);
-        if (!w1Mon) return null;
-        const start = new Date(w1Mon);
-        start.setUTCDate(start.getUTCDate() + (wn - 1) * 7);
-        const end = new Date(start);
-        end.setUTCDate(end.getUTCDate() + 7);
-        return { startISO: start.toISOString().split('T')[0], endISO: end.toISOString().split('T')[0] };
-    }
     /* Month: YYYY-MM. */
     const monthMatch = key.match(/^(\d{4})-(\d{2})$/);
     if (monthMatch) {
@@ -201,25 +182,6 @@ function periodBounds(key: string): { startISO: string; endISO: string } | null 
     return null;
 }
 
-/** Monday of W1 of (yyyy, monthIdx) under the Thursday-owner convention.
- *  W1's Monday is the Monday whose Thursday is the earliest Thursday
- *  inside the target month. Used by `periodBounds` to resolve a
- *  `YYYY-MM-Wn` key into a calendar date. */
-function firstWeekMondayOfMonth(yyyy: number, monthIdx: number): Date | null {
-    /* Walk back to the Monday on/before the 1st; if its Thursday is in
-     *  the target month, that's W1. Otherwise step forward one week. */
-    const first = new Date(Date.UTC(yyyy, monthIdx, 1));
-    const dow = (first.getUTCDay() + 6) % 7; // Mon=0
-    const candidate = new Date(first);
-    candidate.setUTCDate(candidate.getUTCDate() - dow);
-    const thursday = new Date(candidate);
-    thursday.setUTCDate(thursday.getUTCDate() + 3);
-    if (thursday.getUTCMonth() !== monthIdx) {
-        candidate.setUTCDate(candidate.getUTCDate() + 7);
-    }
-    return candidate;
-}
-
 /** Heatmap sibling of `narrowQueryToBucket`. The cell's `[startKey, endKey]`
  *  atom-key range maps directly to a window in days (atoms are hour-keyed)
  *  and an `asOf` anchor at the cell's last atom. Returns null when the
@@ -250,7 +212,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
  *  and could repeat. Formatting the actual window picks the natural calendar
  *  unit from its span, so every crumb reads the same way and always reflects
  *  what was drilled to:
- *    ≤1 day → the day (2026-04-15) · ≤~8 days → week-of (Wk 2026-04-13)
+* ≤~8 days → the day (2026-04-15)
 * ≤~100 → the month (Apr 2026)
  *    ≤~366 → the year (2026) · else → a year range (2010–2019). */
 export function windowLabel(q: GraphQuery): string {
@@ -260,8 +222,7 @@ export function windowLabel(q: GraphQuery): string {
     const d = q.windowDays;
     if (d == null) return 'All';
     const y = end.getUTCFullYear();
-    if (d <= 1) return endISO;
-    if (d <= 8) return `Wk ${endISO}`;
+    if (d <= 8) return endISO;
     if (d <= 100) return `${MONTHS[end.getUTCMonth()]} ${y}`;
     if (d <= 366) return String(y);
     const startY = new Date(end.getTime() - (d - 1) * DAY_MS).getUTCFullYear();

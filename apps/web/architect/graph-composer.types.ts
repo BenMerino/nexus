@@ -141,7 +141,7 @@ export type TimeRangePreset = '7d' | '30d' | '90d' | '180d' | '365d' | 'all';
 export const WINDOW_DAYS_PRESET: Record<TimeRangePreset, number | null> = {
     '7d': 7, '30d': 30, '90d': 90, '180d': 180, '365d': 365, all: null,
 };
-export type Granularity = 'day' | 'week' | 'month' | 'year';
+export type Granularity = 'day' | 'month' | 'year';
 export type ScopePreset = 'today' | 'week' | 'month';
 
 /** Toggle bound to a GraphQuery field — narrowed re-export of the generic

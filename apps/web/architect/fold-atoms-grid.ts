@@ -49,7 +49,6 @@ export interface GridBucket {
  *  pair at the narrowest zoom instead. */
 export function pickAutoUnitPair(visibleDays: number, hasHourly: boolean = false): [Exclude<FoldUnit, 'auto'>, Exclude<FoldUnit, 'auto'>] {
     if (hasHourly && visibleDays <= 14) return ['day', 'hour'];
-    if (visibleDays <= 90) return ['week', 'day'];
     if (visibleDays <= 400) return ['month', 'day'];
     if (visibleDays <= 365 * 40) return ['year', 'month'];
     return ['decade', 'year'];
@@ -200,7 +199,6 @@ export function cellSpanDays(rowUnit: Exclude<FoldUnit, 'auto'>, colUnit: Exclud
     void rowUnit;
     if (colUnit === 'hour') return 1 / HOURS_PER_DAY;
     if (colUnit === 'day') return 1;
-    if (colUnit === 'week') return 7;
     if (colUnit === 'month') return 30;
     if (colUnit === 'year') return 365;
     return 3650;
