@@ -37,7 +37,8 @@ export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
  * on the visible-pixel budget; the rest are explicit user choices.
  *
  * Ordered ladder (fine → coarse):
- *   hour < day < week < month < quarter < year < decade < century
+ *   hour < day < week < month < year < decade < century
+ *   (quarter was removed — navigation goes year → month directly.)
  *
  * `'hour'` enables sub-day resolution for builders that ship hourly
  * atoms (`Atom.hour` set). Daily-only builders never reach this rung —
@@ -48,7 +49,7 @@ export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
  * earn their place over multi-decade / multi-century spans (academic
  * publication histories spanning 100+ years) where even `decade` produces
  * an unreadable number of buckets. */
-export type FoldUnit = 'auto' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year' | 'decade' | 'century';
+export type FoldUnit = 'auto' | 'hour' | 'day' | 'week' | 'month' | 'year' | 'decade' | 'century';
 
 /** Atom key resolution. `key` is hours-since-anchor (integer). Daily
  * atoms occupy hour 0 of each day (`key = dayIdx * HOURS_PER_DAY`);
@@ -94,7 +95,7 @@ export interface FoldedAtom extends Atom {
 }
 
 /** Calendar-aligned bucket: each visible bucket spans one unit
- * (day/week/month/quarter/year) AND carries the start/end keys so the
+ * (day/week/month/year) AND carries the start/end keys so the
  * renderer can position it geometrically inside the visible window.
  *
  * `startKey` and `endKey` are atom keys (epoch-day indices). The bucket
@@ -122,8 +123,7 @@ export function pickAutoFoldUnit(visibleDays: number, hasHourly: boolean = false
     if (hasHourly && visibleDays <= 5) return 'hour';
     if (visibleDays <= 60) return 'day';
     if (visibleDays <= 365 * 1.2) return 'week';
-    if (visibleDays <= 365 * 4) return 'month';
-    if (visibleDays <= 365 * 12) return 'quarter';
+    if (visibleDays <= 365 * 8) return 'month';
     if (visibleDays <= 365 * 40) return 'year';
     if (visibleDays <= 365 * 250) return 'decade';
     return 'century';
@@ -143,7 +143,6 @@ export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = fals
     const centennial = visibleDays / 36500;
     const decadal = visibleDays / 3650;
     const yearly = visibleDays / 365;
-    const quarterly = visibleDays / 91;
     const monthly = visibleDays / 30;
     const weekly = visibleDays / 7;
     const daily = visibleDays;
@@ -151,7 +150,6 @@ export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = fals
     if (centennial >= 3 && centennial <= 120) out.push('century');
     if (decadal >= 3 && decadal <= 120) out.push('decade');
     if (yearly >= 3 && yearly <= 120) out.push('year');
-    if (quarterly >= 3 && quarterly <= 120) out.push('quarter');
     if (monthly >= 3 && monthly <= 120) out.push('month');
     if (weekly >= 3 && weekly <= 120) out.push('week');
     if (daily >= 3 && daily <= 120) out.push('day');
@@ -162,7 +160,7 @@ export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = fals
 import { stepByUnit, alignToUnitStart, formatLabel } from './fold-atoms-calendar';
 
 /** Calendar-aligned fold. Groups atoms by calendar unit (hour/day/week/
- * month/quarter/year). Each output bucket carries `startKey`/`endKey`
+ * month/year). Each output bucket carries `startKey`/`endKey`
  * atom-key range AND `startISO`/`endISO` calendar boundaries, so the
  * renderer can position it geometrically inside the visible window via
  * linearScale.
@@ -201,7 +199,7 @@ export function foldByCalendar(atoms: Atom[], unit: Exclude<FoldUnit, 'auto'>, a
     }
 
     let cur = alignToUnitStart(firstD, unit);
-    /* Coarse units (year/quarter/month) may start before the first
+    /* Coarse units (year/month) may start before the first
      * atom's day — that's intentional, the bucket's atom range is just
      * empty before the timeline begins. End the loop one full day past
      * the last atom so a trailing partial bucket still gets emitted. */

@@ -10,7 +10,7 @@ import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import { weekOfMonth } from '../../architect/fold-atoms-calendar.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 
-export type TierUnit = 'week' | 'month' | 'quarter' | 'year';
+export type TierUnit = 'week' | 'month' | 'year';
 
 /** A horizontal run of adjacent base buckets that share the same
  *  coarser-tier identity. `centerX` is the pixel-x where the label
@@ -58,8 +58,7 @@ export function activeTierCount(chart: GraphDirective): number {
 export function coarserTiersFor(unit: GraphDirective['__foldUnit']): TierUnit[] {
     if (unit === 'day') return ['week', 'month', 'year'];
     if (unit === 'week') return ['month', 'year'];
-    if (unit === 'month') return ['quarter', 'year'];
-    if (unit === 'quarter') return ['year'];
+    if (unit === 'month') return ['year'];
     return [];
 }
 
@@ -71,7 +70,6 @@ const TIER_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 export function parentPeriodKey(tierKey: string, tier: TierUnit): string | null {
     if (tier === 'week') return tierKey.slice(0, 7);
     if (tier === 'month') return tierKey.slice(0, 4);
-    if (tier === 'quarter') return tierKey.slice(0, 4);
     return null;
 }
 
@@ -94,10 +92,6 @@ function tierKeyAndLabel(iso: string, tier: TierUnit, baseUnit: GraphDirective['
     if (tier === 'year') return { key: String(ownerY), label: String(ownerY) };
     if (!Number.isFinite(ownerM) || ownerM < 0 || ownerM > 11) return null;
     if (tier === 'month') return { key: `${ownerY}-${String(ownerM + 1).padStart(2, '0')}`, label: TIER_MONTHS[ownerM] };
-    if (tier === 'quarter') {
-        const q = Math.floor(ownerM / 3) + 1;
-        return { key: `${ownerY}-Q${q}`, label: `Q${q}` };
-    }
     const monthIdx = parseInt(mm, 10) - 1;
     if (!Number.isFinite(monthIdx) || monthIdx < 0 || monthIdx > 11) return null;
     const day = parseInt(dd, 10);

@@ -76,7 +76,7 @@ export function narrowQueryToBucket(
 }
 
 /** Calendar-period drill-down. Decodes a chrome tier-group's `key`
- *  (e.g. `2026-04` for April, `2026-Q2`, `2026`, `2026-04-W2`) into
+ *  (e.g. `2026-04` for April, `2026`, `2026-04-W2`) into
  *  the period's `[start, end)` boundaries via pure date math, then
  *  emits a child query whose window covers exactly that period.
  *
@@ -125,11 +125,9 @@ export function periodKeyFor(startISO: string, unit: string): string | null {
     const m = startISO.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (!m) return null;
     const yyyy = parseInt(m[1], 10);
-    const mm = parseInt(m[2], 10);
     if (unit === 'century') return `${Math.floor(yyyy / 100) * 100}c`;
     if (unit === 'decade') return `${Math.floor(yyyy / 10) * 10}s`;
     if (unit === 'year') return String(yyyy);
-    if (unit === 'quarter') return `${yyyy}-Q${Math.floor((mm - 1) / 3) + 1}`;
     if (unit === 'month') return `${m[1]}-${m[2]}`;
     /* week/day/hour drill via the existing bucket path (week needs the
      *  Thursday-owner key; day/hour are at/below finest period drill). */
@@ -139,7 +137,6 @@ export function periodKeyFor(startISO: string, unit: string): string | null {
 /** Parse a tier-group key into half-open calendar bounds. Key shapes
  *  emitted by `chart-primitives-cartesian.ts` `tierKeyAndLabel`:
  *    year:    `YYYY`              → [YYYY-01-01, (YYYY+1)-01-01)
- *    quarter: `YYYY-Qn`           → [start of Qn,    start of Qn+1)
  *    month:   `YYYY-MM`           → [YYYY-MM-01,    next month-01)
  *    week:    `YYYY-MM-Wn`        → [Mon of Wn,     Mon of Wn+1)
  *    decade:  `YYYYs`             → [(…0)-01-01,    (…0+10)-01-01)
@@ -162,17 +159,6 @@ function periodBounds(key: string): { startISO: string; endISO: string } | null 
         start.setUTCDate(start.getUTCDate() + (wn - 1) * 7);
         const end = new Date(start);
         end.setUTCDate(end.getUTCDate() + 7);
-        return { startISO: start.toISOString().split('T')[0], endISO: end.toISOString().split('T')[0] };
-    }
-    /* Quarter: YYYY-Qn. */
-    const quarterMatch = key.match(/^(\d{4})-Q(\d)$/);
-    if (quarterMatch) {
-        const yyyy = parseInt(quarterMatch[1], 10);
-        const qn = parseInt(quarterMatch[2], 10);
-        if (qn < 1 || qn > 4) return null;
-        const startMonth = (qn - 1) * 3;
-        const start = new Date(Date.UTC(yyyy, startMonth, 1));
-        const end = new Date(Date.UTC(yyyy, startMonth + 3, 1));
         return { startISO: start.toISOString().split('T')[0], endISO: end.toISOString().split('T')[0] };
     }
     /* Month: YYYY-MM. */
@@ -265,7 +251,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
  *  unit from its span, so every crumb reads the same way and always reflects
  *  what was drilled to:
  *    ≤1 day → the day (2026-04-15) · ≤~8 days → week-of (Wk 2026-04-13)
- *    ≤~45 → the month (Apr 2026) · ≤~100 → the quarter (Q2 2026)
+* ≤~100 → the month (Apr 2026)
  *    ≤~366 → the year (2026) · else → a year range (2010–2019). */
 export function windowLabel(q: GraphQuery): string {
     const endISO = q.asOf ?? isoToday();
@@ -276,8 +262,7 @@ export function windowLabel(q: GraphQuery): string {
     const y = end.getUTCFullYear();
     if (d <= 1) return endISO;
     if (d <= 8) return `Wk ${endISO}`;
-    if (d <= 45) return `${MONTHS[end.getUTCMonth()]} ${y}`;
-    if (d <= 100) return `Q${Math.floor(end.getUTCMonth() / 3) + 1} ${y}`;
+    if (d <= 100) return `${MONTHS[end.getUTCMonth()]} ${y}`;
     if (d <= 366) return String(y);
     const startY = new Date(end.getTime() - (d - 1) * DAY_MS).getUTCFullYear();
     return startY === y ? String(y) : `${startY}–${y}`;

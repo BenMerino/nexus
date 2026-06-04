@@ -110,7 +110,7 @@ export function foldByCalendarGrid(
      *  putting any single weekday in the header would be a lie. Strip the
      *  weekday in that case; keep it otherwise. */
     const colDisplayLabel = (d: Date): string => {
-        if (colUnit === 'day' && (rowUnit === 'month' || rowUnit === 'quarter' || rowUnit === 'year')) {
+        if (colUnit === 'day' && (rowUnit === 'month' || rowUnit === 'year')) {
             return String(d.getUTCDate()).padStart(2, '0');
         }
         return formatLabel(d, colUnit);
@@ -202,7 +202,6 @@ export function cellSpanDays(rowUnit: Exclude<FoldUnit, 'auto'>, colUnit: Exclud
     if (colUnit === 'day') return 1;
     if (colUnit === 'week') return 7;
     if (colUnit === 'month') return 30;
-    if (colUnit === 'quarter') return 91;
     if (colUnit === 'year') return 365;
     return 3650;
 }
