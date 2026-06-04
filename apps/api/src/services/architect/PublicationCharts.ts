@@ -15,6 +15,8 @@
  * ──────────────────────────────────────────────────────────── */
 
 import type { ActorContext } from "../../substrate/actor";
+import type { CatalogQuery } from "../analytics/analytics-catalog.types";
+import { pubWindowToggle, type WindowToggle } from "./pub-window-toggle";
 
 // The read scope the N4 libs consume — a subset of ActorContext (DGA scope model:
 // ctx IS the read scope; personal scope narrows to the actor's own papers).
@@ -45,12 +47,34 @@ export interface TimeChartDirective {
   /** KPI headline. `reduce:'mean'` derives papers/year from the plotted
    *  buckets in the engine, so it tracks window/fold (cosmetic path). */
   kpi?: { caption: string; reduce?: "mean" | "sum" | "last" | "first" | "min" | "max" | "count" | "slope"; figure?: string; trend?: "auto" | { direction: "rising" | "flat" | "falling"; label: string } };
+  /** Replay fields — present makes the directive REPLAYABLE: DirectiveChart
+   *  mounts the controller (window slider + drill). The atoms are full-span;
+   *  the client slices the window (Zincro contract — no server re-window). */
+  query?: { kind: string; tenantId: string; windowDays: number | null; asOf?: string };
+  toggles?: WindowToggle[];
+  persistKey?: string;
+}
+
+/** Build the replay stamp (query + toggles + persistKey) for a public
+ *  time-chart. Echoes windowDays/asOf back as a display preference; the atoms
+ *  stay full-span. Shared by both composers so the shape can't drift. */
+function replayStamp(kind: string, tenantId: number, q: CatalogQuery) {
+  const windowDays = q.windowDays ?? null;
+  return {
+    query: { kind, tenantId: String(tenantId), windowDays, ...(q.asOf ? { asOf: q.asOf } : {}) },
+    toggles: [pubWindowToggle(windowDays)],
+    persistKey: `tenant:${tenantId}:${kind}`,
+  };
 }
 
 /** publications.cadence — papers per period by work-type, as a time-series.
  *  Scope-narrowed via ctx: tenant-public ctx → tenant-wide, researcher ctx →
- *  that author's papers. One composer, both surfaces. */
-export async function composeCadence(ctx: ActorContext): Promise<TimeChartDirective | null> {
+ *  that author's papers. One composer, both surfaces.
+ *
+ *  `query` present (public recompose) → stamp replay fields so the chart gets
+ *  the window slider + drill. Absent (scoped dashboard via StatComposer) →
+ *  bare directive, unchanged — the scoped dashboard has no slider. */
+export async function composeCadence(ctx: ActorContext, query?: CatalogQuery): Promise<TimeChartDirective | null> {
   const { atoms, series, meanPerYear } = await cadenceLib.buildCadenceAtoms(scopeOf(ctx));
   if (!atoms.length || !series.length) return null;
   return {
@@ -66,11 +90,14 @@ export async function composeCadence(ctx: ActorContext): Promise<TimeChartDirect
     // Headline = mean papers/year, DERIVED from the plotted buckets so it
     // tracks window/fold (cosmetic reduction, not a hand-typed figure).
     kpi: { caption: "papers / year (avg)", reduce: "mean" },
+    ...(query ? replayStamp("publications.cadence", ctx.tenantId, query) : {}),
   };
 }
 
-/** publications.byIndex — papers per period by indexation source, time-series. */
-export async function composeByIndex(tenantId: number): Promise<TimeChartDirective | null> {
+/** publications.byIndex — papers per period by indexation source, time-series.
+ *  Replayable: stamps the window slider + drill from the wire query. */
+export async function composeByIndex(q: CatalogQuery): Promise<TimeChartDirective | null> {
+  const tenantId = parseInt(q.tenantId, 10);
   const { atoms, series } = await indexLib.buildIndexationAtoms(tenantId);
   if (!atoms.length || !series.length) return null;
   return {
@@ -82,5 +109,6 @@ export async function composeByIndex(tenantId: number): Promise<TimeChartDirecti
     aggregator: "sum",
     atoms,
     data: [],
+    ...replayStamp("publications.byIndex", tenantId, q),
   };
 }
