@@ -15,7 +15,6 @@ perfMark('boot'); // module evaluated — bundles parsed, app about to mount
 
 const NAV: PublicNavItem[] = [
   { id: 'overview',  label: ES.nav.overview },
-  { id: 'charts',    label: ES.nav.charts },
   { id: 'org-tree',  label: ES.nav.orgTree },
   { id: 'authors',   label: ES.nav.authors },
 ];
@@ -91,10 +90,9 @@ function App() {
       <main className="public-main">
         <div className="view">
           <TabPane id="overview" {...paneProps}>
+            {/* Summary cards on top, then the charts — overview + charts merged
+                into one tab (the standalone 'charts' tab was removed). */}
             <SummaryCards summary={statsPayload.stats.summary} />
-          </TabPane>
-
-          <TabPane id="charts" {...paneProps}>
             <TenantChartsTab stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} />
           </TabPane>
 

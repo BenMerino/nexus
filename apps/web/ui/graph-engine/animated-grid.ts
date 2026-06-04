@@ -116,8 +116,13 @@ export const animatedHeatmap: AnimatedFamily<HeatmapState> = {
         const margB = showMarginal ? 12 : 0;
         const gridW = layout.width - labelW - margR;
         const gridH = layout.height - labelH - margB;
-        const cellW = Math.max(8, gridW / cols.length);
-        const cellH = Math.max(8, gridH / rows.length);
+        /* Cells FILL the grid exactly — no min-width floor. A `Math.max(8, …)`
+         *  floor made `cols.length * cellW` exceed `gridW` once columns got
+         *  dense (30-50 years), so cells overflowed the container to the right.
+         *  Filling lets dense heatmaps render thin cells that stay in-bounds;
+         *  the card-grid already caps overall width (minmax(0,1fr)). */
+        const cellW = gridW / cols.length;
+        const cellH = gridH / rows.length;
         /* Atom-key range per (row, col) cell — set by `foldByCalendarGrid`
          *  on each `__startKey`/`__endKey` field. Lets click handlers narrow
          *  the slider window to exactly the atoms behind the cell. */

@@ -192,8 +192,11 @@ export function gridChrome(chart: GraphDirective, width: number, height: number)
         const labelW = 30, labelH = 14;
         const gridW = width - labelW;
         const gridH = height - labelH;
-        const cellW = Math.max(8, gridW / cols.length);
-        const cellH = Math.max(8, gridH / rows.length);
+        /* Fill the grid exactly — must match animated-grid's cell geometry.
+         *  A min-width floor would put these chrome labels out of register
+         *  with the cells and overrun the container on dense column counts. */
+        const cellW = gridW / cols.length;
+        const cellH = gridH / rows.length;
         /* Column labels (years) decimate through the SAME spatial
          *  authority as the cartesian x-axis. With 30-50 year-columns the
          *  cell pitch collapses below the ~7px-glyph label width, so every
