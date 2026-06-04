@@ -23,9 +23,11 @@ interface OrgTree {
 const KIND_LABEL = ES.orgTree.kindLabel;
 
 // A selectable unit row. Twist toggles expand (drill); the label+bar selects
-// (re-scopes). Active when its unitKey is the current scope.
-function Branch({ label, cls, value, max, metric, unitKey, name, selected, onSelect, children }: {
-  label: React.ReactNode; cls: string; value: number; max: number; metric: Metric;
+// (re-scopes). Active when its unitKey is the current scope. `tag` (kind label)
+// is its OWN fixed-width flex cell so every tag aligns into one column,
+// independent of name length — never glued to the end of the name.
+function Branch({ label, cls, tag, value, max, metric, unitKey, name, selected, onSelect, children }: {
+  label: React.ReactNode; cls: string; tag?: string; value: number; max: number; metric: Metric;
   unitKey: string | null; name: string; selected: string | null;
   onSelect: (u: UnitScope | null) => void; children: React.ReactNode;
 }) {
@@ -37,6 +39,7 @@ function Branch({ label, cls, value, max, metric, unitKey, name, selected, onSel
       <div className={`org-row selectable${isActive ? ' active' : ''}`} onClick={pick}>
         <span className={`org-twist${open ? ' open' : ''}`} onClick={e => { e.stopPropagation(); setOpen(o => !o); }}>▶</span>
         <span className={`org-name ${cls}`}>{label}</span>
+        <span className="org-kind-slot">{tag ? <span className="org-kind">{tag}</span> : null}</span>
         <Bar value={value} max={max} metric={metric} />
       </div>
       <div className={`org-children${open ? ' open' : ''}`}>{children}</div>
@@ -88,6 +91,7 @@ export function TenantOrgTree({ slug, selected, onSelect }: {
           <div className={`org-row selectable all-units${selKey === null ? ' active' : ''}`} onClick={() => onSelect(null)}>
             <span className="org-twist" />
             <span className="org-name fac">{ES.orgTree.allOrganization}</span>
+            <span className="org-kind-slot" />
             <Bar value={data.totals.papers} max={data.totals.papers} metric={metric} />
           </div>
         </div>
@@ -96,7 +100,7 @@ export function TenantOrgTree({ slug, selected, onSelect }: {
           const depMax = depts.length ? valueOf(depts[0], metric) : 0;
           return (
             <Branch key={f.name}
-              label={<>{f.name}{KIND_LABEL[f.kind] ? <span className="org-kind"> {KIND_LABEL[f.kind]}</span> : null}</>}
+              label={f.name} tag={KIND_LABEL[f.kind]}
               cls="fac" value={valueOf(f, metric)} max={facMax} metric={metric}
               unitKey={f.unitKey} name={f.name} selected={selKey} onSelect={onSelect}>
               {depts.map(d => (
