@@ -19,10 +19,29 @@ import {
 import { foldByCalendarGrid, pickAutoUnitPair } from '../../architect/fold-atoms-grid.js';
 import { placeAtoms, bucketTops } from '../../architect/place-atoms.js';
 import { bucketSequence } from '../../architect/bucket-sequence.js';
-import { formatLabel } from '../../architect/fold-atoms-calendar.js';
+import { formatLabel, alignToUnitStart, stepByUnit } from '../../architect/fold-atoms-calendar.js';
 import type { GraphDirective, ChartData, GraphQuery } from '../../architect/graph-composer.types.js';
 import { maxLookbackForDirective } from './graph-features/index.js';
 import { reduce } from './reduction.js';
+
+const HOUR_MS = 3_600_000;
+
+/** Snap a [start,end] window (atom-key space, hours-since-anchor) outward to
+ *  whole bucket boundaries for `unit`: start floors to its bucket's start, end
+ *  ceils to its bucket's end (next bucket start − 1h). Keeps every visible
+ *  bucket complete so all bars are equal width. `anchorISO` is the atom
+ *  timeline origin the keys are measured from. */
+function snapWindowToBuckets(
+    startKey: number, endKey: number, unit: Exclude<FoldUnit, 'auto'>, anchorISO: string,
+): { start: number; end: number } {
+    const anchorMs = Date.parse(`${anchorISO}T00:00:00Z`);
+    if (!Number.isFinite(anchorMs)) return { start: startKey, end: endKey };
+    const keyOf = (ms: number) => Math.round((ms - anchorMs) / HOUR_MS);
+    const startBucket = alignToUnitStart(new Date(anchorMs + startKey * HOUR_MS), unit);
+    const endBucket = alignToUnitStart(new Date(anchorMs + endKey * HOUR_MS), unit);
+    const endNext = stepByUnit(new Date(endBucket), unit); // start of the bucket AFTER the end's bucket
+    return { start: keyOf(startBucket.getTime()), end: keyOf(endNext.getTime()) - 1 };
+}
 
 /** ISO YYYY-MM-DD → whole-day count between that date and today (UTC).
  *  Returns 0 when ISO is today or in the future. */
@@ -61,10 +80,10 @@ export function resolveAtomicDirective(
      *  (hour) space — hour 23, not hour 0. Daily atoms sit at hour 0
      *  of each day, so the end of that day is `key + HOURS_PER_DAY - 1`. */
     const lastDayEndKey = lastKey + HOURS_PER_DAY - 1;
-    const windowEndKey = lastDayEndKey - asOfDaysBefore * HOURS_PER_DAY;
+    let windowEndKey = lastDayEndKey - asOfDaysBefore * HOURS_PER_DAY;
     const totalDays = (lastKey - firstKey + 1) / HOURS_PER_DAY;
     const visibleDays = windowDays ?? totalDays;
-    const windowStartKey = windowEndKey - visibleDays * HOURS_PER_DAY + 1;
+    let windowStartKey = windowEndKey - visibleDays * HOURS_PER_DAY + 1;
     /* Does any atom carry sub-day data? Drives whether 'hour' is in
      *  the fold ladder. Daily-only atoms never reach the hour rung. */
     const hasHourly = chart.atoms.some(a => typeof a.hour === 'number' && a.hour > 0);
@@ -97,6 +116,18 @@ export function resolveAtomicDirective(
     const eligible = new Set<string>(eligibleFoldUnits(visibleDays, hasHourly).map(String));
     const foldUnit: FoldUnit = (requested !== 'auto' && eligible.has(requested)) ? requested : 'auto';
     const resolvedUnit = foldUnit === 'auto' ? pickAutoFoldUnit(visibleDays, hasHourly) : foldUnit;
+    /* Snap the visible window to whole BUCKET boundaries so there are never
+     *  partial edge buckets. A partial bucket at the window edge used to get
+     *  its geometry clamped to the plot → a thinner edge bar than its
+     *  neighbours. Snapping the window start DOWN to its bucket start and the
+     *  end UP to its bucket end makes every visible bucket complete, so all
+     *  bars render the same calendar-unit width. The slider effectively rounds
+     *  to the nearest bucket — invisible at year/decade scale, and uniform bars
+     *  read far better than a clamped sliver. (1D path only; heatmap returned
+     *  above with its own grid windowing.) */
+    const snapped = snapWindowToBuckets(windowStartKey, windowEndKey, resolvedUnit, chart.atoms[0].iso);
+    windowStartKey = snapped.start;
+    windowEndKey = snapped.end;
     const buckets = foldByCalendar(chart.atoms, resolvedUnit, chart.aggregator ?? 'sum', chart.series ?? []);
     /* Edge anchoring: leftmost visible bucket pins its center to x=0,
      *  rightmost to x=1. Interior buckets place at their true midpoint.
