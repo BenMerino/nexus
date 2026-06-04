@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { GraphRender } from './GraphRender.js';
 import { useDirectiveController } from '../../architect/useDirectiveController.js';
-import { narrowQueryToBucket, narrowQueryToPeriod, narrowQueryToAtomRange, windowLabel } from '../../architect/graph-drilldown.js';
+import { narrowQueryToBucket, narrowQueryToPeriod, narrowQueryToAtomRange, windowLabel, periodKeyFor } from '../../architect/graph-drilldown.js';
 import { getSeriesPalette } from './svg-color-schemes.js';
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
 
@@ -84,7 +84,7 @@ function ControlledChart({ seed }: { seed: GraphDirective }) {
     // narrow (helpers return null).
     const handleBucketClick = (
         idx: number,
-        _label: string,
+        label: string,
         totalBuckets: number,
         daysPerBucket: number,
         atomKeyRange?: [number, number],
@@ -93,8 +93,17 @@ function ControlledChart({ seed }: { seed: GraphDirective }) {
         const cur = ctrl.directive.query;
         if (!cur) return;
         let child: GraphQuery | null = null;
-        if (periodKey) {
-            child = narrowQueryToPeriod(cur, periodKey);
+        /* Click-to-drill is CALENDAR-EXACT. A tier-label click already carries a
+         *  periodKey. A BASE-BAR click carries the bucket's startISO (`label`)
+         *  for time folds, so derive its periodKey from the resolved fold unit
+         *  (`periodKeyFor`) and drill the same calendar-exact path — clicking the
+         *  2024 bar opens 2024, the Jan bar opens January. Falls back to the
+         *  atom-range / fuzzy bucket math only when no period shape applies
+         *  (week/day, or categorical bars where `label` isn't an ISO). */
+        const foldUnit = (ctrl.directive as { __foldUnit?: string }).__foldUnit;
+        const derivedKey = periodKey ?? (foldUnit ? periodKeyFor(label, foldUnit) : null);
+        if (derivedKey) {
+            child = narrowQueryToPeriod(cur, derivedKey);
         } else if (atomKeyRange) {
             const anchorISO = ctrl.directive.atoms?.[0]?.iso ?? '';
             child = narrowQueryToAtomRange(cur, atomKeyRange[0], atomKeyRange[1], anchorISO);

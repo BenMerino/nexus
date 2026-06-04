@@ -115,12 +115,35 @@ export function narrowQueryToPeriod(parent: GraphQuery, periodKey: string): Grap
     return isContained(child, parent) ? child : null;
 }
 
+/** Period key for the bucket starting at `startISO` at fold `unit` — the
+ *  inverse of formatLabel, producing the key shape `periodBounds` parses. Lets
+ *  a BASE-bar click (which carries the bucket's startISO + the chart's fold
+ *  unit) drill via the calendar-exact `narrowQueryToPeriod`, the same as an
+ *  axis-tier click, instead of the fuzzy daysPerBucket bucket math. Returns
+ *  null for units with no period-drill shape (hour) or a non-ISO start. */
+export function periodKeyFor(startISO: string, unit: string): string | null {
+    const m = startISO.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return null;
+    const yyyy = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    if (unit === 'century') return `${Math.floor(yyyy / 100) * 100}c`;
+    if (unit === 'decade') return `${Math.floor(yyyy / 10) * 10}s`;
+    if (unit === 'year') return String(yyyy);
+    if (unit === 'quarter') return `${yyyy}-Q${Math.floor((mm - 1) / 3) + 1}`;
+    if (unit === 'month') return `${m[1]}-${m[2]}`;
+    /* week/day/hour drill via the existing bucket path (week needs the
+     *  Thursday-owner key; day/hour are at/below finest period drill). */
+    return null;
+}
+
 /** Parse a tier-group key into half-open calendar bounds. Key shapes
  *  emitted by `chart-primitives-cartesian.ts` `tierKeyAndLabel`:
  *    year:    `YYYY`              → [YYYY-01-01, (YYYY+1)-01-01)
  *    quarter: `YYYY-Qn`           → [start of Qn,    start of Qn+1)
  *    month:   `YYYY-MM`           → [YYYY-MM-01,    next month-01)
  *    week:    `YYYY-MM-Wn`        → [Mon of Wn,     Mon of Wn+1)
+ *    decade:  `YYYYs`             → [(…0)-01-01,    (…0+10)-01-01)
+ *    century: `YYYYc`             → [(…00)-01-01,   (…00+100)-01-01)
  *  Returns null for unrecognized shapes. */
 function periodBounds(key: string): { startISO: string; endISO: string } | null {
     /* Week: YYYY-MM-Wn — owner-month/year + week-of-month number.
@@ -167,6 +190,26 @@ function periodBounds(key: string): { startISO: string; endISO: string } | null 
         const yyyy = parseInt(yearMatch[1], 10);
         const start = new Date(Date.UTC(yyyy, 0, 1));
         const end = new Date(Date.UTC(yyyy + 1, 0, 1));
+        return { startISO: start.toISOString().split('T')[0], endISO: end.toISOString().split('T')[0] };
+    }
+    /* Decade / Century: `YYYYs` — the …0 (decade) or …00 (century) start year
+     *  written with a trailing 's' (matches formatLabel: 2020s, 1900s). A bare
+     *  4-digit-with-s is a decade; the century shape carries the same syntax but
+     *  the calling fold unit decides the span, so we infer from the value: a
+     *  multiple of 100 with no tens/units is ambiguous, so accept an explicit
+     *  width via the key suffix. Decade = `YYYYs`, Century = `YYYYc`. */
+    const decadeMatch = key.match(/^(\d{4})s$/);
+    if (decadeMatch) {
+        const dstart = Math.floor(parseInt(decadeMatch[1], 10) / 10) * 10;
+        const start = new Date(Date.UTC(dstart, 0, 1));
+        const end = new Date(Date.UTC(dstart + 10, 0, 1));
+        return { startISO: start.toISOString().split('T')[0], endISO: end.toISOString().split('T')[0] };
+    }
+    const centuryMatch = key.match(/^(\d{4})c$/);
+    if (centuryMatch) {
+        const cstart = Math.floor(parseInt(centuryMatch[1], 10) / 100) * 100;
+        const start = new Date(Date.UTC(cstart, 0, 1));
+        const end = new Date(Date.UTC(cstart + 100, 0, 1));
         return { startISO: start.toISOString().split('T')[0], endISO: end.toISOString().split('T')[0] };
     }
     return null;

@@ -15,6 +15,7 @@ export function stepByUnit(d: Date, unit: Exclude<FoldUnit, 'auto'>): Date {
     if (unit === 'quarter')  d.setUTCMonth(d.getUTCMonth() + 3);
     if (unit === 'year')     d.setUTCFullYear(d.getUTCFullYear() + 1);
     if (unit === 'decade')   d.setUTCFullYear(d.getUTCFullYear() + 10);
+    if (unit === 'century')  d.setUTCFullYear(d.getUTCFullYear() + 100);
     return d;
 }
 
@@ -42,6 +43,9 @@ export function alignToUnitStart(d: Date, unit: Exclude<FoldUnit, 'auto'>): Date
     }
     if (unit === 'decade') {
         return new Date(Date.UTC(Math.floor(r.getUTCFullYear() / 10) * 10, 0, 1));
+    }
+    if (unit === 'century') {
+        return new Date(Date.UTC(Math.floor(r.getUTCFullYear() / 100) * 100, 0, 1));
     }
     return new Date(Date.UTC(r.getUTCFullYear(), 0, 1));
 }
@@ -116,5 +120,6 @@ export function formatLabel(start: Date, unit: Exclude<FoldUnit, 'auto'>): strin
         return `Q${q}`;
     }
     if (unit === 'decade') return `${Math.floor(yyyy / 10) * 10}s`;
+    if (unit === 'century') return `${Math.floor(yyyy / 100) * 100}s`;
     return String(yyyy);
 }

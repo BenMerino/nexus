@@ -2,14 +2,11 @@ import React from 'react';
 import { BaseBox } from '../primitives/BaseBox.js';
 import { BaseText } from '../primitives/BaseText.js';
 import { ChartRender } from './ChartRender.js';
-import { useTimelineSpan } from './useTimelineSpan.js';
 import { LegibilityAlert } from './LegibilityAlert.js';
 import { QueryToggleBar } from './QueryToggleBar.js';
 import { FeatureToggleGroup, useChartFeatureToggles } from './FeatureToggleGroup.js';
 import { LiveBadge } from '../composed/LiveBadge.js';
-import { ChartRangeSlider } from './ChartRangeSlider.js';
 import { DrillBreadcrumbChip } from './DrillBreadcrumbChip.js';
-import { MARGIN } from './svg-parts.js';
 import { eligibleFoldUnits } from '../../architect/fold-atoms.js';
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
 import type { ToggleSpec } from '../../architect/replayable-directive.js';
@@ -31,11 +28,14 @@ function gateFoldUnitToggles<T extends ToggleSpec<GraphQuery>>(toggles: T[], vis
 }
 
 /* ── ChartBody ───────────────────────────────────────────────
- * Renders the title row (title + toggles + LiveBadge), the chart
- * canvas via the family-router, and the optional ChartRangeSlider
- * below. Extracted from GraphRender to keep that file under the
- * NBR-15 ceiling and to keep the slider/family composition in one
- * place. The renderer above (GraphRender) handles the resolved
+ * Renders the title row (title + toggles + LiveBadge) and the chart
+ * canvas via the family-router. Time navigation is pure click-to-drill
+ * (click a bar/period → its sub-periods; breadcrumb drills out) plus the
+ * granularity pills — the continuous windowDays range slider was removed
+ * (arbitrary windows produced partial edge buckets + incoherent drills).
+ * `onWindowChange` is retained on the prop surface for callers but no
+ * longer drives a slider. Extracted from GraphRender to keep that file
+ * under the NBR-15 ceiling. The renderer above (GraphRender) handles the resolved
  * directive (post-fold, post-morph) and passes it here.
  * ──────────────────────────────────────────────────────────── */
 
@@ -72,7 +72,6 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     const otherToggles = allToggles.filter(tg => tg !== windowToggle);
     const tenantId = chart.query?.tenantId;
     const kind = chart.query?.kind;
-    const span = useTimelineSpan(tenantId, kind);
 
     /* Feature opt-in state. Scoped per chart kind; stays empty until
      *  useUserUiPref resolves. The set is merged onto BOTH the
@@ -91,8 +90,6 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
 
     const q = chart.query as GraphQuery | undefined;
     const windowDays = q?.windowDays ?? null;
-    const asOf = q?.asOf ?? null;
-    const sliderActive = !!windowToggle && !!tenantId && !!kind && !!span && !!onWindowChange;
 
     /* daysPerBucket: current fold factor expressed in days. Atoms are
      * hour-resolution (HOURS_PER_DAY keys per day); visible bucket count
@@ -150,17 +147,6 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
             {legibility === 'illegible'
                 ? <LegibilityAlert chart={chartWithActive} />
                 : <RenderFamily chart={resolvedWithActive} w={container.width} h={container.height} axesOverride={axesOverride} onBucketClick={wrappedClick} onToggleSeries={onToggleSeries} />}
-            {sliderActive && (
-                <ChartRangeSlider
-                    span={span!}
-                    windowDays={windowDays}
-                    asOf={asOf}
-                    leftMarginPx={MARGIN.left}
-                    rightMarginPx={MARGIN.right}
-                    onWindowChange={onWindowChange}
-                    disabled={isLoading}
-                />
-            )}
         </>
     );
 }

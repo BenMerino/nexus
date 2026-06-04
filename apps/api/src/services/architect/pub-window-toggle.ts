@@ -1,22 +1,14 @@
-/* ── Shared publications window toggle ──────────────────────
- * The single server-side definition of the window-range toggle for replayable
- * publication time-charts (byIndex, cadence) — mirrors Zincro's
- * graph-toggles.ts:rangeToggle. One option-set, imported by every composer that
- * stamps a replayable directive, so the 5y/10y/20y/All set lives in one place.
+/* ── Publications granularity (fold-unit) toggle ────────────
+ * The single server-side definition of the level toggle for the replayable
+ * publication time-charts (byIndex, cadence). The continuous windowDays range
+ * slider + its 5y/10y/20y/All toggle were removed — navigation is pure
+ * click-to-drill (click a bar/period → its sub-periods) plus this level toggle
+ * as a quick jump. The toggle maps to `query.foldUnit`; the engine honors it
+ * and `eligibleFoldUnits` (client) hides rungs that would over-bucket the span.
  *
- * Academic output is decade-scale, so the offsets are year-equivalents of the
- * engine's `windowDays` unit. Parallels the web fallback's copy in
- * tenant-year-chart.ts (its sanctioned N8 exception) — kept independent so the
- * api never imports the web tree.
+ * Academic output is decade/century-scale, so the ladder runs Century→Week
+ * (no day/hour level pill — drill into a month to reach days).
  * ──────────────────────────────────────────────────────────── */
-
-export interface WindowToggle {
-  id: "windowDays";
-  field: "windowDays";
-  valueType: "numberOrNull";
-  current: string;
-  options: { value: string; label: string }[];
-}
 
 export interface GranularityToggle {
   id: "foldUnit";
@@ -26,30 +18,10 @@ export interface GranularityToggle {
   options: { value: string; label: string }[];
 }
 
-export type PubToggle = WindowToggle | GranularityToggle;
+export type PubToggle = GranularityToggle;
 
-/** The window-range toggle. `current` reflects the active windowDays (the
- *  controller re-reads it; default 'null' = All). */
-export function pubWindowToggle(currentWindowDays: number | null = null): WindowToggle {
-  return {
-    id: "windowDays",
-    field: "windowDays",
-    valueType: "numberOrNull",
-    current: String(currentWindowDays ?? "null"),
-    options: [
-      { value: "1825", label: "5y" },
-      { value: "3650", label: "10y" },
-      { value: "7305", label: "20y" },
-      { value: "null", label: "All" },
-    ],
-  };
-}
-
-/** The bucket/granularity toggle — overrides the engine's auto fold-unit
- *  (pickAutoFoldUnit). `auto` lets the renderer pick from the visible span;
- *  the coarser rungs let the user force year/month/week buckets. Maps to
- *  query.foldUnit (the engine + recompose honor it). Academic output is
- *  decade-scale, so we don't offer day/hour. */
+/** The level (fold-unit) toggle. `auto` lets the renderer pick from the visible
+ *  span; the explicit rungs jump to that level of the current period. */
 export function pubGranularityToggle(currentFoldUnit: string | null = null): GranularityToggle {
   return {
     id: "foldUnit",
@@ -58,6 +30,8 @@ export function pubGranularityToggle(currentFoldUnit: string | null = null): Gra
     current: currentFoldUnit ?? "auto",
     options: [
       { value: "auto", label: "Auto" },
+      { value: "century", label: "Century" },
+      { value: "decade", label: "Decade" },
       { value: "year", label: "Year" },
       { value: "month", label: "Month" },
       { value: "week", label: "Week" },

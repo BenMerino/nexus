@@ -37,17 +37,18 @@ export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
  * on the visible-pixel budget; the rest are explicit user choices.
  *
  * Ordered ladder (fine → coarse):
- *   hour < day < week < month < quarter < year < decade
+ *   hour < day < week < month < quarter < year < decade < century
  *
  * `'hour'` enables sub-day resolution for builders that ship hourly
  * atoms (`Atom.hour` set). Daily-only builders never reach this rung —
  * `eligibleFoldUnits` filters it out unless atoms expose hour data.
  *
- * `'decade'` is the coarsest rung — 10 calendar years per bucket,
- * aligned to the …0 year (1990, 2000). It only earns its place over
- * multi-decade spans (academic publication histories, founding-to-now
- * timelines) where even `year` produces 40+ unreadable buckets. */
-export type FoldUnit = 'auto' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year' | 'decade';
+ * `'decade'`/`'century'` are the coarsest rungs — 10 / 100 calendar years
+ * per bucket, aligned to the …0 / …00 year (1990, 2000 / 1900, 2000). They
+ * earn their place over multi-decade / multi-century spans (academic
+ * publication histories spanning 100+ years) where even `decade` produces
+ * an unreadable number of buckets. */
+export type FoldUnit = 'auto' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year' | 'decade' | 'century';
 
 /** Atom key resolution. `key` is hours-since-anchor (integer). Daily
  * atoms occupy hour 0 of each day (`key = dayIdx * HOURS_PER_DAY`);
@@ -124,7 +125,8 @@ export function pickAutoFoldUnit(visibleDays: number, hasHourly: boolean = false
     if (visibleDays <= 365 * 4) return 'month';
     if (visibleDays <= 365 * 12) return 'quarter';
     if (visibleDays <= 365 * 40) return 'year';
-    return 'decade';
+    if (visibleDays <= 365 * 250) return 'decade';
+    return 'century';
 }
 
 /** Which fold units make sense for a given visible window?
@@ -138,6 +140,7 @@ export function pickAutoFoldUnit(visibleDays: number, hasHourly: boolean = false
  * about zooming in: "show me yearly, then monthly, then weekly". */
 export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = false): Array<Exclude<FoldUnit, 'auto'> | 'auto'> {
     const out: Array<Exclude<FoldUnit, 'auto'> | 'auto'> = ['auto'];
+    const centennial = visibleDays / 36500;
     const decadal = visibleDays / 3650;
     const yearly = visibleDays / 365;
     const quarterly = visibleDays / 91;
@@ -145,6 +148,7 @@ export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = fals
     const weekly = visibleDays / 7;
     const daily = visibleDays;
     const hourly = visibleDays * HOURS_PER_DAY;
+    if (centennial >= 3 && centennial <= 120) out.push('century');
     if (decadal >= 3 && decadal <= 120) out.push('decade');
     if (yearly >= 3 && yearly <= 120) out.push('year');
     if (quarterly >= 3 && quarterly <= 120) out.push('quarter');

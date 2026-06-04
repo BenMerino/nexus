@@ -16,7 +16,7 @@
 
 import type { ActorContext } from "../../substrate/actor";
 import type { CatalogQuery } from "../analytics/analytics-catalog.types";
-import { pubWindowToggle, pubGranularityToggle, type PubToggle } from "./pub-window-toggle";
+import { pubGranularityToggle, type PubToggle } from "./pub-window-toggle";
 
 // The read scope the N4 libs consume — a subset of ActorContext (DGA scope model:
 // ctx IS the read scope; personal scope narrows to the actor's own papers).
@@ -56,14 +56,16 @@ export interface TimeChartDirective {
 }
 
 /** Build the replay stamp (query + toggles + persistKey) for a public
- *  time-chart. Echoes windowDays/asOf back as a display preference; the atoms
- *  stay full-span. Shared by both composers so the shape can't drift. */
+ *  time-chart. The chart opens at the auto fold over the full span (windowDays
+ *  null) and navigates by click-to-drill + the level toggle — no window slider.
+ *  windowDays/asOf are echoed (the client owns the window); atoms stay full-span.
+ *  Shared by both composers so the shape can't drift. */
 function replayStamp(kind: string, tenantId: number, q: CatalogQuery) {
   const windowDays = q.windowDays ?? null;
   const foldUnit = q.foldUnit ?? null;
   return {
     query: { kind, tenantId: String(tenantId), windowDays, ...(q.asOf ? { asOf: q.asOf } : {}), ...(foldUnit ? { foldUnit } : {}) },
-    toggles: [pubWindowToggle(windowDays), pubGranularityToggle(foldUnit)],
+    toggles: [pubGranularityToggle(foldUnit)],
     persistKey: `tenant:${tenantId}:${kind}`,
   };
 }
