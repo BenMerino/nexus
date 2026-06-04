@@ -19,7 +19,9 @@ function pts(series: SparkPoint[], w: number, h: number) {
 
 function Area({ accent, series }: { accent: string; series: SparkPoint[] }) {
   const w = 104, h = 34;
-  const p = pts(series, w, h);
+  // A line tolerates more points than bars; downsample only a very long span so
+  // it stays a smooth trend, not 169px of noise.
+  const p = pts(bucketize(series, 40), w, h);
   if (!p) return <svg className="kpi-spark" width={w} height={h} aria-hidden="true" />;
   const line = 'M' + p.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' L');
   const area = `${line} L${w},${h} L0,${h} Z`;
@@ -33,8 +35,25 @@ function Area({ accent, series }: { accent: string; series: SparkPoint[] }) {
   );
 }
 
-function Bars({ accent, series }: { accent: string; series: SparkPoint[] }) {
-  const w = 104, h = 34, n = series.length;
+// Downsample a series into at most `bins` evenly-sized buckets (sum per bucket),
+// so a long span (utalca ~169y) renders as readable bars instead of sub-pixel
+// hairlines. Fewer points than bins pass through unchanged.
+function bucketize(series: SparkPoint[], bins: number): SparkPoint[] {
+  if (series.length <= bins) return series;
+  const size = series.length / bins;
+  const out: SparkPoint[] = [];
+  for (let b = 0; b < bins; b++) {
+    const slice = series.slice(Math.floor(b * size), Math.floor((b + 1) * size));
+    if (!slice.length) continue;
+    out.push({ year: slice[slice.length - 1].year, value: slice.reduce((s, p) => s + p.value, 0) });
+  }
+  return out;
+}
+
+function Bars({ accent, series: raw }: { accent: string; series: SparkPoint[] }) {
+  const w = 104, h = 34;
+  const series = bucketize(raw, 16);
+  const n = series.length;
   if (n < 2) return <svg className="kpi-spark" width={w} height={h} aria-hidden="true" />;
   const gap = w / n, bw = gap * 0.62, max = Math.max(...series.map(s => s.value)) || 1;
   return (
