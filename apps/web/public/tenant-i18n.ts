@@ -109,7 +109,7 @@ export const ES = {
     pubsByType: 'Publications by type',
     topJournals: 'Top journals',
     topInstitutions: 'Top collaborating institutions',
-    pubsByCountry: 'Publications by country',
+    topCountries: 'Top collaborating countries',
     type: 'Type',
   },
 };

@@ -40,7 +40,7 @@ export function TenantChartsTab({ slug, stats, tenantId, charts, unit, contribut
   const catTitles: Record<string, string> = {
     'publications.topJournals': ES.charts.topJournals,
     'publications.collaborators': ES.charts.topInstitutions,
-    'publications.countriesMap': ES.charts.pubsByCountry,
+    'publications.countriesMap': ES.charts.topCountries,
   };
 
   return (
