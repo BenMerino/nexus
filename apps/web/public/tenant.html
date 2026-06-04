@@ -52,6 +52,27 @@
     .public-signin:hover { color: var(--accent); }
     .public-main { flex: 1; padding: 24px; overflow-y: auto; min-height: 0; }
     .public-main .view { max-width: 1200px; margin: 0 auto; }
+    /* Two-column shell: org scheme pinned left, Overview/Authors content right.
+       The rail is a sticky, independently-scrolling sidebar; the content takes
+       the remaining width. */
+    .tenant-layout { display: flex; gap: 28px; align-items: flex-start; max-width: 1560px; margin: 0 auto; }
+    .tenant-rail {
+      flex: 0 0 340px; width: 340px; position: sticky; top: 0;
+      max-height: calc(100vh - 120px); overflow-y: auto;
+      border-right: 1px solid var(--border-soft); padding-right: 22px;
+    }
+    .tenant-rail-title {
+      font-family: var(--display); font-weight: 400; font-size: 13px;
+      text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-dim);
+      margin: 0 0 12px;
+    }
+    .tenant-content { flex: 1 1 auto; min-width: 0; padding: 0; max-width: none; margin: 0; }
+    @media (max-width: 980px) {
+      /* Stack on narrow screens: org scheme above the content, full width. */
+      .tenant-layout { flex-direction: column; gap: 20px; }
+      .tenant-rail { flex-basis: auto; width: 100%; position: static; max-height: none;
+        border-right: none; border-bottom: 1px solid var(--border-soft); padding-right: 0; padding-bottom: 18px; }
+    }
     @media (max-width: 700px) {
       .public-header { padding: 8px 14px; gap: 12px; }
       .public-tabs { width: 100%; margin-left: 0; }

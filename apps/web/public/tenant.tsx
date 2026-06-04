@@ -14,9 +14,10 @@ import { perfMark, perfAutoFlush } from './perf-beacon';
 
 perfMark('boot'); // module evaluated — bundles parsed, app about to mount
 
+// Org scheme is no longer a tab — it's the persistent left rail. The right
+// column keeps Overview + Authors as switchable tabs.
 const NAV: PublicNavItem[] = [
   { id: 'overview',  label: ES.nav.overview },
-  { id: 'org-tree',  label: ES.nav.orgTree },
   { id: 'authors',   label: ES.nav.authors },
 ];
 const NAV_IDS = new Set(NAV.map(n => n.id));
@@ -93,21 +94,25 @@ function App() {
       <TenantPublicHeader tenant={statsPayload.tenant} items={NAV} currentId={active}
         onNavigate={navigate} yearRange={statsPayload.stats.yearRange} />
       <main className="public-main">
-        <div className="view">
-          <TabPane id="overview" {...paneProps}>
-            {/* Unit picker + KPI cards + charts — the dashboard re-scopes in
-                place when a faculty/department is picked (Philosophy: scope is
-                sovereign). All in TenantOverview to keep this file thin. */}
-            <TenantOverview slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} />
-          </TabPane>
-
-          <TabPane id="org-tree" {...paneProps}>
+        {/* Two-column: org scheme pinned as the left rail (persistent across
+            tabs), the Overview/Authors content on the right. */}
+        <div className="tenant-layout">
+          <aside className="tenant-rail">
+            <h2 className="tenant-rail-title">{ES.nav.orgTree}</h2>
             <TenantOrgTree slug={slug} />
-          </TabPane>
+          </aside>
+          <div className="view tenant-content">
+            <TabPane id="overview" {...paneProps}>
+              {/* Unit picker + KPI cards + charts — the dashboard re-scopes in
+                  place when a faculty/department is picked (Philosophy: scope is
+                  sovereign). All in TenantOverview to keep this file thin. */}
+              <TenantOverview slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} />
+            </TabPane>
 
-          <TabPane id="authors" {...paneProps}>
-            <AuthorsTable slug={slug} />
-          </TabPane>
+            <TabPane id="authors" {...paneProps}>
+              <AuthorsTable slug={slug} />
+            </TabPane>
+          </div>
         </div>
       </main>
     </div>
