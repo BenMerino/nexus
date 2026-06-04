@@ -104,7 +104,7 @@ function App() {
             <h2 className="tenant-rail-title">{ES.nav.orgTree}</h2>
             {/* The rail IS the scope picker: selecting a unit re-scopes the
                 right-side Overview; the "All organization" row resets it. */}
-            <TenantOrgTree slug={slug} selected={unit} onSelect={setUnit} />
+            <TenantOrgTree slug={slug} tenantName={statsPayload.tenant.name} selected={unit} onSelect={setUnit} />
           </aside>
           <div className="view tenant-content">
             <TabPane id="overview" {...paneProps}>

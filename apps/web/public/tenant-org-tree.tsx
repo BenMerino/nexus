@@ -41,8 +41,8 @@ function Branch({ label, cls, tag, unitKey, name, selected, onSelect, children }
   );
 }
 
-export function TenantOrgTree({ slug, selected, onSelect }: {
-  slug: string; selected: UnitScope | null; onSelect: (u: UnitScope | null) => void;
+export function TenantOrgTree({ slug, tenantName, selected, onSelect }: {
+  slug: string; tenantName?: string; selected: UnitScope | null; onSelect: (u: UnitScope | null) => void;
 }) {
   const [data, setData] = useState<OrgTree | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +69,7 @@ export function TenantOrgTree({ slug, selected, onSelect }: {
       <div className="org-node">
         <div className={`org-row selectable all-units${selKey === null ? ' active' : ''}`} onClick={() => onSelect(null)}>
           <span className="org-twist" />
-          <span className="org-name fac">{ES.orgTree.allOrganization}</span>
+          <span className="org-name fac">{tenantName || ES.orgTree.allOrganization}</span>
           <span className="org-kind-slot" />
         </div>
       </div>
