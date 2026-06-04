@@ -2,20 +2,19 @@ import React from 'react';
 import type { GraphDirective } from '../architect/graph-composer.types';
 import { DirectiveChart } from '../ui/graph-engine/index';
 import { BatchedCharts } from './recompose-chart';
-import { VelocityPanel } from './portfolio-velocity';
 import { CadencePanel } from './portfolio-cadence';
 import { hasYearIndex } from './tenant-year-chart';
 import type { PublicStats } from './tenant-builders';
 import { ChartPanel } from './tenant-panel';
 import { useScopedAnalytics } from './use-scoped-analytics';
-import { ES, typeLabelEs, VELOCITY_LABELS_ES, CADENCE_LABELS_ES } from './tenant-i18n';
+import { ES, typeLabelEs, CADENCE_LABELS_ES } from './tenant-i18n';
 
 /* The chart grid (mockup): contributors hero tall-left, velocity + cadence
  * stacked right, publications-per-year full-width below, then the categorical
  * kinds (journals / collaborators / countries) each in their own panel. All
  * charts stay SERVER-COMPOSED (N8) — only the .panel frame is the design's. The
  * server now unit-scopes every kind, so selecting a faculty re-narrows the whole
- * grid in place (velocity/cadence re-fetch via useScopedAnalytics; byIndex +
+ * grid in place (cadence re-fetches via useScopedAnalytics; velocity, byIndex +
  * categorical kinds carry ?unit= through recompose). */
 
 // The full-width "Publications per year" body: the server byIndex kind when an
@@ -34,8 +33,9 @@ export function TenantChartsTab({ slug, stats, tenantId, charts, unit, contribut
   slug: string; stats: PublicStats; tenantId: number; charts: GraphDirective[]; unit?: string | null;
   contributors?: React.ReactNode;
 }) {
-  // Velocity + cadence re-narrow to the selected unit (tenant-wide at null).
-  const { velocity, cadence } = useScopedAnalytics(slug, unit ?? null, stats);
+  // Cadence re-narrows to the selected unit (tenant-wide at null). Velocity is
+  // now server-composed via recompose, so it isn't sourced from here.
+  const { cadence } = useScopedAnalytics(slug, unit ?? null, stats);
   const catKinds = ['publications.topJournals', 'publications.collaborators', 'publications.countriesMap'];
   const catTitles: Record<string, string> = {
     'publications.topJournals': ES.charts.topJournals,
@@ -53,11 +53,12 @@ export function TenantChartsTab({ slug, stats, tenantId, charts, unit, contribut
             {contributors}
           </ChartPanel>
         ) : null}
-        {velocity ? (
-          <ChartPanel title={ES.charts.citationVelocity} sub={ES.charts.citationsPerYear}>
-            <VelocityPanel velocity={velocity} labels={VELOCITY_LABELS_ES} />
-          </ChartPanel>
-        ) : null}
+        {/* Citation velocity — server-COMPOSED (publications.velocity), unit-
+            scoped through recompose. The composer owns the area+forecast+score
+            directive; the panel only renders it (no client chart shaping). */}
+        <ChartPanel title={ES.charts.citationVelocity} sub={ES.charts.citationsPerYear}>
+          <BatchedCharts kinds={['publications.velocity']} tenantId={tenantId} unit={unit} bare minHeight={240} />
+        </ChartPanel>
         {cadence ? (
           <ChartPanel title={ES.charts.publicationCadence} sub={ES.charts.byDocType} tag="stacked · year">
             <CadencePanel cadence={cadence} tenantId={tenantId} labels={CADENCE_LABELS_ES} typeLabel={typeLabelEs} />

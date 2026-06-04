@@ -1,7 +1,6 @@
 import { getTypeByYear, getPublicationTypes } from "../../lib/public-stats";
 const { getCollaborations, getCountries, getTopJournals } = require("../../lib/dashboard-stats");
 const { getTenantRor } = require("../../lib/db-users");
-const { buildKpiSparks } = require("../../lib/public-kpi-sparks");
 
 /* ── PublicCategoryCharts (Composer) ────────────────────────
  * Server-side composers for the public tenant page's CATEGORICAL charts
@@ -41,14 +40,6 @@ export interface ChoroplethDirective {
   data: { country: string; value: number }[];
 }
 
-/** KPI-sparks directive — per-year series behind the public KPI cards. PLAIN
- *  data (no atoms/query/toggles) by construction, so the card renders it with a
- *  tiny static SVG: NOT the engine, no slider, no fold — a lightweight glyph. */
-export interface KpiSparkPoint { year: number; value: number; status: "observed" | "partial" | "projected"; }
-export interface KpiSparksDirective {
-  type: "kpi-sparks";
-  series: { publications: KpiSparkPoint[]; citations: KpiSparkPoint[]; authors: KpiSparkPoint[] };
-}
 
 /** publications.topJournals — top journals by paper count (ranked bar).
  *  Reuses getTopJournals' entity-model SQL (venues + published_in, one row per
@@ -135,14 +126,3 @@ export async function composeTypeByYear(tenantId: number): Promise<HeatmapDirect
   return { type: "heatmap", title: "Publicaciones por tipo", xLabel: "Año", yLabel: "Tipo", data: cells };
 }
 
-/** publications.kpiSparks — per-year series behind the public KPI cards
- *  (publications / citations / authors). Unit-scoped via resolvePubFilter in the
- *  data lib, so the sparklines re-narrow with ?unit= exactly like the KPI
- *  numbers. Returns plain series (no atoms/query/toggles) → the card draws a
- *  static micro-SVG, never the interactive engine. */
-export async function composeKpiSparks(tenantId: number, unitKey?: string | null): Promise<KpiSparksDirective | null> {
-  const series = await buildKpiSparks(publicScope(tenantId, unitKey));
-  const any = series.publications.length || series.citations.length || series.authors.length;
-  if (!any) return null;
-  return { type: "kpi-sparks", series };
-}

@@ -97,4 +97,4 @@ async function buildKpiSparks(scope) {
   };
 }
 
-module.exports = { buildKpiSparks };
+module.exports = { buildKpiSparks, citesByYear, withProjection };

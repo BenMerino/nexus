@@ -1,7 +1,8 @@
 import { composeCadence, composeByIndex } from "../architect/PublicationCharts";
-import { composeTopJournals, composeCollaborators, composeCountries, composeCountriesMap, composeTypeByYear, composeKpiSparks } from "../architect/PublicCategoryCharts";
-import type { ActorContext } from "../../substrate/actor";
-import type { AnalyticsMetric, CatalogQuery } from "./analytics-catalog.types";
+import { composeTopJournals, composeCollaborators, composeCountries, composeCountriesMap, composeTypeByYear } from "../architect/PublicCategoryCharts";
+import { composeKpiSparks, composeVelocity } from "../architect/PublicSeriesCharts";
+import type { AnalyticsMetric } from "./analytics-catalog.types";
+import { replay, publicCtx } from "./catalog-compose-ctx";
 
 export type { AnalyticsMetric, AnalyticsSurface } from "./analytics-catalog.types";
 
@@ -21,20 +22,6 @@ export type { AnalyticsMetric, AnalyticsSurface } from "./analytics-catalog.type
  *
  * Ordered: `overview`-surfaced rows render in this order.
  * ──────────────────────────────────────────────────────────── */
-
-// architect-replay is legacy JS in lib/; the whole app compiles to dist/ 1:1,
-// so this require resolves to the compiled sibling at runtime (tsconfig allowJs).
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const replay = require("../../lib/architect-replay") as {
-  recompose: (query: CatalogQuery) => Promise<unknown>;
-};
-
-// A tenant-public ActorContext from a wire query: tenantId only, no orcid →
-// the composer's scope filter narrows to the whole tenant (not a person), or to
-// one org unit when the query carries a drill-down `unit` key. Single fan-out
-// point: every public metric flows through here, so all charts inherit unit scope.
-const publicCtx = (q: CatalogQuery): ActorContext =>
-  ({ tenantId: parseInt(q.tenantId, 10), orcid: null, ror: null, role: "public", unitKey: q.unit ?? null } as unknown as ActorContext);
 
 export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
   {
@@ -111,6 +98,17 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     queryShape: "none",
     access: "public",
     compose: (q) => composeCountriesMap(parseInt(q.tenantId, 10), q.unit),
+    invalidatedBy: ["publication.upserted", "ingestion.completed"],
+    surfaces: ["overview"],
+  },
+  {
+    kind: "publications.velocity",
+    domain: "publication",
+    title: "Citation velocity",
+    description: "Citations received per year as an area line with a forecast tail + velocity score.",
+    queryShape: "none",
+    access: "public",
+    compose: (q) => composeVelocity(parseInt(q.tenantId, 10), q.unit),
     invalidatedBy: ["publication.upserted", "ingestion.completed"],
     surfaces: ["overview"],
   },
