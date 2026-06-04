@@ -16,8 +16,10 @@ import { easeOutCubic } from '../primitives/tween.js';
  *  `BAR_RADIUS_REVEAL_PX` of the covering segment's fade-out, so the
  *  rounded corner appears only after the segment above is visually
  *  gone (sub-pixel) instead of growing in alongside it. */
-export const BAR_TOP_RADIUS_PX = 0;
-export const BAR_RADIUS_REVEAL_PX = 1;
+/* Re-exported from `engine-visual-defaults` — the per-app visual seam.
+ *  Kept exported here so existing geometry-layer imports are unchanged;
+ *  the actual value lives in the one file the engine sync excludes. */
+export { BAR_TOP_RADIUS_PX, BAR_RADIUS_REVEAL_PX } from './engine-visual-defaults.js';
 
 /** How much of the total animation duration each entering/exiting bar
  *  occupies. `GROW_SPAN = 0.6` means each bar's appearance/disappearance

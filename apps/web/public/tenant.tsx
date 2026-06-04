@@ -7,6 +7,7 @@ import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
 import { SummaryCards, TabPane } from './tenant-summary';
 import { TenantOrgTree } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
+import { GraphProviders } from '../ui/graph-engine-providers';
 import { ES } from './tenant-i18n';
 import { bootStreamBridge } from '../architect/websocket-connector';
 import { perfMark, perfAutoFlush } from './perf-beacon';
@@ -84,6 +85,10 @@ function App() {
   const paneProps = { active, seen };
 
   return (
+    // GraphProviders wires the engine's EngineConfig (apiGet/dark/pref) +
+    // ChartTuning (glow 0) so the vendored charts get the slider span fetch,
+    // theme, and persisted toggles. tenantId scopes the per-tenant tuning.
+    <GraphProviders tenantId={String(statsPayload.tenant.id)}>
     <div className="public-app">
       <TenantPublicHeader tenant={statsPayload.tenant} items={NAV} currentId={active}
         onNavigate={navigate} yearRange={statsPayload.stats.yearRange} />
@@ -106,6 +111,7 @@ function App() {
         </div>
       </main>
     </div>
+    </GraphProviders>
   );
 }
 

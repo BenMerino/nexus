@@ -46,3 +46,13 @@ The pre-commit hook (`hooks/pre-commit-audit.sh` → `scripts/arch-audit.sh`) en
 ### Deploy policy
 
 After every task, commit and push to `main`. **Railway** auto-deploys both services from `main` — `Nexus` (API) and `Nexus-Web` (Caddy static). `dist/` is gitignored; Railway builds the web app from source. Do not ask first. Still ask before destructive git ops (force push, reset --hard, branch deletion).
+
+### Vendored chart engine (synced from Zincro)
+
+The chart **graph-engine is vendored from Zincro** (`git@github.com:BenMerino/Sincro.git`, authoritative source under `packages/shared/src/`). Don't hand-edit the boundary for engine logic — fix it in Zincro and sync down.
+
+- **To pull the latest engine:** `bash scripts/sync-engine.sh --apply` (default is a dry-run report; `--check` exits non-zero if drifted, for CI/pre-push). It fetches Zincro at `$ZINCRO_REF` (default `origin/main`; `$ZINCRO_ROOT` = local fast-path) into gitignored `.engine-src/` and **prints the resolved SHA every run** — record it in the sync commit.
+- **Boundary (Zincro → nexus):** `ui/graph-engine/`, `ui/visual-lang/` are **full mirrors**; `ui/composed/`, `ui/primitives/` sync **only the files nexus already vendors** (Zincro has 100s nexus doesn't want); plus the explicit architect engine-deps (`fold-atoms*`, `graph-composer.types`, `chart-kpi.types`, `graph-directive-runtime.types`, `place-atoms`, `replayable-directive`, `bucket-sequence`, `graph-features.types`). The rest of `architect/` is nexus's own forked controller layer — **not synced**.
+- **App coupling = one provider.** The engine's only host hooks (`apiGet`/`useIsDark`/`useUiPref`) are injected via `EngineConfig` through `<GraphEngineProvider>`. nexus's adapter + combined mount live in `apps/web/ui/graph-engine-providers.tsx` (`GraphProviders`), applied at each chart root (`tenant.tsx`, `dashboard-charts.tsx`). Wire any new chart root the same way or the slider span / theme / toggles fall back to inert defaults.
+- **Exclusions (nexus-owned, never overwritten — in `sync-engine.sh`):** `engine-visual-defaults.ts` (square corners 0/0 vs Zincro 6/3), `ChartTuningContext.tsx` (glow-0 seam + host tuning fetch — glow set via the provider, NOT by forking `chart-tuning.ts`), `index.ts` (re-exports nexus's `DirectiveChart`), `__tests__/`. Also kept (no Zincro counterpart): `DirectiveChart.tsx`, `chart-trace.ts`, the `apps/web/architect/` controller fork.
+- **Flow-UP debt:** `ChartChromeLayer.tsx` carries a nexus `fmtTick` thousands fix (`2403→2,403`) Zincro lacks — currently excluded so `--check` is green. Push it to Zincro, then remove its exclusion line so it syncs clean.

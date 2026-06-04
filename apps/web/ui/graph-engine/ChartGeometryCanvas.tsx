@@ -17,7 +17,7 @@ import React, { useRef, useMemo } from 'react';
 import { useChartCanvas } from '../visual-lang/index.js';
 import type { Primitive } from './chart-primitive.types.js';
 import { tessellatePrimitives } from './tessellate-primitives.js';
-import { useTheme } from '../../hooks/useTheme.js';
+import { useEngineConfig } from './engine-config.js';
 
 /** Bloom margin disabled — see commit notes in
  *  `tessellate-primitives.ts`. Set non-zero to re-enable halo bleed. */
@@ -48,7 +48,7 @@ export const ChartGeometryCanvas: React.FC<ChartGeometryCanvasProps> = ({
      *  alone doesn't redraw — it only ensures the NEXT tessellate call
      *  resolves fresh. Without this dep, a static (no-tween) chart kept
      *  the old GPU vertex colors until the next directive change. */
-    const isDark = useTheme();
+    const isDark = useEngineConfig().useIsDark();
     const { vertices, triCount } = useMemo(
         () => tessellatePrimitives(primitives, m),
         // eslint-disable-next-line react-hooks/exhaustive-deps

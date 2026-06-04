@@ -15,6 +15,7 @@ import type {
     ChromeElement,
     ChartChrome,
 } from './chart-chrome.types.js';
+import { CHROME_CORNER_RADIUS_PX } from './engine-visual-defaults.js';
 import {
     XAxisBand,
     XAxisBandTapTargets,
@@ -127,7 +128,7 @@ function LabelHighlightBand({
             y={TOP}
             width={w}
             height={HEIGHT}
-            rx={0} ry={0}
+            rx={CHROME_CORNER_RADIUS_PX} ry={CHROME_CORNER_RADIUS_PX}
             fill="color-mix(in srgb, var(--text-main) 10%, transparent)"
             pointerEvents="none"
         />
@@ -183,7 +184,8 @@ function fmtTick(v: number): string {
     if (abs >= 10_000) return `${+(v / 1_000).toPrecision(3)}k`;
     /* 1,000–9,999 fell through to String(v) → "2403" (no separator). Group
      *  with a thousands separator so mid-range ticks read "2,403", matching
-     *  the comma-formatted value labels (fmtValue/toLocaleString). */
+     *  the comma-formatted value labels (fmtValue/toLocaleString).
+     *  NEXUS-AHEAD: flow this up to Zincro (its fmtTick still bare String(v)). */
     return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 

@@ -213,7 +213,14 @@ export function drawChartGeometryGpu(
     pass.setPipeline(p.pipeline);
     pass.setBindGroup(0, p.bindGroup);
     pass.setVertexBuffer(0, p.vertexBuffer!);
-    pass.draw(triCount * 3);
+    // triCount === 0 is a legitimate frame: a chart with no geometry (empty
+    // data, or all series tweened to weight 0 mid-transition). Issuing
+    // draw(0) makes WebGPU warn ("Draw with a vertex count of 0 is unusual")
+    // and on some backends invalidates the pass. The clear pass above still
+    // runs, so the canvas blanks cleanly to "no data" — we just skip the
+    // empty draw. This is a robustness invariant: an empty dataset renders
+    // nothing, never an error.
+    if (triCount > 0) pass.draw(triCount * 3);
     pass.end();
     p.device.queue.submit([encoder.finish()]);
 }

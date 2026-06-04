@@ -79,3 +79,12 @@ export type SpacingToken = keyof typeof tokens.spacing;
 export type ColorToken = string;
 export type RadiusToken = keyof typeof tokens.radii;
 export type TypographyVariant = keyof typeof typography;
+
+/** Map a spacing token to its CSS var (or undefined). Shared by the
+ *  spacing/margin/padding props on BaseBox and BaseText. */
+export const sp = (key: SpacingToken | undefined) => key ? tokens.spacing[key] : undefined;
+
+/** Named font-weight → numeric value. Shared by BaseText and MetaChip. */
+export const WEIGHT_MAP: Record<string, number> = {
+  light: 300, normal: 400, medium: 500, semibold: 600, bold: 700, black: 900,
+};

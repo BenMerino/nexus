@@ -8,7 +8,14 @@
  */
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { DEFAULT_CHART_TUNING, resolveChartTuning, type ChartTuning, type TenantDNAChartTuning } from './chart-tuning.js';
+import { resolveChartTuning, type ChartTuning, type TenantDNAChartTuning } from './chart-tuning.js';
+
+/* NEXUS per-app cosmetic: bloom OFF by default (glow 0). The shared engine's
+ * DEFAULT_CHART_TUNING (synced from Zincro) carries glow 0.15; rather than fork
+ * that file, nexus overrides via this provider value — the sanctioned seam for
+ * shared visual identity (engine-visual-defaults handles geometry constants;
+ * glow lives here). Tenant DNA can still raise it via the server fetch below. */
+const NEXUS_CHART_TUNING: ChartTuning = resolveChartTuning({ glow: 0 });
 
 interface ChartTuningContextValue {
     tuning: ChartTuning;
@@ -20,7 +27,7 @@ interface ChartTuningContextValue {
 }
 
 const ChartTuningContext = createContext<ChartTuningContextValue>({
-    tuning: DEFAULT_CHART_TUNING,
+    tuning: NEXUS_CHART_TUNING,
     loaded: false,
     setTuning: () => {},
 });
@@ -33,7 +40,7 @@ interface ChartTuningProviderProps {
 const API_BASE = '';
 
 export function ChartTuningProvider({ tenantId, children }: ChartTuningProviderProps) {
-    const [tuning, setTuning] = useState<ChartTuning>(DEFAULT_CHART_TUNING);
+    const [tuning, setTuning] = useState<ChartTuning>(NEXUS_CHART_TUNING);
     const [loaded, setLoaded] = useState(false);
     useEffect(() => {
         if (!tenantId) { setLoaded(true); return; }

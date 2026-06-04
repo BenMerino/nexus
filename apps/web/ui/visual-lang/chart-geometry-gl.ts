@@ -108,6 +108,8 @@ export function drawChartGeometryGl(
     }
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
 
-    gl.drawArrays(gl.TRIANGLES, 0, triCount * 3);
+    // triCount === 0 is a legitimate empty frame — skip the draw (parity with
+    // the WebGPU path). drawArrays(…, 0) is a no-op that some drivers warn on.
+    if (triCount > 0) gl.drawArrays(gl.TRIANGLES, 0, triCount * 3);
     gl.bindVertexArray(null);
 }

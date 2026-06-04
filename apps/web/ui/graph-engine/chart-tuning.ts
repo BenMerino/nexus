@@ -9,8 +9,6 @@
  * ChartTuningContext.
  */
 
-import type { TenantDNA } from '../../calendar/tenant-dna.types.js';
-
 export interface ChartTuning {
     /** HDR brightness boost on chart marks [0..2]. 0 = flat fill,
      *  1 = engine baseline (punchier), 2 = white-hot (channels clip
@@ -45,7 +43,7 @@ export interface ChartTuning {
  *  marks were perceptibly muted against the dark surface; 1.5 lands
  *  closer to the OKLCH-authored palette intent. */
 export const DEFAULT_CHART_TUNING: ChartTuning = {
-    glow: 0,
+    glow: 0.15,
     iridescence: 0,
     edgeSoftness: 1,
     saturation: 1.5,
@@ -71,8 +69,7 @@ export function resolveChartTuning(override?: TenantDNAChartTuning): ChartTuning
     };
 }
 
-/** TenantDNA shape extension. The TenantDNA root type carries this
- *  optionally; if absent, defaults apply. */
-export type TenantDNAWithChartTuning = TenantDNA & {
-    chartTuning?: TenantDNAChartTuning;
-};
+/* The host's TenantDNA root type carries `chartTuning?: TenantDNAChartTuning`
+ *  optionally; if absent, defaults apply. The engine doesn't import the DNA
+ *  root type (app coupling) — the host intersects its own DNA type with
+ *  `{ chartTuning?: TenantDNAChartTuning }` where it reads the field. */

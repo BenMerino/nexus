@@ -19,6 +19,10 @@ export type {
     ScatterDataPoint, WaterfallDataPoint, TreemapNode, ChartData,
 } from './graph-data.types.js';
 import type { ChartData } from './graph-data.types.js';
+import type { GraphKpi } from './chart-kpi.types.js';
+export type { GraphKpi } from './chart-kpi.types.js';
+import type { GraphDirectiveRuntime } from './graph-directive-runtime.types.js';
+export type { GraphDirectiveRuntime } from './graph-directive-runtime.types.js';
 
 /** Threshold line rendered on the chart */
 export interface GraphThreshold { value: number; label: string; color: string; }
@@ -145,7 +149,7 @@ export type ScopePreset = 'today' | 'week' | 'month';
 export type GraphToggleSpec = ToggleSpec<GraphQuery>;
 
 /** A fully resolved chart directive ready for rendering */
-export interface GraphDirective extends ReplayableDirective<GraphQuery> {
+export interface GraphDirective extends ReplayableDirective<GraphQuery>, GraphDirectiveRuntime {
     type: GraphType;
     title: string;
     /** Optional KPI headline rendered ABOVE the chart: a large figure with
@@ -164,17 +168,8 @@ export interface GraphDirective extends ReplayableDirective<GraphQuery> {
      *
      *  `trend.auto` classifies the reduction's slope into rising/flat/
      *  falling (cosmetic path only). `trend` literal sets it explicitly. */
-    kpi?: {
-        /** Short uppercase caption under the figure, e.g. "score". */
-        caption: string;
-        /** Cosmetic path: which reduction of the plotted series to surface. */
-        reduce?: import('../ui/graph-engine/reduction.js').ReductionKind;
-        /** Authoritative path: composer-owned pre-formatted value. */
-        figure?: string;
-        /** Trend chip. `'auto'` derives direction from the reduction's
-         *  slope (cosmetic path); a literal sets it explicitly. */
-        trend?: 'auto' | { direction: 'rising' | 'flat' | 'falling'; label: string };
-    };
+    /** Optional KPI headline rendered ABOVE the chart. See `GraphKpi`. */
+    kpi?: GraphKpi;
     /** Pre-bucketed render data. Legacy field — directives that have NOT
      *  migrated to the atomic foundation still populate this directly.
      *  Migrated directives leave it empty; the renderer folds `atoms`
@@ -256,52 +251,8 @@ export interface GraphDirective extends ReplayableDirective<GraphQuery> {
     plotInsets?: { top: number; right: number; bottom: number; left: number };
     // query, toggles, persistKey inherited from ReplayableDirective<GraphQuery>
     // — extends, recompose endpoint, and useDirectiveController all key off them.
-    /* CLIENT-RUNTIME fields below — never set by the composer, never
-     * serialized. Attached by GraphRender / useDirectiveController /
-     * resolveAtomicDirective. */
-    /** Series the user has toggled visible (from `useToggleFilters`). */
-    activeSeries?: Set<string>;
-    /** Opt-in subset of `features[].kind`, persisted per (tenant, user). */
-    activeFeatures?: Set<import('./graph-features.types.js').GraphFeatureKind>;
-    /** Pre-window buckets supplied to features with `lookback()` (e.g.
-     *  MA lines start at x=0). */
-    __priorBuckets?: ChartData;
-    /** Per-series tween weight in [0..1]; renderers multiply geometry
-     *  so stacks/wedges reflow continuously instead of snapping. */
-    seriesWeights?: Map<string, number>;
-    /** Percentile clip window [lower, upper] in [0..1]; published by
-     *  the continuous legend's drag handles. */
-    colorClip?: { lower: number; upper: number };
-    /** Resolved fold unit (post-`pickAutoFoldUnit`); chrome builders
-     *  read this for hierarchical X-axis tiers. */
-    __foldUnit?: 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year';
-    /** Per-atom placement in window-normalized [0,1] coordinates.
-     *  When present, families read atoms + placements (foundation-
-     *  correct path) instead of pre-folded `data[]`. Indexed parallel
-     *  to `chart.atoms`. */
-    __placements?: ReadonlyArray<{ xStart: number; xEnd: number; yBase: number; bucketKey: string }>;
-    /** THE canonical bucket sequence for the visible window — one
-     *  empties-included, index-stable list (parallel to `data`) that
-     *  every cartesian family reads for geometry. Built once by
-     *  `resolveAtomicDirective` via `bucketSequence`, so chrome, bars,
-     *  and curves share the same buckets (no sparse-data desync). */
-    __buckets?: ReadonlyArray<import('./place-atoms.js').BucketAggregate>;
-    /** Visible y-domain maximum derived from per-bucket stack-tops at
-     *  the current fold. */
-    __yMax?: number;
-    /** Resolved KPI reduction for `kpi.reduce` — computed over `__buckets`
-     *  in `resolveAtomicDirective` (the same clock as the buckets, so the
-     *  headline tracks window/fold). Absent when `kpi` is unset or uses the
-     *  authoritative `figure` path. `ChartKpiHeader` reads this. */
-    __kpiReduction?: import('../ui/graph-engine/reduction.js').Reduction;
-    /** Off-window neighbor points — see EdgeNeighbors in
-     *  `graph-edge-neighbors.types.ts`. */
-    __edgeNeighbors?: import('./graph-edge-neighbors.types.js').EdgeNeighbors;
-    /** True when this update came from continuous user input (slider
-     *  drag, atomic window patch). The animation engine treats these
-     *  as a gesture-continuation — clocks keep running, target
-     *  retargets — instead of restarting per directive. */
-    __instantUpdate?: boolean;
+    // Client-runtime fields (activeSeries, seriesWeights, __buckets, …) are
+    // mixed in via `GraphDirectiveRuntime` — see graph-directive-runtime.types.ts.
 }
 
 /** Visual style directives — opt-in overrides to engine defaults.

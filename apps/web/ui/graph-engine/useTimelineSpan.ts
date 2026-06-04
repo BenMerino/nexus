@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGet } from '../../telemetry/apiClient.js';
+import { useEngineConfig } from './engine-config.js';
 
 /* ── useTimelineSpan ─────────────────────────────────────────
  * Fetches the genesis-to-today timeline span for a (tenantId, kind)
@@ -16,6 +16,7 @@ export interface TimelineSpan {
 }
 
 export function useTimelineSpan(tenantId: string | undefined, kind: string | undefined): TimelineSpan | null {
+    const { apiGet } = useEngineConfig();
     const [span, setSpan] = useState<TimelineSpan | null>(null);
     useEffect(() => {
         if (!tenantId || !kind) { setSpan(null); return; }
@@ -24,7 +25,7 @@ export function useTimelineSpan(tenantId: string | undefined, kind: string | und
             context: { entity: 'timeline-span', tenantId, kind },
         }).then(s => { if (!cancelled) setSpan(s); }).catch(() => { /* fall back: no span, no slider */ });
         return () => { cancelled = true; };
-    }, [tenantId, kind]);
+    }, [tenantId, kind, apiGet]);
     return span;
 }
 

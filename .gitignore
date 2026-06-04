@@ -14,3 +14,6 @@ Nexus.zip
 nexus.zip
 
 .claude-browser-*.jsonl
+
+# Engine sync cache (Zincro mirror source)
+.engine-src/

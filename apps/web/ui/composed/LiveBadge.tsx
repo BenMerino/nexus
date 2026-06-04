@@ -32,7 +32,7 @@ export function LiveBadge({ active, label = 'live' }: LiveBadgeProps) {
         ? 'color-mix(in srgb, var(--status-success, #10b981) 12%, transparent)'
         : 'color-mix(in srgb, var(--text-muted) 8%, transparent)';
     return (
-        <BaseBox display="inline-flex" align="center" density="tight" radius="full"
+        <BaseBox display="inline-flex" align="center" density="tight" radius="pill"
             style={{
                 padding: '0.125rem 0.5rem',
                 backgroundColor: bg,

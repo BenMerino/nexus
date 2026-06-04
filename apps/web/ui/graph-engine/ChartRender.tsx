@@ -27,7 +27,7 @@ import { PlotDottedBackdrop } from './PlotDottedBackdrop.js';
 import { ChartHitLayerInner, type ChartHitLayerProps } from './ChartHitLayer.js';
 import { ChartChromeLayer } from './ChartChromeLayer.js';
 import { TooltipOverlay, useTooltip } from './svg-parts.js';
-import { tipStateFromHover } from './chart-hover-tooltip.js';
+import { tipStateFromHover, anchorYFromHover } from './chart-hover-tooltip.js';
 import { useDragRange, RangeHighlight, RangeEndpointTags } from './drag-range.js';
 import { defaultInteraction } from '../../architect/graph-composer.types.js';
 import { useChartTuning } from './ChartTuningContext.js';
@@ -156,11 +156,7 @@ export function ChartRender({ chart, width, height, axesOverride, onBucketClick,
         if (!rect || !target.getBBox) return;
         const bb = target.getBBox();
         const cx = bb.x + bb.width / 2;
-        /* Full-height hover rails (line/area families) report a bbox center
-         *  at mid-plot — wrong for the crosshair + tooltip anchor. When the
-         *  rail carries the datum's pixel-y (`pointY`), anchor to it. */
-        const pointY = (data as { pointY?: number } | null)?.pointY;
-        const cy = typeof pointY === 'number' ? pointY : bb.y + bb.height / 2;
+        const cy = anchorYFromHover(data, bb.y + bb.height / 2);
         const sx = rect.width / layoutSize.w;
         const sy = rect.height / layoutSize.h;
         const tipState = tipStateFromHover(chart, data, cx, cy, sx, sy);

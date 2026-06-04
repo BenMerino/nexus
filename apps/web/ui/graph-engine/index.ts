@@ -1,4 +1,7 @@
 export { GraphRender } from './GraphRender.js';
+// NEXUS-ONLY: the forked directive controller surface (DirectiveChart +
+// recompose-registry + /api/stream WS). Not part of the shared Zincro engine;
+// re-add after every sync (sync-engine.sh overwrites this barrel from Zincro).
 export { DirectiveChart } from './DirectiveChart.js';
 export type { DirectiveChartProps } from './DirectiveChart.js';
 export { useContainerSize } from './useContainerSize.js';
@@ -17,3 +20,5 @@ export type { LegibilityStatus, ToggleFilter, ContainerDimensions } from './grap
 export { ChartTuningProvider, useChartTuning } from './ChartTuningContext.js';
 export { DEFAULT_CHART_TUNING, resolveChartTuning } from './chart-tuning.js';
 export type { ChartTuning, TenantDNAChartTuning } from './chart-tuning.js';
+export { GraphEngineProvider, useEngineConfig } from './engine-config.js';
+export type { EngineConfig, EngineApiGet, EngineUseUiPref, EnginePrefStatus } from './engine-config.js';

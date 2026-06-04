@@ -1,5 +1,5 @@
 import React from 'react';
-import { tokens, SpacingToken, RadiusToken } from './tokens';
+import { tokens, sp, SpacingToken, RadiusToken } from './tokens';
 
 export interface BaseBoxProps extends Omit<React.AllHTMLAttributes<HTMLElement>, 'as'> {
   as?: React.ElementType;
@@ -43,8 +43,6 @@ const sizeMap: Record<string, string> = {
 const dirMap: Record<string, string> = {
   row: 'row', col: 'column', 'row-reverse': 'row-reverse', 'col-reverse': 'column-reverse',
 };
-
-const sp = (key: SpacingToken | undefined) => key ? tokens.spacing[key] : undefined;
 
 export type Density = 'tight' | 'normal' | 'loose';
 const DENSITY: Record<Density, string> = {

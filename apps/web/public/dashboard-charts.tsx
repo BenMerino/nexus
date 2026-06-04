@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { GraphProviders } from '../ui/graph-engine-providers';
 import { useCurrentUser } from './shell-helpers';
 import { Stat, SectionHead } from './ui-primitives';
 import type { DashboardData } from './dashboard-builders';
@@ -112,11 +113,14 @@ function App() {
       .catch(e => setErr(String(e)));
   }, []);
   return (
-    <>
+    // GraphProviders wires the engine EngineConfig (apiGet/dark/pref) + glow-0
+    // tuning for the authenticated dashboard charts. tenantId is session-scoped
+    // server-side, so '' here → tuning uses the glow-0 default (no per-tenant fetch).
+    <GraphProviders tenantId="">
       {err && <div className="view"><div className="status error">Error: {err}</div></div>}
       {!data && !err && <DashboardLoading />}
       {data && <DashboardContent data={data} />}
-    </>
+    </GraphProviders>
   );
 }
 

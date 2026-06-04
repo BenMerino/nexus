@@ -16,6 +16,14 @@ export interface TooltipState {
     values: Array<{ name: string; value: number; color: string }>;
 }
 
+/** Full-height hover rails (line/area families) report a bbox center at
+ *  mid-plot — wrong for the crosshair + tooltip anchor. When the rail
+ *  carries the datum's pixel-y (`pointY`), anchor to it; else fall back. */
+export function anchorYFromHover(data: unknown, fallbackY: number): number {
+    const pointY = (data as { pointY?: number } | null)?.pointY;
+    return typeof pointY === 'number' ? pointY : fallbackY;
+}
+
 export function tipStateFromHover(
     chart: GraphDirective,
     data: unknown,

@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { tokens, SpacingToken, typography, TypographyVariant } from './tokens';
+import { tokens, sp, WEIGHT_MAP, SpacingToken, typography, TypographyVariant } from './tokens';
 
 const VARIANT_ELEMENT: Record<string, React.ElementType> = {
   display: 'h1', h1: 'h2', h2: 'h3', h3: 'h4', body: 'p', detail: 'span', caption: 'span', label: 'span',
@@ -7,10 +7,6 @@ const VARIANT_ELEMENT: Record<string, React.ElementType> = {
 
 const BLOCK_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
 const TextNestCtx = createContext<string | null>(null);
-
-const WEIGHT_MAP: Record<string, number> = {
-  light: 300, normal: 400, medium: 500, semibold: 600, bold: 700, black: 900,
-};
 
 export interface BaseTextProps extends React.HTMLAttributes<HTMLElement> {
   as?: React.ElementType;
@@ -25,8 +21,6 @@ export interface BaseTextProps extends React.HTMLAttributes<HTMLElement> {
   mt?: SpacingToken; mb?: SpacingToken; ml?: SpacingToken; mr?: SpacingToken;
   [key: string]: any;
 }
-
-const sp = (key: SpacingToken | undefined) => key ? tokens.spacing[key] : undefined;
 
 export const BaseText = React.forwardRef<HTMLElement, BaseTextProps>(({
   as, variant = 'body', color = 'body',

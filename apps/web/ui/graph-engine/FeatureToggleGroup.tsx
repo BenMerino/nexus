@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { BaseBox } from '../primitives/BaseBox.js';
 import { BaseAction } from '../primitives/BaseAction.js';
 import { BaseText } from '../primitives/BaseText.js';
-import { useUserUiPref } from '../../hooks/useUserUiPref.js';
+import { useEngineConfig } from './engine-config.js';
 import type { GraphFeature, GraphFeatureKind } from '../../architect/graph-features.types.js';
 
 /* ── FeatureToggleGroup ─────────────────────────────────────
@@ -130,7 +130,7 @@ export function useChartFeatureToggles(scopeKey: string): {
     setActiveKinds: (next: Set<GraphFeatureKind>) => void;
     status: 'loading' | 'ready' | 'error';
 } {
-    const [stored, set, status] = useUserUiPref<GraphFeatureKind[]>(scopeKey, []);
+    const [stored, set, status] = useEngineConfig().useUiPref<GraphFeatureKind[]>(scopeKey, []);
     const activeKinds = useMemo(() => new Set(stored), [stored]);
     const setActiveKinds = (next: Set<GraphFeatureKind>) => set(Array.from(next));
     return { activeKinds, setActiveKinds, status };
