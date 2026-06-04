@@ -36,6 +36,14 @@ export const ES = {
     openAccess: 'Open access',
     authors: 'Authors',
   },
+
+  /* Unit scope picker (Overview) */
+  unitPicker: {
+    allTenant: 'All of the university',
+    search: 'Search faculty or department…',
+    noMatch: 'No matching unit',
+    scopedNote: (name: string) => `Showing ${name}. Time-series charts (cadence, indexation) remain university-wide.`,
+  },
   subtitle: (pubs: string, authors: string) =>
     `Public research profile · ${pubs} publications · ${authors} authors`,
 
@@ -70,10 +78,6 @@ export const ES = {
     academicOne: 'academic',
     academicMany: 'academics',
     orcidNone: 'no ORCID',
-    viewAnalytics: 'View analytics',
-    backToTree: '← Back to organization',
-    unitAuthors: 'Academics',
-    unitAnalyticsFor: (name: string) => `Analytics — ${name}`,
   },
 
   /* Charts panel section titles */

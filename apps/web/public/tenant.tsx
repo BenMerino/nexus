@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { AuthorsTable } from './tenant-authors';
 import { buildTenantCharts } from './tenant-builders';
-import { TenantChartsTab } from './tenant-charts-tab';
+import { TenantOverview } from './tenant-overview';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
-import { SummaryCards, TabPane } from './tenant-summary';
+import { TabPane } from './tenant-summary';
 import { TenantOrgTree } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { GraphProviders } from '../ui/graph-engine-providers';
@@ -95,14 +95,14 @@ function App() {
       <main className="public-main">
         <div className="view">
           <TabPane id="overview" {...paneProps}>
-            {/* Summary cards on top, then the charts — overview + charts merged
-                into one tab (the standalone 'charts' tab was removed). */}
-            <SummaryCards summary={statsPayload.stats.summary} />
-            <TenantChartsTab stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} />
+            {/* Unit picker + KPI cards + charts — the dashboard re-scopes in
+                place when a faculty/department is picked (Philosophy: scope is
+                sovereign). All in TenantOverview to keep this file thin. */}
+            <TenantOverview slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} />
           </TabPane>
 
           <TabPane id="org-tree" {...paneProps}>
-            <TenantOrgTree slug={slug} tenantId={statsPayload.tenant.id} />
+            <TenantOrgTree slug={slug} />
           </TabPane>
 
           <TabPane id="authors" {...paneProps}>
