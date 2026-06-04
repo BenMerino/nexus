@@ -212,6 +212,34 @@ export function narrowQueryToAtomRange(
     return isContained(child, parent) ? child : null;
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** A consistent, human breadcrumb label for a drilled window — derived from
+ *  the RESULTING child query (windowDays + asOf), NOT the raw clicked axis
+ *  text. The clicked label was whatever tier you hit (a date like `1986-05-01`
+ *  from the base row, or a bare `Q1` from a tier row), so trails mixed formats
+ *  and could repeat. Formatting the actual window picks the natural calendar
+ *  unit from its span, so every crumb reads the same way and always reflects
+ *  what was drilled to:
+ *    ≤1 day → the day (2026-04-15) · ≤~8 days → week-of (Wk 2026-04-13)
+ *    ≤~45 → the month (Apr 2026) · ≤~100 → the quarter (Q2 2026)
+ *    ≤~366 → the year (2026) · else → a year range (2010–2019). */
+export function windowLabel(q: GraphQuery): string {
+    const endISO = q.asOf ?? isoToday();
+    const end = new Date(`${endISO}T00:00:00Z`);
+    if (Number.isNaN(end.getTime())) return endISO;
+    const d = q.windowDays;
+    if (d == null) return 'All';
+    const y = end.getUTCFullYear();
+    if (d <= 1) return endISO;
+    if (d <= 8) return `Wk ${endISO}`;
+    if (d <= 45) return `${MONTHS[end.getUTCMonth()]} ${y}`;
+    if (d <= 100) return `Q${Math.floor(end.getUTCMonth() / 3) + 1} ${y}`;
+    if (d <= 366) return String(y);
+    const startY = new Date(end.getTime() - (d - 1) * DAY_MS).getUTCFullYear();
+    return startY === y ? String(y) : `${startY}–${y}`;
+}
+
 /** Inverse: given a child query that was the result of drilling, return the
  * parent. Hard to do robustly without breadcrumb history — controllers track
  * the parent themselves. Exported for symmetry / discoverability. */

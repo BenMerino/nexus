@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { GraphRender } from './GraphRender.js';
 import { useDirectiveController } from '../../architect/useDirectiveController.js';
-import { narrowQueryToBucket, narrowQueryToPeriod, narrowQueryToAtomRange } from '../../architect/graph-drilldown.js';
+import { narrowQueryToBucket, narrowQueryToPeriod, narrowQueryToAtomRange, windowLabel } from '../../architect/graph-drilldown.js';
 import { getSeriesPalette } from './svg-color-schemes.js';
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
 
@@ -84,7 +84,7 @@ function ControlledChart({ seed }: { seed: GraphDirective }) {
     // narrow (helpers return null).
     const handleBucketClick = (
         idx: number,
-        label: string,
+        _label: string,
         totalBuckets: number,
         daysPerBucket: number,
         atomKeyRange?: [number, number],
@@ -101,7 +101,12 @@ function ControlledChart({ seed }: { seed: GraphDirective }) {
         } else {
             child = narrowQueryToBucket(cur, idx, totalBuckets, daysPerBucket);
         }
-        if (child) ctrl.drillDown(child, label);
+        /* Breadcrumb label is derived from the CHILD WINDOW (windowLabel), not
+         *  the raw clicked axis text (`_label`) — the latter mixed formats
+         *  ("1986-05-01" base-row vs bare "Q1" tier-row) and could repeat. A
+         *  child that doesn't narrow is already rejected (helpers return null),
+         *  so every pushed crumb reflects a real, consistently-labelled descent. */
+        if (child) ctrl.drillDown(child, windowLabel(child));
     };
 
     /* Re-normalize on EVERY controller directive — not just the seed. A
