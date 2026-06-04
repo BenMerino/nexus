@@ -82,7 +82,7 @@ function App() {
           </div>
         </div>
         {/* KPI row spans the full width above the rail + chart grid (mockup). */}
-        <ScopedSummary slug={slug} stats={statsPayload.stats} unit={unit} />
+        <ScopedSummary slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} unit={unit} />
         {/* Two-column: scope rail (the picker) pinned left, the scoped chart
             grid + author directory on the right. */}
         <div className="tenant-layout">

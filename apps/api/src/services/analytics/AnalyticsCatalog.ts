@@ -1,5 +1,5 @@
 import { composeCadence, composeByIndex } from "../architect/PublicationCharts";
-import { composeTopJournals, composeCollaborators, composeCountries, composeCountriesMap, composeTypeByYear } from "../architect/PublicCategoryCharts";
+import { composeTopJournals, composeCollaborators, composeCountries, composeCountriesMap, composeTypeByYear, composeKpiSparks } from "../architect/PublicCategoryCharts";
 import type { ActorContext } from "../../substrate/actor";
 import type { AnalyticsMetric, CatalogQuery } from "./analytics-catalog.types";
 
@@ -111,6 +111,17 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     queryShape: "none",
     access: "public",
     compose: (q) => composeCountriesMap(parseInt(q.tenantId, 10), q.unit),
+    invalidatedBy: ["publication.upserted", "ingestion.completed"],
+    surfaces: ["overview"],
+  },
+  {
+    kind: "publications.kpiSparks",
+    domain: "publication",
+    title: "KPI sparklines",
+    description: "Per-year series (publications/citations/authors) behind the public KPI cards.",
+    queryShape: "none",
+    access: "public",
+    compose: (q) => composeKpiSparks(parseInt(q.tenantId, 10), q.unit),
     invalidatedBy: ["publication.upserted", "ingestion.completed"],
     surfaces: ["overview"],
   },
