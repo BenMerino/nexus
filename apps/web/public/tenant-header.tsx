@@ -41,31 +41,33 @@ export function TenantPublicHeader({
   const updated = yearRange?.maxYear ? `${ES.updatedPrefix} ${yearRange.maxYear}` : ES.publicProfileBadge;
   return (
     <header className="public-header">
-      <div className="public-brand">
-        {tenant.logo_url
-          ? <img className="public-logo" src={tenant.logo_url} alt="" />
-          : <span className="public-logo-fallback" data-initial={initial(tenant.name)} />}
-        <div>
-          <div className="public-tenant-name">{tenant.name}</div>
-          <div className="public-tenant-sub">
-            <span>{ES.researchIntelligence}</span>
-            {tenant.ror_id ? <> · <a href={rorHref(tenant.ror_id)} target="_blank" rel="noopener noreferrer">ROR {rorId(tenant.ror_id)}</a></> : null}
+      <div className="public-header-inner">
+        <div className="public-brand">
+          {tenant.logo_url
+            ? <img className="public-logo" src={tenant.logo_url} alt="" />
+            : <span className="public-logo-fallback" data-initial={initial(tenant.name)} />}
+          <div>
+            <div className="public-tenant-name">{tenant.name}</div>
+            <div className="public-tenant-sub">
+              <span>{ES.researchIntelligence}</span>
+              {tenant.ror_id ? <> · <a href={rorHref(tenant.ror_id)} target="_blank" rel="noopener noreferrer">ROR {rorId(tenant.ror_id)}</a></> : null}
+            </div>
           </div>
         </div>
-      </div>
-      <nav className="public-tabs" aria-label="Section navigation">
-        {items.map(it => (
-          <a key={it.id} href={`#${it.id}`}
-             className={`public-tab${currentId === it.id ? ' active' : ''}`}
-             onClick={e => { e.preventDefault(); onNavigate(it.id); }}>
-            {it.label}
-          </a>
-        ))}
-      </nav>
-      <div className="public-header-aux">
-        <span className="public-updated"><span className="sync-pulse" /> <span>{updated}</span></span>
-        <a href="/login.html" className="public-signin">{ES.signIn}</a>
-        <ThemeButton />
+        <nav className="public-tabs" aria-label="Section navigation">
+          {items.map(it => (
+            <a key={it.id} href={`#${it.id}`}
+               className={`public-tab${currentId === it.id ? ' active' : ''}`}
+               onClick={e => { e.preventDefault(); onNavigate(it.id); }}>
+              {it.label}
+            </a>
+          ))}
+        </nav>
+        <div className="public-header-aux">
+          <span className="public-updated"><span className="sync-pulse" /> <span>{updated}</span></span>
+          <a href="/login.html" className="public-signin">{ES.signIn}</a>
+          <ThemeButton />
+        </div>
       </div>
     </header>
   );

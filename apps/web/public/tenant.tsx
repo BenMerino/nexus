@@ -67,7 +67,7 @@ function App() {
       <TenantPublicHeader tenant={statsPayload.tenant} items={NAV} currentId="overview"
         onNavigate={() => {}} yearRange={statsPayload.stats.yearRange} />
       <main className="public-main">
-        <div className="view">
+        <div className="public-content">
         {/* Serif headline + lede on the left, the live "viewing scope" flag on
             the right — reflects the unit selected in the rail. */}
         <div className="page-head">

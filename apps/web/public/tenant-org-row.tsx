@@ -1,4 +1,5 @@
 import React from 'react';
+import { ES } from './tenant-i18n';
 
 /* Shared primitives for the contributors ranking and the scope rail: the unit
  * metric model (value/format/rank) and the inline ranked Bar. */

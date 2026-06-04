@@ -9,16 +9,23 @@
        Height pinned to viewport so .public-main is a real scroll container —
        body.shell-fixed clips overflow at the body level, so an inner scroller
        is the only way tall content (charts, long author tables) can scroll. */
-    .public-app { display: flex; flex-direction: column; height: 100vh; }
-    /* Sticky frosted top-bar — sits above the scroll container with a blurred
-       translucent backdrop so content slides under it. */
+    /* Shared content width — the frosted bar spans full-bleed, but its inner
+       row and the page content share this centered max-width so the crest
+       lines up with the headline (the mockup's --maxw). Wide enough to keep
+       side gutters tight on large monitors. */
+    .public-app { --maxw: 1500px; display: flex; flex-direction: column; height: 100vh; }
+    /* Sticky frosted top-bar — full-bleed bar, inner row capped to --maxw. */
     .public-header {
-      display: flex; align-items: center; gap: 24px;
+      display: flex; justify-content: center;
       padding: 0 28px; min-height: 60px;
       background: color-mix(in oklch, var(--bg) 86%, transparent);
       backdrop-filter: blur(14px) saturate(1.4);
       border-bottom: 1px solid var(--border-soft);
-      flex-wrap: wrap; flex: none; z-index: 30;
+      flex: none; z-index: 30;
+    }
+    .public-header-inner {
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+      width: 100%; max-width: var(--maxw);
     }
     .public-brand { display: flex; align-items: center; gap: 13px; flex: none; }
     .public-logo { height: 36px; width: auto; max-width: 120px; object-fit: contain; }
@@ -92,7 +99,9 @@
     .public-signin { color: var(--fg-dim); }
     .public-signin:hover { color: var(--accent); }
     .public-main { flex: 1; padding: 32px 28px 72px; overflow-y: auto; min-height: 0; }
-    .public-main .view { max-width: 1340px; margin: 0 auto; }
+    /* Dedicated wrapper (NOT the generic .view, which carries 40px padding +
+       a 1480 cap) so content aligns with the header-inner at --maxw. */
+    .public-content { max-width: var(--maxw); margin: 0 auto; }
 
     /* ── Page head: serif headline + lede + live scope flag ─────────── */
     .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 26px; flex-wrap: wrap; }
