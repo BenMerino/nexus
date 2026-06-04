@@ -17,6 +17,7 @@ import type { GraphDataPoint } from "@nexus/shared/graph-data.types";
 import { statistician } from "../catalog/Statistician";
 import { composeCadence } from "./PublicationCharts";
 import { velocityFromScope } from "./PublicSeriesCharts";
+import { TOP_N } from "./PublicCategoryCharts";
 
 /** Minimal server-emitted chart directive (the contract GraphRender reads).
  *  The frontend GraphDirective is a superset with render-runtime fields the
@@ -58,13 +59,13 @@ const COMPOSERS: Record<string, (ctx: ActorContext) => Promise<unknown>> = {
     const rows: Array<{ value: string; count: string | number }> = await statistician.topJournals(ctx);
     if (!rows.length) return null;
     return { type: "bar", title: "Top Journals", yLabel: "Publications",
-      data: rows.map((r) => ({ label: top(r.value), value: Number(r.count) })) };
+      data: rows.slice(0, TOP_N).map((r) => ({ label: top(r.value), value: Number(r.count) })) };
   },
   async collaboratingInstitutions(ctx) {
     const rows: Array<{ value: string; count: string | number }> = await statistician.collaborations(ctx);
     if (!rows.length) return null;
     return { type: "bar", title: "Top Collaborating Institutions", yLabel: "Co-authored Papers",
-      data: rows.slice(0, 15).map((r) => ({ label: top(r.value), value: Number(r.count) })) };
+      data: rows.slice(0, TOP_N).map((r) => ({ label: top(r.value), value: Number(r.count) })) };
   },
   async countries(ctx) {
     const rows: Array<{ country: string; count: string | number }> = await statistician.countries(ctx);

@@ -13,6 +13,9 @@ const { getTenantRor } = require("../../lib/db-users");
  * tenantId, not a scope ctx. Registered as catalog kinds in AnalyticsCatalog.
  * ──────────────────────────────────────────────────────────── */
 
+// Ranked "top" bar charts (journals, collaborators) show only the leaders.
+export const TOP_N = 5;
+
 /** Minimal server-emitted categorical directive (the contract GraphRender reads). */
 export interface CategoryDirective {
   type: "bar" | "donut";
@@ -56,7 +59,7 @@ export async function composeTopJournals(tenantId: number, unitKey?: string | nu
     title: "Principales revistas",
     xLabel: "Revista",
     yLabel: "Artículos",
-    data: rows.map((j) => ({ label: j.value || "", value: Number(j.count) })),
+    data: rows.slice(0, TOP_N).map((j) => ({ label: j.value || "", value: Number(j.count) })),
   };
 }
 
@@ -78,7 +81,7 @@ export async function composeCollaborators(tenantId: number, unitKey?: string | 
     title: "Principales instituciones colaboradoras",
     xLabel: "Institución",
     yLabel: "Artículos en colaboración",
-    data: rows.slice(0, 15).map((c) => ({ label: c.value || "", value: Number(c.count) })),
+    data: rows.slice(0, TOP_N).map((c) => ({ label: c.value || "", value: Number(c.count) })),
   };
 }
 

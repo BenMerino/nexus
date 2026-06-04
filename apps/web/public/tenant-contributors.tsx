@@ -16,9 +16,12 @@ function Rows({ units, metric, onDrill }: { units: Unit[]; metric: Metric; onDri
   const ranked = useMemo(() => rank(units, metric).filter(u => valueOf(u, metric) > 0), [units, metric]);
   const max = ranked.length ? valueOf(ranked[0], metric) : 0;
   if (!ranked.length) return <div style={{ padding: 14, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>{ES.contributors.noData}</div>;
+  // Top 5 only — bar scale stays anchored to the true leader (max from the full
+  // ranking), the list shows just the leaders.
+  const top5 = ranked.slice(0, 5);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {ranked.map(u => {
+      {top5.map(u => {
         const fac = u as Faculty;
         const drillable = !!(onDrill && fac.departments && fac.departments.length);
         return (
