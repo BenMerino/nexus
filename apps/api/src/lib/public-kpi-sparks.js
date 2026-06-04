@@ -5,8 +5,48 @@ const { resolvePubFilter } = require("./stats-scope");
 // interpretation behind each headline figure (a real trend, not a glyph). All
 // three narrow with scope via resolvePubFilter (a unitKey → one faculty's
 // authors), so the sparklines re-scope exactly like the KPI numbers above them.
-// Returns { publications:[{year,value}], citations:[…], authors:[…] }, each
-// ascending by year over the metric's natural window.
+// Each point carries a `status`: 'observed' (full year, solid), 'partial' (the
+// current still-filling year, dashed) or 'projected' (regression forecast,
+// dashed) — mirroring the citation-velocity panel's projection behavior so the
+// glyph dashes its tail and continues the gradient underneath.
+// Returns { publications:[{year,value,status}], citations:[…], authors:[…] }.
+
+const FORECAST_YEARS = 3;     // how many years to project past the last observed
+const FIT_WINDOW = 6;         // recent observed years the regression fits over
+
+// Least-squares slope/intercept over [{x,y}]. Flat line if x has no spread.
+function regression(pts) {
+  const n = pts.length;
+  if (n < 2) return { slope: 0, intercept: pts[0] ? pts[0].y : 0 };
+  const mx = pts.reduce((s, p) => s + p.x, 0) / n;
+  const my = pts.reduce((s, p) => s + p.y, 0) / n;
+  let num = 0, den = 0;
+  for (const p of pts) { num += (p.x - mx) * (p.y - my); den += (p.x - mx) ** 2; }
+  const slope = den === 0 ? 0 : num / den;
+  return { slope, intercept: my - slope * mx };
+}
+
+// Stamp status onto a raw [{year,value}] series (ascending) and append a short
+// regression forecast. The last year is 'partial' (still filling); the rest are
+// 'observed'; the forecast tail is 'projected'. Projecting needs ≥3 observed
+// points — below that, return the raw series unprojected (all observed).
+function withProjection(rows, currentYear) {
+  if (!rows.length) return [];
+  const out = rows.map((r, i) => ({
+    year: r.year, value: r.value,
+    status: (i === rows.length - 1 && r.year >= currentYear) ? "partial" : "observed",
+  }));
+  const observed = out.filter((p) => p.status === "observed");
+  if (observed.length < 3) return out;
+  const fit = observed.slice(-FIT_WINDOW).map((p) => ({ x: p.year, y: p.value }));
+  const { slope, intercept } = regression(fit);
+  const lastYear = out[out.length - 1].year;
+  for (let i = 1; i <= FORECAST_YEARS; i++) {
+    const y = lastYear + i;
+    out.push({ year: y, value: Math.max(0, Math.round(slope * y + intercept)), status: "projected" });
+  }
+  return out;
+}
 
 // Publications per published-year (full span). Alias `p` for the filter.
 async function pubsByYear(scope) {
@@ -46,10 +86,15 @@ async function authorsByYear(scope) {
 }
 
 async function buildKpiSparks(scope) {
+  const currentYear = new Date().getUTCFullYear();
   const [publications, citations, authors] = await Promise.all([
     pubsByYear(scope), citesByYear(scope), authorsByYear(scope),
   ]);
-  return { publications, citations, authors };
+  return {
+    publications: withProjection(publications, currentYear),
+    citations: withProjection(citations, currentYear),
+    authors: withProjection(authors, currentYear),
+  };
 }
 
 module.exports = { buildKpiSparks };

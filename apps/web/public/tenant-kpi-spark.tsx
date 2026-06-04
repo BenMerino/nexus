@@ -2,65 +2,87 @@ import React from 'react';
 
 // KPI micro-sparklines — a real per-year trend drawn as a tiny static SVG.
 // Lightweight by construction: NO engine, NO slider, NO toggles, no hover —
-// just a path. The series comes from the server (publications.kpiSparks,
-// unit-scoped), so each glyph reflects the actual trend behind its number.
+// just paths. The series comes from the server (publications.kpiSparks,
+// unit-scoped) with a per-point `status`: 'observed' (solid), 'partial'/
+// 'projected' (the still-filling year + regression forecast → DASHED, with the
+// gradient continuing underneath — mirroring the citation-velocity panel).
 // The open-access ring is the one non-series glyph (it encodes a single pct).
 
-export type SparkPoint = { year: number; value: number };
+export type SparkStatus = 'observed' | 'partial' | 'projected';
+export type SparkPoint = { year: number; value: number; status?: SparkStatus };
 
-// Normalize a per-year series to N plotting points (ascending). Empty/one-point
-// series degrade to a flat baseline rather than throwing.
-function pts(series: SparkPoint[], w: number, h: number) {
-  const vals = series.map(s => s.value);
-  if (vals.length < 2) return null;
-  const max = Math.max(...vals), min = Math.min(...vals), rng = max - min || 1;
-  return series.map((s, i) => [i / (series.length - 1) * w, h - 2 - ((s.value - min) / rng) * (h - 6)] as const);
+const W = 104, H = 34;
+
+// Downsample a series into at most `bins` evenly-sized buckets (sum per bucket),
+// so a long span (utalca ~106y) renders readable, not sub-pixel. Only OBSERVED
+// points are bucketed; the partial+projected tail (a few points) passes through
+// so the dashed boundary stays intact. Fewer points than bins pass unchanged.
+function bucketize(series: SparkPoint[], bins: number): SparkPoint[] {
+  const obs = series.filter(p => (p.status ?? 'observed') === 'observed');
+  const tail = series.filter(p => (p.status ?? 'observed') !== 'observed');
+  if (obs.length <= bins) return series;
+  const size = obs.length / bins;
+  const out: SparkPoint[] = [];
+  for (let b = 0; b < bins; b++) {
+    const slice = obs.slice(Math.floor(b * size), Math.floor((b + 1) * size));
+    if (!slice.length) continue;
+    out.push({ year: slice[slice.length - 1].year, value: slice.reduce((s, p) => s + p.value, 0), status: 'observed' });
+  }
+  return [...out, ...tail];
 }
 
+// Map a series to plotting points sharing one value-scale (so solid + dashed
+// segments align). Returns null for <2 points.
+function project(series: SparkPoint[]): { x: number; y: number; status: SparkStatus }[] | null {
+  if (series.length < 2) return null;
+  const vals = series.map(s => s.value);
+  const max = Math.max(...vals), min = Math.min(...vals), rng = max - min || 1;
+  return series.map((s, i) => ({
+    x: i / (series.length - 1) * W,
+    y: H - 2 - ((s.value - min) / rng) * (H - 6),
+    status: s.status ?? 'observed',
+  }));
+}
+
+const path = (p: { x: number; y: number }[]) =>
+  'M' + p.map(q => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join(' L');
+
 function Area({ accent, series }: { accent: string; series: SparkPoint[] }) {
-  const w = 104, h = 34;
-  // A line tolerates more points than bars; downsample only a very long span so
-  // it stays a smooth trend, not 169px of noise.
-  const p = pts(bucketize(series, 40), w, h);
-  if (!p) return <svg className="kpi-spark" width={w} height={h} aria-hidden="true" />;
-  const line = 'M' + p.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' L');
-  const area = `${line} L${w},${h} L0,${h} Z`;
+  const p = project(bucketize(series, 40));
+  if (!p) return <svg className="kpi-spark" width={W} height={H} aria-hidden="true" />;
+  // Split at the first non-observed point; the dashed segment starts one point
+  // earlier so it connects to the solid line (shared boundary vertex).
+  const cut = p.findIndex(q => q.status !== 'observed');
+  const solid = cut === -1 ? p : p.slice(0, cut);
+  const dashed = cut === -1 ? [] : p.slice(Math.max(0, cut - 1));
+  const area = `${path(p)} L${W},${H} L0,${H} Z`;
   const last = p[p.length - 1];
   return (
-    <svg className="kpi-spark" width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none" aria-hidden="true">
+    <svg className="kpi-spark" width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none" aria-hidden="true">
       <path d={area} fill={accent} fillOpacity="0.14" />
-      <path d={line} stroke={accent} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={last[0].toFixed(1)} cy={last[1].toFixed(1)} r="2.2" fill={accent} />
+      {solid.length >= 2 ? <path d={path(solid)} stroke={accent} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" /> : null}
+      {dashed.length >= 2 ? <path d={path(dashed)} stroke={accent} strokeWidth="1.6" strokeDasharray="2.4 2.2" strokeLinejoin="round" strokeLinecap="round" opacity="0.85" /> : null}
+      <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="2.2" fill={accent} opacity={last.status === 'observed' ? 1 : 0.6} />
     </svg>
   );
 }
 
-// Downsample a series into at most `bins` evenly-sized buckets (sum per bucket),
-// so a long span (utalca ~169y) renders as readable bars instead of sub-pixel
-// hairlines. Fewer points than bins pass through unchanged.
-function bucketize(series: SparkPoint[], bins: number): SparkPoint[] {
-  if (series.length <= bins) return series;
-  const size = series.length / bins;
-  const out: SparkPoint[] = [];
-  for (let b = 0; b < bins; b++) {
-    const slice = series.slice(Math.floor(b * size), Math.floor((b + 1) * size));
-    if (!slice.length) continue;
-    out.push({ year: slice[slice.length - 1].year, value: slice.reduce((s, p) => s + p.value, 0) });
-  }
-  return out;
-}
-
 function Bars({ accent, series: raw }: { accent: string; series: SparkPoint[] }) {
-  const w = 104, h = 34;
   const series = bucketize(raw, 16);
   const n = series.length;
-  if (n < 2) return <svg className="kpi-spark" width={w} height={h} aria-hidden="true" />;
-  const gap = w / n, bw = gap * 0.62, max = Math.max(...series.map(s => s.value)) || 1;
+  if (n < 2) return <svg className="kpi-spark" width={W} height={H} aria-hidden="true" />;
+  const gap = W / n, bw = gap * 0.62, max = Math.max(...series.map(s => s.value)) || 1;
   return (
-    <svg className="kpi-spark" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+    <svg className="kpi-spark" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
       {series.map((s, i) => {
-        const bh = Math.max(2, (s.value / max) * (h - 4));
-        return <rect key={i} x={(i * gap + (gap - bw) / 2).toFixed(1)} y={(h - bh).toFixed(1)} width={bw.toFixed(1)} height={bh.toFixed(1)} fill={accent} opacity={(0.45 + 0.55 * (i / (n - 1))).toFixed(2)} />;
+        const bh = Math.max(2, (s.value / max) * (H - 4));
+        // Projected/partial bars read as hollow (outline) so the forecast tail
+        // is visually distinct from observed bars, like the dashed line.
+        const projected = (s.status ?? 'observed') !== 'observed';
+        const x = (i * gap + (gap - bw) / 2).toFixed(1);
+        return projected
+          ? <rect key={i} x={x} y={(H - bh).toFixed(1)} width={bw.toFixed(1)} height={bh.toFixed(1)} fill="none" stroke={accent} strokeWidth="1" strokeDasharray="1.5 1.2" opacity="0.7" />
+          : <rect key={i} x={x} y={(H - bh).toFixed(1)} width={bw.toFixed(1)} height={bh.toFixed(1)} fill={accent} opacity={(0.45 + 0.55 * (i / (n - 1))).toFixed(2)} />;
       })}
     </svg>
   );

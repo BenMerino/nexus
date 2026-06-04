@@ -44,9 +44,10 @@ export interface ChoroplethDirective {
 /** KPI-sparks directive — per-year series behind the public KPI cards. PLAIN
  *  data (no atoms/query/toggles) by construction, so the card renders it with a
  *  tiny static SVG: NOT the engine, no slider, no fold — a lightweight glyph. */
+export interface KpiSparkPoint { year: number; value: number; status: "observed" | "partial" | "projected"; }
 export interface KpiSparksDirective {
   type: "kpi-sparks";
-  series: { publications: { year: number; value: number }[]; citations: { year: number; value: number }[]; authors: { year: number; value: number }[] };
+  series: { publications: KpiSparkPoint[]; citations: KpiSparkPoint[]; authors: KpiSparkPoint[] };
 }
 
 /** publications.topJournals — top journals by paper count (ranked bar).
