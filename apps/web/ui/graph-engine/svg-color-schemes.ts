@@ -47,6 +47,7 @@ const N = (): ColorScheme => ({ sentiment: 'neutral', primary: SERIES_PALETTE[0]
 
 const TYPE_SCHEME: Record<string, ColorScheme> = {
     heatmap: { sentiment: 'neutral', primary: SERIES_PALETTE[0], fill: SERIES_PALETTE[0], gradient: RAMPS.azure },
+    choropleth: { sentiment: 'neutral', primary: SERIES_PALETTE[0], fill: SERIES_PALETTE[0], gradient: RAMPS.teal },
     bubble: N(), scatter: N(),
     bar: INFO_G, line: INFO_G, area: INFO_G,
     pie: N(), donut: N(), funnel: N(), treemap: N(),

@@ -1,5 +1,5 @@
 import { composeCadence, composeByIndex } from "../architect/PublicationCharts";
-import { composeTopJournals, composeCollaborators, composeCountries, composeTypeByYear } from "../architect/PublicCategoryCharts";
+import { composeTopJournals, composeCollaborators, composeCountries, composeCountriesMap, composeTypeByYear } from "../architect/PublicCategoryCharts";
 import type { ActorContext } from "../../substrate/actor";
 import type { AnalyticsMetric, CatalogQuery } from "./analytics-catalog.types";
 
@@ -100,6 +100,17 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     queryShape: "none",
     access: "public",
     compose: (q) => composeCountries(parseInt(q.tenantId, 10), q.unit),
+    invalidatedBy: ["publication.upserted", "ingestion.completed"],
+    surfaces: ["overview"],
+  },
+  {
+    kind: "publications.countriesMap",
+    domain: "publication",
+    title: "Publicaciones por país",
+    description: "Publications by author-affiliation country as a world choropleth.",
+    queryShape: "none",
+    access: "public",
+    compose: (q) => composeCountriesMap(parseInt(q.tenantId, 10), q.unit),
     invalidatedBy: ["publication.upserted", "ingestion.completed"],
     surfaces: ["overview"],
   },

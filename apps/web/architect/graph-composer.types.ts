@@ -10,7 +10,7 @@ export type GraphType =
     | 'bar' | 'stacked-bar' | 'area' | 'stacked-area' | 'line' | 'multi-line'
     | 'pie' | 'donut' | 'heatmap' | 'radar' | 'distribution'
     | 'gauge' | 'progress-ring' | 'funnel' | 'scatter' | 'bubble'
-    | 'waterfall' | 'sparkline' | 'treemap';
+    | 'waterfall' | 'sparkline' | 'treemap' | 'choropleth';
 
 /* Chart data-point shapes live in `graph-data.types.ts`; re-exported so
  * existing `from './graph-composer.types.js'` importers keep working. */
@@ -50,7 +50,7 @@ export type LegendMode = 'auto' | 'categorical' | 'continuous' | 'size' | 'none'
 
 /** Resolve default legend mode from chart type. Pure: shared by server + client. */
 export function defaultLegendMode(type: string): Exclude<LegendMode, 'auto'> {
-    if (type === 'heatmap') return 'continuous';
+    if (type === 'heatmap' || type === 'choropleth') return 'continuous';
     if (type === 'bubble') return 'size';
     if (type === 'gauge' || type === 'progress-ring' || type === 'sparkline') return 'none';
     return 'categorical';
@@ -61,6 +61,7 @@ export function defaultInteraction(type: string): InteractionMode {
     if (type === 'line' || type === 'multi-line' || type === 'scatter' || type === 'bubble') return { crosshair: 'both', dragRange: true, transitionMs: 80, axes: 'standard' };
     if (type === 'area' || type === 'stacked-area') return { crosshair: 'vertical', dragRange: true, transitionMs: 80, axes: 'standard' };
     if (type === 'heatmap') return { crosshair: 'cell', dragRange: false, transitionMs: 60, axes: 'marginal' };
+    if (type === 'choropleth') return { crosshair: 'none', dragRange: false, transitionMs: 60, axes: 'none' };
     if (type === 'bar' || type === 'stacked-bar') return { crosshair: 'none', dragRange: false, transitionMs: 60, axes: 'standard' };
     if (type === 'sparkline') return { crosshair: 'none', dragRange: false, transitionMs: 80, axes: 'none' };
     return { crosshair: 'none', dragRange: false, transitionMs: 0, axes: 'none' };
@@ -141,7 +142,7 @@ export type TimeRangePreset = '7d' | '30d' | '90d' | '180d' | '365d' | 'all';
 export const WINDOW_DAYS_PRESET: Record<TimeRangePreset, number | null> = {
     '7d': 7, '30d': 30, '90d': 90, '180d': 180, '365d': 365, all: null,
 };
-export type Granularity = 'day' | 'month' | 'year';
+export type Granularity = 'day' | 'week' | 'month' | 'quarter';
 export type ScopePreset = 'today' | 'week' | 'month';
 
 /** Toggle bound to a GraphQuery field — narrowed re-export of the generic
@@ -199,6 +200,10 @@ export interface GraphDirective extends ReplayableDirective<GraphQuery>, GraphDi
     colorScheme?: ColorScheme;
     /** Gauge/sparkline: min/max range for scale context */
     range?: { min: number; max: number };
+    /** Choropleth: world geometry keyed by ISO-alpha2 — `{ [iso2]: { name,
+     *  rings } }`, rings = arrays of [lon,lat]. Injected by the host (not the
+     *  composer) so directives stay data-light; the geo family projects it. */
+    geo?: Record<string, { name: string; rings: number[][][] }>;
     /** Distribution: fitted gaussian params for bell curve overlay */
     gaussian?: { mean: number; stddev: number };
     /** Original uncompressed point count — enables client-side zoom hinting */

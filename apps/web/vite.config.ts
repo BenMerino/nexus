@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { readdirSync } from "fs";
+import { readdirSync, mkdirSync, copyFileSync, existsSync } from "fs";
 import { resolve } from "path";
 
 const SRC = resolve(__dirname, "public");
@@ -29,6 +29,20 @@ export default defineConfig({
       transformIndexHtml: {
         order: "pre",
         handler: (html) => html.replace("</title>", "</title>\n  " + THEME_BOOT),
+      },
+    },
+    {
+      // publicDir is false (this build only bundles HTML entries + their
+      // imports), so static data assets under public/geo/ aren't copied. The
+      // world-choropleth's geometry is one such asset, fetched at runtime from
+      // /geo/world-countries.json — copy it into dist after the bundle.
+      name: "nexus-copy-geo",
+      closeBundle() {
+        const src = resolve(SRC, "geo");
+        const dest = resolve(__dirname, "dist", "geo");
+        if (!existsSync(src)) return;
+        mkdirSync(dest, { recursive: true });
+        for (const f of readdirSync(src)) copyFileSync(resolve(src, f), resolve(dest, f));
       },
     },
   ],

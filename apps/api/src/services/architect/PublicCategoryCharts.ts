@@ -31,6 +31,15 @@ export interface HeatmapDirective {
   data: { row: string; col: string; value: number; label: string }[];
 }
 
+/** Choropleth directive — countries shaded by value. `country` is ISO-alpha2;
+ *  the engine's geo family resolves names/geometry from the host geo asset, so
+ *  the composer ships data-only (no rings). */
+export interface ChoroplethDirective {
+  type: "choropleth";
+  title: string;
+  data: { country: string; value: number }[];
+}
+
 /** publications.topJournals — top journals by paper count (ranked bar).
  *  Reuses getTopJournals' entity-model SQL (venues + published_in, one row per
  *  journal, distinct publications). Full names: the engine ellipsizes/decimates
@@ -80,6 +89,20 @@ export async function composeCountries(tenantId: number, unitKey?: string | null
     type: "donut",
     title: "Publicaciones por país",
     data: rows.slice(0, 12).map((c) => ({ label: c.country, value: Number(c.count) })),
+  };
+}
+
+/** publications.countriesMap — publications by author-affiliation country as a
+ *  world choropleth. Same reader as the donut (country = ISO-alpha2, the engine
+ *  geo family shades by value); ships full distribution (no top-N slice) so the
+ *  whole map can shade. */
+export async function composeCountriesMap(tenantId: number, unitKey?: string | null): Promise<ChoroplethDirective | null> {
+  const rows: Array<{ country: string; count: number }> = await getCountries(publicScope(tenantId, unitKey));
+  if (!rows.length) return null;
+  return {
+    type: "choropleth",
+    title: "Publicaciones por país",
+    data: rows.map((c) => ({ country: c.country, value: Number(c.count) })),
   };
 }
 

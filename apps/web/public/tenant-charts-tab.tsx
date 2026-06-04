@@ -22,12 +22,14 @@ export function TenantChartsTab({ stats, tenantId, charts, unit }: { stats: Publ
   // yet unit-scoped on the server — hide them rather than show university-wide
   // data under a unit heading (Philosophy: report faithfully).
   const scoped = !!unit;
+  // Country distribution renders as the world choropleth (publications.countriesMap)
+  // — the map replaces the donut in the view.
   const kinds = scoped
-    ? ['publications.topJournals', 'publications.collaborators', 'publications.countries']
+    ? ['publications.topJournals', 'publications.collaborators', 'publications.countriesMap']
     : [
         ...(hasYearIndex(stats) ? ['publications.byIndex'] : []),
         'publications.typeByYear', 'publications.topJournals',
-        'publications.collaborators', 'publications.countries',
+        'publications.collaborators', 'publications.countriesMap',
       ];
   return (
     <>

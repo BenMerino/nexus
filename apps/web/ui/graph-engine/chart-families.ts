@@ -38,6 +38,7 @@ import {
 import { animatedPie, animatedGauge, animatedRing } from './animated-radial.js';
 import { animatedRadar, animatedHeatmap } from './animated-grid.js';
 import { animatedTreemap, animatedFunnel } from './animated-packed.js';
+import { animatedGeo } from './animated-geo.js';
 import type { AnimatedFamily } from './animated-family.js';
 
 const CARTESIAN = new Set([
@@ -47,19 +48,22 @@ const CARTESIAN = new Set([
 const RADIAL = new Set(['pie', 'donut', 'gauge', 'progress-ring']);
 const POLAR = new Set(['radar']);
 const GRID = new Set(['heatmap', 'treemap', 'funnel']);
+const GEO = new Set(['choropleth']);
 
 export function isCartesian(type: string): boolean { return CARTESIAN.has(type); }
 export function isRadial(type: string): boolean { return RADIAL.has(type); }
 export function isPolar(type: string): boolean { return POLAR.has(type); }
 export function isGrid(type: string): boolean { return GRID.has(type); }
+export function isGeo(type: string): boolean { return GEO.has(type); }
 
-export type ChartFamilyName = 'cartesian' | 'radial' | 'polar' | 'grid' | 'unknown';
+export type ChartFamilyName = 'cartesian' | 'radial' | 'polar' | 'grid' | 'geo' | 'unknown';
 
 export function familyOf(type: string): ChartFamilyName {
     if (CARTESIAN.has(type)) return 'cartesian';
     if (RADIAL.has(type)) return 'radial';
     if (POLAR.has(type)) return 'polar';
     if (GRID.has(type)) return 'grid';
+    if (GEO.has(type)) return 'geo';
     return 'unknown';
 }
 
@@ -139,6 +143,17 @@ const gridHandler: ChartTypeHandler = {
     dragSupport: () => ({ dragResolve: null, isoToFrame: null, plotXR: null, plotYR: null }),
 };
 
+const geoHandler: ChartTypeHandler = {
+    family: animatedGeo,
+    /* The geo family projects lon/lat into this box; it letterboxes internally
+     *  to keep the 2:1 world aspect, so any w/h works. No chrome (no axes/
+     *  labels) — hover comes from each country polygon's `data` payload. */
+    buildLayout: (_chart, w, h) => ({ width: w, height: h }),
+    buildChrome: () => ({ elements: [] }),
+    layoutSize: (_chart, w, h) => ({ w, h }),
+    dragSupport: () => ({ dragResolve: null, isoToFrame: null, plotXR: null, plotYR: null }),
+};
+
 /* Per-type entries — each gets its own animated family. The base
  * handlers above provide layout + chrome shared across family-mates. */
 const TYPE_HANDLERS: Record<string, ChartTypeHandler> = {
@@ -164,6 +179,8 @@ const TYPE_HANDLERS: Record<string, ChartTypeHandler> = {
     heatmap:        { ...gridHandler, family: animatedHeatmap },
     treemap:        { ...gridHandler, family: animatedTreemap },
     funnel:         { ...gridHandler, family: animatedFunnel },
+
+    choropleth:     geoHandler,
 };
 
 export interface FamilyAnimation {

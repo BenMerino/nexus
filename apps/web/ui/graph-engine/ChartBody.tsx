@@ -2,40 +2,23 @@ import React from 'react';
 import { BaseBox } from '../primitives/BaseBox.js';
 import { BaseText } from '../primitives/BaseText.js';
 import { ChartRender } from './ChartRender.js';
+import { useTimelineSpan } from './useTimelineSpan.js';
 import { LegibilityAlert } from './LegibilityAlert.js';
 import { QueryToggleBar } from './QueryToggleBar.js';
 import { FeatureToggleGroup, useChartFeatureToggles } from './FeatureToggleGroup.js';
 import { LiveBadge } from '../composed/LiveBadge.js';
+import { ChartRangeSlider } from './ChartRangeSlider.js';
 import { DrillBreadcrumbChip } from './DrillBreadcrumbChip.js';
-import { eligibleFoldUnits } from '../../architect/fold-atoms.js';
+import { MARGIN } from './svg-parts.js';
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
 import type { ToggleSpec } from '../../architect/replayable-directive.js';
 
-/* Strip a foldUnit toggle's options down to the units that bucket READABLY
- * for the current visible span (eligibleFoldUnits: 3–120 buckets). Without
- * this a user could force e.g. "week" over a 170-year window → ~9k buckets,
- * crippling the fold/render. Non-foldUnit toggles pass through untouched, and
- * a foldUnit toggle keeps 'auto' (always eligible) plus whatever fits — so the
- * fine rungs reappear as the user narrows the window. */
-function gateFoldUnitToggles<T extends ToggleSpec<GraphQuery>>(toggles: T[], visibleDays: number): T[] {
-    if (!Number.isFinite(visibleDays) || visibleDays <= 0) return toggles;
-    const eligible = new Set(eligibleFoldUnits(visibleDays).map(String));
-    return toggles.map(tg => {
-        if (tg.field !== 'foldUnit' && tg.id !== 'foldUnit') return tg;
-        const options = tg.options.filter(o => eligible.has(o.value));
-        return { ...tg, options } as T;
-    });
-}
-
 /* ── ChartBody ───────────────────────────────────────────────
- * Renders the title row (title + toggles + LiveBadge) and the chart
- * canvas via the family-router. Time navigation is pure click-to-drill
- * (click a bar/period → its sub-periods; breadcrumb drills out) plus the
- * granularity pills — the continuous windowDays range slider was removed
- * (arbitrary windows produced partial edge buckets + incoherent drills).
- * `onWindowChange` is retained on the prop surface for callers but no
- * longer drives a slider. Extracted from GraphRender to keep that file
- * under the NBR-15 ceiling. The renderer above (GraphRender) handles the resolved
+ * Renders the title row (title + toggles + LiveBadge), the chart
+ * canvas via the family-router, and the optional ChartRangeSlider
+ * below. Extracted from GraphRender to keep that file under the
+ * NBR-15 ceiling and to keep the slider/family composition in one
+ * place. The renderer above (GraphRender) handles the resolved
  * directive (post-fold, post-morph) and passes it here.
  * ──────────────────────────────────────────────────────────── */
 
@@ -72,6 +55,7 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     const otherToggles = allToggles.filter(tg => tg !== windowToggle);
     const tenantId = chart.query?.tenantId;
     const kind = chart.query?.kind;
+    const span = useTimelineSpan(tenantId, kind);
 
     /* Feature opt-in state. Scoped per chart kind; stays empty until
      *  useUserUiPref resolves. The set is merged onto BOTH the
@@ -90,6 +74,8 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
 
     const q = chart.query as GraphQuery | undefined;
     const windowDays = q?.windowDays ?? null;
+    const asOf = q?.asOf ?? null;
+    const sliderActive = !!windowToggle && !!tenantId && !!kind && !!span && !!onWindowChange;
 
     /* daysPerBucket: current fold factor expressed in days. Atoms are
      * hour-resolution (HOURS_PER_DAY keys per day); visible bucket count
@@ -104,9 +90,6 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     const atoms = chart.atoms ?? [];
     const totalDays = atoms.length === 0 ? 0 : (atoms[atoms.length - 1].key - atoms[0].key + 1) / 24;
     const visibleAtoms = windowDays != null ? Math.min(windowDays, totalDays) : (totalDays || visibleBuckets);
-    /* Gate the granularity toggle to units readable at the CURRENT window, so
-     *  the user can't force a fold that over-buckets (e.g. week over 170y). */
-    const gatedToggles = gateFoldUnitToggles(otherToggles, visibleAtoms);
     const daysPerBucket = visibleBuckets > 0 ? visibleAtoms / visibleBuckets : 1;
     const isHeatmap = t === 'heatmap';
     const drillable = isHeatmap || daysPerBucket > 1.001;
@@ -127,8 +110,8 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
                         )}
                     </BaseBox>
                     <BaseBox display="flex" direction="row" align="center" density="tight">
-                        {gatedToggles.length > 0 && onToggle && (
-                            <QueryToggleBar toggles={gatedToggles} isLoading={isLoading} error={error} onChange={onToggle} />
+                        {otherToggles.length > 0 && onToggle && (
+                            <QueryToggleBar toggles={otherToggles} isLoading={isLoading} error={error} onChange={onToggle} />
                         )}
                         {featuresAvailable.length > 0 && featureScopeKey && (
                             <FeatureToggleGroup
@@ -147,6 +130,17 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
             {legibility === 'illegible'
                 ? <LegibilityAlert chart={chartWithActive} />
                 : <RenderFamily chart={resolvedWithActive} w={container.width} h={container.height} axesOverride={axesOverride} onBucketClick={wrappedClick} onToggleSeries={onToggleSeries} />}
+            {sliderActive && (
+                <ChartRangeSlider
+                    span={span!}
+                    windowDays={windowDays}
+                    asOf={asOf}
+                    leftMarginPx={MARGIN.left}
+                    rightMarginPx={MARGIN.right}
+                    onWindowChange={onWindowChange}
+                    disabled={isLoading}
+                />
+            )}
         </>
     );
 }

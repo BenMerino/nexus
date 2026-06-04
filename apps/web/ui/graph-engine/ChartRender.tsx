@@ -33,6 +33,8 @@ import { defaultInteraction } from '../../architect/graph-composer.types.js';
 import { useChartTuning } from './ChartTuningContext.js';
 import { buildFamilyAnimation, isRadial, isPolar } from './chart-families.js';
 import { useChartAnimation } from './use-chart-animation.js';
+import { useWorldGeo } from './useWorldGeo.js';
+import { useAnimationMemoKeys } from './use-animation-memo-keys.js';
 
 export interface ChartRenderProps {
     chart: GraphDirective;
@@ -55,9 +57,17 @@ export interface ChartRenderProps {
     onToggleSeries?: (key: string) => void;
 }
 
-export function ChartRender({ chart, width, height, axesOverride, onBucketClick, onToggleSeries }: ChartRenderProps) {
+export function ChartRender({ chart: chartProp, width, height, axesOverride, onBucketClick, onToggleSeries }: ChartRenderProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const { tuning } = useChartTuning();
+    /* Choropleth geometry is host-loaded (the engine's one fetch seam, like
+     * useTimelineSpan) and stamped onto the directive so `sample` stays pure.
+     * Non-geo charts pass through untouched (hook is inert when disabled). */
+    const worldGeo = useWorldGeo(chartProp.type === 'choropleth');
+    const chart = useMemo(
+        () => (chartProp.type === 'choropleth' && worldGeo ? { ...chartProp, geo: worldGeo } : chartProp),
+        [chartProp, worldGeo],
+    );
     /* useTooltip is the canonical hook the old TooltipOverlay reads
      * from. Reusing it means the existing portal-based popup works
      * unchanged across the new substrate. */
@@ -65,34 +75,12 @@ export function ChartRender({ chart, width, height, axesOverride, onBucketClick,
     /* SVG ref for TooltipOverlay's positioning (reads getBoundingClientRect). */
     const hitSvgRef = useRef<SVGSVGElement>(null);
 
-    /* Build the family animation: family + layout + chrome + sizes.
-     * Memo key uses explicit content fields (not the directive's object
-     * reference) so heatmap-scale charts don't rebuild every frame
-     * just because the parent re-rendered. The seriesWeights map is
-     * the most frequently-changing field — its values are stringified
-     * into a stable key so weight tweens trigger fresh sampling. */
-    const seriesWeightsKey = useMemo(() => {
-        if (!chart.seriesWeights) return '';
-        const parts: string[] = [];
-        for (const [k, v] of chart.seriesWeights) {
-            parts.push(`${k}:${v.toFixed(3)}`);
-        }
-        parts.sort();
-        return parts.join('|');
-    }, [chart.seriesWeights]);
-    /* Stable key for the continuous-legend clip window. Like
-     * `seriesWeightsKey`, it lets the animation rebuild when the user
-     * drags the gradient handles without invalidating on identity-only
-     * directive churn. */
-    const colorClipKey = chart.colorClip
-        ? `${chart.colorClip.lower.toFixed(3)}:${chart.colorClip.upper.toFixed(3)}`
-        : '';
-    /* Stable key for active-features Set (sets don't compare by identity
-     *  in deps). Sorted join keeps the key insertion-order-independent. */
-    const activeFeaturesKey = useMemo(() => {
-        if (!chart.activeFeatures || chart.activeFeatures.size === 0) return '';
-        return Array.from(chart.activeFeatures).sort().join('|');
-    }, [chart.activeFeatures]);
+    /* Build the family animation: family + layout + chrome + sizes. The memo
+     * key uses explicit content fields (not the directive's object reference) so
+     * heatmap-scale charts don't rebuild every frame just because the parent
+     * re-rendered. The Map/Set fields need derived string keys — see
+     * useAnimationMemoKeys. */
+    const { seriesWeightsKey, colorClipKey, activeFeaturesKey } = useAnimationMemoKeys(chart);
     const animation = useMemo(() => {
         return buildFamilyAnimation(chart, width, height, axesOverride);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -100,7 +88,7 @@ export function ChartRender({ chart, width, height, axesOverride, onBucketClick,
         chart.type, chart.data, chart.series, seriesWeightsKey, colorClipKey,
         activeFeaturesKey, chart.features,
         chart.colorScheme, chart.thresholds, chart.interaction,
-        chart.plotInsets, chart.gaussian, chart.range,
+        chart.plotInsets, chart.gaussian, chart.range, chart.geo,
         width, height, axesOverride,
     ]);
     const { layoutSize, dragResolve, isoToFrame, plotXR, plotYR } = animation;

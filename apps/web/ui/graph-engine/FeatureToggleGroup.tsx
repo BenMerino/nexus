@@ -30,7 +30,7 @@ interface FeatureToggleGroupProps {
      *  moving-average label so "MA 7" on daily buckets reads as
      *  "Week avg" while the same window count on weekly buckets reads
      *  as "Quarter+ avg". Pull from `chart.__foldUnit` at the call site. */
-    foldUnit?: 'hour' | 'day' | 'month' | 'year' | 'decade' | 'century';
+    foldUnit?: 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year';
 }
 
 const FEATURE_LABEL: Record<GraphFeatureKind, string> = {
@@ -53,7 +53,11 @@ function movingAverageLabel(window: number, foldUnit?: string): string {
         'hour:24': 'Day avg',
         'day:7': 'Week avg',
         'day:30': 'Month avg',
+        'week:4': 'Month avg',
+        'week:13': 'Quarter avg',
+        'month:3': 'Quarter avg',
         'month:12': 'Year avg',
+        'quarter:4': 'Year avg',
     };
     return horizons[key] ?? 'Smooth';
 }
