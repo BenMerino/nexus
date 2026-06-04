@@ -26,7 +26,12 @@ function bucketize(series: SparkPoint[], bins: number): SparkPoint[] {
   for (let b = 0; b < bins; b++) {
     const slice = obs.slice(Math.floor(b * size), Math.floor((b + 1) * size));
     if (!slice.length) continue;
-    out.push({ year: slice[slice.length - 1].year, value: slice.reduce((s, p) => s + p.value, 0), status: 'observed' });
+    // AVERAGE per year, not sum — these are per-year metrics, and the projected
+    // tail is single-year. Summing made each observed bucket tower over the
+    // single-year forecast, so the line cratered into the projection (a false
+    // drop). Averaging keeps observed and projected on the same per-year scale.
+    const avg = slice.reduce((s, p) => s + p.value, 0) / slice.length;
+    out.push({ year: slice[slice.length - 1].year, value: avg, status: 'observed' });
   }
   return [...out, ...tail];
 }
