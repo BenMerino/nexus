@@ -18,6 +18,16 @@ export interface WindowToggle {
   options: { value: string; label: string }[];
 }
 
+export interface GranularityToggle {
+  id: "foldUnit";
+  field: "foldUnit";
+  valueType: "string";
+  current: string;
+  options: { value: string; label: string }[];
+}
+
+export type PubToggle = WindowToggle | GranularityToggle;
+
 /** The window-range toggle. `current` reflects the active windowDays (the
  *  controller re-reads it; default 'null' = All). */
 export function pubWindowToggle(currentWindowDays: number | null = null): WindowToggle {
@@ -31,6 +41,26 @@ export function pubWindowToggle(currentWindowDays: number | null = null): Window
       { value: "3650", label: "10y" },
       { value: "7305", label: "20y" },
       { value: "null", label: "All" },
+    ],
+  };
+}
+
+/** The bucket/granularity toggle — overrides the engine's auto fold-unit
+ *  (pickAutoFoldUnit). `auto` lets the renderer pick from the visible span;
+ *  the coarser rungs let the user force year/month/week buckets. Maps to
+ *  query.foldUnit (the engine + recompose honor it). Academic output is
+ *  decade-scale, so we don't offer day/hour. */
+export function pubGranularityToggle(currentFoldUnit: string | null = null): GranularityToggle {
+  return {
+    id: "foldUnit",
+    field: "foldUnit",
+    valueType: "string",
+    current: currentFoldUnit ?? "auto",
+    options: [
+      { value: "auto", label: "Auto" },
+      { value: "year", label: "Year" },
+      { value: "month", label: "Month" },
+      { value: "week", label: "Week" },
     ],
   };
 }

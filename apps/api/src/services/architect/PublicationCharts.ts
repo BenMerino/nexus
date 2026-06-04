@@ -16,13 +16,13 @@
 
 import type { ActorContext } from "../../substrate/actor";
 import type { CatalogQuery } from "../analytics/analytics-catalog.types";
-import { pubWindowToggle, type WindowToggle } from "./pub-window-toggle";
+import { pubWindowToggle, pubGranularityToggle, type PubToggle } from "./pub-window-toggle";
 
 // The read scope the N4 libs consume — a subset of ActorContext (DGA scope model:
 // ctx IS the read scope; personal scope narrows to the actor's own papers).
-type Scope = Pick<ActorContext, "tenantId" | "orcid" | "ror" | "role">;
+type Scope = Pick<ActorContext, "tenantId" | "orcid" | "ror" | "role" | "unitKey">;
 const scopeOf = (ctx: ActorContext): Scope =>
-  ({ tenantId: ctx.tenantId, orcid: ctx.orcid ?? null, ror: ctx.ror ?? null, role: ctx.role });
+  ({ tenantId: ctx.tenantId, orcid: ctx.orcid ?? null, ror: ctx.ror ?? null, role: ctx.role, unitKey: ctx.unitKey ?? null });
 
 // N4 data libs (CJS) — raw SQL + day/type aggregation only.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -50,8 +50,8 @@ export interface TimeChartDirective {
   /** Replay fields — present makes the directive REPLAYABLE: DirectiveChart
    *  mounts the controller (window slider + drill). The atoms are full-span;
    *  the client slices the window (Zincro contract — no server re-window). */
-  query?: { kind: string; tenantId: string; windowDays: number | null; asOf?: string };
-  toggles?: WindowToggle[];
+  query?: { kind: string; tenantId: string; windowDays: number | null; asOf?: string; foldUnit?: string };
+  toggles?: PubToggle[];
   persistKey?: string;
 }
 
@@ -60,9 +60,10 @@ export interface TimeChartDirective {
  *  stay full-span. Shared by both composers so the shape can't drift. */
 function replayStamp(kind: string, tenantId: number, q: CatalogQuery) {
   const windowDays = q.windowDays ?? null;
+  const foldUnit = q.foldUnit ?? null;
   return {
-    query: { kind, tenantId: String(tenantId), windowDays, ...(q.asOf ? { asOf: q.asOf } : {}) },
-    toggles: [pubWindowToggle(windowDays)],
+    query: { kind, tenantId: String(tenantId), windowDays, ...(q.asOf ? { asOf: q.asOf } : {}), ...(foldUnit ? { foldUnit } : {}) },
+    toggles: [pubWindowToggle(windowDays), pubGranularityToggle(foldUnit)],
     persistKey: `tenant:${tenantId}:${kind}`,
   };
 }
