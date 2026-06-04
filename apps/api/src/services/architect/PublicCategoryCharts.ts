@@ -87,7 +87,9 @@ export async function composeCountries(tenantId: number, unitKey?: string | null
   if (!rows.length) return null;
   return {
     type: "donut",
-    title: "Publicaciones por país",
+    // Same count semantics as the choropleth — country contributions, not a
+    // partition (a cross-country paper counts for each). See composeCountriesMap.
+    title: "Contribuciones por país",
     data: rows.slice(0, 12).map((c) => ({ label: c.country, value: Number(c.count) })),
   };
 }
@@ -101,7 +103,11 @@ export async function composeCountriesMap(tenantId: number, unitKey?: string | n
   if (!rows.length) return null;
   return {
     type: "choropleth",
-    title: "Publicaciones por país",
+    // "Contribuciones", not "Publicaciones": the count is distinct pubs with a
+    // co-author affiliated in each country, so a cross-country paper counts for
+    // each — per-country totals sum above the publication total. It measures
+    // each country's CONTRIBUTION/involvement, not a partition of the corpus.
+    title: "Contribuciones por país",
     data: rows.map((c) => ({ country: c.country, value: Number(c.count) })),
   };
 }

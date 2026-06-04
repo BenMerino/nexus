@@ -95,8 +95,8 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
   {
     kind: "publications.countries",
     domain: "publication",
-    title: "Publicaciones por país",
-    description: "Publications by author-affiliation country (donut).",
+    title: "Contribuciones por país",
+    description: "Country contributions — distinct publications with a co-author affiliated in each country (donut).",
     queryShape: "none",
     access: "public",
     compose: (q) => composeCountries(parseInt(q.tenantId, 10), q.unit),
@@ -106,8 +106,8 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
   {
     kind: "publications.countriesMap",
     domain: "publication",
-    title: "Publicaciones por país",
-    description: "Publications by author-affiliation country as a world choropleth.",
+    title: "Contribuciones por país",
+    description: "Country contributions as a world choropleth — distinct publications with a co-author affiliated in each country.",
     queryShape: "none",
     access: "public",
     compose: (q) => composeCountriesMap(parseInt(q.tenantId, 10), q.unit),
