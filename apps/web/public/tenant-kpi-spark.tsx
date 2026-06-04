@@ -101,6 +101,12 @@ function Ring({ accent, pct }: { accent: string; pct: number }) {
 
 export function KpiSpark({ kind, accent, series, pct }: { kind: 'area' | 'bars' | 'ring'; accent: string; series?: SparkPoint[]; pct?: number }) {
   if (kind === 'ring') return <Ring accent={accent} pct={pct ?? 0} />;
-  if (kind === 'bars') return <Bars accent={accent} series={series ?? []} />;
-  return <Area accent={accent} series={series ?? []} />;
+  // Drop the 'partial' (still-filling current year) point: at micro size its
+  // half-empty value plots as a sharp false cliff between observed and the
+  // forecast, reading as a decline that isn't real. Without it the glyph goes
+  // observed → projected smoothly. (The composer still emits it; the full
+  // velocity panel keeps it, where labels/hover make the dip legible.)
+  const plotted = (series ?? []).filter(p => (p.status ?? 'observed') !== 'partial');
+  if (kind === 'bars') return <Bars accent={accent} series={plotted} />;
+  return <Area accent={accent} series={plotted} />;
 }
