@@ -114,6 +114,11 @@ export function GraphRender({ chart, onToggle, isLoading = false, error, onBucke
     );
 
     const isCompact = t === 'sparkline' || t === 'gauge' || t === 'progress-ring';
+    /* Horizontal padding of the inner chart box (0.5rem each side). The chart
+     *  width must be inset by this total so the SVG fits INSIDE the padded box
+     *  instead of overflowing it. Kept as one constant feeding both the style
+     *  and the width inset so they never drift. */
+    const CHART_BOX_PAD_X = 8;
     const isChat = chart.renderContext === 'chat';
     const tightBorder = legibility === 'tight' ? 'var(--status-warning, #f59e0b)' : 'var(--border-ghost, var(--border-main))';
     const contextBorder = isChat ? `1px solid ${tightBorder}` : `1px solid var(--border-main)`;
@@ -149,12 +154,18 @@ export function GraphRender({ chart, onToggle, isLoading = false, error, onBucke
             >
                 <CardProvider cardRef={containerRef}>
                 {container && (
-                <BaseBox style={{ position: 'relative', zIndex: 1, padding: isCompact ? '0.375rem 0.5rem' : '0.5rem 0.5rem 0.25rem' }}>
+                <BaseBox style={{ position: 'relative', zIndex: 1, padding: isCompact ? `0.375rem ${CHART_BOX_PAD_X}px` : `0.5rem ${CHART_BOX_PAD_X}px 0.25rem` }}>
                     {resolved.kpi && <ChartKpiHeader chart={resolved} />}
                     <ChartBody
                         chart={chart}
                         resolved={resolved}
-                        container={container}
+                        /* Inset width by this box's horizontal padding (both
+                         *  sides). `container` is the OUTER wrapper's full
+                         *  width; the chart renders INSIDE this padded box, so
+                         *  a chart sized to the full width overflows it — and,
+                         *  centered (margin:0 auto), clips both edges (right
+                         *  columns + left row-labels, exactly the heatmap bug). */
+                        container={{ width: Math.max(1, container.width - CHART_BOX_PAD_X * 2), height: container.height }}
                         legibility={legibility}
                         axesOverride={axesOverride}
                         onBucketClick={onBucketClick}
