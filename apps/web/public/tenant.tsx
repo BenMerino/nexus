@@ -5,7 +5,7 @@ import { buildTenantCharts } from './tenant-builders';
 import { TenantOverview } from './tenant-overview';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
 import { TabPane } from './tenant-summary';
-import { TenantOrgTree } from './tenant-org-tree';
+import { TenantOrgTree, type UnitScope } from './tenant-org-tree';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { GraphProviders } from '../ui/graph-engine-providers';
 import { ES } from './tenant-i18n';
@@ -32,6 +32,9 @@ function App() {
   const { statsPayload, statsError, fatalError } = useTenantData(slug);
   const [active, setActive] = useState<string>(initialTabFromHash);
   const [seen, setSeen] = useState<Set<string>>(() => new Set([active]));
+  // Scope lens, shared by the rail (the picker) and the Overview (the content).
+  // null = whole organization. Selecting a unit in the rail re-scopes the right.
+  const [unit, setUnit] = useState<UnitScope | null>(null);
 
   // Hash → tab sync: respects browser back/forward and shareable deep links.
   useEffect(() => {
@@ -99,14 +102,15 @@ function App() {
         <div className="tenant-layout">
           <aside className="tenant-rail">
             <h2 className="tenant-rail-title">{ES.nav.orgTree}</h2>
-            <TenantOrgTree slug={slug} />
+            {/* The rail IS the scope picker: selecting a unit re-scopes the
+                right-side Overview; the "All organization" row resets it. */}
+            <TenantOrgTree slug={slug} selected={unit} onSelect={setUnit} />
           </aside>
           <div className="view tenant-content">
             <TabPane id="overview" {...paneProps}>
-              {/* Unit picker + KPI cards + charts — the dashboard re-scopes in
-                  place when a faculty/department is picked (Philosophy: scope is
-                  sovereign). All in TenantOverview to keep this file thin. */}
-              <TenantOverview slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} />
+              {/* KPI cards + charts — re-scope in place to the unit selected in
+                  the rail (Philosophy: scope is sovereign). */}
+              <TenantOverview slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} unit={unit} />
             </TabPane>
 
             <TabPane id="authors" {...paneProps}>

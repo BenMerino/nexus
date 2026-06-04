@@ -1,15 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ES } from './tenant-i18n';
+import { type Metric, type Person, type Unit, METRICS, valueOf, rank, Bar, PersonRow } from './tenant-org-row';
 
-/* The org scheme IS the contributors ranking. Each faculty/department row
- * carries an inline bar for the selected metric and is sorted by it (biggest
- * first); expand to drill into departments → people. One component, no separate
- * chart. Metric toggle at the top switches Publications / Per academic /
- * Citations. Reads the org-tree payload (papers + citations + headcount). */
+/* The org scheme IS both the contributors ranking AND the scope picker. Each
+ * faculty/department row carries an inline metric bar, is sorted by it, and is
+ * SELECTABLE — clicking it re-scopes the right-side Overview to that unit. An
+ * "All organization" row at the top resets scope. The twist (▶) toggles
+ * expand/drill; the rest of the row selects. Metric toggle switches Publications
+ * / Per academic / Citations. Reads the org-tree payload (papers + citations +
+ * headcount). Row primitives live in tenant-org-row.tsx (size cap). */
 
-interface Person { name: string; category: string | null; orcid: string | null; paperCount: number; }
-interface Unit { name: string; headcount: number; withOrcid: number; papers: number; citations: number; }
-interface Department extends Unit { people: Person[]; }
+// The scope a selected unit carries (shared with tenant.tsx / Overview).
+export interface UnitScope { unitKey: string; name: string; }
+
+interface Department extends Unit { unitKey: string; people: Person[]; }
 interface Faculty extends Unit { kind: 'faculty' | 'institute' | 'other'; departments: Department[]; }
 interface OrgTree {
   totals: { headcount: number; withOrcid: number; papers: number; citations: number; faculties: number; institutes: number; units: number; };
@@ -18,59 +22,20 @@ interface OrgTree {
 
 const KIND_LABEL = ES.orgTree.kindLabel;
 
-type Metric = 'papers' | 'perCapita' | 'citations';
-const METRICS: { id: Metric; label: string }[] = [
-  { id: 'papers', label: ES.contributors.volume },
-  { id: 'perCapita', label: ES.contributors.perCapita },
-  { id: 'citations', label: ES.contributors.citations },
-];
-const valueOf = (u: Unit, m: Metric): number =>
-  m === 'papers' ? u.papers
-  : m === 'citations' ? u.citations
-  : u.headcount > 0 ? u.papers / u.headcount : 0;
-const fmt = (v: number, m: Metric) =>
-  m === 'perCapita' ? v.toFixed(1) : Math.round(v).toLocaleString();
-// Rank a set of units by the metric, largest first (stable name tiebreak).
-function rank<T extends Unit>(units: T[], m: Metric): T[] {
-  return [...units].sort((a, b) => valueOf(b, m) - valueOf(a, m) || a.name.localeCompare(b.name));
-}
-
-function Bar({ value, max, metric }: { value: number; max: number; metric: Metric }) {
-  return (
-    <span className="org-bar" title={`${fmt(value, metric)}`}>
-      <span className="org-bar-track">
-        <span className="org-bar-fill" style={{ width: `${max > 0 ? Math.max(2, (value / max) * 100) : 0}%` }} />
-      </span>
-      <span className="org-bar-val">{fmt(value, metric)}</span>
-    </span>
-  );
-}
-
-function PersonRow({ p }: { p: Person }) {
-  return (
-    <div className="org-node">
-      <div className="org-row leaf">
-        <span className="org-twist" />
-        <span className="org-name person">{p.name} <span className="text-muted">· {p.category || ''}</span></span>
-        <span className="org-metrics">
-          {p.orcid
-            ? <a className="org-orcid" href={`https://orcid.org/${p.orcid}`} target="_blank" rel="noopener noreferrer">{p.orcid}</a>
-            : <span className="org-orcid none">{ES.orgTree.orcidNone}</span>}
-          <span className="org-pill">{p.paperCount} {p.paperCount === 1 ? ES.orgTree.paperOne : ES.orgTree.paperMany}</span>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function Branch({ label, cls, value, max, metric, children }: {
-  label: React.ReactNode; cls: string; value: number; max: number; metric: Metric; children: React.ReactNode;
+// A selectable unit row. Twist toggles expand (drill); the label+bar selects
+// (re-scopes). Active when its unitKey is the current scope.
+function Branch({ label, cls, value, max, metric, unitKey, name, selected, onSelect, children }: {
+  label: React.ReactNode; cls: string; value: number; max: number; metric: Metric;
+  unitKey: string | null; name: string; selected: string | null;
+  onSelect: (u: UnitScope | null) => void; children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const isActive = unitKey != null && selected === unitKey;
+  const pick = () => { if (unitKey) onSelect({ unitKey, name }); };
   return (
     <div className="org-node">
-      <div className="org-row" onClick={() => setOpen(o => !o)}>
-        <span className={`org-twist${open ? ' open' : ''}`}>▶</span>
+      <div className={`org-row selectable${isActive ? ' active' : ''}`} onClick={pick}>
+        <span className={`org-twist${open ? ' open' : ''}`} onClick={e => { e.stopPropagation(); setOpen(o => !o); }}>▶</span>
         <span className={`org-name ${cls}`}>{label}</span>
         <Bar value={value} max={max} metric={metric} />
       </div>
@@ -79,7 +44,9 @@ function Branch({ label, cls, value, max, metric, children }: {
   );
 }
 
-export function TenantOrgTree({ slug }: { slug: string }) {
+export function TenantOrgTree({ slug, selected, onSelect }: {
+  slug: string; selected: UnitScope | null; onSelect: (u: UnitScope | null) => void;
+}) {
   const [data, setData] = useState<OrgTree | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [metric, setMetric] = useState<Metric>('papers');
@@ -94,9 +61,9 @@ export function TenantOrgTree({ slug }: { slug: string }) {
       .catch(e => setError(e.message));
   }, [slug]);
 
-  // Faculties ranked by the metric; max faculty value scales the top-level bars.
   const ranked = useMemo(() => (data ? rank(data.faculties, metric) : []), [data, metric]);
   const facMax = ranked.length ? valueOf(ranked[0], metric) : 0;
+  const selKey = selected?.unitKey ?? null;
 
   if (error) return <div className="org-err" style={{ padding: 14 }}>{error}</div>;
   if (!data) return <div style={{ padding: 14, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>{ES.loadingLabel(ES.orgSchemeLoading)}</div>;
@@ -116,18 +83,26 @@ export function TenantOrgTree({ slug }: { slug: string }) {
         ))}
       </div>
       <div className="org-tree">
+        {/* Scope reset — selected when no unit is active. */}
+        <div className="org-node">
+          <div className={`org-row selectable all-units${selKey === null ? ' active' : ''}`} onClick={() => onSelect(null)}>
+            <span className="org-twist" />
+            <span className="org-name fac">{ES.orgTree.allOrganization}</span>
+            <Bar value={data.totals.papers} max={data.totals.papers} metric={metric} />
+          </div>
+        </div>
         {ranked.map(f => {
-          // Departments ranked within the faculty; scaled to the faculty's own
-          // top department so each faculty's internal ranking reads clearly.
           const depts = rank(f.departments, metric);
           const depMax = depts.length ? valueOf(depts[0], metric) : 0;
           return (
             <Branch key={f.name}
               label={<>{f.name}{KIND_LABEL[f.kind] ? <span className="org-kind"> {KIND_LABEL[f.kind]}</span> : null}</>}
-              cls="fac" value={valueOf(f, metric)} max={facMax} metric={metric}>
+              cls="fac" value={valueOf(f, metric)} max={facMax} metric={metric}
+              unitKey={f.unitKey} name={f.name} selected={selKey} onSelect={onSelect}>
               {depts.map(d => (
                 <Branch key={d.name} label={d.name} cls="dep"
-                  value={valueOf(d, metric)} max={depMax} metric={metric}>
+                  value={valueOf(d, metric)} max={depMax} metric={metric}
+                  unitKey={d.unitKey} name={`${f.name} · ${d.name}`} selected={selKey} onSelect={onSelect}>
                   {d.people.map((p, i) => <PersonRow key={`${p.orcid || p.name}-${i}`} p={p} />)}
                 </Branch>
               ))}

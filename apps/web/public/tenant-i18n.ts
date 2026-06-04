@@ -37,11 +37,8 @@ export const ES = {
     authors: 'Authors',
   },
 
-  /* Unit scope picker (Overview) */
+  /* Unit scope note (Overview) — the picker itself is now the org rail. */
   unitPicker: {
-    allTenant: 'All of the university',
-    search: 'Search faculty or department…',
-    noMatch: 'No matching unit',
     scopedNote: (name: string) => `Showing ${name}. Time-series charts (cadence, indexation) remain university-wide.`,
   },
 
@@ -74,8 +71,9 @@ export const ES = {
     rangeOf: (start: number, end: number, total: string) => `${start}–${end} of ${total}`,
   },
 
-  /* Org tree (now also the contributors ranking — per-row bars + people) */
+  /* Org tree (now the contributors ranking + the scope picker) */
   orgTree: {
+    allOrganization: 'All organization',
     noRoster: 'No academic staff loaded for this organization yet.',
     kindLabel: { faculty: 'Faculty', institute: 'Institute', other: 'Other' } as const,
     paperOne: 'paper',

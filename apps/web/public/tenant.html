@@ -94,6 +94,11 @@
     .org-node > .org-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; cursor: pointer; position: relative; }
     .org-node > .org-row:hover { background: var(--bg-inset); }
     .org-node > .org-row.leaf { cursor: default; }
+    /* Selectable scope rows: clicking re-scopes the Overview. Active row gets a
+       left accent + tint so the current scope is unmistakable. */
+    .org-row.selectable { border-radius: 6px; }
+    .org-row.active { background: var(--bg-inset); box-shadow: inset 2px 0 0 var(--primary); }
+    .org-row.active .org-name { color: var(--primary); }
     .org-twist { width: 12px; color: var(--fg-dim); font-size: 10px; flex: none; transition: transform 0.12s; text-align: center; }
     .org-twist.open { transform: rotate(90deg); }
     .org-name { flex: 1; }
