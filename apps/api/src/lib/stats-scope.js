@@ -114,4 +114,28 @@ async function resolvePubFilter(scope) {
   return scopedPubFilter(scope);
 }
 
-module.exports = { scopedPubFilter, personalPaperFilter, unitPubFilter, resolvePubFilter };
+// Resolve an org-unit `unitKey` to the SET of academic ORCIDs that belong to
+// that unit (the unit's members, not their papers). Used to filter the author
+// directory to a faculty/department. Same accent-safe, this-tenant-only roster
+// resolution as unitPubFilter (N1: matches only this tenant's literals). Returns
+// null for a malformed/unmatched key so callers fall back to the full directory.
+async function unitOrcids(unitKey, tenantId) {
+  const parsed = parseUnitKey(unitKey);
+  if (!parsed) return null;
+  const { rows } = await sql`
+    SELECT faculty, department, orcid FROM users
+    WHERE tenant_id = ${tenantId} AND role = 'academic' AND profile_category IS NOT NULL
+      AND orcid IS NOT NULL`;
+  const out = new Set();
+  for (const r of rows) {
+    const fk = nameKey(r.faculty);
+    const match =
+      parsed.level === "faculty" ? fk === parsed.facultyKey
+      : parsed.level === "dept" ? (fk === parsed.facultyKey && nameKey(r.department) === parsed.deptKey)
+      : nameKey(r.department || r.faculty) === parsed.subKey; // "other"
+    if (match) out.add(normOrcid(r.orcid));
+  }
+  return out.size ? out : null;
+}
+
+module.exports = { scopedPubFilter, personalPaperFilter, unitPubFilter, resolvePubFilter, unitOrcids };

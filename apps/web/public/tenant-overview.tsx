@@ -3,8 +3,10 @@ import type { GraphDirective } from '../architect/graph-composer.types';
 import { SummaryCards } from './tenant-summary';
 import { TenantChartsTab } from './tenant-charts-tab';
 import { TenantContributors } from './tenant-contributors';
+import { AuthorsTable } from './tenant-authors';
 import type { UnitScope } from './tenant-org-tree';
 import type { PublicStats } from './tenant-builders';
+import { ES } from './tenant-i18n';
 
 /* The Overview content (KPIs + charts). Scope is owned by the org rail (the
  * picker); this just renders it. Philosophy #1 — "scope is sovereign": when a
@@ -43,6 +45,12 @@ export function TenantOverview({ slug, stats, tenantId, charts, unit }: {
           at "All organization" scope (meaningless narrowed to one unit). */}
       {unitKey ? null : <TenantContributors slug={slug} />}
       <TenantChartsTab stats={stats} tenantId={tenantId} charts={charts} unit={unitKey} />
+      {/* Author directory, scoped to the selected unit (all authors at the
+          university/main scope; a faculty's roster when a unit is selected). */}
+      <section style={{ marginTop: 24 }}>
+        <h3 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 16, margin: '0 0 12px' }}>{ES.nav.authors}</h3>
+        <AuthorsTable slug={slug} unit={unitKey} />
+      </section>
     </>
   );
 }

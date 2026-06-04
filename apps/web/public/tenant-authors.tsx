@@ -33,7 +33,7 @@ const COLS: Col[] = [
 
 const PAGE_SIZE = 25;
 
-export function AuthorsTable({ slug }: { slug: string }) {
+export function AuthorsTable({ slug, unit }: { slug: string; unit?: string | null }) {
   const [rows, setRows] = useState<AuthorRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
@@ -45,6 +45,10 @@ export function AuthorsTable({ slug }: { slug: string }) {
   const reqIdRef = useRef(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Reset to the first page when the scope unit changes (a faculty has fewer
+  // authors; a stale high page could land out of range / empty).
+  useEffect(() => { setPage(0); }, [unit]);
+
   // Refetch whenever page/sort/dir/q changes. Search input updates `q` from
   // a debounced handler so the URL state cleanly drives this effect.
   useEffect(() => {
@@ -55,6 +59,7 @@ export function AuthorsTable({ slug }: { slug: string }) {
       page: String(page), pageSize: String(PAGE_SIZE), sort, dir,
     });
     if (q.trim()) params.set('q', q.trim());
+    if (unit) params.set('unit', unit);
     fetch(`/api/public/${encodeURIComponent(slug)}/authors?${params}`)
       .then(async r => {
         const j: AuthorsResponse = await r.json();
@@ -65,7 +70,7 @@ export function AuthorsTable({ slug }: { slug: string }) {
       })
       .catch(e => { if (reqIdRef.current === id) setError(e.message || 'Failed to load'); })
       .finally(() => { if (reqIdRef.current === id) setLoading(false); });
-  }, [slug, page, sort, dir, q]);
+  }, [slug, page, sort, dir, q, unit]);
 
   function onSortClick(id: SortKey) {
     if (sort === id) setDir(d => (d === 'asc' ? 'desc' : 'asc'));

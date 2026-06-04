@@ -1,7 +1,8 @@
 const { sql } = require("./sql");
 const { calculateHIndex } = require("./h-index");
 const { canonicalize } = require("./normalize-tags");
-const { normRor } = require("./entity-normalize");
+const { normRor, normOrcid } = require("./entity-normalize");
+const { unitOrcids } = require("./stats-scope");
 
 // Aggregate every tenant author into the directory shape. Pure compute —
 // no pagination, no search. Returned in paperCount-desc order.
@@ -82,10 +83,18 @@ const SORT_FIELDS = {
 // public profile can reuse the roster UI verbatim.
 async function getAuthorsPage(tenantId, tenantRor, opts) {
   const all = await cachedAggregate(tenantId, tenantRor);
+  // Scope to one org unit when a unitKey is given: keep only authors whose ORCID
+  // is in that unit's roster. A key that resolves to nothing falls back to the
+  // full directory (rather than an empty list). normOrcid both sides to compare.
+  let scoped = all;
+  if (opts.unit) {
+    const orcids = await unitOrcids(opts.unit, tenantId);
+    if (orcids) scoped = all.filter(a => a.orcid && orcids.has(normOrcid(a.orcid)));
+  }
   const needle = (opts.q || "").trim().toLowerCase();
   const filtered = needle
-    ? all.filter(a => a.name.toLowerCase().includes(needle))
-    : all.slice();
+    ? scoped.filter(a => a.name.toLowerCase().includes(needle))
+    : scoped.slice();
   const cmp = SORT_FIELDS[opts.sort] || SORT_FIELDS.paperCount;
   const dir = opts.dir === "asc" ? 1 : -1;
   filtered.sort((a, b) => cmp(a, b) * dir);

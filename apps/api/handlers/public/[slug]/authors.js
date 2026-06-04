@@ -20,6 +20,9 @@ module.exports = async function handler(req, res) {
       sort: typeof req.query.sort === "string" ? req.query.sort : "paperCount",
       dir: req.query.dir === "asc" ? "asc" : "desc",
       q: typeof req.query.q === "string" ? req.query.q : "",
+      // ?unit=<unitKey> scopes the directory to one faculty/department's roster
+      // (safe: resolves only against this tenant's own roster literals — N1).
+      unit: typeof req.query.unit === "string" ? req.query.unit : null,
     });
     res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
     res.json({ ok: true, ...page });
