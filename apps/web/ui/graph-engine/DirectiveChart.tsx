@@ -1,8 +1,27 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { GraphRender } from './GraphRender.js';
 import { useDirectiveController } from '../../architect/useDirectiveController.js';
 import { narrowQueryToBucket, narrowQueryToPeriod, narrowQueryToAtomRange } from '../../architect/graph-drilldown.js';
+import { getSeriesPalette } from './svg-color-schemes.js';
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
+
+/* Normalize a multi-series directive's `colorScheme.seriesColors` so the MARKS
+ * and the TOOLTIP read the SAME palette. The geometry families fall back to
+ * getSeriesPalette() when seriesColors is absent, but the hover tooltip falls
+ * back to a single `primary` — so a server directive that ships `series` but no
+ * seriesColors (cadence, byIndex) renders multi-colored bars with a flat-colored
+ * tooltip. Stamping the engine's own default palette here (nexus-owned seam, no
+ * engine edit) makes both sides agree. Charts that already carry seriesColors,
+ * or are single-series, pass through untouched. */
+function withSeriesColors(d: GraphDirective): GraphDirective {
+    const series = (d as { series?: string[] }).series;
+    if (!series || series.length === 0) return d;
+    const cs = (d as { colorScheme?: { seriesColors?: string[] } }).colorScheme;
+    if (cs?.seriesColors && cs.seriesColors.length > 0) return d;
+    const palette = getSeriesPalette();
+    const seriesColors = series.map((_, i) => palette[i % palette.length]);
+    return { ...d, colorScheme: { ...(cs ?? {}), seriesColors } } as GraphDirective;
+}
 
 /* ── DirectiveChart ─────────────────────────────────────────
  * THE single, blessed way to render a chart in Nexus. Pages wrap their
@@ -34,8 +53,12 @@ export interface DirectiveChartProps {
 }
 
 export function DirectiveChart({ seed }: DirectiveChartProps) {
+    // Normalize seriesColors so marks + tooltip share one palette (see
+    // withSeriesColors). Memoized so a stable seed keeps a stable identity —
+    // the controller treats a new seed object as a reseed.
+    const normalized = useMemo(() => withSeriesColors(seed), [seed]);
     // query-less → bare engine render (no controller layer); else → controller.
-    return seed.query ? <ControlledChart seed={seed} /> : <GraphRender chart={seed} />;
+    return normalized.query ? <ControlledChart seed={normalized} /> : <GraphRender chart={normalized} />;
 }
 
 /** The controlled path — only for replayable seeds. Owns the directive in
