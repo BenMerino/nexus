@@ -55,11 +55,13 @@
     /* Two-column shell: org scheme pinned left, Overview/Authors content right.
        The rail is a sticky, independently-scrolling sidebar; the content takes
        the remaining width. */
-    .tenant-layout { display: flex; gap: 28px; align-items: flex-start; max-width: 1560px; margin: 0 auto; }
+    /* Left-anchored (no centering gutter) so the rail hugs the page edge; the
+       page's own 24px padding is the only space before the schema. */
+    .tenant-layout { display: flex; gap: 24px; align-items: flex-start; }
     .tenant-rail {
-      flex: 0 0 340px; width: 340px; position: sticky; top: 0;
+      flex: 0 0 300px; width: 300px; position: sticky; top: 0;
       max-height: calc(100vh - 120px); overflow-y: auto;
-      border-right: 1px solid var(--border-soft); padding-right: 22px;
+      border-right: 1px solid var(--border-soft); padding-right: 18px;
     }
     .tenant-rail-title {
       font-family: var(--display); font-weight: 400; font-size: 13px;
