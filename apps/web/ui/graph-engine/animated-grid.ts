@@ -111,12 +111,11 @@ export const animatedHeatmap: AnimatedFamily<HeatmapState> = {
         const { lower: clipLo, upper: clipHi } = chart.colorClip ?? { lower: 0, upper: 1 };
         const clipSpan = (clipHi - clipLo) || 1;
         const showMarginal = (layout.axesOverride ?? chart.interaction?.axes) === 'marginal';
-        /* labelW matches the cartesian left margin (36px) so row labels get
-         *  the same left gutter as a y-axis — at 30px longer type names
-         *  (dataset/chapter) overran the SVG's left edge. MUST stay equal to
-         *  the chrome's labelW in chart-primitives-radial (cells + labels
-         *  share this origin; a mismatch misaligns them). */
-        const labelW = 36, labelH = 14;
+        /* labelW = the left gutter for row labels (work-type WORDS, wider than
+         *  short cartesian y-ticks). MUST stay equal to the chrome's labelW in
+         *  chart-primitives-radial (cells + labels share this origin; a
+         *  mismatch misaligns them); the chrome truncates labels to fit it. */
+        const labelW = 52, labelH = 14;
         /* Right + bottom insets so cells don't run flush to the card border —
          *  breathing room matching cartesian's plot margins. MUST match the
          *  chrome builder's PAD_R / PAD_B in chart-primitives-radial. (marginal

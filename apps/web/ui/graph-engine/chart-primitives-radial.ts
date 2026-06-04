@@ -189,10 +189,11 @@ export function gridChrome(chart: GraphDirective, width: number, height: number)
         const cells = foldHeatmapColumns(chart.data as any[]);
         const rows = [...new Set(cells.map((d: any) => d.row))];
         const cols = [...new Set(cells.map((d: any) => d.col))];
-        /* labelW MUST equal animated-grid's labelW (36) — cells and these row
-         *  labels share this left origin; a mismatch misaligns them. Matches
-         *  the cartesian left margin so labels get a real y-axis-width gutter. */
-        const labelW = 36, labelH = 14;
+        /* labelW MUST equal animated-grid's labelW (52) — cells and these row
+         *  labels share this left origin; a mismatch misaligns them. Wider than
+         *  a cartesian y-gutter because heatmap row labels are WORDS (work
+         *  types), not short tick numbers; labels truncate to fit it (below). */
+        const labelW = 52, labelH = 14;
         /* PAD_R / PAD_B MUST equal animated-grid's — col-label centers derive
          *  from cellW = gridW/cols and row-label centers from cellH = gridH/rows,
          *  so a different gridW/gridH here would drift the labels off their
@@ -229,12 +230,21 @@ export function gridChrome(chart: GraphDirective, width: number, height: number)
                 color: 'var(--text-muted)',
             });
         }
+        /* Row labels are arbitrary words (work-types: article, dataset,
+         *  proceedings-article…), not short cartesian y-tick numbers, so they
+         *  can overrun the gutter and touch/cross the left border. Truncate to
+         *  the gutter's char budget (leaving ROW_LABEL_PAD before x=0) so a
+         *  long type ellipsises instead of running off the edge — the same
+         *  "never touch the border" behavior cartesian y-ticks get for free by
+         *  being short. ~4.4px/glyph at fontSize 8. */
+        const ROW_LABEL_PAD = 4;
+        const rowLabelChars = Math.max(3, Math.floor((labelW - ROW_LABEL_PAD - 3) / 4.4));
         for (let ri = 0; ri < rows.length; ri++) {
             elements.push({
                 kind: 'text',
                 x: labelW - 3,
                 y: labelH + ri * cellH + cellH / 2 + 3,
-                text: String(rows[ri]),
+                text: abbreviateLabel(String(rows[ri]), rowLabelChars),
                 anchor: 'end', fontSize: 8, fontWeight: 600,
                 color: 'var(--text-muted)',
             });
