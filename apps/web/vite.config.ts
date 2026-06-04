@@ -10,14 +10,16 @@ const htmlEntries = Object.fromEntries(
     .map(f => [f.replace(/\.html$/, ""), resolve(SRC, f)]),
 );
 
-// Before the first style computation: (1) set data-theme="light" when the OS
-// is in light mode so the page doesn't paint the wrong baseline, and (2) apply
-// the tenant's configured surface tokens (cached in localStorage by
-// loadThemeTokens) for the active mode, so a customized --bg/--fg/... doesn't
-// flash from the CSS baseline to the configured color once the async
-// /api/theme-tokens fetch resolves. Synchronous, runs as the first thing in
-// <head>. The token slug list must stay in sync with SURFACE_TOKEN_KEYS.
-const THEME_BOOT = `<script>try{var m=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';var d=document.documentElement;if(m==='light')d.setAttribute('data-theme','light');var t=JSON.parse(localStorage.getItem('nexus.theme-tokens')||'null');if(t){var ks=['bg','bg-elev','bg-card','border','fg','fg-muted','accent'];for(var i=0;i<ks.length;i++){var v=t['theme-'+m+'-'+ks[i]];if(v)d.style.setProperty('--'+ks[i],v)}}}catch(e){}</script>`;
+// Before the first style computation: (1) pick the active mode — a visitor's
+// pinned choice (nexus.public-theme, set by the public dashboard's toggle) wins
+// over the OS prefers-color-scheme — and set data-theme so the page doesn't
+// paint the wrong baseline, and (2) apply the tenant's configured surface
+// tokens (cached in localStorage by loadThemeTokens) for the active mode, so a
+// customized --bg/--fg/... doesn't flash from the CSS baseline to the
+// configured color once the async /api/theme-tokens fetch resolves.
+// Synchronous, runs as the first thing in <head>. The token slug list must stay
+// in sync with SURFACE_TOKEN_KEYS; the pinned-key name with PUBLIC_THEME_KEY.
+const THEME_BOOT = `<script>try{var p=localStorage.getItem('nexus.public-theme');var m=(p==='light'||p==='dark')?p:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var d=document.documentElement;if(m==='light')d.setAttribute('data-theme','light');var t=JSON.parse(localStorage.getItem('nexus.theme-tokens')||'null');if(t){var ks=['bg','bg-elev','bg-card','border','fg','fg-muted','accent'];for(var i=0;i<ks.length;i++){var v=t['theme-'+m+'-'+ks[i]];if(v)d.style.setProperty('--'+ks[i],v)}}}catch(e){}</script>`;
 
 export default defineConfig({
   root: SRC,

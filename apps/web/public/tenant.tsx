@@ -65,6 +65,20 @@ function App() {
       <TenantPublicHeader tenant={statsPayload.tenant} items={NAV} currentId="overview"
         onNavigate={() => {}} yearRange={statsPayload.stats.yearRange} />
       <main className="public-main">
+        <div className="view">
+        {/* Serif headline + lede on the left, the live "viewing scope" flag on
+            the right — reflects the unit selected in the rail. */}
+        <div className="page-head">
+          <div>
+            <h1 className="page-title">{ES.pageHead.title} <em>{ES.pageHead.titleEm}</em></h1>
+            <p className="page-lede">{ES.pageHead.lede}</p>
+          </div>
+          <div className="scope-flag">
+            {ES.pageHead.scopeLabel}<br />
+            <b>{unit?.name ?? ES.pageHead.allUnits}</b><br />
+            <span>{unit ? ES.publicProfile : ES.pageHead.allUnitsNote}</span>
+          </div>
+        </div>
         {/* Two-column: org scheme pinned as the left rail (the scope picker),
             the scoped Overview (KPIs + charts + authors) on the right. */}
         <div className="tenant-layout">
@@ -74,11 +88,12 @@ function App() {
                 right-side Overview; the "All organization" row resets it. */}
             <TenantOrgTree slug={slug} tenantName={statsPayload.tenant.name} selected={unit} onSelect={setUnit} />
           </aside>
-          <div className="view tenant-content">
+          <div className="tenant-content">
             {/* KPI cards + charts + author directory — all re-scope in place to
                 the unit selected in the rail (Philosophy: scope is sovereign). */}
             <TenantOverview slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} unit={unit} />
           </div>
+        </div>
         </div>
       </main>
     </div>

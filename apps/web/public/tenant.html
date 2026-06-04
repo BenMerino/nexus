@@ -5,53 +5,126 @@
   <title>Research — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
   <style>
-    body { --primary: #333333; --secondary: #1565c0; }
     /* Public tenant shell: top header bar + scrollable main, no sidebar.
        Height pinned to viewport so .public-main is a real scroll container —
        body.shell-fixed clips overflow at the body level, so an inner scroller
        is the only way tall content (charts, long author tables) can scroll. */
     .public-app { display: flex; flex-direction: column; height: 100vh; }
+    /* Sticky frosted top-bar — sits above the scroll container with a blurred
+       translucent backdrop so content slides under it. */
     .public-header {
       display: flex; align-items: center; gap: 24px;
-      padding: 10px 24px;
-      background: var(--bg-inset);
+      padding: 0 28px; min-height: 60px;
+      background: color-mix(in oklch, var(--bg) 86%, transparent);
+      backdrop-filter: blur(14px) saturate(1.4);
       border-bottom: 1px solid var(--border-soft);
-      flex-wrap: wrap;
+      flex-wrap: wrap; flex: none; z-index: 30;
     }
-    .public-brand { display: flex; align-items: center; gap: 12px; flex: none; }
+    .public-brand { display: flex; align-items: center; gap: 13px; flex: none; }
     .public-logo { height: 36px; width: auto; max-width: 120px; object-fit: contain; }
-    .public-logo-fallback { display: inline-block; height: 36px; width: 36px; border-radius: 6px; background: var(--bg-card); border: 1px solid var(--border); }
-    .public-tenant-name { font-family: var(--display); font-size: 17px; line-height: 1.1; }
-    .public-tenant-sub { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; color: var(--fg-dim); margin-top: 2px; }
+    /* Gemstone crest: gradient sapphire→amethyst tile with the tenant initial. */
+    .public-logo-fallback {
+      position: relative; display: grid; place-items: center;
+      height: 38px; width: 38px; flex: none; overflow: hidden;
+      border: 1px solid var(--border); background: var(--bg-card);
+    }
+    .public-logo-fallback::before {
+      content: ""; position: absolute; inset: 0; opacity: 0.92;
+      background: linear-gradient(135deg, var(--j-sapphire) 0%, var(--j-amethyst) 100%);
+    }
+    .public-logo-fallback::after {
+      content: attr(data-initial); position: relative;
+      font-family: var(--display); font-size: 22px; color: #fff; line-height: 1;
+    }
+    .public-tenant-name { font-family: var(--display); font-size: 20px; line-height: 1.05; letter-spacing: 0.005em; }
+    .public-tenant-sub { font-family: var(--mono); font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--fg-dim); margin-top: 3px; }
     .public-tenant-sub a { color: var(--fg-dim); }
     .public-tenant-sub a:hover { color: var(--accent); }
     .public-tabs {
-      display: flex; gap: 2px; flex: 1;
-      align-self: flex-end;
-      margin-left: 12px;
+      display: flex; gap: 4px; flex: 1;
+      align-self: stretch; align-items: center;
+      margin-left: 8px;
       overflow-x: auto; white-space: nowrap;
-      scrollbar-width: thin;
+      scrollbar-width: none;
     }
+    .public-tabs::-webkit-scrollbar { display: none; }
     .public-tab {
-      padding: 9px 14px;
+      padding: 8px 14px;
       font-size: 13px;
       color: var(--fg-dim);
       border-bottom: 2px solid transparent;
       cursor: pointer;
       text-decoration: none;
-      transition: color 0.12s, border-color 0.12s;
+      transition: color 0.15s, border-color 0.15s;
     }
     .public-tab:hover { color: var(--fg); }
     .public-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
     .public-header-aux {
-      display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: center; gap: 14px;
       font-family: var(--mono); font-size: 11px; color: var(--fg-dim);
       flex: none;
     }
+    /* Live "updated" badge with a pulsing emerald dot. */
+    .public-updated { display: flex; align-items: center; gap: 7px; letter-spacing: 0.04em; }
+    .sync-pulse {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--j-emerald);
+      animation: sync-pulse 2.4s ease infinite; flex: none;
+    }
+    @keyframes sync-pulse {
+      0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--j-emerald) 60%, transparent); }
+      70%  { box-shadow: 0 0 0 6px transparent; }
+      100% { box-shadow: 0 0 0 0 transparent; }
+    }
+    /* Light/dark toggle button. The sun shows in dark mode (→ go light) and
+       the moon in light mode; visibility flips on data-theme. */
+    .theme-btn {
+      width: 34px; height: 34px; flex: none; cursor: pointer;
+      display: grid; place-items: center;
+      border: 1px solid var(--border); background: var(--bg-card); color: var(--fg-muted);
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .theme-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
+    .theme-btn svg { width: 16px; height: 16px; }
+    .theme-btn .icon-moon { display: block; }
+    .theme-btn .icon-sun { display: none; }
+    :root[data-theme="dark"] .theme-btn .icon-moon { display: none; }
+    :root[data-theme="dark"] .theme-btn .icon-sun { display: block; }
     .public-signin { color: var(--fg-dim); }
     .public-signin:hover { color: var(--accent); }
-    .public-main { flex: 1; padding: 24px; overflow-y: auto; min-height: 0; }
-    .public-main .view { max-width: 1200px; margin: 0 auto; }
+    .public-main { flex: 1; padding: 32px 28px 72px; overflow-y: auto; min-height: 0; }
+    .public-main .view { max-width: 1340px; margin: 0 auto; }
+
+    /* ── Page head: serif headline + lede + live scope flag ─────────── */
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 26px; flex-wrap: wrap; }
+    .page-title { font-family: var(--display); font-size: 40px; line-height: 1.02; letter-spacing: -0.01em; font-weight: 400; max-width: 18ch; margin: 0; }
+    .page-title em { font-style: italic; color: var(--fg-muted); }
+    .page-lede { color: var(--fg-muted); font-size: 14.5px; max-width: 46ch; margin-top: 10px; line-height: 1.55; }
+    .scope-flag { font-family: var(--mono); font-size: 11px; color: var(--fg-dim); letter-spacing: 0.05em; text-align: right; line-height: 1.7; flex: none; }
+    .scope-flag b { color: var(--fg); font-weight: 500; }
+
+    /* ── KPI cards: accent rail + mono label + serif value + sparkline ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .kpi {
+      position: relative; background: var(--bg-card); border: 1px solid var(--border);
+      padding: 22px 22px 20px; display: flex; flex-direction: column; gap: 16px;
+      min-height: 152px; overflow: hidden; box-shadow: var(--shadow-sm);
+    }
+    .kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--kpi-accent, var(--j-sapphire)); }
+    .kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .kpi-label { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.13em; color: var(--fg-dim); }
+    .kpi-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--kpi-accent, var(--j-sapphire)); }
+    .kpi-body { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-top: auto; }
+    .kpi-val { font-family: var(--display); font-size: 44px; line-height: 0.92; letter-spacing: -0.012em; font-weight: 400; font-variant-numeric: tabular-nums; }
+    .kpi-val .pct { font-size: 28px; color: var(--fg-muted); }
+    .kpi-spark { display: block; flex: none; }
+    .kpi-foot { font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim); letter-spacing: 0.04em; }
+
+    /* ── Chart panels: card chrome wrapping the engine charts ────────── */
+    .panel { background: var(--bg-card); border: 1px solid var(--border); padding: 22px 24px 24px; box-shadow: var(--shadow-sm); min-width: 0; }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .panel-title { font-family: var(--display); font-size: 22px; font-weight: 400; line-height: 1.05; letter-spacing: -0.005em; margin: 0; }
+    .panel-sub { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.13em; color: var(--fg-dim); margin-top: 7px; }
+    .panel-tag { font-family: var(--mono); font-size: 10px; color: var(--fg-dim); border: 1px solid var(--border); padding: 3px 8px; letter-spacing: 0.06em; white-space: nowrap; flex: none; }
     /* Two-column shell: org scheme pinned left, Overview/Authors content right.
        The rail is a sticky, independently-scrolling sidebar; the content takes
        the remaining width. */

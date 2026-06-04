@@ -27,12 +27,23 @@
   --fg-muted:   oklch(0.72 0 0);
   --fg-dim:     oklch(0.55 0 0);
 
-  /* Monochrome chrome: brand/accent collapse to neutral grays
-     (chroma → 0). Charts, tags and chips keep their own color. */
-  --primary:    oklch(0.80 0 0);
+  /* Jewel-tone chrome: brand/accent are sapphire — the design's primary
+     gemstone hue. Charts, tags and chips keep their own --chart-* color. */
+  --primary:    oklch(0.66 0.115 256);
   --secondary:  oklch(0.62 0 0);
   --accent:     var(--primary);
-  --accent-dim: oklch(0.60 0 0);
+  --accent-dim: oklch(0.70 0.10 256);
+
+  /* Named jewel tones (design-DNA). The public dashboard chrome (KPI accent
+     bars, rail usage bars, ranked fills, crest gradient) sources these
+     directly; --chart-* stays the engine's categorical palette. Dark theme:
+     a touch lighter so the gems glow on the dark surface. */
+  --j-teal:     oklch(0.70 0.10 196);
+  --j-sapphire: oklch(0.66 0.115 256);
+  --j-amethyst: oklch(0.68 0.115 318);
+  --j-garnet:   oklch(0.68 0.13 22);
+  --j-emerald:  oklch(0.72 0.10 158);
+  --j-topaz:    oklch(0.76 0.11 72);
 
   --talca:      oklch(0.55 0.13 250);
   --journal:    oklch(0.68 0.14 320);
@@ -134,10 +145,19 @@
   --fg-muted:   oklch(0.44 0 0);
   --fg-dim:     oklch(0.56 0 0);
 
-  --primary:    oklch(0.38 0 0);
+  --primary:    oklch(0.50 0.108 256);
   --secondary:  oklch(0.50 0 0);
   --accent:     var(--primary);
-  --accent-dim: oklch(0.62 0 0);
+  --accent-dim: oklch(0.54 0.092 256);
+
+  /* Jewel tones — light theme: deep + saturated so gems read rich (not
+     pastel) on the white paper surface. */
+  --j-teal:     oklch(0.53 0.092 196);
+  --j-sapphire: oklch(0.50 0.108 256);
+  --j-amethyst: oklch(0.52 0.112 318);
+  --j-garnet:   oklch(0.54 0.122 22);
+  --j-emerald:  oklch(0.55 0.090 158);
+  --j-topaz:    oklch(0.64 0.104 72);
 
   --talca:      oklch(0.50 0.14 250);
   --journal:    oklch(0.55 0.16 320);

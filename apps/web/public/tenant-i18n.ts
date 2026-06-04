@@ -10,8 +10,21 @@ export const ES = {
   /* Page chrome / tabs */
   research: 'Research',
   publicProfile: 'Public research profile',
+  researchIntelligence: 'Research Intelligence · Public',
   signIn: 'sign in',
   publicProfileBadge: 'Public profile',
+  updatedPrefix: 'Updated',
+  themeToggle: 'Toggle light / dark',
+
+  /* Page head — serif headline + lede */
+  pageHead: {
+    title: 'Scholarly output,',
+    titleEm: 'measured.',
+    lede: 'A living record of research produced across the University’s faculties, institutes and centres — indexed, de-duplicated and openly published.',
+    scopeLabel: 'Viewing scope',
+    allUnits: 'All units',
+    allUnitsNote: 'complete institutional corpus',
+  },
   nav: {
     overview: 'Overview',
     charts: 'Charts',
