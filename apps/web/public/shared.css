@@ -13,6 +13,13 @@
   --bg-elev:    oklch(0.20 0 0);
   --bg-card:    oklch(0.22 0 0);
   --bg-inset:   oklch(0.14 0 0);
+  /* Floating-tag surface for chart hover tooltips / range badges (GlassTag).
+     Matches the graph-explorer's established glass (the .graph-overlay-right
+     dark translucent panel) so the chart tag reads the same. The engine's
+     GlassTag referenced var(--glass-bg) but nexus never defined the token, so
+     it fell back to --bg-card → dark/saturated series text was low-contrast.
+     Static token (not one of the 7 configurable surface tokens). */
+  --glass-bg:   rgba(20, 22, 26, 0.82);
   --border:     oklch(0.32 0 0);
   --border-soft: oklch(0.27 0 0);
 
@@ -111,6 +118,10 @@
   --bg-elev:    oklch(1.00 0 0);
   --bg-card:    oklch(1.00 0 0);
   --bg-inset:   oklch(0.94 0 0);
+  /* Light-theme glass tag: near-white translucent so dark/saturated series
+     value text (tuned for the light plot) reads against it. Mirrors the dark
+     --glass-bg above for the opposite polarity. */
+  --glass-bg:   rgba(255, 255, 255, 0.88);
   --border:     oklch(0.87 0 0);
   --border-soft: oklch(0.91 0 0);
 
