@@ -10,8 +10,25 @@ import { LiveBadge } from '../composed/LiveBadge.js';
 import { ChartRangeSlider } from './ChartRangeSlider.js';
 import { DrillBreadcrumbChip } from './DrillBreadcrumbChip.js';
 import { MARGIN } from './svg-parts.js';
+import { eligibleFoldUnits } from '../../architect/fold-atoms.js';
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
 import type { ToggleSpec } from '../../architect/replayable-directive.js';
+
+/* Strip a foldUnit toggle's options down to the units that bucket READABLY
+ * for the current visible span (eligibleFoldUnits: 3–120 buckets). Without
+ * this a user could force e.g. "week" over a 170-year window → ~9k buckets,
+ * crippling the fold/render. Non-foldUnit toggles pass through untouched, and
+ * a foldUnit toggle keeps 'auto' (always eligible) plus whatever fits — so the
+ * fine rungs reappear as the user narrows the window. */
+function gateFoldUnitToggles<T extends ToggleSpec<GraphQuery>>(toggles: T[], visibleDays: number): T[] {
+    if (!Number.isFinite(visibleDays) || visibleDays <= 0) return toggles;
+    const eligible = new Set(eligibleFoldUnits(visibleDays).map(String));
+    return toggles.map(tg => {
+        if (tg.field !== 'foldUnit' && tg.id !== 'foldUnit') return tg;
+        const options = tg.options.filter(o => eligible.has(o.value));
+        return { ...tg, options } as T;
+    });
+}
 
 /* ── ChartBody ───────────────────────────────────────────────
  * Renders the title row (title + toggles + LiveBadge), the chart
@@ -90,6 +107,9 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     const atoms = chart.atoms ?? [];
     const totalDays = atoms.length === 0 ? 0 : (atoms[atoms.length - 1].key - atoms[0].key + 1) / 24;
     const visibleAtoms = windowDays != null ? Math.min(windowDays, totalDays) : (totalDays || visibleBuckets);
+    /* Gate the granularity toggle to units readable at the CURRENT window, so
+     *  the user can't force a fold that over-buckets (e.g. week over 170y). */
+    const gatedToggles = gateFoldUnitToggles(otherToggles, visibleAtoms);
     const daysPerBucket = visibleBuckets > 0 ? visibleAtoms / visibleBuckets : 1;
     const isHeatmap = t === 'heatmap';
     const drillable = isHeatmap || daysPerBucket > 1.001;
@@ -110,8 +130,8 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
                         )}
                     </BaseBox>
                     <BaseBox display="flex" direction="row" align="center" density="tight">
-                        {otherToggles.length > 0 && onToggle && (
-                            <QueryToggleBar toggles={otherToggles} isLoading={isLoading} error={error} onChange={onToggle} />
+                        {gatedToggles.length > 0 && onToggle && (
+                            <QueryToggleBar toggles={gatedToggles} isLoading={isLoading} error={error} onChange={onToggle} />
                         )}
                         {featuresAvailable.length > 0 && featureScopeKey && (
                             <FeatureToggleGroup

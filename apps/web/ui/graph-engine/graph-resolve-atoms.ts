@@ -12,6 +12,7 @@
 import {
     foldByCalendar,
     pickAutoFoldUnit,
+    eligibleFoldUnits,
     HOURS_PER_DAY,
     type FoldUnit,
 } from '../../architect/fold-atoms.js';
@@ -86,7 +87,15 @@ export function resolveAtomicDirective(
         } as GraphDirective;
     }
 
-    const foldUnit: FoldUnit = q?.foldUnit ?? 'auto';
+    /* Hard guard against an over-bucketing fold. An explicit `foldUnit` (set by
+     *  the granularity toggle) is honored ONLY when it buckets readably for the
+     *  visible span; otherwise we fall back to the auto pick. Without this, a
+     *  stale `foldUnit` (e.g. 'week' selected, then the window widened to all
+     *  170y) would fold to ~9k buckets and cripple the render — the toggle's UI
+     *  gating alone can't prevent it because the query value persists. */
+    const requested: FoldUnit = q?.foldUnit ?? 'auto';
+    const eligible = new Set<string>(eligibleFoldUnits(visibleDays, hasHourly).map(String));
+    const foldUnit: FoldUnit = (requested !== 'auto' && eligible.has(requested)) ? requested : 'auto';
     const resolvedUnit = foldUnit === 'auto' ? pickAutoFoldUnit(visibleDays, hasHourly) : foldUnit;
     const buckets = foldByCalendar(chart.atoms, resolvedUnit, chart.aggregator ?? 'sum', chart.series ?? []);
     /* Edge anchoring: leftmost visible bucket pins its center to x=0,
