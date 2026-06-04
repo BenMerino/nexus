@@ -3,7 +3,6 @@ import type { GraphDirective } from '../architect/graph-composer.types';
 import { SummaryCards } from './tenant-summary';
 import { TenantChartsTab } from './tenant-charts-tab';
 import { UnitPicker, type UnitOption } from './tenant-unit-picker';
-import { TenantContributors } from './tenant-contributors';
 import type { PublicStats } from './tenant-builders';
 import { ES } from './tenant-i18n';
 
@@ -48,9 +47,6 @@ export function TenantOverview({ slug, stats, tenantId, charts }: {
         </div>
       ) : null}
       <SummaryCards summary={summary} />
-      {/* Cross-unit ranking — a whole-university comparison; shown only at
-          university scope (meaningless narrowed to a single unit). */}
-      {unitKey ? null : <TenantContributors slug={slug} />}
       <TenantChartsTab stats={stats} tenantId={tenantId} charts={charts} unit={unitKey} />
     </>
   );

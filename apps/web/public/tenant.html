@@ -105,6 +105,15 @@
     .org-pill { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 10px; background: var(--bg-inset); border: 1px solid var(--border); color: var(--fg-dim); white-space: nowrap; }
     .org-pill.cov-full { border-color: var(--accent); color: var(--accent); }
 
+    /* Ranked metric bar on each unit row — the scheme as a contributors chart.
+       Fixed-width on the right so bars align into a column down the rail. */
+    .org-bar { display: flex; align-items: center; gap: 8px; flex: none; width: 132px; }
+    .org-bar-track { flex: 1; height: 7px; background: var(--bg-inset); border-radius: 4px; overflow: hidden; }
+    .org-bar-fill { display: block; height: 100%; background: var(--primary); border-radius: 4px; }
+    .org-bar-val { font-family: var(--mono); font-size: 11px; color: var(--fg-dim); min-width: 40px; text-align: right; white-space: nowrap; }
+    /* Departments' bars a touch dimmer so faculty bars read as the primary tier. */
+    .org-children .org-bar-fill { background: var(--secondary); }
+
     /* Top-level faculties: light card stripe so they read as roots. */
     .org-tree > .org-node { border-top: 1px solid var(--border-soft); }
     .org-tree > .org-node:first-child { border-top: none; }

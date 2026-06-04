@@ -74,22 +74,12 @@ export const ES = {
     rangeOf: (start: number, end: number, total: string) => `${start}–${end} of ${total}`,
   },
 
-  /* Org tree */
+  /* Org tree (now also the contributors ranking — per-row bars + people) */
   orgTree: {
-    faculties: (n: number) => `${n} ${n === 1 ? 'faculty' : 'faculties'}`,
-    institutes: (n: number) => `${n} ${n === 1 ? 'institute' : 'institutes'}`,
-    headcount: (n: number) => `${n} ${n === 1 ? 'academic' : 'academics'}`,
-    withOrcid: (n: number) => `${n} with ORCID`,
-    papers: (n: number) => `${n} ${n === 1 ? 'paper' : 'papers'}`,
-    academics: (n: number) => `${n === 1 ? 'academic' : 'academics'}`,
-    orcidRatio: 'ORCID',
-    papersWord: (n: number) => `${n === 1 ? 'paper' : 'papers'}`,
     noRoster: 'No academic staff loaded for this organization yet.',
     kindLabel: { faculty: 'Faculty', institute: 'Institute', other: 'Other' } as const,
     paperOne: 'paper',
     paperMany: 'papers',
-    academicOne: 'academic',
-    academicMany: 'academics',
     orcidNone: 'no ORCID',
   },
 
