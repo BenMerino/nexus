@@ -79,9 +79,13 @@ export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400 }: { kind
       {kinds.map(kind => {
         const d = map ? map[kind] : null;
         const ok = d && ((d as any).atoms || (d as any).data);
+        // The choropleth is shape-locked to 2:1 and sizes its own height (the
+        // engine letterboxes to nothing); don't impose the generic minHeight
+        // floor or its card would leave whitespace below the map.
+        const isMap = kind === 'publications.countriesMap';
         return (
-          <div key={kind} className="card" style={{ minHeight }}>
-            <ComposedView directive={ok ? d : null} failed={failed} minHeight={minHeight} />
+          <div key={kind} className="card" style={isMap ? undefined : { minHeight }}>
+            <ComposedView directive={ok ? d : null} failed={failed} minHeight={isMap ? 0 : minHeight} />
           </div>
         );
       })}

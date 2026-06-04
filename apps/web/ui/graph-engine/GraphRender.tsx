@@ -79,7 +79,12 @@ export interface GraphRenderProps {
 
 export function GraphRender({ chart, onToggle, isLoading = false, error, onBucketClick, onWindowChange, isLive, breadcrumbs, onDrillUp }: GraphRenderProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const container = useContainerSize(containerRef);
+    // A choropleth is shape-locked to the world's 2:1 — size the container to
+    // that aspect (no max-height cap) so the map fills it with no letterbox.
+    const container = useContainerSize(
+        containerRef,
+        chart.type === 'choropleth' ? { aspect: 0.5, maxHeight: Infinity } : undefined,
+    );
     const { filters, toggle, activeSet, seriesWeights } = useToggleFilters(chart);
     const clip = useColorClip();
     const legibility = useChartLegibility(container, chart);
