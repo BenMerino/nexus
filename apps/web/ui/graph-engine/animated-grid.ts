@@ -117,14 +117,13 @@ export const animatedHeatmap: AnimatedFamily<HeatmapState> = {
          *  the chrome's labelW in chart-primitives-radial (cells + labels
          *  share this origin; a mismatch misaligns them). */
         const labelW = 36, labelH = 14;
-        /* Right inset so cells don't run flush to the card border — mirrors
-         *  the left label gutter for the symmetric breathing room cartesian
-         *  charts get from their 36px L/R plot margins. MUST match the chrome
-         *  builder's PAD_R in chart-primitives-radial. (marginal mode adds its
-         *  own 20px strip on top.) */
-        const PAD_R = 12;
+        /* Right + bottom insets so cells don't run flush to the card border —
+         *  breathing room matching cartesian's plot margins. MUST match the
+         *  chrome builder's PAD_R / PAD_B in chart-primitives-radial. (marginal
+         *  mode adds its own 20/12px strips on top.) */
+        const PAD_R = 12, PAD_B = 12;
         const margR = (showMarginal ? 20 : 0) + PAD_R;
-        const margB = showMarginal ? 12 : 0;
+        const margB = (showMarginal ? 12 : 0) + PAD_B;
         const gridW = layout.width - labelW - margR;
         const gridH = layout.height - labelH - margB;
         /* Cells FILL the grid exactly — no min-width floor. A `Math.max(8, …)`

@@ -193,13 +193,14 @@ export function gridChrome(chart: GraphDirective, width: number, height: number)
          *  labels share this left origin; a mismatch misaligns them. Matches
          *  the cartesian left margin so labels get a real y-axis-width gutter. */
         const labelW = 36, labelH = 14;
-        /* PAD_R MUST equal animated-grid's PAD_R — col-label centers are
-         *  derived from cellW = gridW/cols, so a different gridW here would
-         *  drift the labels off their columns. (Marginal mode's extra 20px is
-         *  handled in the geometry; the chrome's labels don't span it.) */
-        const PAD_R = 12;
+        /* PAD_R / PAD_B MUST equal animated-grid's — col-label centers derive
+         *  from cellW = gridW/cols and row-label centers from cellH = gridH/rows,
+         *  so a different gridW/gridH here would drift the labels off their
+         *  cells. (Marginal mode's extra strips are handled in the geometry;
+         *  the chrome's labels don't span them.) */
+        const PAD_R = 12, PAD_B = 12;
         const gridW = width - labelW - PAD_R;
-        const gridH = height - labelH;
+        const gridH = height - labelH - PAD_B;
         /* Fill the grid exactly — must match animated-grid's cell geometry.
          *  A min-width floor would put these chrome labels out of register
          *  with the cells and overrun the container on dense column counts. */
