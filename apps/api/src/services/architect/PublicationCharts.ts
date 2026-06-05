@@ -64,7 +64,7 @@ function replayStamp(kind: string, tenantId: number, q: CatalogQuery) {
   const windowDays = q.windowDays ?? null;
   const foldUnit = q.foldUnit ?? null;
   return {
-    query: { kind, tenantId: String(tenantId), windowDays, ...(q.asOf ? { asOf: q.asOf } : {}), ...(foldUnit ? { foldUnit } : {}) },
+    query: { kind, tenantId: String(tenantId), windowDays, ...(q.asOf ? { asOf: q.asOf } : {}), ...(foldUnit ? { foldUnit } : {}), ...(q.periodKey ? { periodKey: q.periodKey } : {}) },
     toggles: [pubGranularityToggle(foldUnit)],
     persistKey: `tenant:${tenantId}:${kind}`,
   };

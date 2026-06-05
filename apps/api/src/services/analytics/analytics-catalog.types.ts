@@ -46,6 +46,11 @@ export interface CatalogQuery {
   windowDays?: number | null;
   asOf?: string;
   foldUnit?: string;
+  /** Calendar drill identity (e.g. `2010s`, `2024`, `2024-03`). Client-only —
+   *  the server echoes it through so the renderer clips the window to the
+   *  period's exact calendar bounds instead of drifting on windowDays/asOf
+   *  day-arithmetic. See graph-drilldown.ts narrowQueryToPeriod. */
+  periodKey?: string;
   scope?: "today" | "week" | "month";
   /** Org-unit drill-down key (org-tree node's `unitKey`). Narrows the read to
    *  one faculty/department; absent ⇒ whole tenant. See lib/org-units.js. */
