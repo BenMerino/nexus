@@ -45,9 +45,10 @@ export function ServerCharts() {
           <SectionHead eyebrow={chart ? (EYEBROW[chart.title] || 'Stats') : 'Stats'} title={chart?.title || '…'} />
           {chart
             // Real server-composed directive → blessed controller path. The
-            // card's SectionHead above renders the heading → hide the engine's
-            // in-chart title (keep chart.title for the heading/key/eyebrow).
-            ? <DirectiveChart seed={{ ...chart, hideTitle: true }} />
+            // bordered card + its SectionHead render the chrome → hide the
+            // engine's in-chart title + plot frame (keep chart.title for the
+            // heading/key/eyebrow).
+            ? <DirectiveChart seed={{ ...chart, hideTitle: true, hideFrame: true }} />
             // Placeholder card while loading/error: a bare render of an empty
             // directive carrying the page-level fetch state, so the grid
             // doesn't reflow. No controller needed for a non-interactive stub.

@@ -185,7 +185,7 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
         /* Active-area wrapper. Border + radius ring just the plot + axes
          *  (title row and slider sit outside this div). Wrapper height
          *  exactly matches the canvas — no padding shell. */
-        <div ref={wrapperRef} style={{ width: '100%', height: `${layoutSize.h}px`, position: 'relative', border: '1px solid var(--border-main)', borderRadius: '0.75rem' }}>
+        <div ref={wrapperRef} style={{ width: '100%', height: `${layoutSize.h}px`, position: 'relative', border: chart.hideFrame ? 'none' : '1px solid var(--border-main)', borderRadius: chart.hideFrame ? 0 : '0.75rem' }}>
             <PlotDottedBackdrop plotXR={plotXR} plotYR={plotYR} layoutW={layoutSize.w} layoutH={layoutSize.h} />
             <ChartCanvasStack
                 primitives={primitives}

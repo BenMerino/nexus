@@ -11,10 +11,11 @@ import { perfMark } from './perf-beacon';
  * Both render an atom directive via DirectiveChart (uniform-drop toggle). */
 
 function ComposedView({ directive, failed, minHeight, hideTitle }: { directive: GraphDirective | null; failed: boolean; minHeight: number; hideTitle?: boolean }) {
-  // hideTitle: the chart sits inside a host card that renders its own heading,
-  // so suppress the engine's in-chart title (keep the directive's title for the
-  // host/key). Engine honors directive.hideTitle (synced from Zincro).
-  const seed = useMemo(() => (directive && hideTitle ? { ...directive, hideTitle: true } : directive), [directive, hideTitle]);
+  // hideTitle: the chart sits inside a host card that renders its own heading +
+  // border, so suppress the engine's in-chart title AND its redundant plot frame
+  // (keep the directive's title for the host/key). Engine honors both flags
+  // (synced from Zincro).
+  const seed = useMemo(() => (directive && hideTitle ? { ...directive, hideTitle: true, hideFrame: true } : directive), [directive, hideTitle]);
   if (failed || seed === null) {
     return <div style={{ minHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>—</div>;
   }

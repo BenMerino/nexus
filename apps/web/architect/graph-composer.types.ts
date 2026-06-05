@@ -228,6 +228,10 @@ export interface GraphDirective extends ReplayableDirective<GraphQuery>, GraphDi
      *  title isn't shown twice. The header row's toggles/feature controls/live
      *  badge still render; only the title text is hidden. Off by default. */
     hideTitle?: boolean;
+    /** Drop the 1px frame the renderer rings around the plot+axes. For hosts
+     *  that already wrap the chart in a bordered card, where the plot frame is
+     *  a redundant border-inside-a-border. Off by default. */
+    hideFrame?: boolean;
     /** Chart-wide RAW style override — bypasses the semantic status→style
      *  table for pure-aesthetic callers (a dashed target line, brand
      *  styling). Per-bucket variation goes through atom `status` /
