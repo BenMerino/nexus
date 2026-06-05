@@ -16,11 +16,8 @@ export const ES = {
   updatedPrefix: 'Updated',
   themeToggle: 'Toggle light / dark',
 
-  /* Page head — serif headline + lede */
+  /* Page head — the viewing-scope flag (headline + lede removed) */
   pageHead: {
-    title: 'Scholarly output,',
-    titleEm: 'measured.',
-    lede: 'A living record of research produced across the University’s faculties, institutes and centres — indexed, de-duplicated and openly published.',
     scopeLabel: 'Viewing scope',
     allUnits: 'All units',
     allUnitsNote: 'complete institutional corpus',

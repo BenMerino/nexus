@@ -68,13 +68,9 @@ function App() {
         onNavigate={() => {}} yearRange={statsPayload.stats.yearRange} />
       <main className="public-main">
         <div className="public-content">
-        {/* Serif headline + lede on the left, the live "viewing scope" flag on
-            the right — reflects the unit selected in the rail. */}
+        {/* The live "viewing scope" flag — reflects the unit selected in the
+            rail. (Headline + lede removed.) */}
         <div className="page-head">
-          <div>
-            <h1 className="page-title">{ES.pageHead.title} <em>{ES.pageHead.titleEm}</em></h1>
-            <p className="page-lede">{ES.pageHead.lede}</p>
-          </div>
           <div className="scope-flag">
             {ES.pageHead.scopeLabel}<br />
             <b>{unit?.name ?? ES.pageHead.allUnits}</b><br />
