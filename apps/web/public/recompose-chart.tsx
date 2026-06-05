@@ -52,7 +52,9 @@ export function RecomposeChart({ kind, tenantId, unit, minHeight = 360 }: { kind
   // Perf beacon: mark when THIS chart's directive resolves — the per-kind
   // timing exposes the "charts fill one by one" stagger.
   useEffect(() => { if (directive || failed) perfMark(`chart:${kind}`); }, [directive, failed, kind]);
-  return <ComposedView directive={directive} failed={failed} minHeight={minHeight} />;
+  // Card-wrapped like the rest (CadencePanel etc. sit in a .panel with its own
+  // heading + border) → suppress the engine's title + plot frame.
+  return <ComposedView directive={directive} failed={failed} minHeight={minHeight} hideTitle />;
 }
 
 /** Several public charts composed in ONE round-trip (POST /recompose-batch) and
