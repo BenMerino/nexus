@@ -15,29 +15,34 @@ import { BaseBox } from '../primitives/BaseBox.js';
 import { BaseText } from '../primitives/BaseText.js';
 
 export interface DrillBreadcrumbChipProps {
+    /** Ancestor levels — each clickable to jump back to that view. */
     crumbs: { label: string }[];
-    onUp: () => void;
+    /** The current (deepest) level's label — rendered as a non-clickable tail. */
+    current: string;
+    /** Jump to crumb `index` (restore that level's view). */
+    onJump: (index: number) => void;
 }
 
-export function DrillBreadcrumbChip({ crumbs, onUp }: DrillBreadcrumbChipProps) {
+const CRUMB: React.CSSProperties = { fontSize: '10px', color: 'var(--accent)', cursor: 'pointer' };
+const SEP: React.CSSProperties = { fontSize: '10px', color: 'var(--text-subtle, var(--text-muted))', margin: '0 var(--space-1, 0.25rem)' };
+const CUR: React.CSSProperties = { fontSize: '10px', color: 'var(--text-main)', fontWeight: 600 };
+
+/* The breadcrumb IS the time-navigation (the fold-level toggle was removed):
+ * the path `All › 2010s › 2015 › Mar 2015` shows where you are, each ancestor
+ * is clickable to jump back to that level, and clicking a bar drills deeper. */
+export function DrillBreadcrumbChip({ crumbs, current, onJump }: DrillBreadcrumbChipProps) {
     if (crumbs.length === 0) return null;
-    const trail = crumbs.map(c => c.label).join(' › ');
     return (
-        <BaseBox display="flex" direction="row" align="center" density="tight" style={{ flexWrap: 'nowrap' }}>
-            <BaseAction onClick={onUp} style={{
-                padding: 'var(--space-0-5, 0.125rem) var(--space-2, 0.5rem)',
-                borderRadius: 'var(--radius-full, 999px)',
-                border: '1px solid var(--border-ghost, var(--border-main))',
-                background: 'transparent',
-                cursor: 'pointer',
-            }}>
-                <BaseText variant="detail" style={{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    ← Back
-                </BaseText>
-            </BaseAction>
-            <BaseText variant="detail" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                {trail}
-            </BaseText>
+        <BaseBox display="flex" direction="row" align="center" density="tight" style={{ flexWrap: 'wrap' }}>
+            {crumbs.map((c, i) => (
+                <React.Fragment key={i}>
+                    <BaseAction onClick={() => onJump(i)} style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}>
+                        <BaseText variant="detail" style={CRUMB}>{c.label}</BaseText>
+                    </BaseAction>
+                    <BaseText variant="detail" style={SEP}>›</BaseText>
+                </React.Fragment>
+            ))}
+            <BaseText variant="detail" style={CUR}>{current}</BaseText>
         </BaseBox>
     );
 }

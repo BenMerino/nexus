@@ -73,11 +73,14 @@ export interface GraphRenderProps {
      *  a "← Back" chip renders inside the chart's title row (NOT as a
      *  sibling row above). Wire via `controller.breadcrumbs`. */
     breadcrumbs?: { label: string }[];
-    /** Pop one drill level. Wire via `controller.drillUp`. */
-    onDrillUp?: () => void;
+    /** Jump to a crumb level (the breadcrumb is the level control). Wire via
+     *  `controller.drillTo`. */
+    onDrillTo?: (index: number) => void;
+    /** Current (deepest) level label for the breadcrumb tail. */
+    currentLabel?: string;
 }
 
-export function GraphRender({ chart, onToggle, isLoading = false, error, onBucketClick, onWindowChange, isLive, breadcrumbs, onDrillUp }: GraphRenderProps) {
+export function GraphRender({ chart, onToggle, isLoading = false, error, onBucketClick, onWindowChange, isLive, breadcrumbs, onDrillTo, currentLabel }: GraphRenderProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     // A choropleth is shape-locked to the world's 2:1 — size the container to
     // that aspect (no max-height cap) so the map fills it with no letterbox.
@@ -182,7 +185,8 @@ export function GraphRender({ chart, onToggle, isLoading = false, error, onBucke
                         t={t}
                         isLive={isLive}
                         breadcrumbs={breadcrumbs}
-                        onDrillUp={onDrillUp}
+                        onDrillTo={onDrillTo}
+                        currentLabel={currentLabel}
                     />
 
                     {(() => {

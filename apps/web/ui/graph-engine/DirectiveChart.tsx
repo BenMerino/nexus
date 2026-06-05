@@ -110,12 +110,14 @@ function ControlledChart({ seed }: { seed: GraphDirective }) {
         } else {
             child = narrowQueryToBucket(cur, idx, totalBuckets, daysPerBucket);
         }
-        /* Breadcrumb label is derived from the CHILD WINDOW (windowLabel), not
-         *  the raw clicked axis text (`_label`) — the latter mixed formats
-         *  ("1986-05-01" base-row vs bare "Q1" tier-row) and could repeat. A
-         *  child that doesn't narrow is already rejected (helpers return null),
-         *  so every pushed crumb reflects a real, consistently-labelled descent. */
-        if (child) ctrl.drillDown(child, windowLabel(child));
+        /* The pushed crumb labels the level we're LEAVING (the parent view),
+         *  so the crumb text matches the view it restores when clicked
+         *  (windowLabel reads the parent query's periodKey → "All"/"2010s"/…).
+         *  The CHILD (where we land) becomes the non-clickable current tail,
+         *  rendered by the chip from the live directive. A child that doesn't
+         *  narrow is rejected (helpers return null), so each crumb is a real
+         *  descent. */
+        if (child) ctrl.drillDown(child, windowLabel(cur));
     };
 
     /* Re-normalize on EVERY controller directive — not just the seed. A
@@ -142,7 +144,8 @@ function ControlledChart({ seed }: { seed: GraphDirective }) {
             error={ctrl.error}
             isLive={ctrl.isLive}
             breadcrumbs={ctrl.breadcrumbs}
-            onDrillUp={ctrl.drillUp}
+            onDrillTo={ctrl.drillTo}
+            currentLabel={windowLabel(ctrl.directive.query ?? {})}
         />
     );
 }

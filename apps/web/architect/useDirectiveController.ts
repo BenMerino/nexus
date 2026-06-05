@@ -122,8 +122,14 @@ export function useDirectiveController<TDirective extends ReplayableDirective<TQ
         if (directive.query) requestQuery(directive.query);
     }, [directive, requestQuery]);
 
-    const drillDown = useCallback((childQuery: TQuery, breadcrumbLabel: string) => {
-        setBreadcrumbs(prev => [...prev, { label: breadcrumbLabel, directive }]);
+    const drillDown = useCallback((childQuery: TQuery, parentLabel: string) => {
+        /* Push ONE crumb for the level we're LEAVING — labelled by that view
+         *  and storing it as the restore target, so clicking the crumb returns
+         *  to that view (label ↔ restore aligned). The first drill's parent IS
+         *  the root, so it becomes the "All" crumb (no separate seed). The
+         *  CURRENT/deepest level is never a crumb — the chip renders it as the
+         *  non-clickable tail from the live directive. */
+        setBreadcrumbs(prev => [...prev, { label: parentLabel, directive }]);
         requestQuery(childQuery);
     }, [directive, requestQuery]);
 
@@ -138,6 +144,21 @@ export function useDirectiveController<TDirective extends ReplayableDirective<TQ
         });
     }, [subscribeOverBridge]);
 
+    /** Jump straight to crumb `index` — restore the view captured BEFORE that
+     *  drill and truncate the trail to it. The breadcrumb IS the level control:
+     *  clicking "2010s" returns to the decade view, "All" (index 0, the root
+     *  crumb) to the full timeline. Out-of-range index is a no-op. */
+    const drillTo = useCallback((index: number) => {
+        setBreadcrumbs(prev => {
+            if (index < 0 || index >= prev.length) return prev;
+            const target = prev[index];
+            setDirective(target.directive);
+            setError(null);
+            if (target.directive.query) subscribeOverBridge(target.directive.query);
+            return prev.slice(0, index);
+        });
+    }, [subscribeOverBridge]);
+
     return {
         directive,
         isLoading,
@@ -148,6 +169,7 @@ export function useDirectiveController<TDirective extends ReplayableDirective<TQ
         refetch: refetchCurrent,
         drillDown,
         drillUp,
+        drillTo,
         breadcrumbs: breadcrumbs.map(b => ({ label: b.label })),
     };
 }

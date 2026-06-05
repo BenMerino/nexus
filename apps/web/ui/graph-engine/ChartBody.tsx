@@ -47,13 +47,19 @@ export interface ChartBodyProps {
      *  whenever drill state appears. Inside the title row it's a peer
      *  of the toggle pills + LiveBadge and changes no card geometry. */
     breadcrumbs?: { label: string }[];
-    onDrillUp?: () => void;
+    /** Jump to crumb `index` — the breadcrumb is the level control. */
+    onDrillTo?: (index: number) => void;
+    /** The current (deepest) level's label, for the breadcrumb tail. */
+    currentLabel?: string;
 }
 
-export function ChartBody({ chart, resolved, container, legibility, axesOverride, onBucketClick, onToggle, onToggleSeries, onWindowChange, isLoading, error, t, isLive, breadcrumbs, onDrillUp }: ChartBodyProps) {
+export function ChartBody({ chart, resolved, container, legibility, axesOverride, onBucketClick, onToggle, onToggleSeries, onWindowChange, isLoading, error, t, isLive, breadcrumbs, onDrillTo, currentLabel }: ChartBodyProps) {
     const allToggles = chart.toggles ?? [];
     const windowToggle = allToggles.find(tg => tg.id === 'windowDays' || tg.field === 'windowDays') as ToggleSpec<GraphQuery> | undefined;
-    const otherToggles = allToggles.filter(tg => tg !== windowToggle);
+    /* The fold-unit toggle (Auto/Century/Decade/Year/Month) is REPLACED by the
+     *  breadcrumb (the level control) — filter it out of the pill row so the two
+     *  don't both drive granularity. windowDays is already split off above. */
+    const otherToggles = allToggles.filter(tg => tg !== windowToggle && tg.id !== 'foldUnit' && tg.field !== 'foldUnit');
     const tenantId = chart.query?.tenantId;
     const kind = chart.query?.kind;
     const span = useTimelineSpan(tenantId, kind);
@@ -113,7 +119,7 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     // is nothing to show — e.g. a hideTitle chart with no toggles — so the host
     // card's own heading isn't trailed by an empty 0.25rem gap.
     const showHeaderRow = (!chart.hideTitle && !!chart.title)
-        || (!!breadcrumbs && breadcrumbs.length > 0 && !!onDrillUp)
+        || (!!breadcrumbs && breadcrumbs.length > 0 && !!onDrillTo)
         || (otherToggles.length > 0 && !!onToggle)
         || (featuresAvailable.length > 0 && !!featureScopeKey)
         || isLive !== undefined;
@@ -128,8 +134,8 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
                                 {chart.title}
                             </BaseText>
                         )}
-                        {breadcrumbs && breadcrumbs.length > 0 && onDrillUp && (
-                            <DrillBreadcrumbChip crumbs={breadcrumbs} onUp={onDrillUp} />
+                        {breadcrumbs && breadcrumbs.length > 0 && onDrillTo && (
+                            <DrillBreadcrumbChip crumbs={breadcrumbs} current={currentLabel ?? ''} onJump={onDrillTo} />
                         )}
                     </BaseBox>
                     <BaseBox display="flex" direction="row" align="center" density="tight">
