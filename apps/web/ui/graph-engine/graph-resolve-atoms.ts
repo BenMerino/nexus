@@ -20,6 +20,7 @@ import { foldByCalendarGrid, pickAutoUnitPair } from '../../architect/fold-atoms
 import { placeAtoms, bucketTops } from '../../architect/place-atoms.js';
 import { bucketSequence } from '../../architect/bucket-sequence.js';
 import { formatLabel } from '../../architect/fold-atoms-calendar.js';
+import { periodBounds } from '../../architect/graph-drilldown.js';
 import type { GraphDirective, ChartData, GraphQuery } from '../../architect/graph-composer.types.js';
 import { maxLookbackForDirective } from './graph-features/index.js';
 import { reduce } from './reduction.js';
@@ -61,10 +62,34 @@ export function resolveAtomicDirective(
      *  (hour) space — hour 23, not hour 0. Daily atoms sit at hour 0
      *  of each day, so the end of that day is `key + HOURS_PER_DAY - 1`. */
     const lastDayEndKey = lastKey + HOURS_PER_DAY - 1;
-    const windowEndKey = lastDayEndKey - asOfDaysBefore * HOURS_PER_DAY;
     const totalDays = (lastKey - firstKey + 1) / HOURS_PER_DAY;
-    const visibleDays = windowDays ?? totalDays;
-    const windowStartKey = windowEndKey - visibleDays * HOURS_PER_DAY + 1;
+    /* The window the user sees. When this query drilled into a CALENDAR period
+     *  (`periodKey` set), derive the window EXACTLY from that period's calendar
+     *  bounds — converting the period's start/end ISO straight to atom keys.
+     *  The `windowDays`/`asOf` day-arithmetic path accumulates a few days of
+     *  rounding drift (a 2010s drill landed on 2009-12-28 → an extra 2009 year
+     *  bucket); the calendar identity has no such drift. Falls back to the
+     *  day-window math for un-drilled / atom-range queries. */
+    const anchorISO0 = chart.atoms[0].iso;
+    const isoToKey = (iso: string): number => {
+        const days = Math.round((Date.parse(`${iso}T00:00:00Z`) - Date.parse(`${anchorISO0}T00:00:00Z`)) / 86_400_000);
+        return firstKey + days * HOURS_PER_DAY;
+    };
+    const pBounds = q?.periodKey ? periodBounds(q.periodKey) : null;
+    let windowEndKey: number;
+    let windowStartKey: number;
+    if (pBounds) {
+        // endISO is the half-open upper bound → last visible day is the day before.
+        const lastVisibleDayKey = isoToKey(pBounds.endISO) - HOURS_PER_DAY;
+        windowEndKey = lastVisibleDayKey + HOURS_PER_DAY - 1;
+        windowStartKey = isoToKey(pBounds.startISO);
+    } else {
+        windowEndKey = lastDayEndKey - asOfDaysBefore * HOURS_PER_DAY;
+        windowStartKey = windowEndKey - (windowDays ?? totalDays) * HOURS_PER_DAY + 1;
+    }
+    /* Visible span in days — from the RESOLVED window (so a period-derived
+     *  window folds at the right grain too), not the raw windowDays. */
+    const visibleDays = (windowEndKey - windowStartKey + 1) / HOURS_PER_DAY;
     /* Does any atom carry sub-day data? Drives whether 'hour' is in
      *  the fold ladder. Daily-only atoms never reach the hour rung. */
     const hasHourly = chart.atoms.some(a => typeof a.hour === 'number' && a.hour > 0);

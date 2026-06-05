@@ -146,7 +146,7 @@ export function periodKeyFor(startISO: string, unit: string): string | null {
  *    decade:  `YYYYs`             → [(…0)-01-01,    (…0+10)-01-01)
  *    century: `YYYYc`             → [(…00)-01-01,   (…00+100)-01-01)
  *  Returns null for unrecognized shapes. */
-function periodBounds(key: string): { startISO: string; endISO: string } | null {
+export function periodBounds(key: string): { startISO: string; endISO: string } | null {
     /* Month: YYYY-MM. */
     const monthMatch = key.match(/^(\d{4})-(\d{2})$/);
     if (monthMatch) {

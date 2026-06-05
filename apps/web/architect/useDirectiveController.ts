@@ -49,7 +49,17 @@ export function useDirectiveController<TDirective extends ReplayableDirective<TQ
         setError(null);
         try {
             const next = await recomposePost<TDirective>(query);
-            setDirective(next);
+            /* The server rebuilds the directive's `query` from its own
+             *  replayStamp and DROPS client-only drill fields — notably
+             *  `periodKey`, the calendar identity the drill set. Without it the
+             *  renderer falls back to windowDays/asOf day-arithmetic (which
+             *  drifts a few days → an extra edge bucket like a stray 2009 in a
+             *  2010s drill). Merge the requested query's periodKey back onto the
+             *  returned directive so the calendar identity survives the round-trip. */
+            const merged = (query as { periodKey?: string }).periodKey
+                ? ({ ...next, query: { ...(next as { query?: object }).query, periodKey: (query as { periodKey?: string }).periodKey } } as TDirective)
+                : next;
+            setDirective(merged);
             pinDirectiveKey(query);
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : 'recompose failed');

@@ -8,6 +8,7 @@ import { QueryToggleBar } from './QueryToggleBar.js';
 import { FeatureToggleGroup, useChartFeatureToggles } from './FeatureToggleGroup.js';
 import { LiveBadge } from '../composed/LiveBadge.js';
 import { ChartRangeSlider } from './ChartRangeSlider.js';
+import { periodKeyFor } from '../../architect/graph-drilldown.js';
 import { DrillBreadcrumbChip } from './DrillBreadcrumbChip.js';
 import { MARGIN } from './svg-parts.js';
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
@@ -94,7 +95,17 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     const isHeatmap = t === 'heatmap';
     const drillable = isHeatmap || daysPerBucket > 1.001;
     const wrappedClick = drillable && onBucketClick
-        ? (idx: number, label: string, atomKeyRange?: [number, number], periodKey?: string) => onBucketClick(idx, label, visibleBuckets, daysPerBucket, atomKeyRange, periodKey)
+        ? (idx: number, label: string, atomKeyRange?: [number, number], periodKey?: string) => {
+            /* Derive the calendar periodKey HERE, where the post-fold `resolved`
+             *  directive carries the real __foldUnit. DirectiveChart can't: it
+             *  holds the raw controller seed, whose __foldUnit is undefined
+             *  (the fold is computed at render). `label` is the bucket's
+             *  __startISO for time charts, so periodKeyFor maps it to the
+             *  decade/year/month key the drill then narrows to exactly. */
+            const fu = resolved.__foldUnit;
+            const pk = periodKey ?? (fu ? periodKeyFor(label, fu) : null) ?? undefined;
+            onBucketClick(idx, label, visibleBuckets, daysPerBucket, atomKeyRange, pk);
+        }
         : undefined;
 
     // The header row carries the title + drill breadcrumbs (left) and the
