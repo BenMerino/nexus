@@ -6,13 +6,17 @@
 
 import type { FoldUnit } from './fold-atoms';
 
-/** Step a Date by one fold unit (in UTC). Mutates and returns. */
+/** Step a Date by one fold unit (in UTC). Mutates and returns.
+ *  MUST always advance: callers loop `while (cur < after) cur = stepByUnit(...)`,
+ *  so a unit that matches no branch would return `d` unchanged and spin forever.
+ *  An unknown/legacy unit (e.g. a stale 'week'/'quarter' from a cached directive
+ *  after they were dropped) falls back to a day step so the loop still terminates. */
 export function stepByUnit(d: Date, unit: Exclude<FoldUnit, 'auto'>): Date {
     if (unit === 'hour')     d.setUTCHours(d.getUTCHours() + 1);
-    if (unit === 'day')      d.setUTCDate(d.getUTCDate() + 1);
-    if (unit === 'month')    d.setUTCMonth(d.getUTCMonth() + 1);
-    if (unit === 'year')     d.setUTCFullYear(d.getUTCFullYear() + 1);
-    if (unit === 'decade')   d.setUTCFullYear(d.getUTCFullYear() + 10);
+    else if (unit === 'month')  d.setUTCMonth(d.getUTCMonth() + 1);
+    else if (unit === 'year')   d.setUTCFullYear(d.getUTCFullYear() + 1);
+    else if (unit === 'decade') d.setUTCFullYear(d.getUTCFullYear() + 10);
+    else                        d.setUTCDate(d.getUTCDate() + 1); // 'day' + any unknown unit
     return d;
 }
 

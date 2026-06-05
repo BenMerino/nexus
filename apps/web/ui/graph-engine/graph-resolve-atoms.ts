@@ -12,6 +12,7 @@
 import {
     foldByCalendar,
     pickAutoFoldUnit,
+    isValidFoldUnit,
     HOURS_PER_DAY,
     type FoldUnit,
 } from '../../architect/fold-atoms.js';
@@ -86,7 +87,12 @@ export function resolveAtomicDirective(
         } as GraphDirective;
     }
 
-    const foldUnit: FoldUnit = q?.foldUnit ?? 'auto';
+    /* Sanitize the requested foldUnit: a stale persisted/wire value (e.g. a
+     *  'week'/'quarter' saved before they were dropped from the ladder) must
+     *  fall back to auto, NOT reach foldByCalendar — an unknown unit would spin
+     *  the calendar walk forever (stepByUnit can't advance it). */
+    const requested = q?.foldUnit ?? 'auto';
+    const foldUnit: FoldUnit = (requested === 'auto' || isValidFoldUnit(requested)) ? requested : 'auto';
     const resolvedUnit = foldUnit === 'auto' ? pickAutoFoldUnit(visibleDays, hasHourly) : foldUnit;
     const buckets = foldByCalendar(chart.atoms, resolvedUnit, chart.aggregator ?? 'sum', chart.series ?? []);
     /* Edge anchoring: leftmost visible bucket pins its center to x=0,

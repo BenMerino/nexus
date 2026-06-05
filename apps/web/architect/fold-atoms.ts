@@ -49,6 +49,19 @@ export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
  * timelines) where even `year` produces 40+ unreadable buckets. */
 export type FoldUnit = 'auto' | 'hour' | 'day' | 'month' | 'year' | 'decade';
 
+/** The concrete fold units (no 'auto'). The single canonical list — callers
+ *  that accept a persisted/wire foldUnit MUST validate against this so a stale
+ *  value (e.g. a 'week'/'quarter' saved before they were dropped) falls back to
+ *  'auto' instead of reaching the calendar walk (which would spin forever on an
+ *  unknown unit). */
+export const VALID_FOLD_UNITS: ReadonlySet<Exclude<FoldUnit, 'auto'>> =
+    new Set(['hour', 'day', 'month', 'year', 'decade']);
+
+/** True if `u` is a currently-supported concrete fold unit. */
+export function isValidFoldUnit(u: unknown): u is Exclude<FoldUnit, 'auto'> {
+    return typeof u === 'string' && VALID_FOLD_UNITS.has(u as Exclude<FoldUnit, 'auto'>);
+}
+
 /** Atom key resolution. `key` is hours-since-anchor (integer). Daily
  * atoms occupy hour 0 of each day (`key = dayIdx * HOURS_PER_DAY`);
  * hourly atoms fill the remaining 23 slots when builders opt in. The
