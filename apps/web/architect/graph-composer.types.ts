@@ -129,6 +129,11 @@ export interface GraphQuery extends BaseQuery {
      * 4 Streams use this for time-travel: `asOf` becomes the replay
      * cursor across the event log. */
     asOf?: string;
+    /** The CALENDAR period this query drilled into — the single identity the
+     *  breadcrumb, axis, and view derive from, instead of reverse-engineering it
+     *  from windowDays/asOf (which drift + disagree). Set by narrowQueryToPeriod.
+     *  Keys: `2020s` decade, `2024` year, `2024-03` month. */
+    periodKey?: string;
 }
 
 /** Named slider positions exposed as toggle pills. Each maps 1:1 to a

@@ -74,7 +74,7 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
                     segments.push({
                         x, y: topY, w, h: segH,
                         color: seriesColorFor(c, series[si], si),
-                        hit: { idx: i, seriesIdx: si, label: b.startISO, series: series[si], value: v },
+                        hit: { idx: i, seriesIdx: si, label: b.startISO, __startISO: b.startISO, series: series[si], value: v },
                         bucketIdx: i,
                         seriesId: series[si],
                         iso: b.startISO,
@@ -101,7 +101,7 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
                 segments.push({
                     x: pos.x, y: topY, w: Math.max(0, pos.width), h: segH,
                     color: seriesColorFor(c, series[si], si),
-                    hit: { idx: i, seriesIdx: si, label: layout.labels[i], series: series[si], value: v },
+                    hit: { idx: i, seriesIdx: si, label: layout.labels[i], __startISO: iso, series: series[si], value: v },
                     bucketIdx: i,
                     seriesId: series[si],
                     iso,

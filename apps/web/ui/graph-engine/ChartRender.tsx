@@ -152,7 +152,7 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
     }, [chart, layoutSize.w, layoutSize.h, show]);
 
     const handleClick = useCallback((data: unknown) => {
-        const d = data as { idx?: number; label?: string; series?: string; row?: string; col?: string; startKey?: number; endKey?: number };
+        const d = data as { idx?: number; label?: string; iso?: string; __startISO?: string; series?: string; row?: string; col?: string; startKey?: number; endKey?: number };
         /* Series-isolate: pie/donut wedges and radar/polygon series fire
          * onToggleSeries with the legend key (label for pie, series name
          * for radar/multi-line). The receiving toggle() flips the
@@ -171,9 +171,15 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
             onBucketClick(d.startKey, `${d.row} ${d.col}`, [d.startKey, d.endKey]);
             return;
         }
-        /* Cartesian bucket-click. */
+        /* Cartesian bucket-click. Pass the bucket's startISO (not the formatted
+         *  label) as the click key: the drill derives the calendar period from
+         *  it via periodKeyFor, which needs a `YYYY-MM-DD` date. A formatted
+         *  label like "2020s"/"Mar" can't be parsed → the drill fell back to the
+         *  fuzzy bucket-index math and landed on the wrong span (clicking a
+         *  decade showed the neighbouring decades). Categorical bars have no
+         *  __startISO → fall back to the label (their drill uses bucket index). */
         if (onBucketClick && typeof d?.idx === 'number' && typeof d?.label === 'string') {
-            onBucketClick(d.idx, d.label);
+            onBucketClick(d.idx, d.__startISO ?? d.iso ?? d.label);
         }
     }, [onToggleSeries, onBucketClick, chart.type]);
     const clickHandler = (onBucketClick || onToggleSeries) ? handleClick : undefined;

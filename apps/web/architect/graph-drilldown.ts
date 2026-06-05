@@ -107,7 +107,12 @@ export function narrowQueryToPeriod(parent: GraphQuery, periodKey: string): Grap
     if (endMs < startMs) return null; // period sits entirely outside the view
     const spanDays = Math.max(1, Math.round((endMs - startMs) / DAY_MS) + 1);
     const asOf = new Date(endMs).toISOString().split('T')[0];
-    const child = { ...parent, windowDays: spanDays, asOf };
+    /* Carry the calendar identity (`periodKey`) on the child — the SINGLE
+     *  source the breadcrumb + axis read, so they show "2020s"/"2024", never a
+     *  reverse-engineered day-window range like "2007–2017". The window
+     *  (windowDays/asOf) is just what the fetch/fold needs; the IDENTITY is the
+     *  key. */
+    const child = { ...parent, windowDays: spanDays, asOf, periodKey };
     /* Containment — not size — is the gate. A sibling period (Q1 → Q2)
      *  has the same width but a disjoint range, and clicking the year
      *  while inside a quarter widens; both must be rejected so the
@@ -215,7 +220,27 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 * ≤~8 days → the day (2026-04-15)
 * ≤~100 → the month (Apr 2026)
  *    ≤~366 → the year (2026) · else → a year range (2010–2019). */
+/** Human label for a calendar `periodKey` — the SAME identity the drill set, so
+ *  the breadcrumb reads "2020s" / "2024" / "Mar 2024", matching the period the
+ *  view actually descended into. `2020s` decade, `YYYY` year, `YYYY-MM` month. */
+function periodLabel(key: string): string | null {
+    const month = key.match(/^(\d{4})-(\d{2})$/);
+    if (month) return `${MONTHS[parseInt(month[2], 10) - 1]} ${month[1]}`;
+    if (/^\d{4}$/.test(key)) return key;                 // year
+    if (/^\d{4}s$/.test(key)) return key;                // decade (2020s)
+    if (/^\d{4}c$/.test(key)) return `${key.slice(0, 4)}s`; // century → 1900s
+    return null;
+}
+
 export function windowLabel(q: GraphQuery): string {
+    /* Prefer the calendar identity the drill carried — one source of truth, no
+     *  reverse-engineering a range from the day window (which drifts and
+     *  produced "2007–2017"). Falls back to the window only for un-drilled or
+     *  atom-range queries that carry no periodKey. */
+    if (q.periodKey) {
+        const pl = periodLabel(q.periodKey);
+        if (pl) return pl;
+    }
     const endISO = q.asOf ?? isoToday();
     const end = new Date(`${endISO}T00:00:00Z`);
     if (Number.isNaN(end.getTime())) return endISO;
