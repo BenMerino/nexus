@@ -65,7 +65,13 @@ export function xAxisLabelLayout(el: Extract<ChromeElement, { kind: 'x-axis-band
      *  TEMPORAL axes, where labels are samples, not identities. */
     if (keepAll && n > 0) {
         const allIdx = labels.map((_, i) => i);
-        const maxChars = Math.max(X_LABEL_MIN_CHARS, Math.floor(uniformStep / TICK_FONT_AVG_CHAR_PX));
+        /* Reserve a gutter inside the bar slot so a wrapped line stays clear of
+         *  its dividers. Without it the char budget (uniformStep / avg-char-px)
+         *  let a single wide LOWERCASE word ("Horticulturae") pass the count
+         *  test while its real pixels overran the slot edge — avg-char-px (5)
+         *  under-measures all-lowercase words. Budgeting the gutter out makes
+         *  such words ellipsise just before they'd touch the divider. */
+        const maxChars = Math.max(X_LABEL_MIN_CHARS, Math.floor((uniformStep - LABEL_GUTTER_PX) / TICK_FONT_AVG_CHAR_PX));
         /* Categorical labels WRAP onto multiple upright lines (label-wrap)
          *  rather than rotate — easier to read and no edge overhang. */
         return { indices: allIdx, at, step: uniformStep, stride: 1, maxChars, rotate: false, wrap: true, range };

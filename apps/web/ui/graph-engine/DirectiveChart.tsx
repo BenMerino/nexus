@@ -122,8 +122,15 @@ function ControlledChart({ seed }: { seed: GraphDirective }) {
      * refetch/recompose/slider/drill/stream push replaces ctrl.directive with a
      * fresh SERVER directive that lacks seriesColors, so normalizing only the
      * seed makes colors flash on first paint then revert to flat/black once the
-     * controller swaps in a refetched directive. */
-    const chart = useMemo(() => withSeriesColors(ctrl.directive), [ctrl.directive]);
+     * controller swaps in a refetched directive. The host PRESENTATION flags
+     * (hideTitle/hideFrame, set on the seed by a card-wrapping host) are
+     * likewise absent from the server recompose, so re-apply them from the seed
+     * too — else cadence/byIndex (replayable) keep showing the engine title +
+     * frame the card already renders. */
+    const chart = useMemo(
+        () => ({ ...withSeriesColors(ctrl.directive), hideTitle: seed.hideTitle, hideFrame: seed.hideFrame }),
+        [ctrl.directive, seed.hideTitle, seed.hideFrame],
+    );
 
     return (
         <GraphRender
