@@ -56,13 +56,33 @@ export function bucketSequence(
     const anchorMs = Date.parse(`${anchorISO}T00:00:00Z`);
     const byKey = new Map(dense.map(b => [b.bucketKey, b]));
 
-    /* Enumerate every calendar unit spanning the atom range, mirroring
-     *  foldByCalendar's `while (cur < after)` loop. For each, reuse the
-     *  dense agg if present, else synthesize an empty bucket. */
+    /* Enumerate the calendar units that intersect the VISIBLE WINDOW,
+     *  mirroring foldByCalendar's `while (cur < after)` loop. For each,
+     *  reuse the dense agg if present, else synthesize an empty bucket.
+     *
+     *  The walk is CLAMPED to the window, not the full atom span. The
+     *  atom range can be centuries wide (a tenant's whole publication
+     *  history); enumerating every fold unit across it at a fine unit
+     *  ('day'/'month') materializes tens of thousands of empty buckets
+     *  per render — all outside the window, x-clamped to [0,1] and culled
+     *  downstream, yet each one allocated (with a `seriesValues` dict) and
+     *  pushed through geometry. That is unbounded work that crashes the
+     *  renderer. Buckets the window can't show are never built: clamp the
+     *  start to max(firstAtom, windowStart) and the end to
+     *  min(lastAtom+1d, windowEnd+1d), both in date space, before aligning
+     *  to the fold unit. Visible output is identical. */
     const firstD = new Date(anchorMs + atoms[0].key * HOUR_MS);
     const lastD = new Date(anchorMs + atoms[atoms.length - 1].key * HOUR_MS);
-    let cur = alignToUnitStart(firstD, foldUnit);
-    const after = new Date(lastD); after.setUTCDate(after.getUTCDate() + 1);
+    const windowStartD = new Date(anchorMs + windowStartKey * HOUR_MS);
+    const windowEndD = new Date(anchorMs + windowEndKey * HOUR_MS);
+    /* Walk floor: latest of the first atom and the window's left edge,
+     *  snapped back to its fold-unit start so the first bucket is whole. */
+    const walkStart = firstD > windowStartD ? firstD : windowStartD;
+    let cur = alignToUnitStart(walkStart, foldUnit);
+    /* Walk ceiling: earliest of (last atom, window right edge), +1 day so
+     *  the bucket containing that final instant is included. */
+    const walkEnd = lastD < windowEndD ? lastD : windowEndD;
+    const after = new Date(walkEnd); after.setUTCDate(after.getUTCDate() + 1);
     /* MUST match `placeAtoms`'s winSpan (place-atoms.ts:76,
      *  `windowEndKey + 1 - windowStartKey`) — empties interleave with
      *  placement-derived aggregates, so they must share the same
