@@ -37,7 +37,7 @@ export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
  * on the visible-pixel budget; the rest are explicit user choices.
  *
  * Ordered ladder (fine → coarse):
- *   hour < day < week < month < quarter < year < decade
+ *   hour < day < month < year < decade  (week + quarter dropped)
  *
  * `'hour'` enables sub-day resolution for builders that ship hourly
  * atoms (`Atom.hour` set). Daily-only builders never reach this rung —
@@ -47,7 +47,7 @@ export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
  * aligned to the …0 year (1990, 2000). It only earns its place over
  * multi-decade spans (academic publication histories, founding-to-now
  * timelines) where even `year` produces 40+ unreadable buckets. */
-export type FoldUnit = 'auto' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year' | 'decade';
+export type FoldUnit = 'auto' | 'hour' | 'day' | 'month' | 'year' | 'decade';
 
 /** Atom key resolution. `key` is hours-since-anchor (integer). Daily
  * atoms occupy hour 0 of each day (`key = dayIdx * HOURS_PER_DAY`);
@@ -118,11 +118,13 @@ export interface CalendarBucket extends FoldedAtom {
  * available — builders that ship daily-only atoms never get hour-fold
  * even when zoomed to a single day (their atoms have nothing finer). */
 export function pickAutoFoldUnit(visibleDays: number, hasHourly: boolean = false): Exclude<FoldUnit, 'auto'> {
+    // Ladder is hour < day < month < year < decade — week + quarter were
+    // dropped, so AUTO must never resolve to them (it's what re-introduced
+    // W1/Q1 buckets + tier labels). Their old ranges fold into the adjacent
+    // kept rung: the sub-year span → month, the multi-year span → year.
     if (hasHourly && visibleDays <= 5) return 'hour';
     if (visibleDays <= 60) return 'day';
-    if (visibleDays <= 365 * 1.2) return 'week';
     if (visibleDays <= 365 * 4) return 'month';
-    if (visibleDays <= 365 * 12) return 'quarter';
     if (visibleDays <= 365 * 40) return 'year';
     return 'decade';
 }
@@ -140,16 +142,14 @@ export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = fals
     const out: Array<Exclude<FoldUnit, 'auto'> | 'auto'> = ['auto'];
     const decadal = visibleDays / 3650;
     const yearly = visibleDays / 365;
-    const quarterly = visibleDays / 91;
     const monthly = visibleDays / 30;
-    const weekly = visibleDays / 7;
     const daily = visibleDays;
     const hourly = visibleDays * HOURS_PER_DAY;
+    // week + quarter are dropped from the ladder — never offer them as
+    // eligible rungs (kept: decade/year/month/day/hour).
     if (decadal >= 3 && decadal <= 120) out.push('decade');
     if (yearly >= 3 && yearly <= 120) out.push('year');
-    if (quarterly >= 3 && quarterly <= 120) out.push('quarter');
     if (monthly >= 3 && monthly <= 120) out.push('month');
-    if (weekly >= 3 && weekly <= 120) out.push('week');
     if (daily >= 3 && daily <= 120) out.push('day');
     if (hasHourly && hourly >= 3 && hourly <= 120) out.push('hour');
     return out;

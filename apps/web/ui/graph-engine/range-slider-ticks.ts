@@ -13,7 +13,7 @@
  *   span > 8 years   → year minors,  no major tier
  * ──────────────────────────────────────────────────────────── */
 
-export type TickUnit = 'day' | 'week' | 'month' | 'quarter' | 'year';
+export type TickUnit = 'day' | 'month' | 'year';
 
 export interface SliderTick {
     /** Fractional position along the track, [0,1]. */
@@ -22,12 +22,13 @@ export interface SliderTick {
     major: boolean;
 }
 
-/** Auto-pick `(minor, major | null)` from total span in days. */
+/** Auto-pick `(minor, major | null)` from total span in days. week + quarter
+ *  are dropped from the unit ladder, so slider ticks skip them too: a sub-year
+ *  span majors by month, a multi-year span by year. */
 export function pickTickUnits(totalDays: number): { minor: TickUnit; major: TickUnit | null } {
-    if (totalDays <= 90) return { minor: 'day', major: 'week' };
-    if (totalDays <= 365) return { minor: 'week', major: 'month' };
-    if (totalDays <= 365 * 3) return { minor: 'month', major: 'quarter' };
-    if (totalDays <= 365 * 8) return { minor: 'quarter', major: 'year' };
+    if (totalDays <= 90) return { minor: 'day', major: 'month' };
+    if (totalDays <= 365) return { minor: 'month', major: 'year' };
+    if (totalDays <= 365 * 8) return { minor: 'month', major: 'year' };
     return { minor: 'year', major: null };
 }
 
@@ -74,12 +75,9 @@ function alignedStart(d: Date, unit: TickUnit): Date {
     const y = d.getUTCFullYear();
     const mo = d.getUTCMonth();
     const day = d.getUTCDate();
-    const dow = d.getUTCDay(); /* 0 = Sun */
     switch (unit) {
         case 'day':     return new Date(Date.UTC(y, mo, day));
-        case 'week':    return new Date(Date.UTC(y, mo, day - ((dow + 6) % 7))); /* Monday */
         case 'month':   return new Date(Date.UTC(y, mo, 1));
-        case 'quarter': return new Date(Date.UTC(y, Math.floor(mo / 3) * 3, 1));
         case 'year':    return new Date(Date.UTC(y, 0, 1));
     }
 }
@@ -92,9 +90,7 @@ function advance(ms: number, unit: TickUnit): number {
     const day = d.getUTCDate();
     switch (unit) {
         case 'day':     return Date.UTC(y, mo, day + 1);
-        case 'week':    return Date.UTC(y, mo, day + 7);
         case 'month':   return Date.UTC(y, mo + 1, day);
-        case 'quarter': return Date.UTC(y, mo + 3, day);
         case 'year':    return Date.UTC(y + 1, mo, day);
     }
 }

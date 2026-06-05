@@ -48,8 +48,9 @@ export interface GridBucket {
  *  `hasHourly` gates the finest pair — daily-only atoms get the day×week
  *  pair at the narrowest zoom instead. */
 export function pickAutoUnitPair(visibleDays: number, hasHourly: boolean = false): [Exclude<FoldUnit, 'auto'>, Exclude<FoldUnit, 'auto'>] {
+    // week + quarter dropped from the ladder → the row tier never folds to
+    // them. The old ['week','day'] sub-quarter pair becomes ['month','day'].
     if (hasHourly && visibleDays <= 14) return ['day', 'hour'];
-    if (visibleDays <= 90) return ['week', 'day'];
     if (visibleDays <= 400) return ['month', 'day'];
     if (visibleDays <= 365 * 40) return ['year', 'month'];
     return ['decade', 'year'];
@@ -110,7 +111,7 @@ export function foldByCalendarGrid(
      *  putting any single weekday in the header would be a lie. Strip the
      *  weekday in that case; keep it otherwise. */
     const colDisplayLabel = (d: Date): string => {
-        if (colUnit === 'day' && (rowUnit === 'month' || rowUnit === 'quarter' || rowUnit === 'year')) {
+        if (colUnit === 'day' && (rowUnit === 'month' || rowUnit === 'year')) {
             return String(d.getUTCDate()).padStart(2, '0');
         }
         return formatLabel(d, colUnit);
@@ -200,9 +201,7 @@ export function cellSpanDays(rowUnit: Exclude<FoldUnit, 'auto'>, colUnit: Exclud
     void rowUnit;
     if (colUnit === 'hour') return 1 / HOURS_PER_DAY;
     if (colUnit === 'day') return 1;
-    if (colUnit === 'week') return 7;
     if (colUnit === 'month') return 30;
-    if (colUnit === 'quarter') return 91;
     if (colUnit === 'year') return 365;
     return 3650;
 }
