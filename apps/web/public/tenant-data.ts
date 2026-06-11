@@ -8,6 +8,15 @@ interface TenantChrome {
 }
 export interface StatsPayload { tenant: TenantChrome; stats: PublicStats; }
 
+// Href to one academic's public profile. Production URLs are path-shaped
+// (/t/:slug/a/:orcid, Caddy rewrites to author.html); the Vite dev server has
+// no rewrite, so fall back to query params when not on a /t/ path.
+export function authorProfileHref(slug: string, orcid: string): string {
+  return window.location.pathname.startsWith('/t/')
+    ? `/t/${encodeURIComponent(slug)}/a/${encodeURIComponent(orcid)}`
+    : `/author.html?slug=${encodeURIComponent(slug)}&orcid=${encodeURIComponent(orcid)}`;
+}
+
 export function readSlugFromUrl(): string | null {
   const qSlug = new URLSearchParams(window.location.search).get('slug');
   const pathMatch = window.location.pathname.match(/^\/t\/([^\/?#]+)/);

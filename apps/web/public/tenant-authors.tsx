@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { hIndexTooltip } from './h-index-breakdown';
 import { ES } from './tenant-i18n';
+import { AuthorTableRow } from './tenant-author-row';
 
 export interface AuthorRow {
   name: string;
@@ -110,19 +110,12 @@ export function AuthorsTable({ slug, unit }: { slug: string; unit?: string | nul
                 </th>
               ))}
               <th>{ES.authorsTable.orcid}</th>
+              <th aria-label={ES.profile.viewProfileTitle} />
             </tr>
           </thead>
           <tbody>
             {rows.map((a, i) => (
-              <tr key={`${a.orcid || a.name}-${i}`}>
-                <td>{a.name}</td>
-                <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums' }}>{a.paperCount.toLocaleString()}</td>
-                <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums' }} title={hIndexTooltip(a.hIndexByType)}>{a.hIndex}</td>
-                <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontVariantNumeric: 'tabular-nums' }}>{a.totalCitations.toLocaleString()}</td>
-                <td>{a.orcid
-                  ? <a href={`https://orcid.org/${a.orcid}`} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{a.orcid}</a>
-                  : <span className="text-muted text-small">{ES.authorsTable.none}</span>}</td>
-              </tr>
+              <AuthorTableRow key={`${a.orcid || a.name}-${i}`} a={a} slug={slug} />
             ))}
           </tbody>
         </table>

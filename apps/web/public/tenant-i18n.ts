@@ -3,8 +3,9 @@
 // The exported identifiers keep their historical *_ES / Es names to avoid
 // churning every importer; the values are English.
 
-import type { VelocityLabels } from './portfolio-velocity';
-import type { CadenceLabels } from './portfolio-cadence';
+// Chart-label dialects + type labels live in tenant-i18n-labels.ts (N5 split);
+// re-exported here so importers keep one entry point.
+export { VELOCITY_LABELS_ES, CADENCE_LABELS_ES, typeLabelEs } from './tenant-i18n-labels';
 
 export const ES = {
   /* Page chrome / tabs */
@@ -83,6 +84,23 @@ export const ES = {
     rangeOf: (start: number, end: number, total: string) => `${start}–${end} of ${total}`,
   },
 
+  /* Individual academic profile page (/t/:slug/a/:orcid) */
+  profile: {
+    eyebrow: 'Academic profile',
+    backTo: (tenant: string) => `← ${tenant}`,
+    viewProfile: 'Profile',
+    viewProfileTitle: 'View public profile',
+    papers: 'Papers',
+    citations: 'Citations',
+    hIndex: 'h-index',
+    activeYears: 'Active years',
+    outputPerYear: 'Publications per year',
+    publications: 'Publications',
+    onOrcid: 'ORCID record ↗',
+    notFound: 'Author not found.',
+    unfiled: 'No unit on record',
+  },
+
   /* Org tree (now the contributors ranking + the scope picker) */
   orgTree: {
     allOrganization: 'Entire organization',
@@ -110,32 +128,3 @@ export const ES = {
     type: 'Type',
   },
 };
-
-export const VELOCITY_LABELS_ES: VelocityLabels = {
-  score: 'score',
-  trend: { rising: 'rising', flat: 'flat', falling: 'falling' },
-  actual: 'Actual citations',
-  forecast: 'Forecast',
-};
-
-export const CADENCE_LABELS_ES: CadenceLabels = {
-  avgPerYear: 'papers / year (average)',
-};
-
-// Publication type labels.
-const TYPE_LABELS_ES: Record<string, string> = {
-  'journal-article': 'Article',
-  'conference-paper': 'Conference',
-  'preprint': 'Preprint',
-  'review': 'Review',
-  'book-chapter': 'Book chapter',
-  'book': 'Book',
-  'dataset': 'Dataset',
-  'editorial': 'Editorial',
-  'letter': 'Letter',
-  'erratum': 'Erratum',
-  'paratext': 'Paratext',
-  'unknown': 'Other',
-  'other': 'Other',
-};
-export const typeLabelEs = (t: string): string => TYPE_LABELS_ES[t] || t;

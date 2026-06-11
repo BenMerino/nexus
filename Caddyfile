@@ -29,6 +29,10 @@
 	@tenant path_regexp tenant ^/t/[^/]+$
 	rewrite @tenant /tenant.html
 
+	# Individual academic profile: /t/:slug/a/:orcid → author.html.
+	@authorPage path_regexp authorPage ^/t/[^/]+/a/[^/]+$
+	rewrite @authorPage /author.html
+
 	# Asset-shim catch-all for stale-HTML clients. Matches *.js / *.css at
 	# the root that didn't hit the static file_server. Forwards to the API
 	# which serves a tiny reload payload from /api/asset-shim.
