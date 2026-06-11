@@ -7,10 +7,9 @@ import { LegibilityAlert } from './LegibilityAlert.js';
 import { QueryToggleBar } from './QueryToggleBar.js';
 import { FeatureToggleGroup, useChartFeatureToggles } from './FeatureToggleGroup.js';
 import { LiveBadge } from '../composed/LiveBadge.js';
-import { ChartRangeSlider } from './ChartRangeSlider.js';
 import { periodKeyFor } from '../../architect/graph-drilldown.js';
 import { DrillBreadcrumbChip } from './DrillBreadcrumbChip.js';
-import { MARGIN } from './svg-parts.js';
+import { WindowPickerMolecule } from './WindowPickerMolecule.js';
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
 import type { ToggleSpec } from '../../architect/replayable-directive.js';
 
@@ -120,6 +119,7 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     // card's own heading isn't trailed by an empty 0.25rem gap.
     const showHeaderRow = (!chart.hideTitle && !!chart.title)
         || (!!breadcrumbs && breadcrumbs.length > 0 && !!onDrillTo)
+        || sliderActive
         || (otherToggles.length > 0 && !!onToggle)
         || (featuresAvailable.length > 0 && !!featureScopeKey)
         || isLive !== undefined;
@@ -136,6 +136,16 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
                         )}
                         {breadcrumbs && breadcrumbs.length > 0 && onDrillTo && (
                             <DrillBreadcrumbChip crumbs={breadcrumbs} current={currentLabel ?? ''} onJump={onDrillTo} />
+                        )}
+                        {sliderActive && (
+                            <WindowPickerMolecule
+                                windowDays={windowDays}
+                                asOf={asOf}
+                                minISO={span!.earliest}
+                                maxISO={span!.today}
+                                onWindowChange={onWindowChange!}
+                                disabled={isLoading}
+                            />
                         )}
                     </BaseBox>
                     <BaseBox display="flex" direction="row" align="center" density="tight">
@@ -159,17 +169,6 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
             {legibility === 'illegible'
                 ? <LegibilityAlert chart={chartWithActive} />
                 : <RenderFamily chart={resolvedWithActive} w={container.width} h={container.height} axesOverride={axesOverride} onBucketClick={wrappedClick} onToggleSeries={onToggleSeries} />}
-            {sliderActive && (
-                <ChartRangeSlider
-                    span={span!}
-                    windowDays={windowDays}
-                    asOf={asOf}
-                    leftMarginPx={MARGIN.left}
-                    rightMarginPx={MARGIN.right}
-                    onWindowChange={onWindowChange}
-                    disabled={isLoading}
-                />
-            )}
         </>
     );
 }
