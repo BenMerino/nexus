@@ -20,7 +20,7 @@ const publicScope = (tenantId: number, unitKey?: string | null) =>
 export interface KpiSparkPoint { year: number; value: number; status: "observed" | "partial" | "projected"; }
 export interface KpiSparksDirective {
   type: "kpi-sparks";
-  series: { publications: KpiSparkPoint[]; citations: KpiSparkPoint[]; authors: KpiSparkPoint[] };
+  series: { publications: KpiSparkPoint[]; citations: KpiSparkPoint[]; authors: KpiSparkPoint[]; oa: KpiSparkPoint[] };
 }
 
 /** publications.kpiSparks — per-year series behind the public KPI cards
@@ -30,7 +30,7 @@ export interface KpiSparksDirective {
  *  static micro-SVG, never the interactive engine. */
 export async function composeKpiSparks(tenantId: number, unitKey?: string | null): Promise<KpiSparksDirective | null> {
   const series = await buildKpiSparks(publicScope(tenantId, unitKey));
-  const any = series.publications.length || series.citations.length || series.authors.length;
+  const any = series.publications.length || series.citations.length || series.authors.length || series.oa.length;
   if (!any) return null;
   return { type: "kpi-sparks", series };
 }

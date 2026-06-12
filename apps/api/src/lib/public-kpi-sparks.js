@@ -85,15 +85,36 @@ async function authorsByYear(scope) {
   return r.rows.map((row) => ({ year: Number(row.year), value: row.value }));
 }
 
+// %OA per published-year — the trend behind the Open Access card. A RATIO, so
+// no regression tail is appended (a projected percentage can escape [0,100])
+// and the still-filling current year is 'partial' (OA flags lag indexing, so
+// its ratio reads low, not just incomplete).
+async function oaByYear(scope) {
+  const f = await resolvePubFilter(scope);
+  const r = await sql.query(
+    `SELECT SUBSTRING(p.published FROM 1 FOR 4) AS year,
+            ROUND(100.0 * COUNT(*) FILTER (WHERE p.open_access) / COUNT(*), 1)::float AS value
+     FROM publications p
+     WHERE ${f.where} AND p.published ~ '^[0-9]{4}'
+     GROUP BY 1 ORDER BY 1`, f.params);
+  return r.rows.map((row) => ({ year: Number(row.year), value: Number(row.value) }));
+}
+
+// Status stamp without a forecast (for ratio series): last year partial.
+const stampPartial = (rows, currentYear) => rows.map((r, i) => ({
+  ...r, status: (i === rows.length - 1 && r.year >= currentYear) ? "partial" : "observed",
+}));
+
 async function buildKpiSparks(scope) {
   const currentYear = new Date().getUTCFullYear();
-  const [publications, citations, authors] = await Promise.all([
-    pubsByYear(scope), citesByYear(scope), authorsByYear(scope),
+  const [publications, citations, authors, oa] = await Promise.all([
+    pubsByYear(scope), citesByYear(scope), authorsByYear(scope), oaByYear(scope),
   ]);
   return {
     publications: withProjection(publications, currentYear),
     citations: withProjection(citations, currentYear),
     authors: withProjection(authors, currentYear),
+    oa: stampPartial(oa, currentYear),
   };
 }
 

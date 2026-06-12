@@ -30,16 +30,17 @@ export function ScopedSummary({ slug, stats, tenantId, unit }: { slug: string; s
 
 // Each KPI owns a jewel accent (rail + dot), a glyph kind, and the per-year
 // series (real data, from publications.kpiSparks) feeding it. The accent is a
-// real token (--j-*), not per-card hex (N3). OA uses the ring (no series).
-interface KpiDef { key: keyof typeof ES.summary; series: 'publications' | 'citations' | 'authors' | null; label: string; accent: string; spark: 'area' | 'bars' | 'ring'; foot: string; }
+// real token (--j-*), not per-card hex (N3). OA plots its %-per-year share —
+// the headline is the all-time average, the strip shows where it's heading.
+interface KpiDef { key: keyof typeof ES.summary; series: 'publications' | 'citations' | 'authors' | 'oa'; label: string; accent: string; spark: 'area' | 'bars'; foot: string; }
 const KPIS: KpiDef[] = [
   { key: 'publications', series: 'publications', label: ES.summary.publications, accent: 'var(--j-sapphire)', spark: 'area', foot: 'Indexed & de-duplicated' },
   { key: 'citations',    series: 'citations',    label: ES.summary.citations,    accent: 'var(--j-amethyst)', spark: 'area', foot: 'Cumulative, all sources' },
-  { key: 'openAccess',   series: null,           label: ES.summary.openAccess,   accent: 'var(--j-emerald)',  spark: 'ring', foot: 'Of corpus freely available' },
+  { key: 'openAccess',   series: 'oa',           label: ES.summary.openAccess,   accent: 'var(--j-emerald)',  spark: 'area', foot: 'Of corpus freely available' },
   { key: 'authors',      series: 'authors',      label: ES.summary.authors,      accent: 'var(--j-topaz)',    spark: 'bars', foot: 'ORCID-linked researchers' },
 ];
 
-export function SummaryCards({ summary, sparks }: { summary: PublicStats['summary']; sparks?: { publications: SparkPoint[]; citations: SparkPoint[]; authors: SparkPoint[] } | null }) {
+export function SummaryCards({ summary, sparks }: { summary: PublicStats['summary']; sparks?: { publications: SparkPoint[]; citations: SparkPoint[]; authors: SparkPoint[]; oa: SparkPoint[] } | null }) {
   const oaPct = summary.totalPubs > 0 ? Math.round((summary.oaCount / summary.totalPubs) * 100) : 0;
   const value = (k: keyof typeof ES.summary): React.ReactNode => {
     if (k === 'publications') return summary.totalPubs.toLocaleString();
@@ -55,17 +56,13 @@ export function SummaryCards({ summary, sparks }: { summary: PublicStats['summar
             <span className="kpi-label">{k.label}</span>
             <span className="kpi-dot" />
           </div>
-          {/* Ring (single-value glyph) sits beside the number; series glyphs
-              (area/bars) render BELOW the foot as a full-card-width strip. */}
           <div className="kpi-body">
             <div className="kpi-val num">{value(k.key)}</div>
-            {k.spark === 'ring' && <KpiSpark kind="ring" accent={k.accent} pct={oaPct} />}
           </div>
           <div className="kpi-foot">{k.foot}</div>
-          {k.spark !== 'ring' && (
-            <KpiSpark kind={k.spark} accent={k.accent}
-              series={k.series && sparks ? sparks[k.series] : undefined} />
-          )}
+          {/* Full-card-width series strip below the foot. */}
+          <KpiSpark kind={k.spark} accent={k.accent}
+            series={sparks ? sparks[k.series] : undefined} />
         </div>
       ))}
     </div>

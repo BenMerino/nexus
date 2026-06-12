@@ -5,7 +5,7 @@ import type { SparkPoint } from './tenant-kpi-spark';
  * via recompose. Plain data — no engine, no slider. Re-fetches with ?unit= so
  * the glyphs re-narrow with the selected faculty, like the KPI numbers above.
  * Returns null until loaded (cards show the number with an empty glyph). */
-export interface KpiSparkSeries { publications: SparkPoint[]; citations: SparkPoint[]; authors: SparkPoint[]; }
+export interface KpiSparkSeries { publications: SparkPoint[]; citations: SparkPoint[]; authors: SparkPoint[]; oa: SparkPoint[]; }
 
 export function useKpiSparks(tenantId: number, unit: string | null): KpiSparkSeries | null {
   const [series, setSeries] = useState<KpiSparkSeries | null>(null);

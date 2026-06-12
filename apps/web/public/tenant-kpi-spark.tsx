@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 // unit-scoped) with a per-point `status`: 'observed' (solid), 'partial'/
 // 'projected' (the still-filling year + regression forecast → DASHED, with the
 // gradient continuing underneath — mirroring the citation-velocity panel).
-// The open-access ring is the one non-series glyph (it encodes a single pct).
+// Open access plots its %-per-year share (a ratio: no forecast tail).
 
 export type SparkStatus = 'observed' | 'partial' | 'projected';
 export type SparkPoint = { year: number; value: number; status?: SparkStatus };
@@ -112,23 +112,8 @@ function Bars({ accent, series: raw, w }: { accent: string; series: SparkPoint[]
   );
 }
 
-function Ring({ accent, pct }: { accent: string; pct: number }) {
-  const sz = 44, r = 18, c = 2 * Math.PI * r, off = c * (1 - pct / 100);
-  return (
-    <svg className="kpi-spark" width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`} aria-hidden="true">
-      <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke="var(--bg-inset)" strokeWidth="5" />
-      <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={accent} strokeWidth="5"
-              strokeDasharray={c.toFixed(1)} strokeDashoffset={off.toFixed(1)}
-              strokeLinecap="round" transform={`rotate(-90 ${sz / 2} ${sz / 2})`} />
-    </svg>
-  );
-}
-
-export function KpiSpark({ kind, accent, series, pct }: { kind: 'area' | 'bars' | 'ring'; accent: string; series?: SparkPoint[]; pct?: number }) {
-  // Series glyphs render inside the full-width strip even for ring cards'
-  // siblings — hooks must run unconditionally, so measure before branching.
+export function KpiSpark({ kind, accent, series }: { kind: 'area' | 'bars'; accent: string; series?: SparkPoint[] }) {
   const [stripRef, w] = useMeasuredWidth();
-  if (kind === 'ring') return <Ring accent={accent} pct={pct ?? 0} />;
   // Drop the 'partial' (still-filling current year) point: at micro size its
   // half-empty value plots as a sharp false cliff between observed and the
   // forecast, reading as a decline that isn't real. Without it the glyph goes
