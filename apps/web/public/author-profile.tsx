@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { ES, typeLabelEs } from './tenant-i18n';
 import { RichHtml } from './rich-text';
 import { tenantHref } from './tenant-data';
-import { AuthorPubs, OutputPerYear, pubYears } from './author-pubs';
+import { AuthorPubs, OutputPerYear, TopCitedStrip, pubYears } from './author-pubs';
+
+export interface PaperAuthor { name: string; orcid: string | null; inRoster: boolean; }
 
 export interface ProfilePaper {
   title: string | null;
@@ -11,6 +13,8 @@ export interface ProfilePaper {
   journal: string | null;
   type: string | null;
   citations: number;
+  authors?: PaperAuthor[];
+  authorsTotal?: number;
 }
 
 export interface AuthorProfileData {
@@ -21,6 +25,7 @@ export interface AuthorProfileData {
   totalCitations: number;
   hIndex: number;
   hIndexByType: Record<string, number>;
+  concepts?: { name: string; works: number }[];
   papers: ProfilePaper[];
 }
 
@@ -103,13 +108,24 @@ export function AuthorProfile({ d, slug }: { d: AuthorProfileData; slug: string 
             ))}
           </div>
         )}
+        {/* Research topics — the researcher's top OpenAlex concepts (count =
+            works carrying the concept), from data already stored per record. */}
+        {d.concepts && d.concepts.length > 0 && (
+          <div className="profile-chips" style={{ marginTop: 14 }}>
+            <span className="profile-eyebrow" style={{ alignSelf: 'center' }}>{ES.profile.topics}</span>
+            {d.concepts.map(c => (
+              <span key={c.name} className="profile-chip">{c.name} · {c.works}</span>
+            ))}
+          </div>
+        )}
       </section>
       <div className="profile-grid">
         <section className="profile-panel">
           <h2 className="profile-panel-title">{ES.profile.publications}</h2>
-          <AuthorPubs papers={d.papers} open={open} onToggle={toggleYear} />
+          <AuthorPubs papers={d.papers} open={open} onToggle={toggleYear} slug={slug} />
         </section>
         <aside className="profile-panel profile-aside">
+          <TopCitedStrip papers={d.papers} />
           <h2 className="profile-panel-title">{ES.profile.outputPerYear}</h2>
           <OutputPerYear papers={d.papers} onYearClick={jumpToYear} />
         </aside>

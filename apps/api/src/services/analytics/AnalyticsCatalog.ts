@@ -1,5 +1,5 @@
 import { composeCadence, composeByIndex } from "../architect/PublicationCharts";
-import { composeTopJournals, composeCollaborators, composeCountries, composeCountriesMap, composeTypeByYear } from "../architect/PublicCategoryCharts";
+import { composeTopJournals, composeCollaborators, composeCountriesMap, composeResearchAreas } from "../architect/PublicCategoryCharts";
 import { composeKpiSparks, composeVelocity } from "../architect/PublicSeriesCharts";
 import type { AnalyticsMetric } from "./analytics-catalog.types";
 import { replay, publicCtx } from "./catalog-compose-ctx";
@@ -80,13 +80,13 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     surfaces: ["overview"],
   },
   {
-    kind: "publications.countries",
+    kind: "publications.researchAreas",
     domain: "publication",
-    title: "Contribuciones por país",
-    description: "Country contributions — distinct publications with a co-author affiliated in each country (donut).",
+    title: "Research areas",
+    description: "Top OpenAlex concepts on the corpus by distinct publication count (ranked bar).",
     queryShape: "none",
     access: "public",
-    compose: (q) => composeCountries(parseInt(q.tenantId, 10), q.unit),
+    compose: (q) => composeResearchAreas(parseInt(q.tenantId, 10), q.unit),
     invalidatedBy: ["publication.upserted", "ingestion.completed"],
     surfaces: ["overview"],
   },
@@ -120,17 +120,6 @@ export const ANALYTICS_METRICS: readonly AnalyticsMetric[] = [
     queryShape: "none",
     access: "public",
     compose: (q) => composeKpiSparks(parseInt(q.tenantId, 10), q.unit),
-    invalidatedBy: ["publication.upserted", "ingestion.completed"],
-    surfaces: ["overview"],
-  },
-  {
-    kind: "publications.typeByYear",
-    domain: "publication",
-    title: "Publicaciones por tipo",
-    description: "Work-type × year heatmap (top 6 types).",
-    queryShape: "none",
-    access: "public",
-    compose: (q) => composeTypeByYear(parseInt(q.tenantId, 10)),
     invalidatedBy: ["publication.upserted", "ingestion.completed"],
     surfaces: ["overview"],
   },

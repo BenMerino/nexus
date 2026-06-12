@@ -28,17 +28,22 @@ function ThemeButton() {
 }
 
 export function TenantPublicHeader({
-  tenant, items, currentId, onNavigate, yearRange,
+  tenant, items, currentId, onNavigate, yearRange, lastUpdated,
 }: {
   tenant: TenantLike;
   items: PublicNavItem[];
   currentId: string;
   onNavigate: (id: string) => void;
   yearRange?: { minYear: string | null; maxYear: string | null };
+  lastUpdated?: string | null;
 }) {
-  // yearRange may be absent if the analytics payload wins the load race (it
-  // carries no yearRange) — guard so the header never throws on .maxYear.
-  const updated = yearRange?.maxYear ? `${ES.updatedPrefix} ${yearRange.maxYear}` : ES.publicProfileBadge;
+  // Prefer the real corpus-change date (last DOI submission) over the max
+  // publication year; yearRange may be absent if the analytics payload wins
+  // the load race — guard so the header never throws on .maxYear.
+  const updatedDate = lastUpdated
+    ? new Date(lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : yearRange?.maxYear;
+  const updated = updatedDate ? `${ES.updatedPrefix} ${updatedDate}` : ES.publicProfileBadge;
   return (
     <header className="public-header">
       <div className="public-header-inner">

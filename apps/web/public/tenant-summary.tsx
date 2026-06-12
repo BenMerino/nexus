@@ -8,7 +8,7 @@ import { useKpiSparks } from './use-kpi-sparks';
 // Fetch the unit-scoped summary KPIs; null unit → the tenant-wide summary in
 // `stats` (no extra request). Renders the KPI row. Used full-width above the
 // rail (mockup); the cards re-narrow when a unit is picked in the rail.
-const EMPTY_SUMMARY: PublicStats['summary'] = { totalPubs: 0, totalCitations: 0, oaCount: 0, authorCount: 0 };
+const EMPTY_SUMMARY: PublicStats['summary'] = { totalPubs: 0, totalCitations: 0, oaCount: 0, citedCount: 0, authorCount: 0 };
 
 export function ScopedSummary({ slug, stats, tenantId, unit }: { slug: string; stats: PublicStats; tenantId: number; unit: UnitScope | null }) {
   // stats.summary is absent if the analytics payload wins the load race (it
@@ -18,7 +18,7 @@ export function ScopedSummary({ slug, stats, tenantId, unit }: { slug: string; s
   useEffect(() => {
     if (!unit?.unitKey) { setSummary(stats.summary ?? EMPTY_SUMMARY); return; }
     let cancelled = false;
-    setSummary({ totalPubs: 0, totalCitations: 0, oaCount: 0, authorCount: 0 });
+    setSummary(EMPTY_SUMMARY);
     fetch(`/api/public/${encodeURIComponent(slug)}/stats?chrome=1&unit=${encodeURIComponent(unit.unitKey)}`)
       .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((d: { stats: PublicStats }) => { if (!cancelled) setSummary(d.stats.summary); })
@@ -48,6 +48,14 @@ export function SummaryCards({ summary, sparks }: { summary: PublicStats['summar
     if (k === 'authors')      return summary.authorCount.toLocaleString();
     return <>{oaPct}<span className="pct">%</span></>;
   };
+  // Ratio context on the Citations card: citations-per-publication and the
+  // share of the corpus ever cited — raw totals alone carry no meaning.
+  const foot = (k: KpiDef): string => {
+    if (k.key !== 'citations' || !summary.totalPubs || summary.citedCount == null) return k.foot;
+    const per = (summary.totalCitations / summary.totalPubs).toFixed(1);
+    const citedPct = Math.round((summary.citedCount / summary.totalPubs) * 100);
+    return `${per} per publication · ${citedPct}% of output cited`;
+  };
   return (
     <div className="kpi-grid">
       {KPIS.map(k => (
@@ -59,7 +67,7 @@ export function SummaryCards({ summary, sparks }: { summary: PublicStats['summar
           <div className="kpi-body">
             <div className="kpi-val num">{value(k.key)}</div>
           </div>
-          <div className="kpi-foot">{k.foot}</div>
+          <div className="kpi-foot">{foot(k)}</div>
           {/* Full-card-width series strip below the foot. */}
           <KpiSpark kind={k.spark} accent={k.accent}
             series={sparks ? sparks[k.series] : undefined} />

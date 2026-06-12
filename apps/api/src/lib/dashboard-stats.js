@@ -13,13 +13,15 @@ async function getSummary(scope) {
   const f = await resolvePubFilter(scope); // { where, params } over publications p
   const r = await sql.query(
     `SELECT COUNT(*) total_pubs, COALESCE(SUM(citation_count),0) total_citations,
-            COUNT(DISTINCT CASE WHEN open_access THEN doi END) oa_count
+            COUNT(DISTINCT CASE WHEN open_access THEN doi END) oa_count,
+            COUNT(*) FILTER (WHERE citation_count > 0) cited_count
      FROM publications p WHERE ${f.where}`, f.params);
   const row = r.rows[0];
   return {
     totalPubs: parseInt(row.total_pubs),
     totalCitations: parseInt(row.total_citations),
     oaCount: parseInt(row.oa_count),
+    citedCount: parseInt(row.cited_count),
     authorCount: await authorCountFor(scope),
   };
 }

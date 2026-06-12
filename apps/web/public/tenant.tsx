@@ -5,6 +5,8 @@ import { ScopedSummary } from './tenant-summary';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
 import { type UnitScope } from './tenant-scope-rail';
 import { TenantScopeRail } from './tenant-scope-rail';
+import { TenantSearch } from './tenant-search';
+import { TenantFooter } from './tenant-footer';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { ES } from './tenant-i18n';
 import { bootStreamBridge } from '../architect/websocket-connector';
@@ -76,12 +78,14 @@ function App() {
   return (
     <div className="public-app">
       <TenantPublicHeader tenant={statsPayload.tenant} items={NAV} currentId="overview"
-        onNavigate={() => {}} yearRange={statsPayload.stats.yearRange} />
+        onNavigate={() => {}} yearRange={statsPayload.stats.yearRange}
+        lastUpdated={statsPayload.stats.lastUpdated} />
       <main className="public-main">
         <div className="public-content">
-        {/* The live "viewing scope" flag — reflects the unit selected in the
-            rail. (Headline + lede removed.) */}
+        {/* Omnibox left (researchers / publications / units), live "viewing
+            scope" flag right — reflects the unit selected in the rail. */}
         <div className="page-head">
+          <TenantSearch slug={slug} onSelectUnit={setUnit} />
           <div className="scope-flag">
             {ES.pageHead.scopeLabel}<br />
             <b>{unit?.name ?? ES.pageHead.allUnits}</b><br />
@@ -113,6 +117,7 @@ function App() {
             </Suspense>
           </div>
         </div>
+        <TenantFooter yearRange={statsPayload.stats.yearRange} />
         </div>
       </main>
     </div>

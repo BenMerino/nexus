@@ -161,6 +161,20 @@
     .pub-meta a:hover { color: var(--accent); }
     .pub-journal { font-style: italic; font-family: var(--serif, inherit); }
     .pub-cites { white-space: nowrap; }
+    /* Full author list under each paper — roster members are links. */
+    .pub-authors { margin-top: 3px; font-size: 11.5px; color: var(--fg-muted); line-height: 1.5; }
+    .pub-authors a { color: var(--fg-muted); text-decoration: underline; text-decoration-color: var(--border); }
+    .pub-authors a:hover { color: var(--accent); }
+    .pub-authors-more { color: var(--fg-dim); font-family: var(--mono); font-size: 10px; }
+
+    /* "Most cited" aside strip above the per-year bars. */
+    .topcited { margin-bottom: 22px; }
+    .topcited-row { display: flex; gap: 10px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--border-soft); }
+    .topcited-row:last-child { border-bottom: none; }
+    .topcited-title { flex: 1; min-width: 0; font-size: 12.5px; line-height: 1.35; }
+    .topcited-title a { color: var(--fg); }
+    .topcited-title a:hover { color: var(--accent); }
+    .topcited-cites { font-family: var(--mono); font-size: 11px; color: var(--fg-dim); flex: none; }
 
     @media (max-width: 700px) {
       .public-header { padding: 8px 14px; gap: 12px; }

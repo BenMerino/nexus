@@ -1,9 +1,11 @@
 import React from 'react';
-import { typeLabelEs } from './tenant-i18n';
+import { ES, typeLabelEs } from './tenant-i18n';
 import { RichHtml } from './rich-text';
-import type { ProfilePaper } from './author-profile';
+import { authorProfileHref } from './tenant-data';
+import type { ProfilePaper, PaperAuthor } from './author-profile';
 
 const UNDATED = 'Undated';
+const MAX_AUTHOR_CHIPS = 12;
 
 function groupByYear(papers: ProfilePaper[]): { year: string; papers: ProfilePaper[] }[] {
   const buckets = new Map<string, ProfilePaper[]>();
@@ -16,10 +18,32 @@ function groupByYear(papers: ProfilePaper[]): { year: string; papers: ProfilePap
     .sort((a, b) => (a.year === UNDATED ? 1 : b.year === UNDATED ? -1 : b.year.localeCompare(a.year)));
 }
 
-function PubRow({ p }: { p: ProfilePaper }) {
+// Full author list under each paper — roster members link to their own public
+// profile (external co-authors stay plain text: no dead links).
+function AuthorsLine({ authors, total, slug }: { authors?: PaperAuthor[]; total?: number; slug?: string }) {
+  if (!authors?.length) return null;
+  const shown = authors.slice(0, MAX_AUTHOR_CHIPS);
+  const extra = Math.max(total ?? authors.length, authors.length) - shown.length;
+  return (
+    <div className="pub-authors">
+      {shown.map((a, i) => (
+        <React.Fragment key={a.orcid || `i${i}`}>
+          {i > 0 && ', '}
+          {a.inRoster && a.orcid && slug
+            ? <a href={authorProfileHref(slug, a.orcid)}><RichHtml raw={a.name} /></a>
+            : <RichHtml raw={a.name} />}
+        </React.Fragment>
+      ))}
+      {extra > 0 && <span className="pub-authors-more"> {ES.profile.andMore(extra)}</span>}
+    </div>
+  );
+}
+
+function PubRow({ p, slug }: { p: ProfilePaper; slug?: string }) {
   return (
     <div className="pub-item">
       <div className="pub-title">{p.title ? <RichHtml raw={p.title} /> : '(untitled)'}</div>
+      <AuthorsLine authors={p.authors} total={p.authorsTotal} slug={slug} />
       <div className="pub-meta">
         {p.journal && <span className="pub-journal"><RichHtml raw={p.journal} /></span>}
         {p.type && <span>{typeLabelEs(p.type)}</span>}
@@ -38,8 +62,8 @@ export function pubYears(papers: ProfilePaper[]): string[] {
   return groupByYear(papers).map(g => g.year);
 }
 
-export function AuthorPubs({ papers, open, onToggle }: {
-  papers: ProfilePaper[]; open: Set<string>; onToggle: (year: string) => void;
+export function AuthorPubs({ papers, open, onToggle, slug }: {
+  papers: ProfilePaper[]; open: Set<string>; onToggle: (year: string) => void; slug?: string;
 }) {
   const groups = groupByYear(papers);
   return (
@@ -52,10 +76,32 @@ export function AuthorPubs({ papers, open, onToggle }: {
               <span><i className={`pub-twist${isOpen ? ' open' : ''}`}>▸</i> {g.year}</span>
               <span>{g.papers.length}</span>
             </div>
-            {isOpen && g.papers.map((p, i) => <PubRow key={p.doi || `${g.year}-${i}`} p={p} />)}
+            {isOpen && g.papers.map((p, i) => <PubRow key={p.doi || `${g.year}-${i}`} p={p} slug={slug} />)}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// The researcher's citation leaders — a compact aside strip (top 5 by count).
+export function TopCitedStrip({ papers }: { papers: ProfilePaper[] }) {
+  const top = papers.filter(p => p.citations > 0)
+    .sort((a, b) => b.citations - a.citations).slice(0, 5);
+  if (!top.length) return null;
+  return (
+    <div className="topcited">
+      <h2 className="profile-panel-title">{ES.profile.mostCited}</h2>
+      {top.map((p, i) => (
+        <div key={p.doi || i} className="topcited-row">
+          <span className="topcited-title">
+            {p.doi
+              ? <a href={`https://doi.org/${p.doi}`} target="_blank" rel="noopener noreferrer"><RichHtml raw={p.title || '(untitled)'} /></a>
+              : <RichHtml raw={p.title || '(untitled)'} />}
+          </span>
+          <span className="topcited-cites">{p.citations.toLocaleString()}</span>
+        </div>
+      ))}
     </div>
   );
 }

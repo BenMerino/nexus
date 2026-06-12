@@ -33,6 +33,18 @@
 	@authorPage path_regexp authorPage ^/t/[^/]+/a/[^/]+$
 	rewrite @authorPage /author.html
 
+	# Per-tenant social meta: the BUILT tenant/author HTML carries a
+	# {{% ... %}} marker (vite.config injects it at build time); this pass
+	# replaces it with the API-composed <meta> fragment via an internal
+	# subrequest (httpInclude → /api/public-meta, routed through the /api/*
+	# proxy above). Custom delimiters so bundled JS '{{' can never collide.
+	# /api/public-meta always answers 200 (empty on error), so this cannot
+	# fail the page render.
+	@pubHtml path /tenant.html /author.html
+	templates @pubHtml {
+		between {{% %}}
+	}
+
 	# Asset-shim catch-all for stale-HTML clients. Matches *.js / *.css at
 	# the root that didn't hit the static file_server. Forwards to the API
 	# which serves a tiny reload payload from /api/asset-shim.

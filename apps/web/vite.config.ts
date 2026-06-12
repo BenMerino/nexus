@@ -34,6 +34,23 @@ export default defineConfig({
       },
     },
     {
+      // Per-tenant social meta on the public pages: at BUILD time only, plant a
+      // Caddy `templates` marker (custom {{% %}} delimiters) in tenant/author
+      // HTML. In prod, Caddy replaces it with the API-composed <meta> fragment
+      // (httpInclude → /api/public-meta) so link previews carry the tenant's
+      // name/logo. Dev never sees the marker (raw text in <head> would render).
+      name: "nexus-public-meta-marker",
+      apply: "build",
+      transformIndexHtml: {
+        order: "post",
+        handler: (html, ctx) =>
+          /(?:^|\/)(tenant|author)\.html$/.test(ctx.filename)
+            ? html.replace("</title>", "</title>\n  " +
+                '{{% httpInclude (printf "/api/public-meta?uri=%s" .OriginalReq.URL.Path) %}}')
+            : html,
+      },
+    },
+    {
       // publicDir is false (this build only bundles HTML entries + their
       // imports), so static data assets under public/geo/ aren't copied. The
       // world-choropleth's geometry is one such asset, fetched at runtime from

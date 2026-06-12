@@ -3,6 +3,8 @@ const { calculateHIndex } = require("./h-index");
 const { canonicalize } = require("./normalize-tags");
 const { normRor, normOrcid } = require("./entity-normalize");
 const { classifyUnit, unitKeyForNode } = require("./org-units");
+const { attachPaperAuthors } = require("./public-author-extras");
+const { getTopConcepts } = require("./portfolio-aggregates");
 
 // One academic's public profile: identity, roster placement, metrics, papers.
 // Same population rule as public-authors.js aggregateAuthors (affiliation edge
@@ -12,13 +14,13 @@ const { classifyUnit, unitKeyForNode } = require("./org-units");
 async function queryAuthorPapers(tenantId, ror, orcid) {
   return ror
     ? (await sql`
-        SELECT a.name, d.title, d.doi, d.published, d.journal, d.type, d.citation_count
+        SELECT a.name, d.id, d.title, d.doi, d.published, d.journal, d.type, d.citation_count
         FROM affiliation af
         JOIN institutions i ON i.id = af.institution_id AND i.tenant_id = ${tenantId} AND i.ror = ${ror}
         JOIN authors a ON a.id = af.author_id AND a.orcid = ${orcid}
         JOIN doi_records d ON d.id = af.publication_id`).rows
     : (await sql`
-        SELECT a.name, d.title, d.doi, d.published, d.journal, d.type, d.citation_count
+        SELECT a.name, d.id, d.title, d.doi, d.published, d.journal, d.type, d.citation_count
         FROM authorship s
         JOIN authors a ON a.id = s.author_id AND a.tenant_id = ${tenantId} AND a.orcid = ${orcid}
         JOIN doi_records d ON d.id = s.publication_id`).rows;
@@ -64,6 +66,7 @@ async function getAuthorProfile(tenantId, tenantRor, rawOrcid) {
   }
   const papers = [...seen.values()]
     .map((r) => ({
+      id: r.id,
       title: r.title || null,
       doi: r.doi || null,
       year: r.published ? String(r.published).slice(0, 4) : null,
@@ -72,6 +75,14 @@ async function getAuthorProfile(tenantId, tenantRor, rawOrcid) {
       citations: parseInt(r.citation_count) || 0,
     }))
     .sort((a, b) => (b.year || "").localeCompare(a.year || "") || b.citations - a.citations);
+
+  // Full author lists per paper (roster members flagged → linkable chips) and
+  // the researcher's top concepts — both from data already stored per record.
+  const [, concepts] = await Promise.all([
+    attachPaperAuthors(papers, tenantId),
+    getTopConcepts(papers.map((p) => p.id).filter(Boolean), 10),
+  ]);
+  for (const p of papers) delete p.id; // internal serial — not part of the wire shape
 
   const byType = {};
   for (const p of papers) if (p.type) (byType[p.type] ||= []).push(p.citations);
@@ -87,6 +98,7 @@ async function getAuthorProfile(tenantId, tenantRor, rawOrcid) {
     totalCitations: papers.reduce((s, p) => s + p.citations, 0),
     hIndex: calculateHIndex(papers.map((p) => p.citations)),
     hIndexByType,
+    concepts: concepts.map((c) => ({ name: c.name, works: c.works })),
     papers,
   };
 }

@@ -2,14 +2,6 @@ const { sql } = require("./sql");
 const { getSummary, getByYearAndSource } = require("./dashboard-stats");
 const { buildTenantVelocity, buildTenantCadence } = require("./public-tenant-velocity");
 
-async function getPublicationTypes(tenantId) {
-  const r = await sql`
-    SELECT COALESCE(NULLIF(type, ''), 'other') as type, COUNT(*) as count
-    FROM doi_records WHERE tenant_id = ${tenantId}
-    GROUP BY COALESCE(NULLIF(type, ''), 'other') ORDER BY count DESC`;
-  return r.rows.map(row => ({ type: row.type, count: parseInt(row.count) }));
-}
-
 // Top journals by paper count. Reads the entity model (venues + published_in):
 // a venue is one journal (ISSN siblings already collapsed), venue_type='journal'
 // excludes repositories (SSRN) and book series (non-journal) — matching the old
@@ -24,17 +16,6 @@ async function getTopJournals(tenantId, limit = 10) {
     GROUP BY v.id, v.name
     ORDER BY count DESC LIMIT ${limit}`;
   return r.rows.map(row => ({ journal: row.journal, count: parseInt(row.count) }));
-}
-
-async function getTypeByYear(tenantId) {
-  const r = await sql`
-    SELECT COALESCE(NULLIF(type, ''), 'other') AS type,
-           SUBSTRING(published FROM 1 FOR 4) AS year,
-           COUNT(*) AS count
-    FROM doi_records
-    WHERE tenant_id = ${tenantId} AND published IS NOT NULL AND published <> ''
-    GROUP BY COALESCE(NULLIF(type, ''), 'other'), SUBSTRING(published FROM 1 FOR 4)`;
-  return r.rows.map(row => ({ type: row.type, year: row.year, count: parseInt(row.count) }));
 }
 
 // Presence flag: does this tenant have ANY indexed-venue publication? The
@@ -65,16 +46,26 @@ async function getYearRange(tenantId) {
   return { minYear: row.min_year || null, maxYear: row.max_year || null };
 }
 
+// Freshness: when this tenant's corpus last changed — the latest DOI
+// submission. Drives the header's "Updated <date>" badge (a real date, not
+// just the max publication year).
+async function getLastUpdated(tenantId) {
+  const r = await sql`
+    SELECT MAX(created_at) AS last FROM submissions WHERE tenant_id = ${tenantId}`;
+  return (r.rows[0] && r.rows[0].last) || null;
+}
+
 // CHROME — the cheap fields the page shell needs to paint immediately: the
 // summary cards (overview tab) + the header's year range. Both are sub-10ms
 // aggregates. The shell renders from these alone; it never blocks on the heavy
 // analytics, which the charts tab fetches separately (getPublicAnalytics).
 async function getPublicChrome(scope) {
-  const [summary, yearRange] = await Promise.all([
+  const [summary, yearRange, lastUpdated] = await Promise.all([
     getSummary(scope),
     getYearRange(scope.tenantId),
+    getLastUpdated(scope.tenantId),
   ]);
-  return { summary, yearRange };
+  return { summary, yearRange, lastUpdated };
 }
 
 // ANALYTICS — the heavy chart aggregates, fetched lazily when the charts tab
@@ -104,7 +95,6 @@ async function getPublicStats(scope) {
 }
 
 module.exports = {
-  getPublicationTypes, getTopJournals, getYearRange,
-  getTypeByYear, getYearByIndexation,
+  getTopJournals, getYearRange, getYearByIndexation,
   getPublicChrome, getPublicAnalytics, getPublicStats,
 };

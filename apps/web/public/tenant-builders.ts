@@ -7,9 +7,10 @@ export interface YearSourceRow { year: string; source: string; count: string; }
 export interface YearIndexRow { year: string; bucket: string; count: number; }
 
 export interface PublicStats {
-  summary: { totalPubs: number; totalCitations: number; oaCount: number; authorCount: number };
+  summary: { totalPubs: number; totalCitations: number; oaCount: number; citedCount?: number; authorCount: number };
   yearSource: YearSourceRow[];
   yearRange: { minYear: string | null; maxYear: string | null };
+  lastUpdated?: string | null;
   yearByIndex: YearIndexRow[];
   velocity?: Velocity;
   cadence?: Cadence;

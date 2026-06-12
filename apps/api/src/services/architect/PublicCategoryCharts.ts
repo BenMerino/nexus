@@ -1,5 +1,5 @@
-import { getTypeByYear, getPublicationTypes } from "../../lib/public-stats";
 const { getCollaborations, getCountries, getTopJournals } = require("../../lib/dashboard-stats");
+const { getResearchAreas } = require("../../lib/concept-stats");
 const { getTenantRor } = require("../../lib/db-users");
 
 /* ── PublicCategoryCharts (Composer) ────────────────────────
@@ -14,7 +14,7 @@ const { getTenantRor } = require("../../lib/db-users");
  * ──────────────────────────────────────────────────────────── */
 
 // Ranked "top" bar charts (journals, collaborators) show only the leaders.
-export const TOP_N = 5;
+export const TOP_N = 10;
 
 /** Minimal server-emitted categorical directive (the contract GraphRender reads). */
 export interface CategoryDirective {
@@ -23,15 +23,6 @@ export interface CategoryDirective {
   xLabel?: string;
   yLabel?: string;
   data: { label: string; value: number }[];
-}
-
-/** Heatmap directive — row/col cells (type × year). */
-export interface HeatmapDirective {
-  type: "heatmap";
-  title: string;
-  xLabel: string;
-  yLabel: string;
-  data: { row: string; col: string; value: number; label: string }[];
 }
 
 /** Choropleth directive — countries shaded by value. `country` is ISO-alpha2;
@@ -85,16 +76,18 @@ export async function composeCollaborators(tenantId: number, unitKey?: string | 
   };
 }
 
-/** publications.countries — publications by author-affiliation country (donut). */
-export async function composeCountries(tenantId: number, unitKey?: string | null): Promise<CategoryDirective | null> {
-  const rows: Array<{ country: string; count: number }> = await getCountries(publicScope(tenantId, unitKey));
+/** publications.researchAreas — top OpenAlex concepts on the corpus (ranked
+ *  bar). The institutional "what do we research" panel; counts distinct
+ *  publications per concept, unit-scoped like the other categorical kinds. */
+export async function composeResearchAreas(tenantId: number, unitKey?: string | null): Promise<CategoryDirective | null> {
+  const rows: Array<{ name: string; count: number }> = await getResearchAreas(publicScope(tenantId, unitKey));
   if (!rows.length) return null;
   return {
-    type: "donut",
-    // Same count semantics as the choropleth — country contributions, not a
-    // partition (a cross-country paper counts for each). See composeCountriesMap.
-    title: "Top collaborating countries",
-    data: rows.slice(0, 12).map((c) => ({ label: c.country, value: Number(c.count) })),
+    type: "bar",
+    title: "Research areas",
+    xLabel: "Concept",
+    yLabel: "Publications",
+    data: rows.map((c) => ({ label: c.name || "", value: Number(c.count) })),
   };
 }
 
@@ -114,18 +107,5 @@ export async function composeCountriesMap(tenantId: number, unitKey?: string | n
     title: "Top collaborating countries",
     data: rows.map((c) => ({ country: c.country, value: Number(c.count) })),
   };
-}
-
-/** publications.typeByYear — work-type × year heatmap (top 6 types). Ports the
- *  client buildTypeChart's slice/filter/map to the server. */
-export async function composeTypeByYear(tenantId: number): Promise<HeatmapDirective | null> {
-  const [types, typeByYear] = await Promise.all([getPublicationTypes(tenantId), getTypeByYear(tenantId)]);
-  if (!typeByYear.length) return null;
-  const top = new Set(types.slice(0, 6).map((t) => t.type));
-  const cells = typeByYear
-    .filter((r) => top.has(r.type) && r.year)
-    .map((r) => ({ row: r.type, col: r.year, value: r.count, label: `${r.type} ${r.year}` }));
-  if (!cells.length) return null;
-  return { type: "heatmap", title: "Publicaciones por tipo", xLabel: "Año", yLabel: "Tipo", data: cells };
 }
 

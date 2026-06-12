@@ -6,6 +6,7 @@
 // Chart-label dialects + type labels live in tenant-i18n-labels.ts (N5 split);
 // re-exported here so importers keep one entry point.
 export { VELOCITY_LABELS_ES, CADENCE_LABELS_ES, typeLabelEs } from './tenant-i18n-labels';
+import { CHART_STRINGS } from './tenant-i18n-labels';
 
 export const ES = {
   /* Page chrome / tabs */
@@ -101,6 +102,9 @@ export const ES = {
     onOrcid: 'ORCID record ↗',
     notFound: 'Author not found.',
     unfiled: 'No unit on record',
+    topics: 'Research topics',
+    mostCited: 'Most cited',
+    andMore: (n: number) => `+${n} more`,
   },
 
   /* Org tree (now the contributors ranking + the scope picker) */
@@ -113,20 +117,32 @@ export const ES = {
     orcidNone: 'no ORCID',
   },
 
-  /* Charts panel section titles */
-  charts: {
-    citationVelocity: 'Citation velocity',
-    citationsPerYear: 'Citations received per year',
-    publicationCadence: 'Publication cadence',
-    byDocType: 'Output by document type',
-    byIndexSource: 'Segmented by indexing source',
-    yearAxis: 'Year',
-    articles: 'Papers',
-    pubsByYear: 'Publications per year',
-    pubsByType: 'Publications by type',
-    topJournals: 'Top journals',
-    topInstitutions: 'Top collaborating institutions',
-    topCountries: 'Top collaborating countries',
-    type: 'Type',
+  /* Chart panel section titles (tenant-i18n-labels.ts, N5 split) */
+  charts: CHART_STRINGS,
+
+  /* Publication lists (most cited / recent) */
+  works: {
+    mostCited: 'Most cited',
+    mostCitedSub: 'All-time citation leaders',
+    recent: 'Recent publications',
+    recentSub: 'Latest indexed output',
+    empty: 'No publications.',
+  },
+
+  /* Omnibox search */
+  searchBox: {
+    placeholder: 'Search researchers, publications, units…',
+    researchers: 'Researchers',
+    publications: 'Publications',
+    units: 'Units',
+    noResults: 'No matches.',
+    papersSuffix: 'papers',
+  },
+
+  /* Provenance footer */
+  footer: {
+    sources: 'Source data: CrossRef · OpenAlex · Semantic Scholar · DataCite',
+    coverage: (min: string, max: string) => `Coverage ${min}–${max}`,
+    countNote: 'Citation counts are cumulative across sources; a cross-unit paper counts once per unit.',
   },
 };
