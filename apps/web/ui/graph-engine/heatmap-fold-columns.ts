@@ -46,9 +46,42 @@ export function foldHeatmapColumns<T extends HeatmapCellLike>(cells: T[]): T[] {
         const existing = merged.get(key);
         if (existing) {
             existing.value += d.value;
+            /* Fold the atom-key range too — keeping only the first year's
+             *  `__startKey`/`__endKey` would make a click on the decade
+             *  cell drill into ONE year instead of ten. */
+            if (typeof existing.__startKey === 'number' && typeof d.__startKey === 'number') {
+                existing.__startKey = Math.min(existing.__startKey, d.__startKey);
+            }
+            if (typeof existing.__endKey === 'number' && typeof d.__endKey === 'number') {
+                existing.__endKey = Math.max(existing.__endKey, d.__endKey);
+            }
         } else {
             merged.set(key, { ...d, col: decadeOf(String(d.col)), value: d.value });
         }
     }
     return [...merged.values()];
+}
+
+/** The heatmap's cell-grid geometry — the ONE authority both the
+ *  renderer (`animatedHeatmap.sample`) and the chrome builder
+ *  (`gridChrome`) read, so cells and their row/column labels share an
+ *  origin and pitch BY CONSTRUCTION. They used to duplicate these
+ *  constants, and marginal mode (which shrinks the grid for its Σ
+ *  strips) was only applied on the renderer side — labels drifted off
+ *  their cells by up to a cell-width the moment the Σ toggle flipped.
+ *
+ *  labelW: left gutter for row-label WORDS (wider than cartesian
+ *  y-ticks); labelH: top strip for column labels; PAD_R/PAD_B:
+ *  breathing room mirroring cartesian plot margins; marginal mode adds
+ *  its 20/12px Σ strips on top of those. */
+export function heatmapGridGeometry(width: number, height: number, marginal: boolean) {
+    const labelW = 52, labelH = 14;
+    const PAD_R = 12, PAD_B = 12;
+    const margR = (marginal ? 20 : 0) + PAD_R;
+    const margB = (marginal ? 12 : 0) + PAD_B;
+    return {
+        labelW, labelH, margR, margB,
+        gridW: width - labelW - margR,
+        gridH: height - labelH - margB,
+    };
 }

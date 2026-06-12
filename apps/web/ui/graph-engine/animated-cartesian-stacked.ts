@@ -11,6 +11,9 @@
 import { cs, seriesColorFor, weightOf } from './svg-parts.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import { lerpNumber, type AnimatedFamily } from './animated-family.js';
+import { statusStyle, resolveStatuses } from './datum-status-style.js';
+import { pairSegmentsForFold } from './animated-cartesian-pairing.js';
+import type { DatumStatus } from '../../architect/fold-atoms.js';
 import {
     BAR_TOP_RADIUS_PX,
     BAR_RADIUS_REVEAL_PX,
@@ -34,6 +37,12 @@ interface StackedBarSegment {
     /** Bucket calendar range — see `BarItem.iso`/`isoEnd` for rationale. */
     iso: string;
     isoEnd: string;
+    /** Canonical fold identity — first-priority pairing key (see
+     *  `BarItem.bucketKey`); the iso containment tests are the fallback. */
+    bucketKey: string;
+    /** Folded bucket status — drives rect opacity via the ONE
+     *  status→style table, same as `animatedBar`. */
+    status: DatumStatus;
 }
 export interface StackedBarState { segments: StackedBarSegment[]; }
 
@@ -52,6 +61,11 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
             const aggs = chart.__buckets;
             const plotW = layout.xR[1] - layout.xR[0];
             const aggsCount = aggs.length;
+            const statuses = resolveStatuses(
+                aggs.map(b => b.status ?? 'observed'),
+                chart.statusOverrides,
+                aggs.map(b => b.bucketKey),
+            );
             for (let i = 0; i < aggsCount; i++) {
                 const b = aggs[i];
                 const xs = Math.max(0, Math.min(1, b.xStart));
@@ -74,11 +88,22 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
                     segments.push({
                         x, y: topY, w, h: segH,
                         color: seriesColorFor(c, series[si], si),
-                        hit: { idx: i, seriesIdx: si, label: b.startISO, __startISO: b.startISO, series: series[si], value: v },
+                        /* `label` is the FORMATTED bucket label (`chart.data` is
+                         *  built from the same canonical sequence, so index i
+                         *  aligns) — raw `b.startISO` here leaked ISO dates into
+                         *  tooltips/breadcrumbs. The ISO rides `__startISO` for
+                         *  the click→period drill instead. */
+                        hit: { idx: i, seriesIdx: si, label: layout.labels[i] ?? b.startISO, series: series[si], value: v, __startISO: b.startISO },
                         bucketIdx: i,
                         seriesId: series[si],
                         iso: b.startISO,
-                        isoEnd: '',
+                        /* endISO/bucketKey were dropped here (isoEnd: '') —
+                         *  pairSegmentsForFold's containment tests require
+                         *  isoEnd, so fold split/merge NEVER matched on the
+                         *  atomic path and every segment churned enter/exit. */
+                        isoEnd: b.endISO ?? '',
+                        bucketKey: b.bucketKey,
+                        status: statuses[i],
                     });
                     y0 = topY;
                 }
@@ -87,6 +112,11 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
         }
         /* Legacy path. */
         const data = chart.data as any[];
+        const legacyStatuses = resolveStatuses(
+            data.map((d) => (d.__status as DatumStatus) ?? (d.status as DatumStatus) ?? 'observed'),
+            chart.statusOverrides,
+            data.map((d) => (typeof d.__startISO === 'string' ? d.__startISO : '')),
+        );
         for (let i = 0; i < data.length; i++) {
             const d = data[i];
             const pos = layout.positionAt(i);
@@ -101,11 +131,13 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
                 segments.push({
                     x: pos.x, y: topY, w: Math.max(0, pos.width), h: segH,
                     color: seriesColorFor(c, series[si], si),
-                    hit: { idx: i, seriesIdx: si, label: layout.labels[i], __startISO: iso, series: series[si], value: v },
+                    hit: { idx: i, seriesIdx: si, label: layout.labels[i], series: series[si], value: v, __startISO: iso || undefined },
                     bucketIdx: i,
                     seriesId: series[si],
                     iso,
                     isoEnd,
+                    bucketKey: typeof d.__bucketKey === 'string' ? d.__bucketKey : '',
+                    status: legacyStatuses[i],
                 });
                 y0 = topY;
             }
@@ -152,6 +184,8 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
                     seriesId: t.seriesId,
                     iso: t.iso,
                     isoEnd: t.isoEnd,
+                    bucketKey: t.bucketKey,
+                    status: t.status,
                 });
             } else {
                 const a = perBarAlpha(tRaw, enteringBucketRank.get(t.bucketIdx) ?? 0, enteringTotal);
@@ -166,6 +200,8 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
                     seriesId: t.seriesId,
                     iso: t.iso,
                     isoEnd: t.isoEnd,
+                    bucketKey: t.bucketKey,
+                    status: t.status,
                 });
             }
         }
@@ -185,6 +221,8 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
                 seriesId: p.seriesId,
                 iso: p.iso,
                 isoEnd: p.isoEnd,
+                bucketKey: p.bucketKey,
+                status: p.status,
             });
         }
         return { state: { segments: out }, maxDelta: dRef.value };
@@ -215,51 +253,20 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
             const s = segs[kk];
             if (s.w <= 0 || s.h <= 0) continue;
             const topFactor = Math.max(0, Math.min(1, 1 - coverAbove[kk] / BAR_RADIUS_REVEAL_PX));
+            /* Status → fill opacity through the ONE status→style table —
+             *  a projected/partial bucket must read "not yet real" on
+             *  stacked charts exactly as it does on every other family. */
+            const rect = statusStyle(s.status).rect;
             out.push({
                 kind: 'rect' as const,
                 x: s.x, y: s.y, w: s.w, h: s.h,
                 color: s.color, data: s.hit,
                 radiusTop: BAR_TOP_RADIUS_PX * topFactor,
+                ...(rect ? { opacity: rect.opacity } : {}),
             });
         }
         return out;
     },
 };
 
-/** Stacked-bar variant of `pairBarsForFold` — pairs by both series
- *  identity AND calendar containment so each series-stripe stages
- *  independently. Returns matched-prev refs plus the set of prev
- *  indices that found a match; unmatched prev = exiting. */
-function pairSegmentsForFold(prev: StackedBarSegment[], target: StackedBarSegment[]): { matched: Array<StackedBarSegment | undefined>; usedPrev: Set<number> } {
-    const matched: Array<StackedBarSegment | undefined> = new Array(target.length);
-    const usedPrev = new Set<number>();
-    /* Index prev by series for O(target * prevInSeries) instead of
-     *  O(n²) full scans. Stacked-area charts can run wide. Indices
-     *  refer back to the original `prev` array via `idx`. */
-    const prevBySeries = new Map<string, Array<{ seg: StackedBarSegment; idx: number }>>();
-    for (let j = 0; j < prev.length; j++) {
-        const p = prev[j];
-        const arr = prevBySeries.get(p.seriesId);
-        if (arr) arr.push({ seg: p, idx: j });
-        else prevBySeries.set(p.seriesId, [{ seg: p, idx: j }]);
-    }
-    for (let i = 0; i < target.length; i++) {
-        const t = target[i];
-        const pool = prevBySeries.get(t.seriesId) ?? [];
-        let matchIdx = -1;
-        if (t.iso) {
-            for (const { seg: p, idx: j } of pool) {
-                if (usedPrev.has(j) || !p.iso) continue;
-                if (p.isoEnd && t.iso >= p.iso && t.iso < p.isoEnd) { matchIdx = j; break; }
-                if (t.isoEnd && p.iso >= t.iso && p.iso < t.isoEnd) { matchIdx = j; break; }
-                if (p.iso === t.iso) { matchIdx = j; break; }
-            }
-        }
-        if (matchIdx >= 0) {
-            matched[i] = prev[matchIdx];
-            usedPrev.add(matchIdx);
-        }
-    }
-    return { matched, usedPrev };
-}
 

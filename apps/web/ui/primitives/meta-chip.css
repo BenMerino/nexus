@@ -1,0 +1,35 @@
+/* MetaChip primitive — floating-on-background metadata text gets a glass
+ * chip with a feathered edge. Surface lives on ::before so the radial-mask
+ * fade applies only to the surface, never to the text itself. Sized to
+ * its content; never stretches to fill the parent. */
+.meta-chip {
+    position: relative;
+    display: inline-block;
+    width: fit-content;
+    max-width: max-content;
+    margin: 0;
+    padding: var(--space-1) var(--space-3);
+    border: none;
+    background: transparent;
+    isolation: isolate;
+}
+
+.meta-chip::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: var(--radius-pill);
+    /* Opaque-leaning tint instead of backdrop-filter blur. The glass blur
+     * forced a compositing layer that re-sampled the scrolling content
+     * behind it every frame; on macOS Chrome that left half-painted /
+     * flashing regions when the chip sat at a scroll seam (e.g. the order
+     * detail header above its feed). A higher-opacity color-mix keeps the
+     * floating-metadata read and text legibility without the per-frame
+     * backdrop recomposite. */
+    background-color: color-mix(in srgb, var(--bg-card) 82%, transparent);
+    -webkit-mask-image: radial-gradient(ellipse closest-side at center, black 70%, transparent 100%);
+    mask-image: radial-gradient(ellipse closest-side at center, black 70%, transparent 100%);
+    pointer-events: none;
+}
+

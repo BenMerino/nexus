@@ -136,8 +136,11 @@ const gridHandler: ChartTypeHandler = {
     /* Grid families take a width/height pair + axesOverride passthrough. */
     buildLayout: (_chart, w, h, axesOverride) => ({ width: w, height: h, axesOverride }),
     buildChrome: (chart, layout) => {
-        const l = layout as { width: number; height: number };
-        return gridChrome(chart, l.width, l.height);
+        /* axesOverride rides the layout (stamped by buildLayout above) —
+         *  the chrome MUST see the same marginal state as the renderer
+         *  or its labels misalign from the cells. */
+        const l = layout as { width: number; height: number; axesOverride?: string };
+        return gridChrome(chart, l.width, l.height, l.axesOverride);
     },
     layoutSize: (_chart, w, h) => ({ w, h }),
     dragSupport: () => ({ dragResolve: null, isoToFrame: null, plotXR: null, plotYR: null }),

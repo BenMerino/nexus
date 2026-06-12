@@ -12,7 +12,7 @@
 import {
     foldByCalendar,
     pickAutoFoldUnit,
-    isValidFoldUnit,
+    eligibleFoldUnits,
     HOURS_PER_DAY,
     type FoldUnit,
 } from '../../architect/fold-atoms.js';
@@ -20,36 +20,25 @@ import { foldByCalendarGrid, pickAutoUnitPair } from '../../architect/fold-atoms
 import { placeAtoms, bucketTops } from '../../architect/place-atoms.js';
 import { bucketSequence } from '../../architect/bucket-sequence.js';
 import { formatLabel } from '../../architect/fold-atoms-calendar.js';
-import { periodBounds } from '../../architect/graph-drilldown.js';
 import type { GraphDirective, ChartData, GraphQuery } from '../../architect/graph-composer.types.js';
 import { maxLookbackForDirective } from './graph-features/index.js';
 import { reduce } from './reduction.js';
+import { snapWindowToBuckets, daysBeforeToday, foldClampKeys } from './graph-resolve-window.js';
+import { computeEdgeNeighbors } from './curve-edge-neighbors.js';
 
-/** ISO YYYY-MM-DD → whole-day count between that date and today (UTC).
- *  Returns 0 when ISO is today or in the future. */
-export function daysBeforeToday(iso: string): number {
-    const todayMs = Date.parse(`${new Date().toISOString().split('T')[0]}T00:00:00Z`);
-    const isoMs = Date.parse(`${iso}T00:00:00Z`);
-    if (!Number.isFinite(todayMs) || !Number.isFinite(isoMs)) return 0;
-    return Math.max(0, Math.round((todayMs - isoMs) / 86_400_000));
-}
-
-export interface ResolveExtras {
-    activeSet: Set<string>;
-    seriesWeights: Map<string, number>;
-    colorClip: { lower: number; upper: number };
-}
+export { daysBeforeToday } from './graph-resolve-window.js';
 
 /** Build the runtime-resolved directive (atoms-clipped to window,
  *  buckets folded, placements computed, yMax derived). Returns the
- *  input directive with client-runtime fields populated. */
-export function resolveAtomicDirective(
-    chart: GraphDirective,
-    extras: ResolveExtras,
-): GraphDirective {
-    const { activeSet, seriesWeights, colorClip } = extras;
+ *  input directive with client-runtime fields populated.
+ *
+ *  Pure function of `chart` ONLY — toggle weights / color clips are
+ *  stamped by the caller in a separate cheap pass (GraphRender's second
+ *  memo), so a legend tween's ~17 rAF frames don't trigger 17 full
+ *  refolds of the timeline. */
+export function resolveAtomicDirective(chart: GraphDirective): GraphDirective {
     if (!chart.atoms || chart.atoms.length === 0) {
-        return { ...chart, activeSeries: activeSet, seriesWeights, colorClip };
+        return chart;
     }
     const q = chart.query as GraphQuery | undefined;
     const windowDays = q?.windowDays;
@@ -62,34 +51,12 @@ export function resolveAtomicDirective(
      *  (hour) space — hour 23, not hour 0. Daily atoms sit at hour 0
      *  of each day, so the end of that day is `key + HOURS_PER_DAY - 1`. */
     const lastDayEndKey = lastKey + HOURS_PER_DAY - 1;
-    const totalDays = (lastKey - firstKey + 1) / HOURS_PER_DAY;
-    /* The window the user sees. When this query drilled into a CALENDAR period
-     *  (`periodKey` set), derive the window EXACTLY from that period's calendar
-     *  bounds — converting the period's start/end ISO straight to atom keys.
-     *  The `windowDays`/`asOf` day-arithmetic path accumulates a few days of
-     *  rounding drift (a 2010s drill landed on 2009-12-28 → an extra 2009 year
-     *  bucket); the calendar identity has no such drift. Falls back to the
-     *  day-window math for un-drilled / atom-range queries. */
-    const anchorISO0 = chart.atoms[0].iso;
-    const isoToKey = (iso: string): number => {
-        const days = Math.round((Date.parse(`${iso}T00:00:00Z`) - Date.parse(`${anchorISO0}T00:00:00Z`)) / 86_400_000);
-        return firstKey + days * HOURS_PER_DAY;
-    };
-    const pBounds = q?.periodKey ? periodBounds(q.periodKey) : null;
-    let windowEndKey: number;
-    let windowStartKey: number;
-    if (pBounds) {
-        // endISO is the half-open upper bound → last visible day is the day before.
-        const lastVisibleDayKey = isoToKey(pBounds.endISO) - HOURS_PER_DAY;
-        windowEndKey = lastVisibleDayKey + HOURS_PER_DAY - 1;
-        windowStartKey = isoToKey(pBounds.startISO);
-    } else {
-        windowEndKey = lastDayEndKey - asOfDaysBefore * HOURS_PER_DAY;
-        windowStartKey = windowEndKey - (windowDays ?? totalDays) * HOURS_PER_DAY + 1;
-    }
-    /* Visible span in days — from the RESOLVED window (so a period-derived
-     *  window folds at the right grain too), not the raw windowDays. */
-    const visibleDays = (windowEndKey - windowStartKey + 1) / HOURS_PER_DAY;
+    let windowEndKey = lastDayEndKey - asOfDaysBefore * HOURS_PER_DAY;
+    /* Span runs to the END of the last day (hour 23), not its hour-0 key —
+     *  `(lastKey - firstKey + 1)` undercounted every span by 23/24 of a day. */
+    const totalDays = (lastDayEndKey - firstKey + 1) / HOURS_PER_DAY;
+    const visibleDays = windowDays ?? totalDays;
+    let windowStartKey = windowEndKey - visibleDays * HOURS_PER_DAY + 1;
     /* Does any atom carry sub-day data? Drives whether 'hour' is in
      *  the fold ladder. Daily-only atoms never reach the hour rung. */
     const hasHourly = chart.atoms.some(a => typeof a.hour === 'number' && a.hour > 0);
@@ -107,24 +74,54 @@ export function resolveAtomicDirective(
                 row: c.row, col: c.col, value: c.value,
                 __startKey: c.startKey, __endKey: c.endKey,
             })) as ChartData,
-            activeSeries: activeSet, seriesWeights, colorClip,
             __foldUnit: colUnit,
         } as GraphDirective;
     }
 
-    /* Sanitize the requested foldUnit: a stale persisted/wire value (e.g. a
-     *  'week'/'quarter' saved before they were dropped from the ladder) must
-     *  fall back to auto, NOT reach foldByCalendar — an unknown unit would spin
-     *  the calendar walk forever (stepByUnit can't advance it). */
-    const requested = q?.foldUnit ?? 'auto';
-    const foldUnit: FoldUnit = (requested === 'auto' || isValidFoldUnit(requested)) ? requested : 'auto';
+    /* Hard guard against an over-bucketing fold. An explicit `foldUnit` (set by
+     *  the granularity toggle) is honored ONLY when it buckets readably for the
+     *  visible span; otherwise we fall back to the auto pick. Without this, a
+     *  stale `foldUnit` (e.g. 'week' selected, then the window widened to all
+     *  170y) would fold to ~9k buckets and cripple the render — the toggle's UI
+     *  gating alone can't prevent it because the query value persists. */
+    const requested: FoldUnit = q?.foldUnit ?? 'auto';
+    const eligible = new Set<string>(eligibleFoldUnits(visibleDays, hasHourly).map(String));
+    const foldUnit: FoldUnit = (requested !== 'auto' && eligible.has(requested)) ? requested : 'auto';
     const resolvedUnit = foldUnit === 'auto' ? pickAutoFoldUnit(visibleDays, hasHourly) : foldUnit;
-    const buckets = foldByCalendar(chart.atoms, resolvedUnit, chart.aggregator ?? 'sum', chart.series ?? []);
+    /* Snap the visible window to whole BUCKET boundaries so there are never
+     *  partial edge buckets. A partial bucket at the window edge used to get
+     *  its geometry clamped to the plot → a thinner edge bar than its
+     *  neighbours. Snapping the window start DOWN to its bucket start and the
+     *  end UP to its bucket end makes every visible bucket complete, so all
+     *  bars render the same calendar-unit width. The slider effectively rounds
+     *  to the nearest bucket — invisible at year/decade scale, and uniform bars
+     *  read far better than a clamped sliver. (1D path only; heatmap returned
+     *  above with its own grid windowing.) */
+    const snapped = snapWindowToBuckets(windowStartKey, windowEndKey, resolvedUnit, chart.atoms[0].iso);
+    windowStartKey = snapped.start;
+    windowEndKey = snapped.end;
+    /* Clamp the fold's INPUT to the window ± what its consumers actually
+     *  read: `overlapping` (the window), edge neighbors (±1 bucket), and
+     *  feature lookback (N buckets before). Folding the FULL atom span
+     *  here was the unbounded-work problem `bucketSequence` already
+     *  guards against — an all-time hourly timeline walked + allocated
+     *  one bucket per calendar unit across 170 years on every drag tick.
+     *  The window is bucket-aligned post-snap, so stepping back from
+     *  `windowStartKey` lands exactly on whole-bucket boundaries. */
+    const lookback = maxLookbackForDirective(chart);
+    const clampKeys = foldClampKeys(windowStartKey, windowEndKey, resolvedUnit, chart.atoms[0].iso, lookback);
+    const foldInput = clampKeys
+        ? chart.atoms.filter(a => a.key >= clampKeys.start && a.key <= clampKeys.end)
+        : chart.atoms;
+    const buckets = foldByCalendar(foldInput, resolvedUnit, chart.aggregator ?? 'sum', chart.series ?? []);
     /* Edge anchoring: leftmost visible bucket pins its center to x=0,
      *  rightmost to x=1. Interior buckets place at their true midpoint.
      *  Without this, a partially-clipped bucket's center slides through
-     *  the plot as the slider drags. */
-    const winSpan = (windowEndKey - windowStartKey) || 1;
+     *  the plot as the slider drags. (Denominator MUST match placeAtoms /
+     *  bucketSequence's `windowEndKey + 1 - windowStartKey` — the old
+     *  off-by-one put edge-neighbor anchors in a subtly different x-space
+     *  than the visible buckets they abut.) */
+    const winSpan = (windowEndKey + 1 - windowStartKey) || 1;
     const overlapping = buckets.filter(b => b.endKey >= windowStartKey && b.startKey <= windowEndKey);
     /* `chart.data` is built BELOW from the canonical `bucketSequence`
      *  (after placements), NOT from `overlapping` — so chrome, bars, and
@@ -206,84 +203,19 @@ export function resolveAtomicDirective(
     const tops = bucketTops(windowedAtoms, placements, stackSeries);
     let yMax = 0;
     for (const v of tops.values()) if (v > yMax) yMax = v;
-    /* Off-window curve neighbors. Curve families (line, area, etc.)
-     *  prepend/append these to their sampled point arrays so smoothed
-     *  lines don't terminate with a sharp cut at the plot edges. When
-     *  a real neighbor bucket exists in the full timeline (the bucket
-     *  immediately before the leftmost visible one, or immediately
-     *  after the rightmost), use its true value. When the window is at
-     *  the timeline boundary (no earlier / no later data exists), fall
-     *  back to linear extrapolation from the two visible edge points
-     *  — done lazily inside the family because it needs the visible
-     *  points' ys, which are layout-dependent. The composer just
-     *  signals "no real neighbor here" via `value: NaN` so the family
-     *  knows to extrapolate. */
-    const firstVisibleIdx = buckets.findIndex(b => b.endKey >= windowStartKey && b.startKey <= windowEndKey);
-    const lastVisibleIdx = (() => {
-        for (let i = buckets.length - 1; i >= 0; i--) {
-            if (buckets[i].endKey >= windowStartKey && buckets[i].startKey <= windowEndKey) return i;
-        }
-        return -1;
-    })();
-    const seriesList = chart.series ?? [];
-    const neighborFor = (b: typeof buckets[number]): {
-        xCenter: number; value: number;
-        seriesValues?: Record<string, number>; isExtrapolated: boolean;
-    } => {
-        const xStart = (b.startKey - windowStartKey) / winSpan;
-        const xEnd = (b.endKey + 1 - windowStartKey) / winSpan;
-        const sv: Record<string, number> = {};
-        for (const s of seriesList) {
-            const v = (b as Record<string, unknown>)[s];
-            if (typeof v === 'number') sv[s] = v;
-        }
-        return {
-            xCenter: (xStart + xEnd) / 2,
-            value: b.value,
-            seriesValues: seriesList.length > 0 ? sv : undefined,
-            isExtrapolated: false,
-        };
-    };
-    const edgeNeighbors: GraphDirective['__edgeNeighbors'] = {};
-    if (firstVisibleIdx > 0) {
-        edgeNeighbors.left = neighborFor(buckets[firstVisibleIdx - 1]);
-    } else if (firstVisibleIdx === 0 && overlapping.length >= 2) {
-        /* No real neighbor — flag for in-family extrapolation. xCenter
-         *  is one bucket-width to the left of the leftmost visible
-         *  bucket. value=0 here is a placeholder; the family replaces
-         *  it with the extrapolated y. */
-        const lead = overlapping[0];
-        const leadXStart = Math.max(0, (lead.startKey - windowStartKey) / winSpan);
-        const leadXEnd = Math.min(1, (lead.endKey + 1 - windowStartKey) / winSpan);
-        const leadW = leadXEnd - leadXStart;
-        edgeNeighbors.left = {
-            xCenter: leadXStart - leadW / 2,
-            value: 0,
-            seriesValues: seriesList.length > 0 ? Object.fromEntries(seriesList.map(s => [s, 0])) : undefined,
-            isExtrapolated: true,
-        };
-    }
-    if (lastVisibleIdx >= 0 && lastVisibleIdx < buckets.length - 1) {
-        edgeNeighbors.right = neighborFor(buckets[lastVisibleIdx + 1]);
-    } else if (lastVisibleIdx === buckets.length - 1 && overlapping.length >= 2) {
-        const trail = overlapping[overlapping.length - 1];
-        const trailXStart = Math.max(0, (trail.startKey - windowStartKey) / winSpan);
-        const trailXEnd = Math.min(1, (trail.endKey + 1 - windowStartKey) / winSpan);
-        const trailW = trailXEnd - trailXStart;
-        edgeNeighbors.right = {
-            xCenter: trailXEnd + trailW / 2,
-            value: 0,
-            seriesValues: seriesList.length > 0 ? Object.fromEntries(seriesList.map(s => [s, 0])) : undefined,
-            isExtrapolated: true,
-        };
-    }
+    /* Off-window curve neighbors — see `computeEdgeNeighbors` (the
+     *  producer half of curve-edge-neighbors.ts). Curve families
+     *  prepend/append these so smoothed lines don't cut sharply at the
+     *  plot edges. */
+    const edgeNeighbors = computeEdgeNeighbors(
+        buckets, overlapping, windowStartKey, windowEndKey, winSpan, chart.series ?? [],
+    );
     /* Lookback support for features that need pre-window context (e.g.
      *  moving average filling its leading window cleanly at x=0). We
      *  ask the dispatcher how many prior buckets the active features
      *  need; zero means skip the slice entirely. Bucket entries are
      *  the same shape feature resolvers consume from `data`, minus the
      *  positional fields (prior buckets are not rendered, only summed). */
-    const lookback = maxLookbackForDirective(chart);
     let priorBuckets: ChartData | undefined;
     if (lookback > 0) {
         const before = buckets.filter(b => b.endKey < windowStartKey);
@@ -303,15 +235,12 @@ export function resolveAtomicDirective(
         ...chart,
         atoms: windowedAtoms,
         data,
-        activeSeries: activeSet,
-        seriesWeights,
-        colorClip,
         __foldUnit: resolvedUnit,
         __placements: placements,
         __buckets: seq,
         __yMax: yMax,
         __priorBuckets: priorBuckets,
-        __edgeNeighbors: (edgeNeighbors.left || edgeNeighbors.right) ? edgeNeighbors : undefined,
+        __edgeNeighbors: edgeNeighbors,
         /* Cosmetic KPI reduction over the SAME visible buckets — so the
          *  headline tracks window/fold and never drifts. Only the
          *  `reduce` (cosmetic) path resolves here; the authoritative

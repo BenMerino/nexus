@@ -66,14 +66,18 @@ export const animatedBar: AnimatedFamily<BarState> = {
             const pos = layout.positionAt(i);
             const value = d.value ?? 0;
             const topY = layout.yS(value);
+            const iso = typeof d.__startISO === 'string' ? d.__startISO : '';
             bars.push({
                 x: pos.x,
                 y: topY,
                 w: Math.max(0, pos.width),
                 h: Math.max(0, baseY - topY),
                 color: c.primary,
-                hit: { idx: i, label: layout.labels[i], value },
-                iso: typeof d.__startISO === 'string' ? d.__startISO : '',
+                /* `__startISO` rides the hit payload so a click can resolve the
+                 *  bucket's calendar period (ChartRender → periodKeyFor); the
+                 *  `label` stays formatted for tooltip/breadcrumb display. */
+                hit: { idx: i, label: layout.labels[i], value, __startISO: iso || undefined },
+                iso,
                 isoEnd: typeof d.__endISO === 'string' ? d.__endISO : '',
                 bucketKey: typeof d.__bucketKey === 'string' ? d.__bucketKey : '',
                 status: statuses[i],

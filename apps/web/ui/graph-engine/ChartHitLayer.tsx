@@ -115,3 +115,55 @@ export const ChartHitLayerInner = React.memo(function ChartHitLayerInner({ primi
         </>
     );
 });
+
+/* The HitLayer's <svg> root is the chart's main pointer surface. It
+ * forwards a ref so TooltipOverlay can compute viewport coords from
+ * getBoundingClientRect, and accepts optional drag handlers + a range
+ * highlight rect rendered behind the hit targets when range-drag is
+ * active. Lives here (not in ChartRender) because it IS the hit layer's
+ * standalone svg root — ChartRender just mounts it. */
+type HitLayerWithRefProps = ChartHitLayerProps & {
+    rangeYR?: [number, number];
+    rangeRect?: React.ReactNode;
+    rangeCursor?: React.CSSProperties['cursor'];
+    dragHandlers?: {
+        onMouseDown?: (e: React.MouseEvent<SVGSVGElement>) => void;
+        onMouseMove?: (e: React.MouseEvent<SVGSVGElement>) => void;
+        onMouseUp?: () => void;
+        onMouseLeave?: () => void;
+    };
+};
+export const HitLayerWithRef = React.forwardRef<SVGSVGElement, HitLayerWithRefProps>(
+    function HitLayerWithRef(props, ref) {
+        const { rangeYR: _yr, rangeRect, rangeCursor, dragHandlers, ...rest } = props;
+        void _yr;
+        return (
+            <svg
+                ref={ref}
+                viewBox={`0 0 ${props.width} ${props.height}`}
+                width={props.width}
+                height={props.height}
+                style={{
+                    /* Sized to the chart canvas (`props.width/height` =
+                     *  `layoutSize.w/h`), centered horizontally in the
+                     *  wrapper via auto margins on both-edges-anchored
+                     *  absolute box. Matches `ChartGeometryCanvas` so
+                     *  the hit targets align with the GPU marks. */
+                    position: 'absolute',
+                    left: 0, right: 0, top: 0,
+                    margin: '0 auto',
+                    width: `${props.width}px`, height: `${props.height}px`,
+                    display: 'block',
+                    cursor: rangeCursor,
+                }}
+                onMouseLeave={() => { props.onLeave?.(); dragHandlers?.onMouseLeave?.(); }}
+                onMouseDown={dragHandlers?.onMouseDown}
+                onMouseMove={dragHandlers?.onMouseMove}
+                onMouseUp={dragHandlers?.onMouseUp}
+            >
+                {rangeRect}
+                <ChartHitLayerInner {...rest} />
+            </svg>
+        );
+    }
+);

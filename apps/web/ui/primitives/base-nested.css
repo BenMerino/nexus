@@ -1,0 +1,20 @@
+/* ── BaseNested ────────────────────────────────────────────
+ * Most of the contract lives as inline style derived from the
+ * `inset`, `surface`, and `border` props + the parent's radius
+ * context. This file only carries the structural defaults that
+ * don't depend on any prop. */
+
+.base-nested {
+    display: inline-flex;
+    align-items: center;
+    /* Box-sizing border-box so the margin + border don't push the
+     * nested item past the parent's inner edge. */
+    box-sizing: border-box;
+    /* Negative-margin compensation: the parent (BaseTile, BaseCard,
+     * etc.) carries its own padding so children flow inside the
+     * tile's safe area. The Nested child's `margin` adds breathing
+     * room ON TOP of that padding. The math relies on the parent's
+     * padding being set via the cascade (not a magic value) so the
+     * total visible inset = parent.padding + nested.margin remains
+     * predictable. */
+}

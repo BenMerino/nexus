@@ -18,7 +18,7 @@
 import { arcScale } from './scales.js';
 import { decimateByMinSlot } from './label-decimate.js';
 import { abbreviateLabel } from './label-abbreviate.js';
-import { foldHeatmapColumns } from './heatmap-fold-columns.js';
+import { foldHeatmapColumns, heatmapGridGeometry } from './heatmap-fold-columns.js';
 import { weightOf, fmtValue } from './svg-parts.js';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import type { ChartChrome, ChromeElement } from './chart-chrome.types.js';
@@ -82,7 +82,12 @@ export function radialChrome(chart: GraphDirective, layout: RadialLayout): Chart
         const median = sortedSweeps.length ? sortedSweeps[Math.floor(sortedSweeps.length / 2)] : 0;
         const calloutMin = median * 0.6;
         for (let i = 0; i < arcs.length; i++) {
-            if (sweeps[i] < calloutMin) continue;
+            /* Epsilon mirrors the wedge geometry's own visibility filter
+             *  (animated-radial drops arcs ≤ 1e-4). With ALL slices
+             *  toggled off every sweep is 0, the median collapses to 0,
+             *  and `0 < 0` let every callout through — a pile of labels
+             *  stacked at 12 o'clock over an empty donut. */
+            if (sweeps[i] <= 1e-4 || sweeps[i] < calloutMin) continue;
             const arc = arcs[i];
             const mid = (arc.startAngle + arc.endAngle) / 2;
             const cosM = Math.cos(mid), sinM = Math.sin(mid);
@@ -175,7 +180,12 @@ export function radarChrome(chart: GraphDirective, size: number): ChartChrome {
         const ly = cy + (maxR + RADAR_LABEL_GAP) * Math.sin(a);
         elements.push({
             kind: 'text', x: lx, y: ly,
-            text: String(data[i].label ?? ''),
+            /* Through the ONE label-folding authority, like every other
+             *  family's callouts — the radius only reserves RADAR_LABEL_PX
+             *  of half-label slop, so an unabbreviated "Universidad de
+             *  Talca" overran the square viewBox and clipped. Budget =
+             *  2×slop ÷ ~4.3px/glyph at this font size. */
+            text: abbreviateLabel(String(data[i].label ?? ''), Math.floor((RADAR_LABEL_PX * 2) / 4.3)),
             anchor: 'middle', baseline: 'central',
             fontSize: 8, fontWeight: 600,
             color: 'var(--text-muted)',
@@ -183,25 +193,21 @@ export function radarChrome(chart: GraphDirective, size: number): ChartChrome {
     }
     return { elements };
 }
-export function gridChrome(chart: GraphDirective, width: number, height: number): ChartChrome {
+export function gridChrome(chart: GraphDirective, width: number, height: number, axesOverride?: string): ChartChrome {
     const elements: ChromeElement[] = [];
     if (chart.type === 'heatmap') {
         const cells = foldHeatmapColumns(chart.data as any[]);
         const rows = [...new Set(cells.map((d: any) => d.row))];
         const cols = [...new Set(cells.map((d: any) => d.col))];
-        /* labelW MUST equal animated-grid's labelW (52) — cells and these row
-         *  labels share this left origin; a mismatch misaligns them. Wider than
-         *  a cartesian y-gutter because heatmap row labels are WORDS (work
-         *  types), not short tick numbers; labels truncate to fit it (below). */
-        const labelW = 52, labelH = 14;
-        /* PAD_R / PAD_B MUST equal animated-grid's — col-label centers derive
-         *  from cellW = gridW/cols and row-label centers from cellH = gridH/rows,
-         *  so a different gridW/gridH here would drift the labels off their
-         *  cells. (Marginal mode's extra strips are handled in the geometry;
-         *  the chrome's labels don't span them.) */
-        const PAD_R = 12, PAD_B = 12;
-        const gridW = width - labelW - PAD_R;
-        const gridH = height - labelH - PAD_B;
+        /* Cell geometry from the ONE shared authority (also read by
+         *  animatedHeatmap.sample) — col-label centers derive from
+         *  cellW = gridW/cols and row-label centers from cellH = gridH/rows,
+         *  so a private copy here would drift the labels off their cells.
+         *  Marginal mode shrinks the grid for its Σ strips; before the
+         *  flag was threaded through here, labels drifted up to a
+         *  cell-width the moment the Σ toggle flipped. */
+        const showMarginal = (axesOverride ?? chart.interaction?.axes) === 'marginal';
+        const { labelW, labelH, gridW, gridH } = heatmapGridGeometry(width, height, showMarginal);
         /* Fill the grid exactly — must match animated-grid's cell geometry.
          *  A min-width floor would put these chrome labels out of register
          *  with the cells and overrun the container on dense column counts. */

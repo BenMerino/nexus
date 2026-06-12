@@ -37,17 +37,19 @@ export type Aggregator = 'sum' | 'wavg' | 'min' | 'max' | 'first' | 'last';
  * on the visible-pixel budget; the rest are explicit user choices.
  *
  * Ordered ladder (fine → coarse):
- *   hour < day < month < year < decade  (week + quarter dropped)
+ *   hour < day < month < year < decade < century
+ *   (quarter + week removed — navigation goes year → month → day directly.)
  *
  * `'hour'` enables sub-day resolution for builders that ship hourly
  * atoms (`Atom.hour` set). Daily-only builders never reach this rung —
  * `eligibleFoldUnits` filters it out unless atoms expose hour data.
  *
- * `'decade'` is the coarsest rung — 10 calendar years per bucket,
- * aligned to the …0 year (1990, 2000). It only earns its place over
- * multi-decade spans (academic publication histories, founding-to-now
- * timelines) where even `year` produces 40+ unreadable buckets. */
-export type FoldUnit = 'auto' | 'hour' | 'day' | 'month' | 'year' | 'decade';
+ * `'decade'`/`'century'` are the coarsest rungs — 10 / 100 calendar years
+ * per bucket, aligned to the …0 / …00 year (1990, 2000 / 1900, 2000). They
+ * earn their place over multi-decade / multi-century spans (academic
+ * publication histories spanning 100+ years) where even `decade` produces
+ * an unreadable number of buckets. */
+export type FoldUnit = 'auto' | 'hour' | 'day' | 'month' | 'year' | 'decade' | 'century';
 
 /** The concrete fold units (no 'auto'). The single canonical list — callers
  *  that accept a persisted/wire foldUnit MUST validate against this so a stale
@@ -106,7 +108,7 @@ export interface FoldedAtom extends Atom {
 }
 
 /** Calendar-aligned bucket: each visible bucket spans one unit
- * (day/week/month/quarter/year) AND carries the start/end keys so the
+ * (day/week/month/year) AND carries the start/end keys so the
  * renderer can position it geometrically inside the visible window.
  *
  * `startKey` and `endKey` are atom keys (epoch-day indices). The bucket
@@ -131,15 +133,12 @@ export interface CalendarBucket extends FoldedAtom {
  * available — builders that ship daily-only atoms never get hour-fold
  * even when zoomed to a single day (their atoms have nothing finer). */
 export function pickAutoFoldUnit(visibleDays: number, hasHourly: boolean = false): Exclude<FoldUnit, 'auto'> {
-    // Ladder is hour < day < month < year < decade — week + quarter were
-    // dropped, so AUTO must never resolve to them (it's what re-introduced
-    // W1/Q1 buckets + tier labels). Their old ranges fold into the adjacent
-    // kept rung: the sub-year span → month, the multi-year span → year.
     if (hasHourly && visibleDays <= 5) return 'hour';
-    if (visibleDays <= 60) return 'day';
-    if (visibleDays <= 365 * 4) return 'month';
+    if (visibleDays <= 90) return 'day';
+    if (visibleDays <= 365 * 8) return 'month';
     if (visibleDays <= 365 * 40) return 'year';
-    return 'decade';
+    if (visibleDays <= 365 * 250) return 'decade';
+    return 'century';
 }
 
 /** Which fold units make sense for a given visible window?
@@ -153,13 +152,13 @@ export function pickAutoFoldUnit(visibleDays: number, hasHourly: boolean = false
  * about zooming in: "show me yearly, then monthly, then weekly". */
 export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = false): Array<Exclude<FoldUnit, 'auto'> | 'auto'> {
     const out: Array<Exclude<FoldUnit, 'auto'> | 'auto'> = ['auto'];
+    const centennial = visibleDays / 36500;
     const decadal = visibleDays / 3650;
     const yearly = visibleDays / 365;
     const monthly = visibleDays / 30;
     const daily = visibleDays;
     const hourly = visibleDays * HOURS_PER_DAY;
-    // week + quarter are dropped from the ladder — never offer them as
-    // eligible rungs (kept: decade/year/month/day/hour).
+    if (centennial >= 3 && centennial <= 120) out.push('century');
     if (decadal >= 3 && decadal <= 120) out.push('decade');
     if (yearly >= 3 && yearly <= 120) out.push('year');
     if (monthly >= 3 && monthly <= 120) out.push('month');
@@ -168,10 +167,21 @@ export function eligibleFoldUnits(visibleDays: number, hasHourly: boolean = fals
     return out;
 }
 
+/** Whether a bucket at this fold unit can OPEN — i.e. drilling into its
+ *  period reveals finer buckets. The single drillability predicate for
+ *  plot bucket clicks and axis base-row labels: a day bucket opens only
+ *  when hourly atoms exist below it; an hour bucket never opens; every
+ *  coarser unit always does. `undefined` (categorical x) never opens —
+ *  categorical drills go through index math, not calendar periods. */
+export function foldOpensFiner(unit: FoldUnit | undefined, hasHourly: boolean): boolean {
+    if (!unit || unit === 'auto' || unit === 'hour') return false;
+    return unit !== 'day' || hasHourly;
+}
+
 import { stepByUnit, alignToUnitStart, formatLabel } from './fold-atoms-calendar';
 
 /** Calendar-aligned fold. Groups atoms by calendar unit (hour/day/week/
- * month/quarter/year). Each output bucket carries `startKey`/`endKey`
+ * month/year). Each output bucket carries `startKey`/`endKey`
  * atom-key range AND `startISO`/`endISO` calendar boundaries, so the
  * renderer can position it geometrically inside the visible window via
  * linearScale.
@@ -210,7 +220,7 @@ export function foldByCalendar(atoms: Atom[], unit: Exclude<FoldUnit, 'auto'>, a
     }
 
     let cur = alignToUnitStart(firstD, unit);
-    /* Coarse units (year/quarter/month) may start before the first
+    /* Coarse units (year/month) may start before the first
      * atom's day — that's intentional, the bucket's atom range is just
      * empty before the timeline begins. End the loop one full day past
      * the last atom so a trailing partial bucket still gets emitted. */

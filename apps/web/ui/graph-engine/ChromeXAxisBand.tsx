@@ -186,19 +186,17 @@ export function XAxisBand({
                     );
                 }
                 const display = abbreviateLabel(l, maxChars);
-                /* Edge-aware anchoring. For curves the first/last points sit
-                 *  AT the plot edges (xR[0]/xR[1]); a centered label there
-                 *  overhangs — left into the y-axis gutter, right past the
-                 *  plot. When a non-rotated label's center is within half
-                 *  its rendered width of an edge, anchor it INWARD so the
-                 *  glyphs stay inside the plot: `start` at the left edge,
-                 *  `end` at the right. Interior labels stay centered. */
-                const halfW = (display.length * TICK_FONT_AVG_CHAR_PX) / 2;
-                const anchor = rotate
-                    ? 'end'
-                    : cx - halfW < range[0] ? 'start'
-                    : cx + halfW > range[1] ? 'end'
-                    : 'middle';
+                /* A tick label is ALWAYS centered on its bucket (textAnchor
+                 *  'middle' at cx) so it reads as perfectly aligned with the
+                 *  position it marks. The old edge-aware anchoring shifted the
+                 *  first/last label to 'start'/'end' to keep glyphs off the plot
+                 *  edge — but that un-centered the label from its bucket, which
+                 *  is exactly the misalignment we don't want. An edge label may
+                 *  now overhang slightly (clipped by the container); alignment
+                 *  wins over edge-fit. `rotate` still anchors 'end' (the -40°
+                 *  pivot is the label's anchor point, so 'end' keeps it centered
+                 *  on the tick). */
+                const anchor = rotate ? 'end' : 'middle';
                 const transform = rotate
                     ? `translate(${cx}px, ${y + 14}px) rotate(-40deg)`
                     : `translate(${cx}px, ${y + 14}px)`;
@@ -227,10 +225,9 @@ export function XAxisBandTapTargets({
     onLabelClick?: (idx: number, label: string, periodKey?: string) => void;
     onLabelHover: (h: LabelHover) => void;
 }) {
-    const { labels, y, keys } = el;
+    const { labels, y, keys, periodKeys } = el;
     const { indices, at, step, stride, range } = xAxisLabelLayout(el);
     const tapHeight = 18;
-    const cursor = onLabelClick ? 'pointer' : 'default';
     return (
         <>
             {indices.map((i) => {
@@ -249,21 +246,28 @@ export function XAxisBandTapTargets({
                 const right = Math.min(range[1], cx + idealHalf);
                 const tapW = Math.max(0, right - left);
                 const key = keys?.[i] ?? labels[i];
+                /* Drill identity comes from `periodKeys` (the periodKey
+                 *  grammar), never from `keys` (React identity — base-row
+                 *  keys are raw ISO dates the period parser can't take; a
+                 *  parser miss made every base-row label click silently
+                 *  dead while still showing a pointer cursor). The cursor
+                 *  only advertises a click when a drill key exists. */
+                const periodKey = periodKeys?.[i];
                 return (
                     <rect key={key}
                         width={tapW} height={tapHeight}
                         fill="transparent" pointerEvents="all"
                         style={{
-                            cursor,
+                            cursor: onLabelClick && periodKey ? 'pointer' : 'default',
                             transform: `translate(${left}px, ${y + 2}px)`,
                             transition: LABEL_TRANSITION,
                         }}
                         onMouseEnter={() => onLabelHover({ rowIdx, labelIdx: i })}
                         onMouseLeave={() => onLabelHover(null)}
                         onClick={(e) => {
-                            if (!onLabelClick) return;
+                            if (!onLabelClick || !periodKey) return;
                             e.stopPropagation();
-                            onLabelClick(i, labels[i], keys?.[i]);
+                            onLabelClick(i, labels[i], periodKey);
                         }} />
                 );
             })}

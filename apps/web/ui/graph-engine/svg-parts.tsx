@@ -57,13 +57,24 @@ export function TooltipOverlay({ tip, yLabel, currencyCfg, svgRef, ms = 80 }: { 
     if (!rect) return null;
     /* `tip.x, tip.y` are in scaled-SVG-pixel coords (the renderer multiplies
      * vbX/vbY by scaleX/scaleY before calling show()). Add the SVG's
-     * viewport-relative origin to get viewport coords for the portal. */
-    const vpLeft = rect.left + tip.x;
-    const vpTop = rect.top + tip.y - 8;
+     * viewport-relative origin to get viewport coords for the portal.
+     * Clamp into the viewport: the portal escapes the card's overflow
+     * clip but nothing escapes the window — a hover near the left/right
+     * edge half-clipped the tag, and near the top it rendered fully
+     * above the fold. Estimates (the tag isn't measured before paint)
+     * err on the roomy side. */
+    const TAG_HALF_W = 70, TAG_EST_H = 56, EDGE = 4;
+    const vpLeft = Math.min(
+        Math.max(rect.left + tip.x, TAG_HALF_W + EDGE),
+        window.innerWidth - TAG_HALF_W - EDGE,
+    );
+    /* Too close to the viewport top → flip below the anchor point. */
+    const flipBelow = rect.top + tip.y - 8 - TAG_EST_H < 0;
+    const vpTop = rect.top + tip.y + (flipBelow ? 8 : -8);
     const t = ms > 0 ? `left ${ms}ms ease-out, top ${ms}ms ease-out` : undefined;
     return createPortal(
         <GlassTag shadow="xl"
-            style={{ position: 'fixed', left: vpLeft, top: vpTop, transform: 'translate(-50%, -100%)', zIndex: 9999, transition: t }}
+            style={{ position: 'fixed', left: vpLeft, top: vpTop, transform: flipBelow ? 'translate(-50%, 0)' : 'translate(-50%, -100%)', zIndex: 9999, transition: t }}
         >
             <BaseText color="muted" style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, marginBottom: 2 }}>
                 {tip.label}

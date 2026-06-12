@@ -26,12 +26,13 @@
 .base-action--md:not(.base-action--has-border) { padding: calc(var(--space-2)   + 1px) calc(var(--space-4) + 1px); }
 .base-action--lg:not(.base-action--has-border) { padding: calc(var(--space-3)   + 1px) calc(var(--space-6) + 1px); }
 
-/* Icon-only buttons: square padding (symmetric all sides) and a
- * full-pill radius. Per-size icon-only padding is the same as the
- * sided version's smaller axis. */
-.base-action--icon-only.base-action--sm { padding: var(--space-1-5); border-radius: var(--radius-full); }
-.base-action--icon-only.base-action--md { padding: var(--space-2);   border-radius: var(--radius-full); }
-.base-action--icon-only.base-action--lg { padding: var(--space-3);   border-radius: var(--radius-full); }
+/* Icon-only buttons: square padding (symmetric all sides). Corner is the
+ * concentric-nesting formula — host radius − host pad − border, read from
+ * the --_nest-* publication; unhosted falls back to the capped pill role.
+ * Perfectly-round chrome is banned (rounder corners only). */
+.base-action--icon-only.base-action--sm { padding: var(--space-1-5); border-radius: max(0px, calc(var(--_nest-r, var(--radius-pill)) - var(--_nest-pad, 0px) - 1px)); }
+.base-action--icon-only.base-action--md { padding: var(--space-2);   border-radius: max(0px, calc(var(--_nest-r, var(--radius-pill)) - var(--_nest-pad, 0px) - 1px)); }
+.base-action--icon-only.base-action--lg { padding: var(--space-3);   border-radius: max(0px, calc(var(--_nest-r, var(--radius-pill)) - var(--_nest-pad, 0px) - 1px)); }
 .base-action:disabled {
   opacity: 0.5;
   cursor: not-allowed;

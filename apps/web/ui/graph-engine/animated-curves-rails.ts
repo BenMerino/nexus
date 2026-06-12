@@ -16,7 +16,11 @@ export function appendHoverRails(
     ys?: ReadonlyArray<number>,
 ): void {
     const n = xs.length;
-    if (n === 0) return;
+    /* n < 2: the neighbour-midpoint math below reads xs[1]/xs[n-2] —
+     *  a single-point curve produced NaN-coordinate hit rects (multi-
+     *  line/stacked-area called in unguarded on one-bucket windows). A
+     *  lone point gets its hover from the marker itself. */
+    if (n < 2) return;
     const yTop = plotYR[0];
     const h = plotYR[1] - plotYR[0];
     if (h <= 0) return;

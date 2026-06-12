@@ -1,0 +1,51 @@
+.seg-wrap { position: relative; align-self: flex-start; }
+
+/* Capped pill ROLE, not the raw surface scale: 24px shells clamp to a
+ * capsule on a ~28px control — perfectly-round chrome is banned. The
+ * indicator/buttons derive concentrically (shell − inset − border). */
+.seg-wrap-pill {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-pill);
+  outline: 1px solid var(--border-main);
+  outline-offset: -1px;
+}
+
+.seg-wrap-tab {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-surface-md);
+  outline: 1px solid var(--border-main);
+  outline-offset: -1px;
+}
+
+.seg-wrap-solid {
+  background: var(--bg-card);
+  outline: 1px solid var(--border-main);
+  outline-offset: -1px;
+  border-radius: var(--radius-surface-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.seg-btn-pill { font-weight: 700; border-radius: max(0px, calc(var(--radius-pill) - var(--space-0-5) - 1px)); }
+.seg-btn-tab { font-weight: 500; border-radius: var(--radius-md); }
+.seg-btn-solid { font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; border-radius: var(--radius-xl); }
+.seg-btn-underline { font-weight: 500; }
+
+.seg-indicator { position: absolute; }
+.seg-indicator-pill { inset: var(--space-0-5); background: var(--bg-card); border-radius: max(0px, calc(var(--radius-pill) - var(--space-0-5) - 1px)); box-shadow: var(--shadow-sm); }
+.seg-indicator-tab { inset: var(--space-0-5); background: var(--bg-card); border-radius: var(--radius-surface-sm); box-shadow: var(--shadow-sm); }
+.seg-indicator-solid { inset: var(--space-0-5); border-radius: var(--radius-surface-lg); box-shadow: var(--shadow-sm); }
+.seg-indicator-underline { bottom: 0; left: 0; right: 0; height: var(--space-0-5); border-radius: var(--radius-full); }
+
+.seg-active { position: relative; }
+.seg-active-tab { color: var(--text-main); }
+.seg-active-solid { color: var(--text-inverse); }
+
+.seg-inactive { position: relative; color: var(--text-muted); }
+.seg-inactive:hover { color: var(--text-main); }

@@ -129,10 +129,13 @@ export interface GraphQuery extends BaseQuery {
      * 4 Streams use this for time-travel: `asOf` becomes the replay
      * cursor across the event log. */
     asOf?: string;
-    /** The CALENDAR period this query drilled into — the single identity the
-     *  breadcrumb, axis, and view derive from, instead of reverse-engineering it
-     *  from windowDays/asOf (which drift + disagree). Set by narrowQueryToPeriod.
-     *  Keys: `2020s` decade, `2024` year, `2024-03` month. */
+    /** The CALENDAR period this query drilled into. Set ONLY by
+     *  `narrowQueryToPeriod`; grammar lives in `graph-drilldown.ts`
+     *  (`periodKeyFor`/`periodBounds`): `1900c`, `2020s`, `2024`, `2024-03`,
+     *  `2024-03-15`. Absent on an un-drilled query. Presentation identity,
+     *  NOT data identity: window moves by any other path must drop it
+     *  (`dropStalePeriodKey`), and `streamKeyFromQuery` excludes it so the
+     *  same window reached via different paths shares one Stream. */
     periodKey?: string;
 }
 
@@ -147,7 +150,7 @@ export type TimeRangePreset = '7d' | '30d' | '90d' | '180d' | '365d' | 'all';
 export const WINDOW_DAYS_PRESET: Record<TimeRangePreset, number | null> = {
     '7d': 7, '30d': 30, '90d': 90, '180d': 180, '365d': 365, all: null,
 };
-export type Granularity = 'day' | 'week' | 'month' | 'quarter';
+export type Granularity = 'day' | 'month' | 'year';
 export type ScopePreset = 'today' | 'week' | 'month';
 
 /** Toggle bound to a GraphQuery field — narrowed re-export of the generic

@@ -37,6 +37,10 @@ export interface AreaState {
      *  by index whereas the curve consumes them through the scale. */
     values: number[];
     labels: string[];
+    /** Per-bucket start ISO — rides the rail hit payload as `__startISO`
+     *  so a plot click resolves the bucket's calendar period (same drill
+     *  contract as bars). Empty string when non-atomic/categorical. */
+    isos: string[];
     /** Per-bucket status (dash) + presence (gap). */
     statuses: DatumStatus[];
     defined: boolean[];
@@ -68,7 +72,10 @@ export const animatedArea: AnimatedFamily<AreaState> = {
                 xs: aggs.map(b => toPx(b.xCenter)),
                 vs: aggs.map(b => b.value),
                 values: aggs.map(b => b.value),
-                labels: aggs.map(b => b.startISO),
+                /* Formatted labels (`chart.data` shares the canonical
+                 *  sequence's indexing) — raw startISO leaked into tooltips. */
+                labels: aggs.map((b, i) => layout.labels[i] ?? b.startISO),
+                isos: aggs.map(b => b.startISO),
                 statuses: resolveStatuses(aggs.map(b => b.status), chart.statusOverrides, aggs.map(b => b.startISO)),
                 defined: aggs.map(b => b.defined),
                 baseY: layout.yR[1],
@@ -87,6 +94,7 @@ export const animatedArea: AnimatedFamily<AreaState> = {
             vs: data.map((d) => d.value ?? 0),
             values: data.map((d) => d.value ?? 0),
             labels: layout.labels,
+            isos: data.map((d) => typeof d.__startISO === 'string' ? d.__startISO : ''),
             statuses: resolveStatuses(
                 data.map((d) => (d.__status as DatumStatus) ?? (d.status as DatumStatus) ?? 'observed'),
                 chart.statusOverrides,
@@ -114,6 +122,7 @@ export const animatedArea: AnimatedFamily<AreaState> = {
                 vs: lerpNumberArray(prev.vs, target.vs, phase.alphaShort, dRef),
                 values: target.values,
                 labels: target.labels,
+                isos: target.isos,
                 statuses: target.statuses,
                 defined: target.defined,
                 baseY: lerpNumber(prev.baseY, target.baseY, phase.alpha, dRef),
@@ -178,7 +187,7 @@ export const animatedArea: AnimatedFamily<AreaState> = {
             });
         }
         appendHoverRails(out, state.xs, state.plotYR, (i) => ({
-            idx: i, label: state.labels[i], value: state.values[i],
+            idx: i, label: state.labels[i], value: state.values[i], __startISO: state.isos[i] || undefined,
         }), ys);
         return out;
     },

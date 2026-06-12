@@ -55,11 +55,6 @@ export function activeTierCount(chart: GraphDirective): number {
 /** Coarser X-axis tiers to stack beneath the base labels, given the
  *  resolved fold unit. */
 export function coarserTiersFor(unit: GraphDirective['__foldUnit']): TierUnit[] {
-    // The FoldUnit ladder dropped week + quarter (hour<day<month<year<decade<
-    // century), so the tier rows above the bars must not group by them either:
-    // a day fold tiers up by MONTH (not week), a month fold by YEAR (not
-    // quarter). Leaving week/quarter here re-introduced W1/Q1 labels the ladder
-    // no longer has. The week/quarter base-unit branches are unreachable now.
     if (unit === 'day') return ['month', 'year'];
     if (unit === 'month') return ['year'];
     return [];

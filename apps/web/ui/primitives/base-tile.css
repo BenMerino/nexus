@@ -1,0 +1,148 @@
+/* ── BaseTile ──────────────────────────────────────────────
+ * The chrome-tile primitive's CSS contract. One place for the
+ * tile family's height, radius, surface, border, hover, focus.
+ * See BaseTile.tsx for the why. */
+
+.base-tile {
+    /* Tile family height — same outer dimensions for every chrome
+     * tile regardless of inner content. Locks the row's vertical
+     * rhythm: every tile sits at the same baseline.
+     *
+     * `box-sizing: border-box` so the height includes border + padding,
+     * matching what the visual eye reads (the tile's outer rectangle). */
+    height: var(--space-8);
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    /* `control` corner — chrome tiles share the one interactive radius
+     * with buttons/inputs (var(--radius-control), 9px). */
+    border-radius: var(--radius-control);
+    /* Chrome tiles never wrap; their content is a single line. */
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+    font-family: inherit;
+    transition:
+        background var(--motion-normal) ease,
+        border-color var(--motion-normal) ease,
+        box-shadow var(--motion-normal) ease;
+}
+
+/* Width policies. */
+.base-tile--square {
+    /* Icon-only tiles — perfect square, padding centred. */
+    width: var(--space-8);
+    padding: var(--space-1-5);
+    justify-content: center;
+}
+.base-tile--auto {
+    /* Content-sized tiles — width grows with children. Symmetric
+     * horizontal padding gives the placeholder + text + kbd hint
+     * room to breathe. */
+    padding: 0 var(--space-3);
+}
+
+/* ── Variant: default (neutral chrome) ── */
+.base-tile--default {
+    background: var(--bg-card);
+    border: 1px solid var(--border-main);
+    box-shadow: none;
+    color: var(--text-main);
+}
+.base-tile--default:hover {
+    background: var(--bg-elevated);
+    color: var(--text-main);
+}
+
+/* ── Variant: primary (gradient brand surface) ── */
+.base-tile--primary {
+    background: var(--gradient-primary, linear-gradient(135deg, var(--primary), var(--primary-bright)));
+    /* Clip the gradient to the padding box so it never paints under the
+     * 1px transparent border. On a dark rail the gradient's light end
+     * would otherwise antialias against the background at the rounded
+     * corners, leaving a bright fringe that reads as a phantom second
+     * border ringing the tile. Padding-box clip removes that seam. */
+    background-clip: padding-box;
+    border: 1px solid transparent;
+    color: var(--text-inverse, white);
+}
+.base-tile--primary:hover {
+    filter: brightness(1.05);
+}
+
+/* ── Variant: bare (no border / no surface at rest) ──────────
+ * Surfaces only on hover or when active. Used by the nav rail:
+ * icons should read as part of the rail's surface at rest, then
+ * promote to a real tile when the user looks at or selects them.
+ *
+ * Transparent border (not `none`) keeps the box model identical
+ * to other variants so the tile doesn't jump 1px when the border
+ * appears on hover. */
+.base-tile--bare {
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    color: var(--text-muted);
+}
+.base-tile--bare:hover {
+    background: var(--bg-elevated);
+    border-color: var(--border-main);
+    color: var(--text-main);
+}
+/* When active + bare: promote to the default tile surface so the
+ * selected nav item reads as a chrome tile (the same family the
+ * header uses), not just a halo'd transparent box. */
+.base-tile--bare.base-tile--active {
+    background: var(--bg-card);
+    border-color: var(--border-main);
+    color: var(--text-main);
+}
+
+/* Active state — for filter triggers holding an open popover or
+ * carrying an applied filter. Renders a halo without changing the
+ * surface so the tile reads as "engaged" without losing its family
+ * identity. */
+.base-tile--active {
+    box-shadow: var(--shadow-halo);
+}
+
+/* Focus ring — visible on keyboard focus only. Bound to the tile's shape
+ * by construction: a box-shadow ring follows `border-radius`, so the ring
+ * can never paint a rectangle past the rounded corners (which a CSS
+ * `outline` does — outline ignores radius). The ring is a `--ring-color`
+ * stroke held 2px off the edge by an intervening `--bg-card` spacer ring,
+ * recreating the old outline-offset gap. Decoration is therefore the
+ * tile's form, not an independently-shaped overlay. */
+.base-tile {
+    /* Default ring color. The primary variant overrides this token so the
+     * ring contrasts the gradient instead of clashing with it. */
+    --tile-ring-color: var(--primary);
+}
+.base-tile:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 2px var(--bg-card),
+        0 0 0 4px var(--tile-ring-color);
+}
+/* When a focused tile is also active, the halo must still read — compose
+ * the focus ring on top of the active halo rather than clobbering it. */
+.base-tile--active:focus-visible {
+    box-shadow:
+        0 0 0 2px var(--bg-card),
+        0 0 0 4px var(--tile-ring-color),
+        var(--shadow-halo);
+}
+/* On the primary gradient surface a --primary ring would be primary-on-
+ * primary — it collides with the fill and reads as an alien border. The
+ * gradient tile is a self-contained brand surface; its ring uses the same
+ * inverse color its icon/text already use, and its spacer ring matches the
+ * surface so the gap reads as the tile, not a white halo. */
+.base-tile--primary {
+    --tile-ring-color: var(--text-inverse, white);
+}
+.base-tile--primary:focus-visible {
+    box-shadow:
+        0 0 0 2px var(--primary),
+        0 0 0 4px var(--tile-ring-color);
+}

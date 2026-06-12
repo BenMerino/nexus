@@ -2,24 +2,48 @@ import React from 'react';
 import { BaseBox } from '../primitives/BaseBox.js';
 import { BaseText } from '../primitives/BaseText.js';
 import { ChartRender } from './ChartRender.js';
-import { useTimelineSpan } from './useTimelineSpan.js';
 import { LegibilityAlert } from './LegibilityAlert.js';
 import { QueryToggleBar } from './QueryToggleBar.js';
 import { FeatureToggleGroup, useChartFeatureToggles } from './FeatureToggleGroup.js';
 import { LiveBadge } from '../composed/LiveBadge.js';
-import { periodKeyFor } from '../../architect/graph-drilldown.js';
 import { DrillBreadcrumbChip } from './DrillBreadcrumbChip.js';
-import { WindowPickerMolecule } from './WindowPickerMolecule.js';
+import { Calendar } from 'lucide-react';
+import { eligibleFoldUnits, foldOpensFiner } from '../../architect/fold-atoms.js';
+import { FilterTrigger } from '../composed/FilterTrigger.js';
+import { DateRangeCalendarView } from '../composed/DateRangeCalendarView.js';
+import { rangeValueFromQuery, windowPatchFromRange, periodKeyLabel, shortRangeLabel } from './chart-range-window.js';
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
 import type { ToggleSpec } from '../../architect/replayable-directive.js';
 
+/* Strip a foldUnit toggle's options down to the units that bucket READABLY
+ * for the current visible span (eligibleFoldUnits: 3–120 buckets). Without
+ * this a user could force e.g. "week" over a 170-year window → ~9k buckets,
+ * crippling the fold/render. Non-foldUnit toggles pass through untouched, and
+ * a foldUnit toggle keeps 'auto' (always eligible) plus whatever fits — so the
+ * fine rungs reappear as the user narrows the window. */
+function gateFoldUnitToggles<T extends ToggleSpec<GraphQuery>>(toggles: T[], visibleDays: number): T[] {
+    if (!Number.isFinite(visibleDays) || visibleDays <= 0) return toggles;
+    const eligible = new Set(eligibleFoldUnits(visibleDays).map(String));
+    return toggles.map(tg => {
+        if (tg.field !== 'foldUnit' && tg.id !== 'foldUnit') return tg;
+        const options = tg.options.filter(o => eligible.has(o.value));
+        return { ...tg, options } as T;
+    });
+}
+
 /* ── ChartBody ───────────────────────────────────────────────
- * Renders the title row (title + toggles + LiveBadge), the chart
- * canvas via the family-router, and the optional ChartRangeSlider
- * below. Extracted from GraphRender to keep that file under the
- * NBR-15 ceiling and to keep the slider/family composition in one
- * place. The renderer above (GraphRender) handles the resolved
- * directive (post-fold, post-morph) and passes it here.
+ * Renders the title row (title + range chip + toggles + LiveBadge) and
+ * the chart canvas via the family-router. Time navigation:
+ *   - COARSE: the DateRangePicker chip (presets + custom dates) commits
+ *     whole windows via `onWindowChange`; a picked range that IS a
+ *     calendar period carries its `periodKey` identity.
+ *   - FINE: click-to-drill (bar/period → its sub-periods; breadcrumb
+ *     drills out) + the granularity pills.
+ * The continuous windowDays slider stays removed — arbitrary windows
+ * produced partial edge buckets; the resolver snaps picked windows to
+ * whole buckets instead. Extracted from GraphRender to keep that file
+ * under the NBR-15 ceiling. The renderer above (GraphRender) handles the
+ * resolved directive (post-fold, post-morph) and passes it here.
  * ──────────────────────────────────────────────────────────── */
 
 export interface ChartBodyProps {
@@ -34,7 +58,7 @@ export interface ChartBodyProps {
      *  with a `series` or `label` payload is clicked. ChartRender
      *  routes the click to whichever toggle key matches the primitive. */
     onToggleSeries?: (key: string) => void;
-    onWindowChange?: (window: { windowDays: number | null; asOf: string | null }) => void;
+    onWindowChange?: (window: { windowDays: number | null; asOf: string | null; periodKey?: string }) => void;
     isLoading: boolean;
     error?: string | null;
     t: string;
@@ -46,22 +70,15 @@ export interface ChartBodyProps {
      *  whenever drill state appears. Inside the title row it's a peer
      *  of the toggle pills + LiveBadge and changes no card geometry. */
     breadcrumbs?: { label: string }[];
-    /** Jump to crumb `index` — the breadcrumb is the level control. */
-    onDrillTo?: (index: number) => void;
-    /** The current (deepest) level's label, for the breadcrumb tail. */
-    currentLabel?: string;
+    onDrillUp?: () => void;
 }
 
-export function ChartBody({ chart, resolved, container, legibility, axesOverride, onBucketClick, onToggle, onToggleSeries, onWindowChange, isLoading, error, t, isLive, breadcrumbs, onDrillTo, currentLabel }: ChartBodyProps) {
+export function ChartBody({ chart, resolved, container, legibility, axesOverride, onBucketClick, onToggle, onToggleSeries, onWindowChange, isLoading, error, t, isLive, breadcrumbs, onDrillUp }: ChartBodyProps) {
     const allToggles = chart.toggles ?? [];
     const windowToggle = allToggles.find(tg => tg.id === 'windowDays' || tg.field === 'windowDays') as ToggleSpec<GraphQuery> | undefined;
-    /* The fold-unit toggle (Auto/Century/Decade/Year/Month) is REPLACED by the
-     *  breadcrumb (the level control) — filter it out of the pill row so the two
-     *  don't both drive granularity. windowDays is already split off above. */
-    const otherToggles = allToggles.filter(tg => tg !== windowToggle && tg.id !== 'foldUnit' && tg.field !== 'foldUnit');
+    const otherToggles = allToggles.filter(tg => tg !== windowToggle);
     const tenantId = chart.query?.tenantId;
     const kind = chart.query?.kind;
-    const span = useTimelineSpan(tenantId, kind);
 
     /* Feature opt-in state. Scoped per chart kind; stays empty until
      *  useUserUiPref resolves. The set is merged onto BOTH the
@@ -71,17 +88,21 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     const featureScopeKey = kind ? `chart:${kind}:features` : '';
     const featureToggles = useChartFeatureToggles(featureScopeKey);
     const featuresAvailable = chart.features ?? [];
-    const chartWithActive = featuresAvailable.length > 0
-        ? { ...chart, activeFeatures: featureToggles.activeKinds }
-        : chart;
-    const resolvedWithActive = featuresAvailable.length > 0
-        ? { ...resolved, activeFeatures: featureToggles.activeKinds }
-        : resolved;
+    const hasFeatures = featuresAvailable.length > 0;
+    /* Memoized — a fresh spread per render gives ChartRender a new `chart`
+     *  identity every time, recreating its hover/click callbacks and
+     *  re-rendering every memoized hit shape even when nothing changed. */
+    const chartWithActive = React.useMemo(
+        () => hasFeatures ? { ...chart, activeFeatures: featureToggles.activeKinds } : chart,
+        [hasFeatures, chart, featureToggles.activeKinds],
+    );
+    const resolvedWithActive = React.useMemo(
+        () => hasFeatures ? { ...resolved, activeFeatures: featureToggles.activeKinds } : resolved,
+        [hasFeatures, resolved, featureToggles.activeKinds],
+    );
 
     const q = chart.query as GraphQuery | undefined;
     const windowDays = q?.windowDays ?? null;
-    const asOf = q?.asOf ?? null;
-    const sliderActive = !!windowToggle && !!tenantId && !!kind && !!span && !!onWindowChange;
 
     /* daysPerBucket: current fold factor expressed in days. Atoms are
      * hour-resolution (HOURS_PER_DAY keys per day); visible bucket count
@@ -96,30 +117,59 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     const atoms = chart.atoms ?? [];
     const totalDays = atoms.length === 0 ? 0 : (atoms[atoms.length - 1].key - atoms[0].key + 1) / 24;
     const visibleAtoms = windowDays != null ? Math.min(windowDays, totalDays) : (totalDays || visibleBuckets);
+    /* Gate the granularity toggle to units readable at the CURRENT window, so
+     *  the user can't force a fold that over-buckets (e.g. week over 170y). */
+    const gatedToggles = gateFoldUnitToggles(otherToggles, visibleAtoms);
     const daysPerBucket = visibleBuckets > 0 ? visibleAtoms / visibleBuckets : 1;
     const isHeatmap = t === 'heatmap';
-    const drillable = isHeatmap || daysPerBucket > 1.001;
-    const wrappedClick = drillable && onBucketClick
-        ? (idx: number, label: string, atomKeyRange?: [number, number], periodKey?: string) => {
-            /* Derive the calendar periodKey HERE, where the post-fold `resolved`
-             *  directive carries the real __foldUnit. DirectiveChart can't: it
-             *  holds the raw controller seed, whose __foldUnit is undefined
-             *  (the fold is computed at render). `label` is the bucket's
-             *  __startISO for time charts, so periodKeyFor maps it to the
-             *  decade/year/month key the drill then narrows to exactly. */
-            const fu = resolved.__foldUnit;
-            const pk = periodKey ?? (fu ? periodKeyFor(label, fu) : null) ?? undefined;
-            onBucketClick(idx, label, visibleBuckets, daysPerBucket, atomKeyRange, pk);
-        }
+    /* Two independent drill paths share this handler, gated separately:
+     *  - PLOT bucket clicks: only when the current fold OPENS (drilling a
+     *    bucket reveals finer buckets — `foldOpensFiner`, the same
+     *    predicate the chrome uses for base-row labels). The old
+     *    `daysPerBucket > 1` proxy also blocked day buckets sitting on
+     *    hourly atoms, which DO open.
+     *  - AXIS label clicks: a tier label ("May" over day bars) is coarser
+     *    than the buckets BY CONSTRUCTION, so it can always open — gating
+     *    it on the plot's fold made every tier click dead exactly at fine
+     *    folds, where tier rows are most useful. Per-label drillability
+     *    is decided by the chrome's `periodKeys` (no key ⇒ inert label). */
+    const hasHourly = atoms.some(a => typeof a.hour === 'number' && a.hour > 0);
+    const plotDrillable = isHeatmap || foldOpensFiner(resolved.__foldUnit, hasHourly);
+    const wrappedClick = onBucketClick
+        ? (idx: number, label: string, atomKeyRange?: [number, number], periodKey?: string) => onBucketClick(idx, label, visibleBuckets, daysPerBucket, atomKeyRange, periodKey)
         : undefined;
 
+    /* Window controls — two pieces side by side with the other toggles:
+     *  - PRESET PILLS: the directive's `windowDays` toggle renders as a
+     *    SegmentedPill like any other toggle (selection derived from the
+     *    LIVE query, not the composer's stale `current`).
+     *  - CUSTOM CHIP: a "Custom" popover that vessels ONLY the two-
+     *    calendar date picker. Its label shows the calendar identity
+     *    ("May 2026") or the picked span when a non-preset window is
+     *    active. */
+    const hasRangeChip = atoms.length > 0 && !!onWindowChange && !!q;
+    const windowPill = React.useMemo(() => {
+        if (!windowToggle || !q) return undefined;
+        return { ...windowToggle, current: String(q.windowDays ?? 'null') } as ToggleSpec<GraphQuery>;
+    }, [windowToggle, q]);
+    const rangeValue = React.useMemo(
+        () => (hasRangeChip ? rangeValueFromQuery(q!, []) : null),
+        [hasRangeChip, q],
+    );
+    const isPresetWindow = !!windowToggle?.options.some(o => String(o.value) === String(q?.windowDays ?? 'null'));
+    const customLabel = periodKeyLabel(q?.periodKey)
+        ?? (rangeValue && !isPresetWindow && rangeValue.preset !== 'all'
+            ? shortRangeLabel(rangeValue.start, rangeValue.end)
+            : 'Custom');
+
     // The header row carries the title + drill breadcrumbs (left) and the
-    // toggles/feature controls/live badge (right). Skip it entirely when there
-    // is nothing to show — e.g. a hideTitle chart with no toggles — so the host
-    // card's own heading isn't trailed by an empty 0.25rem gap.
+    // range chip/toggles/feature controls/live badge (right). Skip it
+    // entirely when there is nothing to show — e.g. a hideTitle chart with
+    // no toggles — so the host card's own heading isn't trailed by an
+    // empty 0.25rem gap.
     const showHeaderRow = (!chart.hideTitle && !!chart.title)
-        || (!!breadcrumbs && breadcrumbs.length > 0 && !!onDrillTo)
-        || sliderActive
+        || (!!breadcrumbs && breadcrumbs.length > 0 && !!onDrillUp)
+        || hasRangeChip
         || (otherToggles.length > 0 && !!onToggle)
         || (featuresAvailable.length > 0 && !!featureScopeKey)
         || isLive !== undefined;
@@ -134,23 +184,39 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
                                 {chart.title}
                             </BaseText>
                         )}
-                        {breadcrumbs && breadcrumbs.length > 0 && onDrillTo && (
-                            <DrillBreadcrumbChip crumbs={breadcrumbs} current={currentLabel ?? ''} onJump={onDrillTo} />
-                        )}
-                        {sliderActive && (
-                            <WindowPickerMolecule
-                                windowDays={windowDays}
-                                asOf={asOf}
-                                minISO={span!.earliest}
-                                maxISO={span!.today}
-                                onWindowChange={onWindowChange!}
-                                disabled={isLoading}
-                            />
+                        {breadcrumbs && breadcrumbs.length > 0 && onDrillUp && (
+                            <DrillBreadcrumbChip crumbs={breadcrumbs} onUp={onDrillUp} />
                         )}
                     </BaseBox>
                     <BaseBox display="flex" direction="row" align="center" density="tight">
-                        {otherToggles.length > 0 && onToggle && (
-                            <QueryToggleBar toggles={otherToggles} isLoading={isLoading} error={error} onChange={onToggle} />
+                        {windowPill && onToggle && (
+                            <QueryToggleBar toggles={[windowPill]} isLoading={isLoading} onChange={onToggle} />
+                        )}
+                        {hasRangeChip && rangeValue && (
+                            <FilterTrigger
+                                icon={<Calendar style={{ width: 14, height: 14 }} />}
+                                label={customLabel}
+                                align="right"
+                            >
+                                {() => (
+                                    <BaseBox bg="var(--bg-card)" border="var(--border-main)" radius="card" shadow="lg" pad="tight">
+                                        {/* max = today: windowPatchFromRange clamps the window
+                                          * to today anyway — disabling future days makes that
+                                          * visible instead of silently collapsing the pick. */}
+                                        <DateRangeCalendarView
+                                            value={rangeValue}
+                                            max={new Date().toISOString().split('T')[0]}
+                                            onCommit={(start, end) => {
+                                                const p = windowPatchFromRange({ preset: 'custom', start, end });
+                                                onWindowChange!({ windowDays: p.windowDays, asOf: p.asOf ?? null, periodKey: p.periodKey });
+                                            }}
+                                        />
+                                    </BaseBox>
+                                )}
+                            </FilterTrigger>
+                        )}
+                        {gatedToggles.length > 0 && onToggle && (
+                            <QueryToggleBar toggles={gatedToggles} isLoading={isLoading} error={error} onChange={onToggle} />
                         )}
                         {featuresAvailable.length > 0 && featureScopeKey && (
                             <FeatureToggleGroup
@@ -168,11 +234,11 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
             )}
             {legibility === 'illegible'
                 ? <LegibilityAlert chart={chartWithActive} />
-                : <RenderFamily chart={resolvedWithActive} w={container.width} h={container.height} axesOverride={axesOverride} onBucketClick={wrappedClick} onToggleSeries={onToggleSeries} />}
+                : <RenderFamily chart={resolvedWithActive} w={container.width} h={container.height} axesOverride={axesOverride} onBucketClick={wrappedClick} plotDrillable={plotDrillable} onToggleSeries={onToggleSeries} />}
         </>
     );
 }
 
-function RenderFamily({ chart, w, h, axesOverride, onBucketClick, onToggleSeries }: { chart: GraphDirective; w: number; h: number; axesOverride?: string; onBucketClick?: (idx: number, label: string, atomKeyRange?: [number, number], periodKey?: string) => void; onToggleSeries?: (key: string) => void }) {
-    return <ChartRender chart={chart} width={Math.max(100, w)} height={Math.max(60, h)} axesOverride={axesOverride} onBucketClick={onBucketClick} onToggleSeries={onToggleSeries} />;
+function RenderFamily({ chart, w, h, axesOverride, onBucketClick, plotDrillable, onToggleSeries }: { chart: GraphDirective; w: number; h: number; axesOverride?: string; onBucketClick?: (idx: number, label: string, atomKeyRange?: [number, number], periodKey?: string) => void; plotDrillable?: boolean; onToggleSeries?: (key: string) => void }) {
+    return <ChartRender chart={chart} width={Math.max(100, w)} height={Math.max(60, h)} axesOverride={axesOverride} onBucketClick={onBucketClick} plotDrillable={plotDrillable} onToggleSeries={onToggleSeries} />;
 }

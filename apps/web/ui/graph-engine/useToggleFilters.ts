@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { cs, seriesColorFor } from './svg-parts.js';
 import { useTweenedMap } from '../primitives/tween.js';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
@@ -28,6 +28,20 @@ export function useToggleFilters(chart: GraphDirective) {
     ), [chart.series, chart.type, chart.data]);
 
     const [activeSet, setActiveSet] = useState<Set<string>>(() => new Set(seriesKeys));
+    /* Reconcile when the series set CHANGES after mount (a stream patch
+     *  or regroup toggle introducing a series): a key the user never saw
+     *  defaults active. Without this, new keys got target weight 0 and
+     *  tweens SPAWN at their target — the series rendered permanently
+     *  invisible with a dimmed pill and no user action explaining why.
+     *  `seen` (not `activeSet`) is the dedup so explicit user-offs stay
+     *  off — reconciliation must never resurrect them. */
+    const seenKeysRef = useRef<Set<string>>(new Set(seriesKeys));
+    useEffect(() => {
+        const unseen = seriesKeys.filter(k => !seenKeysRef.current.has(k));
+        if (unseen.length === 0) return;
+        for (const k of unseen) seenKeysRef.current.add(k);
+        setActiveSet(prev => new Set([...prev, ...unseen]));
+    }, [seriesKeys]);
 
     const targetWeights = useMemo(
         () => new Map(seriesKeys.map(k => [k, activeSet.has(k) ? 1 : 0])),

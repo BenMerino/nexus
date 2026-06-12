@@ -55,14 +55,15 @@ export interface GraphRenderProps {
         atomKeyRange?: [number, number],
         periodKey?: string,
     ) => void;
-    /** Optional positioned-window setter. The slider expresses a windowed
-     * range `[from, to]` over the genesis-to-today timeline. Width is
+    /** Positioned-window setter — commits the range chip's picks. Width is
      * `windowDays`, right-edge anchor is `asOf` (ISO `YYYY-MM-DD`).
      * `windowDays = null` means all-time. `asOf = null` means anchored to
-     * "now" (server resolves at compose time). The slider commits both
-     * fields together so the controller can issue a single recompose with
-     * the new positioned window. Wire to `controller.setQueryFields({...})`. */
-    onWindowChange?: (window: { windowDays: number | null; asOf: string | null }) => void;
+     * "now" (server resolves at compose time; rolling presets keep
+     * rolling). `periodKey` is present when the picked range IS a whole
+     * calendar period — pass it through so the window carries the same
+     * identity a drill would stamp. Wire to
+     * `controller.setQueryFields({...})`. */
+    onWindowChange?: (window: { windowDays: number | null; asOf: string | null; periodKey?: string }) => void;
     /** Whether this chart is receiving Stream pushes (Phase 5). When `true`,
      * a small pulsing badge renders in the title row. When `undefined`, the
      * badge is omitted entirely (use this for static demos / non-replayable
@@ -73,14 +74,11 @@ export interface GraphRenderProps {
      *  a "← Back" chip renders inside the chart's title row (NOT as a
      *  sibling row above). Wire via `controller.breadcrumbs`. */
     breadcrumbs?: { label: string }[];
-    /** Jump to a crumb level (the breadcrumb is the level control). Wire via
-     *  `controller.drillTo`. */
-    onDrillTo?: (index: number) => void;
-    /** Current (deepest) level label for the breadcrumb tail. */
-    currentLabel?: string;
+    /** Pop one drill level. Wire via `controller.drillUp`. */
+    onDrillUp?: () => void;
 }
 
-export function GraphRender({ chart, onToggle, isLoading = false, error, onBucketClick, onWindowChange, isLive, breadcrumbs, onDrillTo, currentLabel }: GraphRenderProps) {
+export function GraphRender({ chart, onToggle, isLoading = false, error, onBucketClick, onWindowChange, isLive, breadcrumbs, onDrillUp }: GraphRenderProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     // A choropleth is shape-locked to the world's 2:1 — size the container to
     // that aspect (no max-height cap) so the map fills it with no letterbox.
@@ -113,12 +111,18 @@ export function GraphRender({ chart, onToggle, isLoading = false, error, onBucke
     // and width interpolate continuously. Buckets at the window edges
     // get clipped by the plot range. No bucket-count snapping. No
     // snapshot lerp. The math IS the animation.
-    const containerWidth = container?.width ?? 0;
     const colorClip = useMemo(() => ({ lower: clip.lower, upper: clip.upper }), [clip.lower, clip.upper]);
+    /* Two-stage resolve. The FOLD (placements, bucket sequence, yMax,
+     *  neighbors) is a pure function of the directive and is the expensive
+     *  half — keyed on `chart` alone. Toggle weights / color clips are
+     *  client-runtime presentation state stamped in a second, cheap memo:
+     *  `seriesWeights` is a NEW Map on every rAF frame of a legend tween
+     *  (~17 frames per toggle), and keying the fold on it forced 17
+     *  consecutive full refolds per legend click. */
+    const resolvedBase = useMemo(() => resolveAtomicDirective(chart), [chart]);
     const resolved = useMemo(
-        () => resolveAtomicDirective(chart, { activeSet, seriesWeights, colorClip }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [chart, containerWidth, activeSet, seriesWeights, colorClip],
+        () => ({ ...resolvedBase, activeSeries: activeSet, seriesWeights, colorClip }),
+        [resolvedBase, activeSet, seriesWeights, colorClip],
     );
 
     const isCompact = t === 'sparkline' || t === 'gauge' || t === 'progress-ring';
@@ -185,8 +189,7 @@ export function GraphRender({ chart, onToggle, isLoading = false, error, onBucke
                         t={t}
                         isLive={isLive}
                         breadcrumbs={breadcrumbs}
-                        onDrillTo={onDrillTo}
-                        currentLabel={currentLabel}
+                        onDrillUp={onDrillUp}
                     />
 
                     {(() => {
@@ -216,7 +219,7 @@ function AxesToggle({ current, onToggle }: { current: string; onToggle: () => vo
         <BaseAction onClick={onToggle} style={{
             display: 'inline-flex', alignItems: 'center', gap: 'var(--space-1, 0.25rem)',
             padding: 'var(--space-0-5, 0.125rem) var(--space-2, 0.5rem)',
-            borderRadius: 'var(--radius-full, 999px)', cursor: 'pointer',
+            borderRadius: 'var(--radius-pill)', cursor: 'pointer',
             border: '1px solid var(--border-ghost, var(--border-main))',
             background: current === 'marginal' ? 'var(--bg-card)' : 'transparent',
             opacity: current === 'marginal' ? 1 : 0.4, transition: 'opacity 150ms ease',

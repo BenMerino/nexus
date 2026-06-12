@@ -1,10 +1,11 @@
 /**
- * `pairBarsForFold` — pure matching primitive for the simple-bar
- * family. Pairs target bars with prev bars by calendar containment to
- * drive the persistent / split / merge / enter / exit classification
- * in the bar family's `lerp`. Extracted so the family file stays under
- * the file-length ceiling and the matching logic is testable in
- * isolation.
+ * Fold-transition pairing primitives. `pairBarsForFold` serves the
+ * simple-bar family; `pairSegmentsForFold` is the stacked variant
+ * (per-series pools). Both pair target marks with prev marks by
+ * canonical bucket identity / calendar containment to drive the
+ * persistent / split / merge / enter / exit classification in the
+ * families' `lerp`. Extracted so the family files stay under the
+ * file-length ceiling and the matching logic is testable in isolation.
  */
 
 import type { BarItem } from './animated-cartesian.js';
@@ -79,6 +80,63 @@ export function pairBarsForFold(prev: BarItem[], target: BarItem[]): { matched: 
              *  their starting position. NON-split (persistent, merge,
              *  spatial fallback): one-to-one match, mark used. */
             if (!isSplit) usedPrev.add(matchIdx);
+        }
+    }
+    return { matched, usedPrev };
+}
+
+/** Minimal identity a stacked segment needs for fold pairing. */
+export interface FoldPairable {
+    seriesId: string;
+    iso: string;
+    isoEnd: string;
+    bucketKey: string;
+}
+
+/** Stacked-bar variant of `pairBarsForFold` — pairs by series identity
+ *  AND bucket identity (bucketKey first, iso containment as the
+ *  fold-change fallback) so each series-stripe stages independently.
+ *  Returns matched-prev refs plus the set of prev indices that found a
+ *  match; unmatched prev = exiting. */
+export function pairSegmentsForFold<T extends FoldPairable>(
+    prev: T[], target: T[],
+): { matched: Array<T | undefined>; usedPrev: Set<number> } {
+    const matched: Array<T | undefined> = new Array(target.length);
+    const usedPrev = new Set<number>();
+    /* Index prev by series for O(target * prevInSeries) instead of
+     *  O(n²) full scans. Stacked charts can run wide. Indices refer
+     *  back to the original `prev` array via `idx`. */
+    const prevBySeries = new Map<string, Array<{ seg: T; idx: number }>>();
+    for (let j = 0; j < prev.length; j++) {
+        const p = prev[j];
+        const arr = prevBySeries.get(p.seriesId);
+        if (arr) arr.push({ seg: p, idx: j });
+        else prevBySeries.set(p.seriesId, [{ seg: p, idx: j }]);
+    }
+    for (let i = 0; i < target.length; i++) {
+        const t = target[i];
+        const pool = prevBySeries.get(t.seriesId) ?? [];
+        let matchIdx = -1;
+        /* Canonical bucket identity first — same fold ⇒ same bucketKey,
+         *  exact and cheap (mirrors `pairBarsForFold`). The iso
+         *  containment tests below handle fold CHANGES (day→month split/
+         *  merge), where keys differ but ranges nest. */
+        if (t.bucketKey) {
+            for (const { seg: p, idx: j } of pool) {
+                if (!usedPrev.has(j) && p.bucketKey === t.bucketKey) { matchIdx = j; break; }
+            }
+        }
+        if (matchIdx < 0 && t.iso) {
+            for (const { seg: p, idx: j } of pool) {
+                if (usedPrev.has(j) || !p.iso) continue;
+                if (p.isoEnd && t.iso >= p.iso && t.iso < p.isoEnd) { matchIdx = j; break; }
+                if (t.isoEnd && p.iso >= t.iso && p.iso < t.isoEnd) { matchIdx = j; break; }
+                if (p.iso === t.iso) { matchIdx = j; break; }
+            }
+        }
+        if (matchIdx >= 0) {
+            matched[i] = prev[matchIdx];
+            usedPrev.add(matchIdx);
         }
     }
     return { matched, usedPrev };

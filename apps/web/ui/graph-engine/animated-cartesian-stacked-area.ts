@@ -13,6 +13,9 @@ import { smoothPoints } from './curve-sampling.js';
 import { appendHoverRails } from './animated-curves-rails.js';
 import { extrapolateAtX, clipPolylineX } from './curve-edge-neighbors.js';
 import { linearScale } from './scales.js';
+import { resolveBucketStyle, resolveStatuses } from './datum-status-style.js';
+import { buildCurveSegments, type SegPoint } from './curve-segments.js';
+import type { DatumStatus } from '../../architect/fold-atoms.js';
 import {
     type StackedEdgePtState,
     lerpStackedEdgePt,
@@ -32,6 +35,13 @@ export interface StackedAreaState {
         tailPt?: StackedEdgePtState;
     }[];
     labels: string[];
+    /** Per-bucket start ISO — rides the rail hit payload as `__startISO`
+     *  so a plot click resolves the bucket's calendar period (same drill
+     *  contract as bars). Empty string when non-atomic/categorical. */
+    isos: string[];
+    /** Per-bucket folded status — dashes the top strokes through the
+     *  ONE status→style table, same as every other curve family. */
+    statuses: DatumStatus[];
     rowValues: Record<string, number>[];
     plotYR: [number, number];
     yDomMin: number;
@@ -90,7 +100,12 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
                         leadPt, tailPt,
                     };
                 }),
-                labels: aggs.map(b => b.startISO),
+                /* Formatted bucket labels (`chart.data` is built from the
+                 *  same canonical sequence, so index i aligns) — raw
+                 *  startISO leaked ISO dates into the hover tooltip. */
+                labels: aggs.map((b, i) => layout.labels[i] ?? b.startISO),
+                isos: aggs.map(b => b.startISO),
+                statuses: resolveStatuses(aggs.map(b => b.status), chart.statusOverrides, aggs.map(b => b.startISO)),
                 rowValues,
                 plotYR: layout.yR,
                 yDomMin: layout.yDom.min,
@@ -121,6 +136,12 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
                 };
             }),
             labels: layout.labels,
+            isos: data.map((d) => typeof d.__startISO === 'string' ? d.__startISO : ''),
+            statuses: resolveStatuses(
+                data.map((d) => (d.__status as DatumStatus) ?? (d.status as DatumStatus) ?? 'observed'),
+                chart.statusOverrides,
+                data.map((d) => (typeof d.__startISO === 'string' ? d.__startISO : '')),
+            ),
             rowValues,
             plotYR: layout.yR,
             yDomMin: layout.yDom.min,
@@ -147,6 +168,8 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
             state: {
                 layers: out,
                 labels: target.labels,
+                isos: target.isos,
+                statuses: target.statuses,
                 rowValues: target.rowValues,
                 plotYR: target.plotYR,
                 yDomMin: lerpNumber(prev.yDomMin, target.yDomMin, phase.alphaScale, dRef),
@@ -155,10 +178,11 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
             maxDelta: dRef.value,
         };
     },
-    primitives(state, layoutRaw) {
+    primitives(state, layoutRaw, chart) {
         const fills: Primitive[] = [];
         const strokes: Primitive[] = [];
         const layout = layoutRaw as CartesianLayout;
+        const pres = chart?.presentation;
         const yS = linearScale([state.yDomMin, state.yDomMax], [state.plotYR[1], state.plotYR[0]]);
         for (const l of state.layers) {
             if (l.xs.length < 2) continue;
@@ -208,14 +232,34 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
                 gradient: { topOpacity: 0.75, bottomOpacity: 0 },
                 data: { seriesIdx: 0, series: l.id },
             });
-            strokes.push({
-                kind: 'polyline',
-                points: top,
-                strokeWidth: 1.5,
-                color: l.color,
-                opacity: l.weight,
-                data: undefined,
-            });
+            /* Top stroke splits into dash runs at status boundaries via
+             *  the shared segmenter (same as line/area) — a projected
+             *  bucket dashes the stacked edge instead of rendering
+             *  indistinguishable from observed history. The fill band
+             *  stays whole; the dash carries the semantics. (Runs are
+             *  smoothed per-run; near a rare status boundary the stroke
+             *  may deviate sub-pixel from the band's whole-curve smooth.) */
+            const segPts: SegPoint[] = l.xs.map((x, i) => ({
+                x, y: topYs[i], defined: true,
+                dash: resolveBucketStyle(state.statuses[i], pres).dash,
+            }));
+            const runs = buildCurveSegments(
+                segPts,
+                leadProj && l.leadPt ? { x: l.leadPt.x, y: leadProj.top } : undefined,
+                tailProj && l.tailPt ? { x: l.tailPt.x, y: tailProj.top } : undefined,
+                layout.xR[0], layout.xR[1],
+            );
+            for (const run of runs) {
+                strokes.push({
+                    kind: 'polyline',
+                    points: run.points,
+                    strokeWidth: 1.5,
+                    color: l.color,
+                    opacity: l.weight,
+                    dash: run.dash,
+                    data: undefined,
+                });
+            }
         }
         /* Strokes after fills so the top-edge line sits above the bands. */
         const out: Primitive[] = [...fills, ...strokes];
@@ -236,7 +280,7 @@ export const animatedStackedArea: AnimatedFamily<StackedAreaState> = {
                 const row = state.rowValues?.[i] ?? {};
                 const merged: Record<string, number> = { ...row };
                 for (const l of state.layers) if (!(l.id in merged)) merged[l.id] = 0;
-                return { idx: i, label: state.labels?.[i] ?? '', rowValues: merged };
+                return { idx: i, label: state.labels?.[i] ?? '', rowValues: merged, __startISO: state.isos?.[i] || undefined };
             }, anchorYs);
         }
         return out;

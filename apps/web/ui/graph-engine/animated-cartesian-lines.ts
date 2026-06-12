@@ -41,6 +41,10 @@ export interface LineState {
     vs: number[];
     values: number[];
     labels: string[];
+    /** Per-bucket start ISO — rides the rail hit payload as `__startISO`
+     *  so a plot click resolves the bucket's calendar period (same drill
+     *  contract as bars). Empty string when non-atomic/categorical. */
+    isos: string[];
     /** Per-bucket semantic status (post statusOverrides) — drives dash +
      *  marker. Discrete: pass-through in lerp. */
     statuses: DatumStatus[];
@@ -67,7 +71,11 @@ export const animatedLine: AnimatedFamily<LineState> = {
                 xs: aggs.map(b => toPx(b.xCenter)),
                 vs: aggs.map(b => b.value),
                 values: aggs.map(b => b.value),
-                labels: aggs.map(b => b.startISO),
+                /* Formatted labels (`chart.data` is built from the same
+                 *  canonical sequence, so index i aligns) — raw startISO
+                 *  leaked ISO dates into the hover tooltip. */
+                labels: aggs.map((b, i) => layout.labels[i] ?? b.startISO),
+                isos: aggs.map(b => b.startISO),
                 statuses: resolveStatuses(aggs.map(b => b.status), chart.statusOverrides, aggs.map(b => b.startISO)),
                 defined: aggs.map(b => b.defined),
                 color: c.primary,
@@ -86,6 +94,7 @@ export const animatedLine: AnimatedFamily<LineState> = {
             vs: data.map((d) => d.value ?? 0),
             values: data.map((d) => d.value ?? 0),
             labels: layout.labels,
+            isos: data.map((d) => typeof d.__startISO === 'string' ? d.__startISO : ''),
             statuses: resolveStatuses(
                 data.map((d) => (d.__status as DatumStatus) ?? (d.status as DatumStatus) ?? 'observed'),
                 chart.statusOverrides,
@@ -107,6 +116,7 @@ export const animatedLine: AnimatedFamily<LineState> = {
                 vs: lerpNumberArray(prev.vs, target.vs, phase.alphaShort, dRef),
                 values: target.values,
                 labels: target.labels,
+                isos: target.isos,
                 statuses: target.statuses,
                 defined: target.defined,
                 color: target.color,
@@ -137,7 +147,7 @@ export const animatedLine: AnimatedFamily<LineState> = {
         }
         appendMarkers(out, state.xs, ys, state.statuses, state.defined, state.color, layout.xR[0], layout.xR[1]);
         appendHoverRails(out, state.xs, state.plotYR, (i) => ({
-            idx: i, label: state.labels[i], value: state.values[i],
+            idx: i, label: state.labels[i], value: state.values[i], __startISO: state.isos[i] || undefined,
         }), ys);
         return out;
     },

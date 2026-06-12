@@ -26,7 +26,7 @@ export function ToggleBar({ filters, onToggle }: { filters: ToggleFilter[]; onTo
                         alignItems: 'center',
                         gap: 'var(--space-1, 0.25rem)',
                         padding: 'var(--space-0-5, 0.125rem) var(--space-2, 0.5rem)',
-                        borderRadius: 'var(--radius-full, 999px)',
+                        borderRadius: 'var(--radius-pill)',
                         border: '1px solid var(--border-ghost, var(--border-main))',
                         background: f.active ? 'var(--bg-card)' : 'transparent',
                         opacity: f.active ? 1 : 0.45,
@@ -41,7 +41,7 @@ export function ToggleBar({ filters, onToggle }: { filters: ToggleFilter[]; onTo
                         style={{
                             width: 'var(--space-2, 0.5rem)',
                             height: 'var(--space-2, 0.5rem)',
-                            borderRadius: 'var(--radius-full, 999px)',
+                            borderRadius: 'var(--radius-pill)',
                             background: f.color,
                             flexShrink: 0,
                             transform: f.active ? 'scale(1)' : 'scale(0.7)',

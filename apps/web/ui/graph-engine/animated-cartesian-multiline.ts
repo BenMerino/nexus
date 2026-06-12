@@ -32,6 +32,10 @@ export interface MultiLineState {
         tailPt?: EdgePtState;
     }[];
     labels: string[];
+    /** Per-bucket start ISO — rides the rail hit payload as `__startISO`
+     *  so a plot click resolves the bucket's calendar period (same drill
+     *  contract as bars). Empty string when non-atomic/categorical. */
+    isos: string[];
     /** Per-bucket status (shared across series — a forecast applies to
      *  the whole bucket). Drives dash + markers. */
     statuses: DatumStatus[];
@@ -83,7 +87,10 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
                         tailPt: makeSeriesNeighbor('right', s, sw),
                     };
                 }),
-                labels: aggs.map(b => b.startISO),
+                /* Formatted labels (`chart.data` shares the canonical
+                 *  sequence's indexing) — raw startISO leaked into tooltips. */
+                labels: aggs.map((b, i) => layout.labels[i] ?? b.startISO),
+                isos: aggs.map(b => b.startISO),
                 statuses: resolveStatuses(aggs.map(b => b.status), chart.statusOverrides, aggs.map(b => b.startISO)),
                 rowValues,
                 plotYR: layout.yR,
@@ -116,6 +123,7 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
                 };
             }),
             labels: layout.labels,
+            isos: data.map((d) => typeof d.__startISO === 'string' ? d.__startISO : ''),
             statuses: resolveStatuses(
                 data.map((d) => (d.status as DatumStatus) ?? 'observed'),
                 chart.statusOverrides,
@@ -146,6 +154,7 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
             state: {
                 series: out,
                 labels: target.labels,
+                isos: target.isos,
                 statuses: target.statuses,
                 rowValues: target.rowValues,
                 plotYR: target.plotYR,
@@ -200,7 +209,7 @@ export const animatedMultiLine: AnimatedFamily<MultiLineState> = {
                 const row = state.rowValues?.[i] ?? {};
                 const merged: Record<string, number> = { ...row };
                 for (const s of state.series) if (!(s.id in merged)) merged[s.id] = 0;
-                return { idx: i, label: state.labels?.[i] ?? '', rowValues: merged };
+                return { idx: i, label: state.labels?.[i] ?? '', rowValues: merged, __startISO: state.isos?.[i] || undefined };
             }, anchorYs);
         }
         return out;

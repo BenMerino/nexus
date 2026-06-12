@@ -5,7 +5,7 @@
  */
 
 import { rampColor } from './scales.js';
-import { foldHeatmapColumns } from './heatmap-fold-columns.js';
+import { foldHeatmapColumns, heatmapGridGeometry } from './heatmap-fold-columns.js';
 import { cs, getSeriesPalette, weightOf, seriesColorFor } from './svg-parts.js';
 import { radarMaxR } from './chart-primitives-radial.js';
 import type { Primitive } from './chart-primitive.types.js';
@@ -111,20 +111,10 @@ export const animatedHeatmap: AnimatedFamily<HeatmapState> = {
         const { lower: clipLo, upper: clipHi } = chart.colorClip ?? { lower: 0, upper: 1 };
         const clipSpan = (clipHi - clipLo) || 1;
         const showMarginal = (layout.axesOverride ?? chart.interaction?.axes) === 'marginal';
-        /* labelW = the left gutter for row labels (work-type WORDS, wider than
-         *  short cartesian y-ticks). MUST stay equal to the chrome's labelW in
-         *  chart-primitives-radial (cells + labels share this origin; a
-         *  mismatch misaligns them); the chrome truncates labels to fit it. */
-        const labelW = 52, labelH = 14;
-        /* Right + bottom insets so cells don't run flush to the card border —
-         *  breathing room matching cartesian's plot margins. MUST match the
-         *  chrome builder's PAD_R / PAD_B in chart-primitives-radial. (marginal
-         *  mode adds its own 20/12px strips on top.) */
-        const PAD_R = 12, PAD_B = 12;
-        const margR = (showMarginal ? 20 : 0) + PAD_R;
-        const margB = (showMarginal ? 12 : 0) + PAD_B;
-        const gridW = layout.width - labelW - margR;
-        const gridH = layout.height - labelH - margB;
+        /* Geometry comes from the ONE shared authority (also read by
+         *  gridChrome) so cells and labels can't drift — see
+         *  heatmapGridGeometry. */
+        const { labelW, labelH, gridW, gridH, margR, margB } = heatmapGridGeometry(layout.width, layout.height, showMarginal);
         /* Cells FILL the grid exactly — no min-width floor. A `Math.max(8, …)`
          *  floor made `cols.length * cellW` exceed `gridW` once columns got
          *  dense (30-50 years), so cells overflowed the container to the right.

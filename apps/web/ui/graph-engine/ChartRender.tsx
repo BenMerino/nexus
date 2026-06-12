@@ -24,7 +24,7 @@ import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import type { Primitive } from './chart-primitive.types.js';
 import { ChartCanvasStack } from './ChartCanvasStack.js';
 import { PlotDottedBackdrop } from './PlotDottedBackdrop.js';
-import { ChartHitLayerInner, type ChartHitLayerProps } from './ChartHitLayer.js';
+import { HitLayerWithRef } from './ChartHitLayer.js';
 import { ChartChromeLayer } from './ChartChromeLayer.js';
 import { TooltipOverlay, useTooltip } from './svg-parts.js';
 import { tipStateFromHover, anchorYFromHover } from './chart-hover-tooltip.js';
@@ -32,6 +32,7 @@ import { useDragRange, RangeHighlight, RangeEndpointTags } from './drag-range.js
 import { defaultInteraction } from '../../architect/graph-composer.types.js';
 import { useChartTuning } from './ChartTuningContext.js';
 import { buildFamilyAnimation, isRadial, isPolar } from './chart-families.js';
+import { periodKeyFor } from '../../architect/graph-drilldown.js';
 import { useChartAnimation } from './use-chart-animation.js';
 import { useWorldGeo } from './useWorldGeo.js';
 import { useAnimationMemoKeys } from './use-animation-memo-keys.js';
@@ -51,13 +52,18 @@ export interface ChartRenderProps {
      *  `2026`, `2026-04-W2`) so the controller can use calendar math
      *  via `narrowQueryToPeriod` instead of fold-factor arithmetic. */
     onBucketClick?: (idx: number, label: string, atomKeyRange?: [number, number], periodKey?: string) => void;
+    /** Whether PLOT bucket/cell clicks may drill (false at finest
+     *  granularity — a day bucket can't open). Axis-label clicks are NOT
+     *  gated by this: a tier label is coarser than the buckets by
+     *  construction and drills whenever it carries a `periodKey`. */
+    plotDrillable?: boolean;
     /** Series-isolate handler — called when a pie wedge or polygon
      *  carrying a `series` or `label` payload is clicked. Routes the
      *  toggle through useToggleFilters' `toggle(key)`. */
     onToggleSeries?: (key: string) => void;
 }
 
-export function ChartRender({ chart: chartProp, width, height, axesOverride, onBucketClick, onToggleSeries }: ChartRenderProps) {
+export function ChartRender({ chart: chartProp, width, height, axesOverride, onBucketClick, plotDrillable = true, onToggleSeries }: ChartRenderProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const { tuning } = useChartTuning();
     /* Choropleth geometry is host-loaded (the engine's one fetch seam, like
@@ -125,17 +131,22 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
             if (ep) dragMove(ep);
         },
         onMouseUp: () => { if (range.dragging) dragUp(); },
+        /* Releasing the button OUTSIDE the svg never fires onMouseUp here
+         *  (no pointer capture), which left `dragging` latched — on
+         *  re-entry the selection chased the cursor with the button up.
+         *  Leaving mid-drag commits the range at the last inside point. */
+        onMouseLeave: () => { if (range.dragging) dragUp(); },
     } : {};
-    const dragScaleX = (() => {
+    /* Only consumed by RangeEndpointTags (rendered when drag is enabled) —
+     *  computing unconditionally forced a layout read (getBoundingClientRect)
+     *  on every render, including every ~60fps animation re-render. */
+    const dragScale = (dragEnabled && plotYR) ? (() => {
         const rect = hitSvgRef.current?.getBoundingClientRect();
-        if (!rect || rect.width === 0) return 1;
-        return rect.width / layoutSize.w;
-    })();
-    const dragScaleY = (() => {
-        const rect = hitSvgRef.current?.getBoundingClientRect();
-        if (!rect || rect.height === 0) return 1;
-        return rect.height / layoutSize.h;
-    })();
+        return {
+            x: rect && rect.width !== 0 ? rect.width / layoutSize.w : 1,
+            y: rect && rect.height !== 0 ? rect.height / layoutSize.h : 1,
+        };
+    })() : { x: 1, y: 1 };
 
     /* Stable so the memoized hit layer doesn't rebuild every mark on each tooltip mousemove. */
     const handleHover = useCallback((data: unknown, _p: Primitive, e: React.MouseEvent<SVGElement>) => {
@@ -152,7 +163,7 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
     }, [chart, layoutSize.w, layoutSize.h, show]);
 
     const handleClick = useCallback((data: unknown) => {
-        const d = data as { idx?: number; label?: string; iso?: string; __startISO?: string; series?: string; row?: string; col?: string; startKey?: number; endKey?: number };
+        const d = data as { idx?: number; label?: string; __startISO?: string; series?: string; row?: string; col?: string; startKey?: number; endKey?: number };
         /* Series-isolate: pie/donut wedges and radar/polygon series fire
          * onToggleSeries with the legend key (label for pie, series name
          * for radar/multi-line). The receiving toggle() flips the
@@ -167,22 +178,42 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
         }
         /* Heatmap cell-click: row+col are present; the cell's atom-key
          *  range encodes which slice of the timeline to drill into. */
-        if (onBucketClick && typeof d?.row === 'string' && typeof d?.col === 'string' && typeof d?.startKey === 'number' && typeof d?.endKey === 'number') {
+        if (onBucketClick && plotDrillable && typeof d?.row === 'string' && typeof d?.col === 'string' && typeof d?.startKey === 'number' && typeof d?.endKey === 'number') {
             onBucketClick(d.startKey, `${d.row} ${d.col}`, [d.startKey, d.endKey]);
             return;
         }
-        /* Cartesian bucket-click. Pass the bucket's startISO (not the formatted
-         *  label) as the click key: the drill derives the calendar period from
-         *  it via periodKeyFor, which needs a `YYYY-MM-DD` date. A formatted
-         *  label like "2020s"/"Mar" can't be parsed → the drill fell back to the
-         *  fuzzy bucket-index math and landed on the wrong span (clicking a
-         *  decade showed the neighbouring decades). Categorical bars have no
-         *  __startISO → fall back to the label (their drill uses bucket index). */
-        if (onBucketClick && typeof d?.idx === 'number' && typeof d?.label === 'string') {
-            onBucketClick(d.idx, d.__startISO ?? d.iso ?? d.label);
+        /* Cartesian bucket-click. The drill needs the bucket's CALENDAR
+         *  identity, not its formatted label: "2020s"/"Mar" can't be parsed,
+         *  so label-driven drills fell back to fuzzy bucket-index math and
+         *  landed on the wrong span (clicking a decade showed the neighbouring
+         *  decades). Derive the period key from the bucket's `__startISO` +
+         *  the resolved fold unit and pass it through the dedicated
+         *  `periodKey` parameter — `label` stays human-readable for the
+         *  breadcrumb/annotations. Categorical bars carry no `__startISO` →
+         *  no periodKey; their drill keeps using the bucket index. */
+        if (onBucketClick && plotDrillable && typeof d?.idx === 'number' && typeof d?.label === 'string') {
+            const pk = typeof d.__startISO === 'string'
+                ? periodKeyFor(d.__startISO, chart.__foldUnit)
+                : null;
+            onBucketClick(d.idx, d.label, undefined, pk ?? undefined);
         }
-    }, [onToggleSeries, onBucketClick, chart.type]);
-    const clickHandler = (onBucketClick || onToggleSeries) ? handleClick : undefined;
+    }, [onToggleSeries, onBucketClick, plotDrillable, chart.type, chart.__foldUnit]);
+    /* Wire the handler ONLY when a click can actually act: drillable plot
+     *  buckets, or series-isolate — which applies to radial/polar alone
+     *  (see the guard in handleClick). Wiring it for `onToggleSeries` on
+     *  cartesian charts gave every non-drillable line/area plot a pointer
+     *  cursor over a click that did nothing — the cursor IS the contract. */
+    const seriesIsolate = !!onToggleSeries && (isRadial(chart.type) || isPolar(chart.type));
+    const clickHandler = ((onBucketClick && plotDrillable) || seriesIsolate) ? handleClick : undefined;
+
+    /* Stable adapter — an inline closure here would defeat ChartChromeLayer's
+     *  static-chrome memo (deps include onLabelClick), forcing the full axis
+     *  tree (decimation × every band row) to rebuild on every tooltip
+     *  mousemove re-render of this component. */
+    const handleLabelClick = useCallback(
+        (idx: number, label: string, periodKey?: string) => onBucketClick?.(idx, label, undefined, periodKey),
+        [onBucketClick],
+    );
 
     /* Stable hover ref — keyed on coords so downstream memos don't churn. */
     const hover = useMemo(() => tip ? { x: tip.vbX, y: tip.vbY } : null, [tip?.vbX, tip?.vbY]);
@@ -227,9 +258,9 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
                 width={layoutSize.w}
                 height={layoutSize.h}
                 hover={hover}
-                onLabelClick={onBucketClick ? (idx, label, periodKey) => onBucketClick(idx, label, undefined, periodKey) : undefined}
+                onLabelClick={onBucketClick ? handleLabelClick : undefined}
             />
-            {dragEnabled && plotYR && <RangeEndpointTags range={range} scaleX={dragScaleX} scaleY={dragScaleY} currencyCfg={chart.currencyConfig} isoToFrame={isoToFrame} />}
+            {dragEnabled && plotYR && <RangeEndpointTags range={range} scaleX={dragScale.x} scaleY={dragScale.y} currencyCfg={chart.currencyConfig} isoToFrame={isoToFrame} />}
             <TooltipOverlay
                 tip={tip}
                 yLabel={chart.yLabel}
@@ -241,53 +272,4 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
     );
 }
 
-/* The HitLayer's <svg> root is the chart's main pointer surface. It
- * forwards a ref so TooltipOverlay can compute viewport coords from
- * getBoundingClientRect, and accepts optional drag handlers + a range
- * highlight rect rendered behind the hit targets when range-drag is
- * active. */
-type HitLayerWithRefProps = ChartHitLayerProps & {
-    rangeYR?: [number, number];
-    rangeRect?: React.ReactNode;
-    rangeCursor?: React.CSSProperties['cursor'];
-    dragHandlers?: {
-        onMouseDown?: (e: React.MouseEvent<SVGSVGElement>) => void;
-        onMouseMove?: (e: React.MouseEvent<SVGSVGElement>) => void;
-        onMouseUp?: () => void;
-    };
-};
-const HitLayerWithRef = React.forwardRef<SVGSVGElement, HitLayerWithRefProps>(
-    function HitLayerWithRef(props, ref) {
-        const { rangeYR: _yr, rangeRect, rangeCursor, dragHandlers, ...rest } = props;
-        void _yr;
-        return (
-            <svg
-                ref={ref}
-                viewBox={`0 0 ${props.width} ${props.height}`}
-                width={props.width}
-                height={props.height}
-                style={{
-                    /* Sized to the chart canvas (`props.width/height` =
-                     *  `layoutSize.w/h`), centered horizontally in the
-                     *  wrapper via auto margins on both-edges-anchored
-                     *  absolute box. Matches `ChartGeometryCanvas` so
-                     *  the hit targets align with the GPU marks. */
-                    position: 'absolute',
-                    left: 0, right: 0, top: 0,
-                    margin: '0 auto',
-                    width: `${props.width}px`, height: `${props.height}px`,
-                    display: 'block',
-                    cursor: rangeCursor,
-                }}
-                onMouseLeave={props.onLeave}
-                onMouseDown={dragHandlers?.onMouseDown}
-                onMouseMove={dragHandlers?.onMouseMove}
-                onMouseUp={dragHandlers?.onMouseUp}
-            >
-                {rangeRect}
-                <ChartHitLayerInner {...rest} />
-            </svg>
-        );
-    }
-);
 

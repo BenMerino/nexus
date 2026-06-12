@@ -1,0 +1,32 @@
+/* ── FilterTrigger count badge ────────────────────────────
+ * Fixed-size circular badge for the selected-count. Kept OUT of
+ * the label text (the trigger used to render "Provider (1)", which
+ * re-measured the tile on every toggle and shifted sibling chrome).
+ * The label stays constant; only this badge fades in, and its width
+ * is pinned so 1 vs 2-digit counts never reflow the row. */
+.ft-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--space-4);
+  height: var(--space-4);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-pill);
+  /* `--primary-fill`, not raw `--primary`: a near-black tenant primary
+   * would be an invisible black chip on the dark card. The fill token is
+   * floored to a legible lightness in dark mode (see dna-defaults.css). */
+  background: var(--primary-fill);
+  color: var(--text-inverse);
+  font-size: var(--text-label);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  /* Fade in without nudging layout — the badge occupies its slot from
+   * mount; only opacity animates, width does not. */
+  transition: opacity 0.15s ease;
+}
+
+/* Empty state: keep the slot (visibility, not display) so the trigger
+ * width is identical at 0 and 1+ selected — no reflow on first select. */
+.ft-badge--empty {
+  visibility: hidden;
+}

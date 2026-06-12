@@ -1,14 +1,15 @@
 import React from 'react';
 import { BaseBox } from '../primitives/BaseBox.js';
 import { BaseText } from '../primitives/BaseText.js';
-import { SegmentedPill } from '../composed/SegmentedPill.js';
+import { SegmentedControl } from '../composed/SegmentedControl.js';
 import type { ToggleSpec } from '../../architect/replayable-directive.js';
 
 /* ── QueryToggleBar ──────────────────────────────────────────
  * Segmented pills for query toggles whose UX is "pick one of these
  * named categories" — e.g. `scope: today / week / month`. Each toggle
- * renders as a SegmentedPill: a single rounded shell with a sliding
- * indicator that translates to the active segment.
+ * renders as a SegmentedControl pill — the SAME molecule + variant as
+ * the calendar's D/W/M/Y switcher, so chart chrome and calendar chrome
+ * speak one visual language.
  *
  * Window-width toggles (`windowDays`) are NOT rendered here. They
  * have a real continuous axis (the timeline), so `<GraphRender>`
@@ -35,14 +36,16 @@ export function QueryToggleBar({
                 </BaseText>
             )}
             {toggles.map(t => (
-                <SegmentedPill
+                /* No layoutId: the per-instance default keeps indicators
+                 *  from flying between pills across charts on one page.
+                 *  `isLoading` is a visual hint only — clicks still go
+                 *  through. The controller's streamKey dedupes in-flight
+                 *  requests; the latest value wins. */
+                <SegmentedControl
                     key={t.id}
-                    options={t.options.map(o => ({ value: String(o.value), label: o.label }))}
+                    variant="pill"
+                    segments={t.options.map(o => ({ value: String(o.value), label: o.label }))}
                     value={String(t.current)}
-                    /* `isLoading` is a visual hint only — clicks still go
-                     *  through. The controller's streamKey dedupes
-                     *  in-flight requests; the latest value wins. */
-                    disabled={false}
                     onChange={(next) => onChange(t.id, next)}
                 />
             ))}

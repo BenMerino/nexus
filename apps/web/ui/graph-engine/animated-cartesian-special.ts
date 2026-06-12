@@ -106,7 +106,7 @@ export const animatedWaterfall: AnimatedFamily<WaterfallState> = {
                     x: pos.x, y: topY, w: pos.width,
                     h: Math.max(0, baseY - topY),
                     color: 'var(--primary)',
-                    hit: { idx: i, label: d.label, value: d.value, kind: 'total' },
+                    hit: { idx: i, label: d.label, value: d.value, kind: 'total', __startISO: d.__startISO },
                 });
                 running = d.value;
             } else {
@@ -119,7 +119,7 @@ export const animatedWaterfall: AnimatedFamily<WaterfallState> = {
                     x: pos.x, y: topY, w: pos.width,
                     h: Math.max(0, baseY - topY),
                     color: d.type === 'subtract' ? 'var(--status-error)' : 'var(--status-success)',
-                    hit: { idx: i, label: d.label, value: d.value, kind: d.type },
+                    hit: { idx: i, label: d.label, value: d.value, kind: d.type, __startISO: d.__startISO },
                 });
             }
         }

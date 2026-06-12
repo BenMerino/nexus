@@ -9,6 +9,8 @@ import type { GraphDirective } from '../../architect/graph-composer.types.js';
 import { defaultInteraction } from '../../architect/graph-composer.types.js';
 import type { ChartChrome, ChromeElement } from './chart-chrome.types.js';
 import { niceDomain } from './scales.js';
+import { periodKeyFor } from '../../architect/graph-drilldown.js';
+import { foldOpensFiner } from '../../architect/fold-atoms.js';
 import { type CartesianLayout, isCurve } from './chart-primitives-cartesian.js';
 import { xAxisLabelLayout } from './ChromeXAxisBand.js';
 import { valueLabelElements } from './chrome-value-labels.js';
@@ -46,6 +48,23 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
         const baseKeys = layout.labels.map((_, i) => {
             const iso = baseData[i]?.__startISO as string | undefined;
             return iso ?? `idx-${i}`;
+        });
+        /* Drill identity per base label: the calendar period the bucket
+         *  belongs to (`2024-03` for a month bucket, `2020s` for a decade).
+         *  Raw `baseKeys` must not double as drill keys — a month bucket's
+         *  key is its start DATE, which would parse as a day period.
+         *  Stamped only when the period actually OPENS (foldOpensFiner —
+         *  the same predicate gating plot clicks): a day label with
+         *  daily-only atoms has nothing inside, so no key ⇒ the tap target
+         *  renders inert and the cursor never advertises a drill that
+         *  would land on a one-bucket view. Tier rows below are always
+         *  coarser than the base fold, so they always stamp. */
+        const hasHourly = (chart.atoms ?? []).some(a => typeof a.hour === 'number' && a.hour > 0);
+        const baseOpens = foldOpensFiner(chart.__foldUnit, hasHourly);
+        const basePeriodKeys = layout.labels.map((_, i) => {
+            if (!baseOpens) return undefined;
+            const iso = baseData[i]?.__startISO as string | undefined;
+            return iso ? periodKeyFor(iso, chart.__foldUnit) ?? undefined : undefined;
         });
         const plotW = layout.xR[1] - layout.xR[0];
         /* Divider edges per bucket. For BARS the bucket is the band
@@ -108,6 +127,7 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
             xAt: baseXAt,
             y: layout.yR[1],
             keys: baseKeys,
+            periodKeys: basePeriodKeys,
             leadingEdgeXs: baseLeadingEdgeXs,
             trailingEdgeXs: baseTrailingEdgeXs,
             plotYR: layout.yR,
@@ -137,6 +157,9 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
                 kind: 'x-axis-band',
                 labels: groups.map(g => g.label),
                 keys: groups.map(g => g.key),
+                /* Tier-group keys already use the period grammar (`2026`,
+                 *  `2026-03`) — they ARE the drill identity. */
+                periodKeys: groups.map(g => g.key),
                 range: layout.xR,
                 xAt: (i: number) => groups[i].centerX,
                 y: tierY,

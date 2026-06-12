@@ -38,7 +38,10 @@ export const animatedTreemap: AnimatedFamily<TreemapState> = {
                 const node: TreemapNode = {
                     x, y: 0, w, h: layout.height,
                     color: colors[i % colors.length],
-                    hit: { name: n.name, value: n.value || 0 },
+                    /* `name ?? label` — same fallback the weight key and the
+                     *  chrome label use; label-keyed data carried
+                     *  `name: undefined` into its tooltip payload. */
+                    hit: { name: n.name ?? n.label, value: n.value || 0 },
                 };
                 x += w;
                 return node;
@@ -84,7 +87,12 @@ export const animatedFunnel: AnimatedFamily<FunnelState> = {
         const colors = c.seriesColors || getSeriesPalette();
         const data = chart.data as any[];
         if (data.length === 0) return { stages: [] };
-        const maxVal = data[0]?.value || 1;
+        /* First-stage normalization is the funnel convention, but it
+         *  trusts the composer's ordering: a zero first stage (maxVal
+         *  fell back to 1) or unsorted stages made later widths exceed
+         *  the layout and draw trapezoids outside the canvas. Normalize
+         *  by the true max so any input stays in-bounds. */
+        const maxVal = Math.max(...data.map((d: any) => d.value || 0), 1);
         const stepH = layout.height / data.length;
         const pad = 8;
         const wOf = (i: number) => weightOf(

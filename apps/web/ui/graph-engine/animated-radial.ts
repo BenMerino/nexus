@@ -110,7 +110,10 @@ function gaugeStateFor(chart: GraphDirective, layout: RadialLayout, isRing: bool
     }
     const value = d.value ?? 0;
     const max = chart.range?.max ?? 100;
-    const pct = Math.min(value / max, 1);
+    /* Clamp BOTH ends and guard max=0: a negative value drew a backwards
+     *  arc below the gauge's baseline, and 0/0 = NaN propagated into the
+     *  tessellator's triangle count. */
+    const pct = Math.min(Math.max(value / (max || 1), 0), 1);
     const start = isRing ? -Math.PI / 2 : Math.PI;
     const trackEnd = isRing ? -Math.PI / 2 + Math.PI * 2 : Math.PI * 2;
     return {

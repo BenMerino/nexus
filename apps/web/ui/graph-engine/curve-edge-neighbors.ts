@@ -16,6 +16,72 @@ export interface EdgeNeighborInput {
     isExtrapolated: boolean;
 }
 
+type EdgeNeighborPayload = EdgeNeighborInput & { seriesValues?: Record<string, number> };
+type NeighborBucket = { startKey: number; endKey: number; value: number } & Record<string, unknown>;
+
+/** Build the directive's `__edgeNeighbors` payload from the folded
+ *  buckets (the PRODUCER side; `resolveEdgeNeighbor` above is the
+ *  consumer). When a real bucket exists immediately beyond the window,
+ *  carry its true value; at a timeline boundary, emit an extrapolation
+ *  marker one bucket-width outside the edge — the family computes the
+ *  y lazily because it needs layout-dependent visible points. Returns
+ *  undefined when neither side has a neighbor (single-bucket views). */
+export function computeEdgeNeighbors(
+    buckets: ReadonlyArray<NeighborBucket>,
+    overlapping: ReadonlyArray<NeighborBucket>,
+    windowStartKey: number,
+    windowEndKey: number,
+    winSpan: number,
+    seriesList: ReadonlyArray<string>,
+): { left?: EdgeNeighborPayload; right?: EdgeNeighborPayload } | undefined {
+    const firstVisibleIdx = buckets.findIndex(b => b.endKey >= windowStartKey && b.startKey <= windowEndKey);
+    const lastVisibleIdx = (() => {
+        for (let i = buckets.length - 1; i >= 0; i--) {
+            if (buckets[i].endKey >= windowStartKey && buckets[i].startKey <= windowEndKey) return i;
+        }
+        return -1;
+    })();
+    const neighborFor = (b: NeighborBucket): EdgeNeighborPayload => {
+        const xStart = (b.startKey - windowStartKey) / winSpan;
+        const xEnd = (b.endKey + 1 - windowStartKey) / winSpan;
+        const sv: Record<string, number> = {};
+        for (const s of seriesList) {
+            const v = b[s];
+            if (typeof v === 'number') sv[s] = v;
+        }
+        return {
+            xCenter: (xStart + xEnd) / 2,
+            value: b.value,
+            seriesValues: seriesList.length > 0 ? sv : undefined,
+            isExtrapolated: false,
+        };
+    };
+    /* Extrapolation marker one bucket-width outside the given edge bucket. */
+    const markerFor = (edge: NeighborBucket, side: 'left' | 'right'): EdgeNeighborPayload => {
+        const xStart = Math.max(0, (edge.startKey - windowStartKey) / winSpan);
+        const xEnd = Math.min(1, (edge.endKey + 1 - windowStartKey) / winSpan);
+        const w = xEnd - xStart;
+        return {
+            xCenter: side === 'left' ? xStart - w / 2 : xEnd + w / 2,
+            value: 0, // placeholder; the family replaces it with the extrapolated y
+            seriesValues: seriesList.length > 0 ? Object.fromEntries(seriesList.map(s => [s, 0])) : undefined,
+            isExtrapolated: true,
+        };
+    };
+    const out: { left?: EdgeNeighborPayload; right?: EdgeNeighborPayload } = {};
+    if (firstVisibleIdx > 0) {
+        out.left = neighborFor(buckets[firstVisibleIdx - 1]);
+    } else if (firstVisibleIdx === 0 && overlapping.length >= 2) {
+        out.left = markerFor(overlapping[0], 'left');
+    }
+    if (lastVisibleIdx >= 0 && lastVisibleIdx < buckets.length - 1) {
+        out.right = neighborFor(buckets[lastVisibleIdx + 1]);
+    } else if (lastVisibleIdx === buckets.length - 1 && overlapping.length >= 2) {
+        out.right = markerFor(overlapping[overlapping.length - 1], 'right');
+    }
+    return (out.left || out.right) ? out : undefined;
+}
+
 /** Resolve one off-window edge neighbor into world-space coords. When
  *  the neighbor is real (a bucket exists beyond the window), uses its
  *  true bucket value. When extrapolated (timeline boundary, no further

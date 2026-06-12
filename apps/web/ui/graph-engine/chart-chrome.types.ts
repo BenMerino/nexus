@@ -22,6 +22,13 @@ export interface ChartChromeAxisX {
      *  (e.g. week-of-month labels W1..W5 across multiple months). Falls
      *  back to the label content when absent. */
     keys?: string[];
+    /** Optional per-label DRILL identity — the calendar period key
+     *  (`periodKeyFor` grammar: `2020s`, `2024`, `2024-03`, ...) a click
+     *  on this label should narrow to. Distinct from `keys` (React
+     *  identity): base-row keys are raw ISO dates, which the period
+     *  parser must not receive. A label without a period key is not
+     *  drillable — the tap target renders without a pointer cursor. */
+    periodKeys?: (string | undefined)[];
     /** Optional per-label left-edge X position in viewBox px. When set,
      *  the renderer draws a vertical divider tick at the leading edge of
      *  every rendered (post-decimation) label — boundaries always align
