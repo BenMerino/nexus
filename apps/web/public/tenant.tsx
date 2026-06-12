@@ -1,18 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { buildTenantCharts } from './tenant-builders';
-import { TenantOverview } from './tenant-overview';
 import { ScopedSummary } from './tenant-summary';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
 import { type UnitScope } from './tenant-scope-rail';
 import { TenantScopeRail } from './tenant-scope-rail';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
-import { GraphProviders } from '../ui/graph-engine-providers';
 import { ES } from './tenant-i18n';
 import { bootStreamBridge } from '../architect/websocket-connector';
 import { perfMark, perfAutoFlush } from './perf-beacon';
 
 perfMark('boot'); // module evaluated — bundles parsed, app about to mount
+
+// The chart grid + engine providers live behind React.lazy: their import chain
+// carries the vendored graph engine (~380KB chunk), which would otherwise gate
+// the shell's first paint. The charts wait on their data fetches anyway, so
+// deferring the code costs nothing visible.
+const TenantBody = React.lazy(() => import('./tenant-body'));
 
 // No tabs: org scheme is the left rail, and Authors folded into the Overview
 // (scoped to the rail's selection). One content view → no top nav tabs.
@@ -70,10 +74,6 @@ function App() {
   }
 
   return (
-    // GraphProviders wires the engine's EngineConfig (apiGet/dark/pref) +
-    // ChartTuning (glow 0) so the vendored charts get the slider span fetch,
-    // theme, and persisted toggles. tenantId scopes the per-tenant tuning.
-    <GraphProviders tenantId={String(statsPayload.tenant.id)}>
     <div className="public-app">
       <TenantPublicHeader tenant={statsPayload.tenant} items={NAV} currentId="overview"
         onNavigate={() => {}} yearRange={statsPayload.stats.yearRange} />
@@ -106,14 +106,16 @@ function App() {
           </aside>
           <div className="tenant-content">
             {/* KPI cards + charts + author directory — all re-scope in place to
-                the unit selected in the rail (Philosophy: scope is sovereign). */}
-            <TenantOverview slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} unit={unit} />
+                the unit selected in the rail (Philosophy: scope is sovereign).
+                Lazy (engine chunk); panels appear when the code lands. */}
+            <Suspense fallback={<div style={{ minHeight: 600 }} />}>
+              <TenantBody slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} unit={unit} />
+            </Suspense>
           </div>
         </div>
         </div>
       </main>
     </div>
-    </GraphProviders>
   );
 }
 
