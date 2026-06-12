@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ES } from './tenant-i18n';
+import { fetchOrgTreeSummary } from './tenant-data';
 import { type Metric, type Unit, METRICS, valueOf, fmt, rank, Bar } from './tenant-org-row';
 
 /* Biggest contributors — the whole-university comparison, shown on the right at
@@ -43,8 +44,7 @@ export function TenantContributors({ slug }: { slug: string }) {
   const [drill, setDrill] = useState<Faculty | null>(null);
 
   useEffect(() => {
-    fetch(`/api/public/${encodeURIComponent(slug)}/org-tree`)
-      .then(r => (r.ok ? r.json() as Promise<OrgTree> : Promise.reject(r.status)))
+    fetchOrgTreeSummary<OrgTree>(slug)
       .then(setTree)
       .catch(() => setTree(null));
   }, [slug]);

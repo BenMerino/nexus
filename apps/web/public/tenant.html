@@ -129,7 +129,10 @@
     .kpi-foot { font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim); letter-spacing: 0.04em; }
 
     /* ── Chart panels: card chrome wrapping the engine charts ────────── */
-    .panel { background: var(--bg-card); border: 1px solid var(--border); padding: 22px 24px 24px; box-shadow: var(--shadow-sm); min-width: 0; }
+    .panel { background: var(--bg-card); border: 1px solid var(--border); padding: 22px 24px 24px; box-shadow: var(--shadow-sm); min-width: 0;
+      /* Skip layout/paint for panels below the fold until they scroll near;
+         the intrinsic-size estimate keeps the scrollbar from jumping. */
+      content-visibility: auto; contain-intrinsic-size: auto 420px; }
     .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
     .panel-title { font-family: var(--display); font-size: 22px; font-weight: 400; line-height: 1.05; letter-spacing: -0.005em; margin: 0; }
     .panel-sub { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.13em; color: var(--fg-dim); margin-top: 7px; }

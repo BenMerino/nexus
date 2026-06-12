@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ES } from './tenant-i18n';
+import { fetchOrgTreeSummary } from './tenant-data';
 import type { Unit } from './tenant-org-row';
 
 // The scope a selected unit carries (shared with tenant.tsx / Overview /
@@ -39,8 +40,7 @@ export function TenantScopeRail({ slug, tenantName, selected, onSelect, initialK
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/public/${encodeURIComponent(slug)}/org-tree`)
-      .then(r => (r.ok ? r.json() as Promise<OrgTree> : Promise.reject(new Error(`Org tree failed (${r.status})`))))
+    fetchOrgTreeSummary<OrgTree>(slug)
       .then(setData)
       .catch(e => setError(e.message));
   }, [slug]);

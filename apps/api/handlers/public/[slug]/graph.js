@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const graph = await buildPublicGraph(tenant.id, tenant.ror_id);
-    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
+    res.setHeader("Cache-Control", "public, max-age=120, s-maxage=300, stale-while-revalidate=3600");
     res.json({ graph });
   } catch (err) {
     console.error("[public/graph]", err);

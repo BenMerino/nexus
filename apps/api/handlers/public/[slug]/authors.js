@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
       // (safe: resolves only against this tenant's own roster literals — N1).
       unit: typeof req.query.unit === "string" ? req.query.unit : null,
     });
-    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=60, stale-while-revalidate=300");
     res.json({ ok: true, ...page });
   } catch (err) {
     console.error("[public/authors]", err);

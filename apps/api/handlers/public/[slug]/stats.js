@@ -23,7 +23,7 @@ module.exports = async function handler(req, res) {
     const stats = req.query.analytics ? await getPublicAnalytics(scope)
       : req.query.chrome ? await getPublicChrome(scope)
       : await getPublicStats(scope);
-    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
+    res.setHeader("Cache-Control", "public, max-age=120, s-maxage=300, stale-while-revalidate=3600");
     res.json({
       tenant: {
         id: tenant.id, name: tenant.name, slug: tenant.slug, ror_id: tenant.ror_id,

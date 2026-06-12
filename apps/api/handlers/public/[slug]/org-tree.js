@@ -16,8 +16,16 @@ module.exports = async function handler(req, res) {
 
   try {
     const tree = await queryOrgTree(tenant.id);
-    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
-    res.json(tree);
+    // ?summary=1 strips per-person rows — the public page's consumers (scope
+    // rail, contributors ranking) read only unit aggregates, and `people` is
+    // most of the payload. Default (full) shape unchanged for other callers.
+    const body = req.query.summary
+      ? { ...tree, faculties: tree.faculties.map((f) => ({ ...f, departments: f.departments.map(({ people, ...d }) => d) })) }
+      : tree;
+    // max-age: Railway has no shared cache (s-maxage alone does nothing), so
+    // let the BROWSER reuse this briefly — back-navigation stops refetching.
+    res.setHeader("Cache-Control", "public, max-age=120, s-maxage=300, stale-while-revalidate=3600");
+    res.json(body);
   } catch (err) {
     console.error("[public/org-tree]", err);
     res.status(500).json({ error: err.message });

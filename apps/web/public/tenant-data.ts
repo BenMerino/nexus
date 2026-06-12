@@ -17,6 +17,22 @@ export function authorProfileHref(slug: string, orcid: string): string {
     : `/author.html?slug=${encodeURIComponent(slug)}&orcid=${encodeURIComponent(orcid)}`;
 }
 
+// Org-tree summary (unit aggregates, people stripped server-side), fetched ONCE
+// per page load — the scope rail and the contributors panel both read it, and
+// it's the slowest public endpoint; a module-level promise cache dedupes the
+// two consumers. Failures aren't cached so a retry can succeed.
+const orgTreePromises = new Map<string, Promise<unknown>>();
+export function fetchOrgTreeSummary<T>(slug: string): Promise<T> {
+  let p = orgTreePromises.get(slug);
+  if (!p) {
+    p = fetch(`/api/public/${encodeURIComponent(slug)}/org-tree?summary=1`)
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error(`Org tree failed (${r.status})`))));
+    orgTreePromises.set(slug, p);
+    p.catch(() => orgTreePromises.delete(slug));
+  }
+  return p as Promise<T>;
+}
+
 // Href to the tenant page, optionally pre-scoped to one org unit (?unit=
 // unitKey — read on boot by tenant.tsx and resolved by the scope rail).
 export function tenantHref(slug: string, unitKey?: string | null): string {

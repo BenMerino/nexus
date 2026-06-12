@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
   try {
     const profile = await getAuthorProfile(tenant.id, tenant.ror_id, req.query.orcid);
     if (!profile) return res.status(404).json({ ok: false, error: "Author not found" });
-    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=60, stale-while-revalidate=300");
     res.json({ ok: true, profile });
   } catch (err) {
     console.error("[public/author]", err);
