@@ -8,7 +8,7 @@ import { TenantScopeRail } from './tenant-scope-rail';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { ES } from './tenant-i18n';
 import { bootStreamBridge } from '../architect/websocket-connector';
-import { perfMark, perfAutoFlush } from './perf-beacon';
+import { perfMark, perfAutoFlush } from './perf-marks';
 
 perfMark('boot'); // module evaluated — bundles parsed, app about to mount
 

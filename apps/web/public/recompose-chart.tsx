@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { DirectiveChart } from '../ui/graph-engine/index';
 import type { GraphDirective } from '../architect/graph-composer.types';
-import { perfMark } from './perf-beacon';
+import { perfMark } from './perf-marks';
 
 /* Renders a SERVER-COMPOSED chart directive — the blessed path for time-series
  * charts: the directive (per-day ISO atoms) is built by the Composer
