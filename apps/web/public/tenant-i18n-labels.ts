@@ -33,8 +33,6 @@ export const CHART_STRINGS = {
   type: 'Type',
   researchAreas: 'Research areas',
   researchAreasSub: 'OpenAlex concepts on the corpus',
-  network: 'Collaboration network',
-  networkSub: 'Researchers & partner institutions, sized by shared output',
   segByType: 'By type',
   segByIndex: 'By index',
   segTotal: 'Total',

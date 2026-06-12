@@ -3,17 +3,16 @@ import type { GraphDirective } from '../architect/graph-composer.types';
 import { TenantChartsTab } from './tenant-charts-tab';
 import { TenantContributors } from './tenant-contributors';
 import { TenantWorks } from './tenant-works';
-import { TenantNetwork } from './tenant-network';
 import { AuthorsTable } from './tenant-authors';
 import type { UnitScope } from './tenant-scope-rail';
 import type { PublicStats } from './tenant-builders';
 import { ES } from './tenant-i18n';
 
-/* The Overview content (chart grid + publication lists + collaboration
- * network + author directory). KPIs render above the rail in tenant.tsx; this
- * is everything to the RIGHT of the scope rail. Scope is owned by the rail
- * (the picker); selecting a unit re-narrows charts, works and the directory
- * in place (Philosophy #1 — "scope is sovereign"). */
+/* The Overview content (chart grid + publication lists + author directory).
+ * KPIs render above the rail in tenant.tsx; this is everything to the RIGHT
+ * of the scope rail. Scope is owned by the rail (the picker); selecting a
+ * unit re-narrows charts, works and the directory in place (Philosophy #1 —
+ * "scope is sovereign"). */
 
 export function TenantOverview({ slug, stats, tenantId, charts, unit }: {
   slug: string; stats: PublicStats; tenantId: number; charts: GraphDirective[]; unit: UnitScope | null;
@@ -29,9 +28,6 @@ export function TenantOverview({ slug, stats, tenantId, charts, unit }: {
         contributors={unitKey ? null : <TenantContributors slug={slug} />} />
       {/* Most-cited + recent publications, unit-scoped like the charts. */}
       <TenantWorks slug={slug} unit={unitKey} />
-      {/* Collaboration network — tenant-wide only (the public graph endpoint
-          carries no unit scope), so it hides when a unit is selected. */}
-      {!unitKey && <TenantNetwork slug={slug} />}
       {/* Author directory, scoped to the selected unit (all authors at the
           university/main scope; a faculty's roster when a unit is selected). */}
       <section style={{ marginTop: 24 }}>
