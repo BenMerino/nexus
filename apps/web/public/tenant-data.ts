@@ -17,6 +17,16 @@ export function authorProfileHref(slug: string, orcid: string): string {
     : `/author.html?slug=${encodeURIComponent(slug)}&orcid=${encodeURIComponent(orcid)}`;
 }
 
+// Href to the tenant page, optionally pre-scoped to one org unit (?unit=
+// unitKey — read on boot by tenant.tsx and resolved by the scope rail).
+export function tenantHref(slug: string, unitKey?: string | null): string {
+  const base = window.location.pathname.startsWith('/t/')
+    ? `/t/${encodeURIComponent(slug)}`
+    : `/tenant.html?slug=${encodeURIComponent(slug)}`;
+  if (!unitKey) return base;
+  return `${base}${base.includes('?') ? '&' : '?'}unit=${encodeURIComponent(unitKey)}`;
+}
+
 export function readSlugFromUrl(): string | null {
   const qSlug = new URLSearchParams(window.location.search).get('slug');
   const pathMatch = window.location.pathname.match(/^\/t\/([^\/?#]+)/);

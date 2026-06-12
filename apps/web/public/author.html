@@ -116,12 +116,20 @@
 
     /* ── Body grid: publications (main) + output-per-year aside ────── */
     .profile-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
-    @media (max-width: 860px) { .profile-grid { grid-template-columns: 1fr; } }
+    /* Single column on narrow screens — the output-per-year aside comes FIRST
+       so the shape-of-career summary isn't buried under a long paper list. */
+    @media (max-width: 860px) {
+      .profile-grid { grid-template-columns: 1fr; }
+      .profile-aside { order: -1; }
+    }
     .profile-panel { background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 22px 24px 24px; min-width: 0; }
     .profile-panel-title { font-family: var(--display); font-size: 20px; font-weight: 400; margin: 0 0 16px; }
 
     /* Output-per-year bars (token-colored, no chart engine needed). */
     .yearbar { display: grid; grid-template-columns: 42px 1fr 36px; gap: 10px; align-items: center; padding: 4px 0; }
+    .yearbar.clickable { cursor: pointer; }
+    .yearbar.clickable:hover .y { color: var(--accent); }
+    .yearbar.clickable:hover .t i { opacity: 1; }
     .yearbar .y { font-family: var(--mono); font-size: 11px; color: var(--fg-dim); }
     .yearbar .t { height: 8px; background: var(--bg-inset); overflow: hidden; }
     .yearbar .t i { display: block; height: 100%; background: var(--primary, var(--j-sapphire)); opacity: 0.8; }
@@ -134,6 +142,17 @@
       padding-bottom: 6px; border-bottom: 1px solid var(--border-soft); margin-bottom: 4px;
       display: flex; justify-content: space-between;
     }
+    .pub-year-label.clickable { cursor: pointer; user-select: none; }
+    .pub-year-label.clickable:hover { color: var(--fg); }
+    .pub-twist { display: inline-block; font-style: normal; font-size: 9px; width: 10px; transition: transform 0.12s; }
+    .pub-twist.open { transform: rotate(90deg); }
+
+    /* Loading skeleton (hero placeholder while the profile fetch is in flight). */
+    .profile-skel .skel-block::before { background: var(--bg-inset); }
+    .skel-line { height: 13px; background: var(--bg-inset); animation: skel-pulse 1.4s ease infinite; }
+    .profile-skel .profile-avatar { border-color: var(--border-soft); }
+    .profile-skel .profile-avatar::before { background: var(--bg-inset); animation: skel-pulse 1.4s ease infinite; }
+    @keyframes skel-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
     .pub-item { padding: 10px 2px; border-bottom: 1px solid var(--border-soft); }
     .pub-item:last-child { border-bottom: none; }
     .pub-title { font-size: 13.5px; line-height: 1.4; color: var(--fg); }

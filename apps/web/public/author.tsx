@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { TenantPublicHeader } from './tenant-header';
 import { ES } from './tenant-i18n';
+import { tenantHref } from './tenant-data';
 import { AuthorProfile, type AuthorProfileData } from './author-profile';
 
 // /t/:slug/a/:orcid (Caddy rewrites to author.html); dev fallback via
@@ -15,10 +16,21 @@ function readParams(): { slug: string | null; orcid: string | null } {
   };
 }
 
-export function tenantHref(slug: string): string {
-  return window.location.pathname.startsWith('/t/')
-    ? `/t/${encodeURIComponent(slug)}`
-    : `/tenant.html?slug=${encodeURIComponent(slug)}`;
+// Hero placeholder while the profile fetch is in flight — keeps the page from
+// sitting blank on a cold load (no cached chrome on this route).
+function ProfileSkeleton() {
+  return (
+    <section className="profile-hero profile-skel" aria-hidden="true">
+      <div className="profile-head">
+        <div className="profile-avatar skel-block" />
+        <div className="profile-id">
+          <div className="skel-line" style={{ width: 120 }} />
+          <div className="skel-line" style={{ width: 320, height: 28, marginTop: 10 }} />
+          <div className="skel-line" style={{ width: 220, marginTop: 12 }} />
+        </div>
+      </div>
+    </section>
+  );
 }
 
 interface Chrome {
@@ -69,12 +81,16 @@ function App() {
       )}
       <main className="public-main">
         <div className="public-content">
-          {slug && chrome && (
+          {/* Back link paints immediately from the slug; the tenant name fills
+              in when the chrome fetch lands. */}
+          {slug && (
             <a className="profile-back" href={tenantHref(slug)}>
-              {ES.profile.backTo(chrome.tenant.name)}
+              {chrome ? ES.profile.backTo(chrome.tenant.name) : ES.profile.back}
             </a>
           )}
-          {profile && slug && <AuthorProfile d={profile} />}
+          {profile && slug
+            ? <AuthorProfile d={profile} slug={slug} />
+            : <ProfileSkeleton />}
         </div>
       </main>
     </div>

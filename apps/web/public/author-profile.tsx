@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ES, typeLabelEs } from './tenant-i18n';
 import { RichHtml } from './rich-text';
-import { AuthorPubs, OutputPerYear } from './author-pubs';
+import { tenantHref } from './tenant-data';
+import { AuthorPubs, OutputPerYear, pubYears } from './author-pubs';
 
 export interface ProfilePaper {
   title: string | null;
@@ -15,7 +16,7 @@ export interface ProfilePaper {
 export interface AuthorProfileData {
   name: string;
   orcid: string;
-  roster: { faculty: string | null; department: string | null; category: string | null; unitKey: string | null } | null;
+  roster: { faculty: string | null; department: string | null; category: string | null; unitKey: string | null; facultyUnitKey: string | null } | null;
   paperCount: number;
   totalCitations: number;
   hIndex: number;
@@ -39,8 +40,22 @@ function activeYearsLabel(papers: ProfilePaper[]): string | null {
   return min === max ? min : `${min}–${max}`;
 }
 
-export function AuthorProfile({ d }: { d: AuthorProfileData }) {
+export function AuthorProfile({ d, slug }: { d: AuthorProfileData; slug: string }) {
   const years = activeYearsLabel(d.papers);
+  // Year groups: most recent 3 start expanded; the rest fold so a prolific
+  // career isn't one unbroken scroll. The aside's year bars double as
+  // navigation — clicking one expands + scrolls to that year's group.
+  const [open, setOpen] = useState<Set<string>>(() => new Set(pubYears(d.papers).slice(0, 3)));
+  const toggleYear = (y: string) => setOpen(prev => {
+    const next = new Set(prev);
+    if (next.has(y)) next.delete(y); else next.add(y);
+    return next;
+  });
+  const jumpToYear = (y: string) => {
+    setOpen(prev => (prev.has(y) ? prev : new Set(prev).add(y)));
+    requestAnimationFrame(() =>
+      document.getElementById(`pub-y-${y}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
   // h-index chips by document type, biggest first — only types with signal.
   const typeChips = Object.entries(d.hIndexByType)
     .filter(([, h]) => h > 0)
@@ -58,7 +73,11 @@ export function AuthorProfile({ d }: { d: AuthorProfileData }) {
               {d.roster
                 ? <>
                     {d.roster.department && <><b>{d.roster.department}</b>{' · '}</>}
-                    {d.roster.faculty || ES.profile.unfiled}
+                    {/* Faculty links back to the tenant page pre-scoped to that
+                        unit (?unit= deep link, resolved by the scope rail). */}
+                    {d.roster.facultyUnitKey
+                      ? <a href={tenantHref(slug, d.roster.facultyUnitKey)} style={{ color: 'var(--fg-muted)' }}>{d.roster.faculty}</a>
+                      : (d.roster.faculty || ES.profile.unfiled)}
                   </>
                 : ES.profile.unfiled}
             </div>
@@ -88,11 +107,11 @@ export function AuthorProfile({ d }: { d: AuthorProfileData }) {
       <div className="profile-grid">
         <section className="profile-panel">
           <h2 className="profile-panel-title">{ES.profile.publications}</h2>
-          <AuthorPubs papers={d.papers} />
+          <AuthorPubs papers={d.papers} open={open} onToggle={toggleYear} />
         </section>
-        <aside className="profile-panel">
+        <aside className="profile-panel profile-aside">
           <h2 className="profile-panel-title">{ES.profile.outputPerYear}</h2>
-          <OutputPerYear papers={d.papers} />
+          <OutputPerYear papers={d.papers} onYearClick={jumpToYear} />
         </aside>
       </div>
     </>

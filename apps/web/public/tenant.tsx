@@ -23,7 +23,18 @@ function App() {
   const { statsPayload, statsError, fatalError } = useTenantData(slug);
   // Scope lens, shared by the rail (the picker) and the Overview (the content).
   // null = whole organization. Selecting a unit in the rail re-scopes the right.
-  const [unit, setUnit] = useState<UnitScope | null>(null);
+  // The selection is mirrored to ?unit=<unitKey> so a scoped view is shareable
+  // (and the academic-profile breadcrumb can land pre-scoped); the rail resolves
+  // the initial key once the org-tree loads.
+  const [initialUnitKey] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get('unit'));
+  const [unit, setUnitState] = useState<UnitScope | null>(null);
+  const setUnit = (u: UnitScope | null) => {
+    setUnitState(u);
+    const url = new URL(window.location.href);
+    if (u) url.searchParams.set('unit', u.unitKey); else url.searchParams.delete('unit');
+    window.history.replaceState(null, '', url);
+  };
 
   // Perf beacon: 'shell' = first paint with chrome (header/overview),
   // 'analytics' = heavy chart data merged in. The gap between them, and how
@@ -74,7 +85,7 @@ function App() {
           <div className="scope-flag">
             {ES.pageHead.scopeLabel}<br />
             <b>{unit?.name ?? ES.pageHead.allUnits}</b><br />
-            <span>{unit ? ES.publicProfile : ES.pageHead.allUnitsNote}</span>
+            <span>{unit ? ES.pageHead.unitNote : ES.pageHead.allUnitsNote}</span>
           </div>
         </div>
         {/* KPI row spans the full width above the rail + chart grid (mockup). */}
@@ -90,7 +101,7 @@ function App() {
               <p className="tenant-rail-note">{ES.scopeRail.note}</p>
             </div>
             <div className="tenant-rail-list">
-              <TenantScopeRail slug={slug} tenantName={statsPayload.tenant.name} selected={unit} onSelect={setUnit} />
+              <TenantScopeRail slug={slug} tenantName={statsPayload.tenant.name} selected={unit} onSelect={setUnit} initialKey={initialUnitKey} />
             </div>
           </aside>
           <div className="tenant-content">

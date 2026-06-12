@@ -22,6 +22,7 @@ export const ES = {
     scopeLabel: 'Viewing scope',
     allUnits: 'All units',
     allUnitsNote: 'complete institutional corpus',
+    unitNote: 'unit-scoped corpus',
   },
 
   /* Scope rail head + the "all units" row label */
@@ -87,6 +88,7 @@ export const ES = {
   /* Individual academic profile page (/t/:slug/a/:orcid) */
   profile: {
     eyebrow: 'Academic profile',
+    back: '← Back',
     backTo: (tenant: string) => `← ${tenant}`,
     viewProfile: 'Profile',
     viewProfileTitle: 'View public profile',

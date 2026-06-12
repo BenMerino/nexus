@@ -43,7 +43,10 @@ async function rosterEntry(tenantId, orcid) {
   const unitKey = department
     ? unitKeyForNode(c.kind, c.group, department)
     : (c.kind === "other" ? null : unitKeyForNode(c.kind, c.group, null));
-  return { faculty: c.group, department, category: hit.profile_category, unitKey };
+  // The faculty-level key — what the public page's scope rail (faculty/institute
+  // granularity) can resolve, so the profile breadcrumb deep-links there.
+  const facultyUnitKey = c.kind === "other" ? null : unitKeyForNode(c.kind, c.group, null);
+  return { faculty: c.group, department, category: hit.profile_category, unitKey, facultyUnitKey };
 }
 
 async function getAuthorProfile(tenantId, tenantRor, rawOrcid) {

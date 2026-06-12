@@ -31,8 +31,9 @@ function Row({ name, kind, papers, max, active, onClick }: {
   );
 }
 
-export function TenantScopeRail({ slug, tenantName, selected, onSelect }: {
+export function TenantScopeRail({ slug, tenantName, selected, onSelect, initialKey }: {
   slug: string; tenantName?: string; selected: UnitScope | null; onSelect: (u: UnitScope | null) => void;
+  initialKey?: string | null;
 }) {
   const [data, setData] = useState<OrgTree | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +44,18 @@ export function TenantScopeRail({ slug, tenantName, selected, onSelect }: {
       .then(setData)
       .catch(e => setError(e.message));
   }, [slug]);
+
+  // Resolve a ?unit= deep link once the org-tree lands: select the matching
+  // faculty/institute so a shared scoped URL opens already narrowed. One-shot —
+  // after this the user's clicks own the selection. An unknown key is a no-op.
+  const appliedRef = React.useRef(false);
+  useEffect(() => {
+    if (appliedRef.current || !initialKey || !data) return;
+    appliedRef.current = true;
+    const hit = data.faculties.find(f => f.unitKey === initialKey);
+    if (hit && hit.unitKey) onSelect({ unitKey: hit.unitKey, name: hit.name });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, initialKey]);
 
   const selKey = selected?.unitKey ?? null;
   if (error) return <div className="org-err" style={{ padding: 14 }}>{error}</div>;

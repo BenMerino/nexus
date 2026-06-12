@@ -12,8 +12,14 @@ const num: React.CSSProperties = {
 // (/t/:slug/a/:orcid) from both the name and an explicit Profile button;
 // ORCID-less authors render plain (no dead links).
 export function AuthorTableRow({ a, slug }: { a: AuthorRowData; slug: string }) {
+  // The whole row navigates (rows already hover-highlight, which reads as
+  // clickable); inner anchors handle themselves — only plain-cell clicks route.
+  const rowClick = (e: React.MouseEvent) => {
+    if (!a.orcid || (e.target as HTMLElement).closest('a')) return;
+    window.location.href = authorProfileHref(slug, a.orcid);
+  };
   return (
-    <tr>
+    <tr onClick={rowClick} style={a.orcid ? { cursor: 'pointer' } : undefined}>
       <td>{a.orcid
         ? <a href={authorProfileHref(slug, a.orcid)} style={{ color: 'var(--fg)' }} title={ES.profile.viewProfileTitle}>{a.name}</a>
         : a.name}</td>

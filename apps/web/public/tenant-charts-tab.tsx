@@ -59,11 +59,17 @@ export function TenantChartsTab({ slug, stats, tenantId, charts, unit, contribut
         <ChartPanel title={ES.charts.citationVelocity} sub={ES.charts.citationsPerYear}>
           <BatchedCharts kinds={['publications.velocity']} tenantId={tenantId} unit={unit} bare minHeight={240} />
         </ChartPanel>
-        {cadence ? (
-          <ChartPanel title={ES.charts.publicationCadence} sub={ES.charts.byDocType} tag="stacked · year">
-            <CadencePanel cadence={cadence} tenantId={tenantId} labels={CADENCE_LABELS_ES} typeLabel={typeLabelEs} />
-          </ChartPanel>
-        ) : null}
+        {/* ALWAYS render the cadence panel frame. Cadence arrives with the heavy
+            analytics merge, so a `cadence ? panel : null` mount inserted a panel
+            mid-load — the grid reflowed and the full-width charts below (incl.
+            the world map) jumped through the velocity slot ("the chart shifts
+            between world map and area chart"). A stable frame with a placeholder
+            body keeps the grid geometry fixed from first paint. */}
+        <ChartPanel title={ES.charts.publicationCadence} sub={ES.charts.byDocType} tag="stacked · year">
+          {cadence
+            ? <CadencePanel cadence={cadence} tenantId={tenantId} labels={CADENCE_LABELS_ES} typeLabel={typeLabelEs} />
+            : <div style={{ minHeight: 240 }} />}
+        </ChartPanel>
         <YearPanel stats={stats} tenantId={tenantId} charts={charts} unit={unit} />
       </div>
       {/* Categorical kinds in ONE batch round-trip, each framed in its own

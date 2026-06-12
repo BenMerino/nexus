@@ -32,26 +32,38 @@ function PubRow({ p }: { p: ProfilePaper }) {
   );
 }
 
-export function AuthorPubs({ papers }: { papers: ProfilePaper[] }) {
+/** Distinct years, newest first — the order AuthorPubs renders. Used by the
+ *  host to seed which groups start expanded. */
+export function pubYears(papers: ProfilePaper[]): string[] {
+  return groupByYear(papers).map(g => g.year);
+}
+
+export function AuthorPubs({ papers, open, onToggle }: {
+  papers: ProfilePaper[]; open: Set<string>; onToggle: (year: string) => void;
+}) {
   const groups = groupByYear(papers);
   return (
     <div>
-      {groups.map(g => (
-        <div key={g.year} className="pub-year">
-          <div className="pub-year-label">
-            <span>{g.year}</span>
-            <span>{g.papers.length}</span>
+      {groups.map(g => {
+        const isOpen = open.has(g.year);
+        return (
+          <div key={g.year} className="pub-year" id={`pub-y-${g.year}`}>
+            <div className="pub-year-label clickable" onClick={() => onToggle(g.year)}>
+              <span><i className={`pub-twist${isOpen ? ' open' : ''}`}>▸</i> {g.year}</span>
+              <span>{g.papers.length}</span>
+            </div>
+            {isOpen && g.papers.map((p, i) => <PubRow key={p.doi || `${g.year}-${i}`} p={p} />)}
           </div>
-          {g.papers.map((p, i) => <PubRow key={p.doi || `${g.year}-${i}`} p={p} />)}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
 // Token-colored CSS bars (no chart engine): one row per year, newest first,
-// width proportional to the busiest year.
-export function OutputPerYear({ papers }: { papers: ProfilePaper[] }) {
+// width proportional to the busiest year. Each bar is navigation, not just
+// decoration: clicking expands + scrolls to that year's publication group.
+export function OutputPerYear({ papers, onYearClick }: { papers: ProfilePaper[]; onYearClick?: (year: string) => void }) {
   const counts = new Map<string, number>();
   for (const p of papers) {
     if (!p.year) continue;
@@ -64,7 +76,8 @@ export function OutputPerYear({ papers }: { papers: ProfilePaper[] }) {
   return (
     <div>
       {rows.map(r => (
-        <div key={r.year} className="yearbar">
+        <div key={r.year} className={`yearbar${onYearClick ? ' clickable' : ''}`}
+             onClick={onYearClick ? () => onYearClick(r.year) : undefined}>
           <span className="y">{r.year}</span>
           <span className="t"><i style={{ width: `${Math.round((r.n / max) * 100)}%` }} /></span>
           <span className="n">{r.n}</span>
