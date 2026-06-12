@@ -88,17 +88,21 @@ async function authorsByYear(scope) {
 // %OA per published-year — the trend behind the Open Access card. A RATIO, so
 // no regression tail is appended (a projected percentage can escape [0,100])
 // and the still-filling current year is 'partial' (OA flags lag indexing, so
-// its ratio reads low, not just incomplete).
-async function oaByYear(scope) {
+// its ratio reads low, not just incomplete). Windowed to the last 30 years:
+// OA is a digital-era phenomenon, and historic years with a handful of
+// retro-digitized papers plot as 50-100% spikes (small-denominator noise,
+// not a trend). HAVING ≥5 guards thin years inside the window too.
+const OA_WINDOW_YEARS = 30;
+async function oaByYear(scope, currentYear) {
   const f = await resolvePubFilter(scope);
+  const minYear = String(currentYear - OA_WINDOW_YEARS);
   const r = await sql.query(
     `SELECT SUBSTRING(p.published FROM 1 FOR 4) AS year,
             ROUND(100.0 * COUNT(*) FILTER (WHERE p.open_access) / COUNT(*), 1)::float AS value
      FROM publications p
      WHERE ${f.where} AND p.published ~ '^[0-9]{4}'
-     GROUP BY 1 HAVING COUNT(*) >= 5 ORDER BY 1`, f.params);
-  // HAVING ≥5: a year with 2 papers where 1 is OA plots as a 50% spike —
-  // small-denominator noise, not a trend. Thin years drop out of the ratio.
+       AND SUBSTRING(p.published FROM 1 FOR 4) >= $${f.params.length + 1}
+     GROUP BY 1 HAVING COUNT(*) >= 5 ORDER BY 1`, [...f.params, minYear]);
   return r.rows.map((row) => ({ year: Number(row.year), value: Number(row.value) }));
 }
 
@@ -110,7 +114,7 @@ const stampPartial = (rows, currentYear) => rows.map((r, i) => ({
 async function buildKpiSparks(scope) {
   const currentYear = new Date().getUTCFullYear();
   const [publications, citations, authors, oa] = await Promise.all([
-    pubsByYear(scope), citesByYear(scope), authorsByYear(scope), oaByYear(scope),
+    pubsByYear(scope), citesByYear(scope), authorsByYear(scope), oaByYear(scope, currentYear),
   ]);
   return {
     publications: withProjection(publications, currentYear),
