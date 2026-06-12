@@ -55,13 +55,17 @@ export function SummaryCards({ summary, sparks }: { summary: PublicStats['summar
             <span className="kpi-label">{k.label}</span>
             <span className="kpi-dot" />
           </div>
+          {/* Ring (single-value glyph) sits beside the number; series glyphs
+              (area/bars) render BELOW the foot as a full-card-width strip. */}
           <div className="kpi-body">
             <div className="kpi-val num">{value(k.key)}</div>
-            <KpiSpark kind={k.spark} accent={k.accent}
-              series={k.series && sparks ? sparks[k.series] : undefined}
-              pct={k.key === 'openAccess' ? oaPct : undefined} />
+            {k.spark === 'ring' && <KpiSpark kind="ring" accent={k.accent} pct={oaPct} />}
           </div>
           <div className="kpi-foot">{k.foot}</div>
+          {k.spark !== 'ring' && (
+            <KpiSpark kind={k.spark} accent={k.accent}
+              series={k.series && sparks ? sparks[k.series] : undefined} />
+          )}
         </div>
       ))}
     </div>
