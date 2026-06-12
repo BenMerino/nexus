@@ -52,11 +52,24 @@
 	# Long-cache hashed assets, no-cache HTML.
 	@assets path /assets/*
 	header @assets Cache-Control "public, max-age=31536000, immutable"
+	# Hashed assets are immutable, so a request that misses the file_server is
+	# a STALE hash from cached HTML — serve a real 404, never the index.html
+	# SPA fallback (a module script fed text/html throws and blanks the page).
+	handle /assets/* {
+		root * {$RAILPACK_SPA_OUTPUT_DIR}
+		file_server
+	}
 	# Geo data (world choropleth geometry, ~78KB) — not content-hashed but
 	# effectively immutable; a day of browser cache stops the re-download.
 	@geo path /geo/*
 	header @geo Cache-Control "public, max-age=86400"
-	@html path *.html
+	# NB: `header` runs BEFORE `rewrite` in Caddy's directive order, so this
+	# matcher must list the PRE-rewrite shapes: explicit *.html, the SPA root,
+	# and the /t/* public routes (tenant + academic profiles). Without /t/*
+	# those responses ship with no Cache-Control, browsers heuristically cache
+	# the HTML, and after a deploy it references deleted asset hashes → blank
+	# page (exactly the failure seen after rapid redeploys).
+	@html path *.html / /t/*
 	header @html Cache-Control "no-store, no-cache, must-revalidate"
 
 	handle {
