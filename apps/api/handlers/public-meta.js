@@ -2,6 +2,8 @@ const { ensureSchema } = require("../src/lib/db");
 const { getTenantBySlug } = require("../src/lib/db-users");
 const { buildMetaFragment } = require("../src/lib/public-meta");
 
+// arch-audit-ignore: N1 — public-by-design (same class as handlers/public/*):
+// serves only tenant-public chrome (name/logo) already exposed by /stats.
 // GET /api/public-meta?uri=/t/:slug[/a/:orcid]
 // HTML <meta> fragment for the public pages, injected server-side by Caddy's
 // `templates` pass (httpInclude) so social/link previews carry the tenant's
