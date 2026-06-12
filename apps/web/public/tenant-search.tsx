@@ -14,6 +14,10 @@ interface AuthorHit { name: string; orcid: string; papers: number; }
 interface WorkHit { title: string; doi: string | null; year: string | null; journal: string | null; citations: number; }
 interface OrgTree { faculties: { name: string; unitKey: string | null }[]; }
 
+// Accent-fold for the client-side unit match, so "ingenieria" finds
+// "Ingeniería" — same NFD-strip rule the API search uses server-side.
+const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
 export function TenantSearch({ slug, onSelectUnit }: { slug: string; onSelectUnit: (u: UnitScope) => void }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -30,10 +34,13 @@ export function TenantSearch({ slug, onSelectUnit }: { slug: string; onSelectUni
         .then(d => setHits({ authors: d.authors || [], works: d.works || [] }))
         .catch(() => setHits({ authors: [], works: [] }));
       fetchOrgTreeSummary<OrgTree>(slug)
-        .then(tree => setUnits(tree.faculties
-          .filter((f): f is { name: string; unitKey: string } =>
-            !!f.unitKey && f.name.toLowerCase().includes(needle.toLowerCase()))
-          .slice(0, 4)))
+        .then(tree => {
+          const n = fold(needle);
+          setUnits(tree.faculties
+            .filter((f): f is { name: string; unitKey: string } =>
+              !!f.unitKey && fold(f.name).includes(n))
+            .slice(0, 4));
+        })
         .catch(() => setUnits([]));
     }, 250);
     return () => clearTimeout(t);

@@ -1,5 +1,6 @@
 const { sql } = require("./sql");
 const { normRor } = require("./entity-normalize");
+const { foldExpr, foldTerm } = require("./sql-unaccent");
 
 // Public omnibox search: researchers + publications in one round-trip.
 // (Org units are filtered client-side from the already-cached org-tree
@@ -12,14 +13,16 @@ const MAX_TOKENS = 6; // ignore pathological many-word queries
 
 // Tokenize the query and build an AND-of-ILIKE clause over `col`, so word
 // ORDER and spacing don't matter: "Rivera Marco", "marco r", and "González
-// energía" all match a name/title containing every token. Returns the SQL
-// fragment plus the `%token%` params, numbered from `startIdx`. A single
-// whole-phrase ILIKE (the old approach) missed reordered names entirely and
-// returned zero works for any multi-word person query.
+// energía" all match a name/title containing every token. Both sides are
+// accent-FOLDED (foldExpr on the column, foldTerm on the token) so "Gonzalez"
+// matches "González" and "energia" matches "energía". Returns the SQL fragment
+// plus the `%token%` params, numbered from `startIdx`. A single whole-phrase
+// ILIKE (the old approach) missed reordered names AND accented variants.
 function tokenClause(col, q, startIdx) {
   const tokens = q.split(/\s+/).filter(Boolean).slice(0, MAX_TOKENS);
-  const params = tokens.map((t) => `%${t}%`);
-  const sqlFrag = tokens.map((_, i) => `${col} ILIKE $${startIdx + i}`).join(" AND ");
+  const params = tokens.map((t) => `%${foldTerm(t)}%`);
+  const folded = foldExpr(col);
+  const sqlFrag = tokens.map((_, i) => `${folded} ILIKE $${startIdx + i}`).join(" AND ");
   return { sql: sqlFrag, params };
 }
 
