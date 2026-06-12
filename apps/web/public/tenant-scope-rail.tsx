@@ -32,9 +32,9 @@ function Row({ name, kind, papers, max, active, onClick }: {
   );
 }
 
-export function TenantScopeRail({ slug, tenantName, selected, onSelect, initialKey }: {
+export function TenantScopeRail({ slug, tenantName, selected, onSelect, initialKey, onInitialResolved }: {
   slug: string; tenantName?: string; selected: UnitScope | null; onSelect: (u: UnitScope | null) => void;
-  initialKey?: string | null;
+  initialKey?: string | null; onInitialResolved?: () => void;
 }) {
   const [data, setData] = useState<OrgTree | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,15 +47,19 @@ export function TenantScopeRail({ slug, tenantName, selected, onSelect, initialK
 
   // Resolve a ?unit= deep link once the org-tree lands: select the matching
   // faculty/institute so a shared scoped URL opens already narrowed. One-shot —
-  // after this the user's clicks own the selection. An unknown key is a no-op.
+  // after this the user's clicks own the selection. An unknown key is a no-op
+  // for the selection, but onInitialResolved fires on EVERY settle (match,
+  // unknown key, fetch error) so a page gating its charts on the deep link
+  // never hangs. onSelect + onInitialResolved batch into one parent render.
   const appliedRef = React.useRef(false);
   useEffect(() => {
-    if (appliedRef.current || !initialKey || !data) return;
+    if (appliedRef.current || !initialKey || (!data && !error)) return;
     appliedRef.current = true;
-    const hit = data.faculties.find(f => f.unitKey === initialKey);
+    const hit = data?.faculties.find(f => f.unitKey === initialKey);
     if (hit && hit.unitKey) onSelect({ unitKey: hit.unitKey, name: hit.name });
+    onInitialResolved?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, initialKey]);
+  }, [data, error, initialKey]);
 
   const selKey = selected?.unitKey ?? null;
   if (error) return <div className="org-err" style={{ padding: 14 }}>{error}</div>;

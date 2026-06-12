@@ -3,8 +3,8 @@ import { createRoot, type Root } from 'react-dom/client';
 import { buildTenantCharts } from './tenant-builders';
 import { ScopedSummary } from './tenant-summary';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
-import { type UnitScope } from './tenant-scope-rail';
 import { TenantScopeRail } from './tenant-scope-rail';
+import { useUnitScope } from './use-unit-scope';
 import { TenantSearch } from './tenant-search';
 import { TenantFooter } from './tenant-footer';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
@@ -28,19 +28,9 @@ function App() {
   const [slug] = useState<string | null>(() => readSlugFromUrl());
   const { statsPayload, statsError, fatalError } = useTenantData(slug);
   // Scope lens, shared by the rail (the picker) and the Overview (the content).
-  // null = whole organization. Selecting a unit in the rail re-scopes the right.
-  // The selection is mirrored to ?unit=<unitKey> so a scoped view is shareable
-  // (and the academic-profile breadcrumb can land pre-scoped); the rail resolves
-  // the initial key once the org-tree loads.
-  const [initialUnitKey] = useState<string | null>(
-    () => new URLSearchParams(window.location.search).get('unit'));
-  const [unit, setUnitState] = useState<UnitScope | null>(null);
-  const setUnit = (u: UnitScope | null) => {
-    setUnitState(u);
-    const url = new URL(window.location.href);
-    if (u) url.searchParams.set('unit', u.unitKey); else url.searchParams.delete('unit');
-    window.history.replaceState(null, '', url);
-  };
+  // null = whole organization. URL mirroring + the deep-link chart gate live in
+  // use-unit-scope (?unit= loads hold the chart grid until the rail resolves).
+  const { initialUnitKey, unit, setUnit, unitReady, markUnitReady } = useUnitScope();
 
   // Perf beacon: 'shell' = first paint with chrome (header/overview),
   // 'analytics' = heavy chart data merged in. The gap between them, and how
@@ -53,6 +43,10 @@ function App() {
     if (statsPayload.stats.velocity) perfMark('analytics');
     if (slug) perfAutoFlush(slug);
   }, [statsPayload, slug]);
+
+  // Preload the engine chunk in parallel with the org-tree fetch, so the
+  // deep-link gate costs layout stability, not time-to-charts.
+  useEffect(() => { void import('./tenant-body'); }, []);
 
   // Memoize ABOVE the early returns — hooks must run unconditionally every
   // render (React #310). Guards on statsPayload internally and yields [] until
@@ -105,16 +99,19 @@ function App() {
               <p className="tenant-rail-note">{ES.scopeRail.note}</p>
             </div>
             <div className="tenant-rail-list">
-              <TenantScopeRail slug={slug} tenantName={statsPayload.tenant.name} selected={unit} onSelect={setUnit} initialKey={initialUnitKey} />
+              <TenantScopeRail slug={slug} tenantName={statsPayload.tenant.name} selected={unit} onSelect={setUnit}
+                initialKey={initialUnitKey} onInitialResolved={markUnitReady} />
             </div>
           </aside>
           <div className="tenant-content">
             {/* KPI cards + charts + author directory — all re-scope in place to
                 the unit selected in the rail (Philosophy: scope is sovereign).
                 Lazy (engine chunk); panels appear when the code lands. */}
-            <Suspense fallback={<div style={{ minHeight: 600 }} />}>
-              <TenantBody slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} unit={unit} />
-            </Suspense>
+            {unitReady ? (
+              <Suspense fallback={<div style={{ minHeight: 600 }} />}>
+                <TenantBody slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} unit={unit} />
+              </Suspense>
+            ) : <div style={{ minHeight: 600 }} />}
           </div>
         </div>
         <TenantFooter yearRange={statsPayload.stats.yearRange} />
