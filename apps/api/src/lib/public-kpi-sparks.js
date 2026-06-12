@@ -96,7 +96,9 @@ async function oaByYear(scope) {
             ROUND(100.0 * COUNT(*) FILTER (WHERE p.open_access) / COUNT(*), 1)::float AS value
      FROM publications p
      WHERE ${f.where} AND p.published ~ '^[0-9]{4}'
-     GROUP BY 1 ORDER BY 1`, f.params);
+     GROUP BY 1 HAVING COUNT(*) >= 5 ORDER BY 1`, f.params);
+  // HAVING ≥5: a year with 2 papers where 1 is OA plots as a 50% spike —
+  // small-denominator noise, not a trend. Thin years drop out of the ratio.
   return r.rows.map((row) => ({ year: Number(row.year), value: Number(row.value) }));
 }
 
