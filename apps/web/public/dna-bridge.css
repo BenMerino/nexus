@@ -122,6 +122,81 @@
 .contrib-row,
 .org-row.selectable { border-radius: var(--_nest-corner, var(--radius-control)); }
 
+/* ═══ GLASS SURFACES + TONAL STACKING ════════════════════════════════════════
+   Every surface is translucent "glass" (a tint of --bg + backdrop blur + grain),
+   and nested surfaces STEP a 4-rung tonal ladder so each stacked layer reads as a
+   new shade. The ladder is DERIVED from nexus's live --bg (mixed toward --fg), so
+   it respects the theme handler + works in light AND dark by construction
+   (color-mix toward fg lightens in dark, darkens in light — correct both ways).
+
+   Glass-in-glass compounds blur and goes muddy, so the TONAL step is the primary
+   stacking signal (always legible) and the blur is modest + capped at depth 3. */
+:root {
+  /* Tonal ladder — opaque shades, deepest → highest. Each rung mixes ~6% more
+     --fg into --bg than the last; --tonal-0 IS the page bg. */
+  --tonal-0: var(--bg);
+  --tonal-1: color-mix(in oklch, var(--fg) 5%,  var(--bg));
+  --tonal-2: color-mix(in oklch, var(--fg) 10%, var(--bg));
+  --tonal-3: color-mix(in oklch, var(--fg) 15%, var(--bg));
+
+  /* Glass = a ladder rung at reduced alpha (so the backdrop shows through the
+     blur). --glass-alpha tunes translucency in one place. */
+  --glass-alpha: 72%;
+  --glass-0: color-mix(in oklch, var(--tonal-0) var(--glass-alpha), transparent);
+  --glass-1: color-mix(in oklch, var(--tonal-1) var(--glass-alpha), transparent);
+  --glass-2: color-mix(in oklch, var(--tonal-2) var(--glass-alpha), transparent);
+  --glass-3: color-mix(in oklch, var(--tonal-3) var(--glass-alpha), transparent);
+  --glass-blur: 14px;
+  /* Procedural grain (fractal noise, baked alpha) — the frosted texture. */
+  --glass-grain: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'200'%20height%3D'200'%3E%3Cfilter%20id%3D'g'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.7'%20numOctaves%3D'4'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20values%3D'1%200%200%200%200%200%201%200%200%200%200%200%201%200%200%200%200%200%200.05%200'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20filter%3D'url(%23g)'%2F%3E%3C%2Fsvg%3E");
+  /* Each surface tracks its own depth; a nested .surface reads the parent's and
+     adds 1 (capped at 3). The shared shorthand for a glass fill at a given rung. */
+  --surface-depth: 0;
+}
+
+/* The glass recipe — translucent fill + blur + grain + hairline. `.surface`
+   (or nexus's card classes below) wear it; the tonal rung comes from --glass-N
+   chosen by depth. Grain rides a ::before so text stays sharp above it. */
+.surface, .glass-surface {
+  position: relative;
+  background-color: var(--glass-1);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border: 1px solid var(--border);
+}
+.surface::before, .glass-surface::before {
+  content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: var(--glass-grain); background-repeat: repeat;
+  border-radius: inherit;
+}
+.surface > *, .glass-surface > * { position: relative; z-index: 1; }
+
+/* TONAL STACKING — a glass surface nested inside another steps to the next rung,
+   so each layer is a distinct shade. Depth 1→2→3, then clamps (no muddier). */
+.surface .surface,
+.glass-surface .glass-surface { background-color: var(--glass-2); }
+.surface .surface .surface,
+.glass-surface .glass-surface .glass-surface { background-color: var(--glass-3); }
+.surface .surface .surface .surface,
+.glass-surface .glass-surface .glass-surface .glass-surface { background-color: var(--glass-3); }
+
+/* nexus's hand-written card surfaces adopt the glass recipe + ladder. They were
+   opaque var(--bg-card); now they're glass rung 1, and their nested sections
+   step up. The :root prefix raises specificity to (0,2,0) so these win over the
+   page-embedded `.panel { background: var(--bg-card) }` rules (0,1,0) that load
+   after shared.css in each HTML <style> — without resorting to !important. */
+:root .card, :root .panel, :root .kpi, :root .tenant-rail, :root .stat,
+:root .gc-community, :root .omni-pop, :root .sidebar-search-results,
+:root .tweaks-panel {
+  position: relative;
+  background-color: var(--glass-1);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+}
+/* A surface nested inside a nexus card steps to rung 2. */
+:root .panel .panel, :root .card .card, :root .kpi .stat,
+:root .panel .stat { background-color: var(--glass-2); }
+
 /* Smooth corners — the squircle that makes Zincro's concentric corners read as
    continuous (superellipse) rather than circular arcs. ONE knob (--corner-smooth,
    from dna-defaults) applied to every radius by construction. @supports-guarded:

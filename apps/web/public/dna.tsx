@@ -3,14 +3,15 @@ import { createRoot } from 'react-dom/client';
 import { BaseBox, BaseText } from '../ui/primitives';
 import { SegmentedControl } from '../ui/composed/SegmentedControl';
 import { GraphProviders } from '../ui/graph-engine-providers';
-import { PrimitivesSection, ComposedSection, ConcentricSection } from './dna-sections';
+import { PrimitivesSection, ComposedSection } from './dna-sections';
+import { ConcentricSection, GlassSection } from './dna-sections-corners';
 
 /* /dna — the live DNA catalog. Renders the vendored Zincro primitives + composed
  * components against nexus's token contract (dna-defaults.css + dna-bridge.css),
  * so this page is also the visual proof the contract resolves. Wrapped in
  * GraphProviders for the single DNA/accent control point. */
 
-type Tab = 'primitives' | 'composed' | 'concentric';
+type Tab = 'primitives' | 'composed' | 'concentric' | 'glass';
 
 function Gallery() {
   const [tab, setTab] = useState<Tab>('primitives');
@@ -30,13 +31,15 @@ function Gallery() {
           { value: 'primitives', label: 'Primitives' },
           { value: 'composed', label: 'Composed' },
           { value: 'concentric', label: 'Concentric' },
+          { value: 'glass', label: 'Glass' },
         ]}
         value={tab}
         onChange={setTab}
       />
       {tab === 'primitives' ? <PrimitivesSection />
         : tab === 'composed' ? <ComposedSection />
-        : <ConcentricSection />}
+        : tab === 'concentric' ? <ConcentricSection />
+        : <GlassSection />}
     </BaseBox>
   );
 }

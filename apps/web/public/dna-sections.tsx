@@ -5,7 +5,6 @@ import {
 import { Button } from '../ui/composed/Button';
 import { SegmentedControl } from '../ui/composed/SegmentedControl';
 import { Popover } from '../ui/composed/Popover';
-import { ListItem } from '../ui/composed/ListItem';
 
 /* The DNA catalog sections — live renders of the vendored Zincro primitives +
  * composed components, proving the token contract (dna-defaults + dna-bridge)
@@ -16,7 +15,7 @@ const BASE_ACTION_VARIANTS = [
   'danger-soft', 'warning-soft', 'success-soft', 'info-soft',
 ] as const;
 
-function Row({ title, children }: { title: string; children: React.ReactNode }) {
+export function Row({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <BaseBox display="flex" flexDirection="col" gap="3" style={{ marginBottom: 'var(--space-8)' }}>
       <BaseText as="h3" variant="label" color="muted">{title}</BaseText>
@@ -98,34 +97,6 @@ export function ComposedSection() {
           )}
         </Popover>
       </Row>
-    </div>
-  );
-}
-
-export function ConcentricSection() {
-  return (
-    <div>
-      <Row title="Concentric corners — nest-controls surface (corners curve parallel to the card)">
-        <BaseBox radius="card" pad="row" className="nest-controls"
-          display="flex" flexDirection="col" gap="1"
-          style={{ width: '320px', border: '1px solid var(--border)' }}>
-          <ListItem as="button" leftIcon={<span>◆</span>}>Publications</ListItem>
-          <ListItem as="button" active leftIcon={<span>◆</span>}>Per academic</ListItem>
-          <ListItem as="button" leftIcon={<span>◆</span>}>Citations</ListItem>
-          <BaseAction variant="primary" size="sm">Action inside the card</BaseAction>
-        </BaseBox>
-      </Row>
-      <Row title="Flat control (no nest-controls) — square/control radius for contrast">
-        <BaseBox radius="card" pad="row" display="flex" flexDirection="col" gap="1"
-          style={{ width: '320px', border: '1px solid var(--border)' }}>
-          <BaseAction variant="secondary" size="sm">Same card, no nest-controls</BaseAction>
-        </BaseBox>
-      </Row>
-      <BaseText variant="detail" color="muted">
-        The card has radius="card" + pad="row"; BaseBox publishes --_nest-r/-pad, and
-        nest-controls makes descendants read the concentric corner (card radius −
-        inset − border). corner-shape: superellipse(1.6) renders them as squircles.
-      </BaseText>
     </div>
   );
 }
