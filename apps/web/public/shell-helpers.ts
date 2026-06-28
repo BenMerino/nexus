@@ -43,7 +43,16 @@ export function useCurrentUser(): { me: CurrentUser | null; loading: boolean; er
       .then(r => r.status === 401 ? null : r.json())
       .then(d => {
         if (cancelled) return;
-        if (!d) { window.location.href = '/login.html'; return; }
+        // 401 → the signed session (nexus_user) is gone/invalid but the
+        // non-HttpOnly nexus_logged_in flag may still be set. Clear the stale
+        // flag before redirecting, or the SPA auth gate (AuthLayout) and the
+        // login page both keep trusting it and bounce /dashboard ↔ /login
+        // forever. See LoginPage / AuthLayout cookie checks.
+        if (!d) {
+          document.cookie = 'nexus_logged_in=; Path=/; SameSite=Lax; Max-Age=0';
+          window.location.href = '/login';
+          return;
+        }
         setMe(d);
         try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch {}
         applyTheme(d);
