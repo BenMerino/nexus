@@ -1,0 +1,65 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   dna-bridge.css — nexus → Zincro token bridge (nexus-owned, NOT synced)
+
+   The vendored ui/primitives + ui/composed are built against Zincro's token
+   names (--bg-main, --text-main, --primary, --status-*, --_ctl-*). nexus's
+   live theme handler writes a DIFFERENT set of surface tokens inline on :root
+   per-mode (--bg, --bg-elev, --border, --fg, --fg-muted, --accent — see
+   theme.md / N6). This file maps nexus → Zincro so the vendored layer renders
+   with nexus's live theme instead of Zincro's frozen dna-defaults values.
+
+   Imported AFTER dna-defaults.css (so these aliases win) but the mapped RHS
+   are nexus's OWN tokens from shared.css :root, which the theme handler keeps
+   current — so toggling OS dark/light or editing surface tokens flows straight
+   through to every Zincro component. One direction only; theme handler is the
+   source of truth and is never touched.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Surfaces: Zincro name ← nexus themed token ───────────────────────── */
+  --bg-main:      var(--bg);
+  --bg-elevated:  var(--bg-elev);
+  --bg-highest:   var(--bg-elev);
+  --bg-input:     var(--bg-card);
+  /* --bg-card matches both vocabularies — no alias needed. */
+
+  /* ── Borders ──────────────────────────────────────────────────────────── */
+  --border-main:    var(--border);
+  --border-subtle:  var(--border);
+  --border-ghost:   var(--border);
+
+  /* ── Text / foreground ────────────────────────────────────────────────── */
+  --text-main:     var(--fg);
+  --text-body:     var(--fg);
+  --text-heading:  var(--fg);
+  --text-muted:    var(--fg-muted);
+  --text-inverse:  var(--bg);
+
+  /* ── Brand: nexus --primary IS the brand; --accent === --primary already.
+     Re-point Zincro's derived primary names at it. on-primary = label color
+     that sits ON a primary fill → nexus's base bg reads correctly in both modes. */
+  --primary:        var(--accent);
+  --primary-bright: var(--accent);
+  --primary-fill:   var(--accent);
+  --primary-text:   var(--accent);
+  --on-primary:     var(--bg);
+
+  /* ── Status: Zincro --status-* ← nexus semantic status tokens ─────────── */
+  --status-success: var(--ok);
+  --status-warning: var(--warn);
+  --status-error:   var(--err);
+  --status-info:    var(--primary);
+
+  /* ── Control cascade root defaults (the "md" row from BaseBox CONTROL_SIZE).
+     Primitives read --_ctl-* published at runtime by a wrapping <BaseBox
+     controlSize=…>; with no such wrapper they fall back to these so a bare
+     <BaseAction>/<Button> still has correct height/padding/font/radius. ──── */
+  --_ctl-h:         var(--space-10);
+  --_ctl-px:        var(--space-4);
+  --_ctl-font:      var(--text-control);
+  --_ctl-weight:    var(--weight-control);
+  --_ctl-icon:      var(--icon-control-md);
+  --_ctl-border:    1px;
+  --_ctl-radius:    var(--radius-control);
+  --_ctl-pad-block: 0px;
+}

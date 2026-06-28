@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCurrentUser } from './shell-helpers';
-import { StatSkeleton, SectionHead } from './ui-primitives';
+import { StatSkeleton, SectionHead } from './ui-kit';
 import { TopJournalsSkeleton, PartnerInstitutionsSkeleton, BarChartSkeleton, RecentlyIndexedSkeleton } from './dashboard-panels-skeletons';
 import { CoAuthorGraphPanelSkeleton } from './coauthor-graph-preview';
 import { VelocityPanelSkeleton } from './portfolio-velocity';

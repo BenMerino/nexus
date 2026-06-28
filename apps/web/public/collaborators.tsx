@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { SectionHead, Tag } from './ui-primitives';
+import { SectionHead, Tag } from './ui-kit';
 import { CollaboratorsPanel, type Suggested } from './portfolio-collaborators';
 
 interface Payload { portfolio?: { collaborators: { suggested: Suggested[] } } }

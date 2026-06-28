@@ -1,5 +1,5 @@
 import React from 'react';
-import { SectionHead, Tag } from './ui-primitives';
+import { SectionHead, Tag } from './ui-kit';
 
 const JOURNAL_NAMES = [
   'Revista Médica de Chile',

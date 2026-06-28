@@ -16,6 +16,7 @@
 import React from 'react';
 import { GraphEngineProvider, type EngineConfig } from './graph-engine/engine-config.js';
 import { ChartTuningProvider } from './graph-engine/ChartTuningContext.js';
+import { ThemeAccentProvider } from './visual-lang/ThemeAccentContext.js';
 import { apiGet } from '../telemetry/apiClient.js';
 import { useTheme } from '../hooks/useTheme.js';
 import { useUserUiPref } from '../hooks/useUserUiPref.js';
@@ -28,9 +29,14 @@ export const NEXUS_ENGINE_CONFIG: EngineConfig = {
   useUiPref: useUserUiPref,
 };
 
-/** Mount both engine providers around a chart-rendering subtree:
+/** Mount the engine + DNA providers around a chart/UI subtree — the single
+ *  control point for the vendored layer:
  *   • GraphEngineProvider → host apiGet/dark/pref (slider span, theme, toggles)
- *   • ChartTuningProvider  → per-tenant tuning (glow 0 default, server override) */
+ *   • ChartTuningProvider → per-tenant tuning (glow 0 default, server override)
+ *   • ThemeAccentProvider → AI-glow colors for composed components that opt in
+ *     (FusedSearch header, AiGlowEdge…). nexus drives surface/brand colors via
+ *     CSS vars (dna-bridge.css), NOT writeAccentVars — so we mount the glow
+ *     context only and leave the CSS cascade to the theme handler. */
 export function GraphProviders({
   tenantId, children,
 }: {
@@ -39,7 +45,9 @@ export function GraphProviders({
 }) {
   return (
     <GraphEngineProvider value={NEXUS_ENGINE_CONFIG}>
-      <ChartTuningProvider tenantId={tenantId}>{children}</ChartTuningProvider>
+      <ChartTuningProvider tenantId={tenantId}>
+        <ThemeAccentProvider>{children}</ThemeAccentProvider>
+      </ChartTuningProvider>
     </GraphEngineProvider>
   );
 }

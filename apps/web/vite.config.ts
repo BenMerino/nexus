@@ -74,6 +74,13 @@ export default defineConfig({
   },
   server: {
     port: 9000,
-    proxy: { "/api": "http://localhost:3000" },
+    // Default: local API on :3000. Set DEV_API_TARGET to proxy /api at a remote
+    // (e.g. the prod web host, which fronts the real API+DB) for data preview
+    // without a local DATABASE_URL. changeOrigin/secure handle the HTTPS edge.
+    proxy: {
+      "/api": process.env.DEV_API_TARGET
+        ? { target: process.env.DEV_API_TARGET, changeOrigin: true, secure: true }
+        : "http://localhost:3000",
+    },
   },
 });

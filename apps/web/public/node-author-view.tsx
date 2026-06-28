@@ -1,5 +1,5 @@
 import React from 'react';
-import { Ico } from './ui-primitives';
+import { Ico } from './ui-kit';
 import type { AuthorD, Paper } from './node-detail-views';
 import { RichHtml } from './rich-text';
 

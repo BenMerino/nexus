@@ -1,14 +1,21 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { authorProfileHref, fetchOrgTreeSummary } from './tenant-data';
 import { RichHtml } from './rich-text';
 import { ES } from './tenant-i18n';
 import type { UnitScope } from './tenant-scope-rail';
+import { SearchField } from '../ui/composed/SearchField';
+import { Popover } from '../ui/composed/Popover';
 
 /* Omnibox for the tenant page: one input over researchers + publications
  * (server, /search) and org units (client-side filter of the already-cached
  * org-tree summary — no extra round-trip). Researchers link to their public
  * profile, publications to their DOI, units re-scope the page via the same
- * lens the rail drives. */
+ * lens the rail drives.
+ *
+ * Built on the vendored composed layer: SearchField (input shell) + Popover
+ * (positioning, portal, click-outside, Escape, glass-reveal) replace the old
+ * hand-rolled .omni-input / .omni-pop + boxRef mousedown effect. The data
+ * fetch + grouping logic is unchanged. */
 
 interface AuthorHit { name: string; orcid: string; papers: number; }
 interface WorkHit { title: string; doi: string | null; year: string | null; journal: string | null; citations: number; }
@@ -23,7 +30,6 @@ export function TenantSearch({ slug, onSelectUnit }: { slug: string; onSelectUni
   const [open, setOpen] = useState(false);
   const [hits, setHits] = useState<{ authors: AuthorHit[]; works: WorkHit[] } | null>(null);
   const [units, setUnits] = useState<{ name: string; unitKey: string }[]>([]);
-  const boxRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const needle = q.trim();
@@ -46,31 +52,28 @@ export function TenantSearch({ slug, onSelectUnit }: { slug: string; onSelectUni
     return () => clearTimeout(t);
   }, [q, slug]);
 
-  // Click-outside closes the popover; Escape too.
-  useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, []);
-
   const showing = open && q.trim().length >= 2 && hits !== null;
   const empty = showing && !hits!.authors.length && !hits!.works.length && !units.length;
 
   return (
-    <div className="omni" ref={boxRef}>
-      <input className="omni-input" type="search" value={q} placeholder={ES.searchBox.placeholder}
-        aria-label={ES.searchBox.placeholder}
-        onChange={e => { setQ(e.target.value); setOpen(true); }}
-        onFocus={() => setOpen(true)}
-        onKeyDown={e => { if (e.key === 'Escape') setOpen(false); }} />
-      {showing && (
-        <div className="omni-pop">
+    <Popover
+      open={showing}
+      onOpenChange={setOpen}
+      panelClassName="omni-pop"
+      panelStyle={{ width: '100%' }}
+      trigger={({ ref }) => (
+        <div className="omni" ref={ref as React.Ref<HTMLDivElement>}>
+          <SearchField value={q} onChange={(v) => { setQ(v); setOpen(true); }}
+            placeholder={ES.searchBox.placeholder} className="omni-input" />
+        </div>
+      )}
+    >
+      {(close) => (
+        <>
           {units.length > 0 && <div className="omni-group">{ES.searchBox.units}</div>}
           {units.map(u => (
             <button key={u.unitKey} type="button" className="omni-row"
-              onClick={() => { onSelectUnit({ unitKey: u.unitKey, name: u.name }); setOpen(false); setQ(''); }}>
+              onClick={() => { onSelectUnit({ unitKey: u.unitKey, name: u.name }); close(); setQ(''); }}>
               <span className="omni-name">{u.name}</span>
             </button>
           ))}
@@ -90,8 +93,8 @@ export function TenantSearch({ slug, onSelectUnit }: { slug: string; onSelectUni
             </a>
           ))}
           {empty && <div className="omni-empty">{ES.searchBox.noResults}</div>}
-        </div>
+        </>
       )}
-    </div>
+    </Popover>
   );
 }

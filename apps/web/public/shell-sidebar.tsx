@@ -1,6 +1,6 @@
 import React from 'react';
 import { Ico } from './shell-icons';
-import { Tag } from './ui-primitives';
+import { Tag } from './ui-kit';
 import { SidebarSearch } from './shell-search';
 import type { CurrentUser } from './shell-helpers';
 

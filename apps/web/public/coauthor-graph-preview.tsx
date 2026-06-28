@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Ico } from './ui-primitives';
+import { Ico } from './ui-kit';
 import { CoAuthorSim } from './coauthor-graph-sim';
 import { CommunityLegend, type CommunityAdapter } from './community-graph';
 import type { CoauthorGraph, CoauthorNode } from './dashboard-builders';

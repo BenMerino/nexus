@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { GraphRender, DirectiveChart } from '../ui/graph-engine/index';
 import type { GraphDirective } from '../architect/graph-composer.types';
-import { SectionHead } from './ui-primitives';
+import { SectionHead } from './ui-kit';
 
 // Eyebrow label per chart kind (server emits title; the card eyebrow is ours).
 const EYEBROW: Record<string, string> = {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { GraphProviders } from '../ui/graph-engine-providers';
 import { useCurrentUser } from './shell-helpers';
-import { Stat, SectionHead } from './ui-primitives';
+import { Stat, SectionHead } from './ui-kit';
 import type { DashboardData } from './dashboard-builders';
 import { RecentlyIndexed } from './dashboard-panels';
 import { ServerCharts } from './dashboard-server-charts';

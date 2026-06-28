@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, SectionHead } from './ui-primitives';
+import { Tag, SectionHead } from './ui-kit';
 
 type Tone = 'ok' | 'err' | 'info';
 

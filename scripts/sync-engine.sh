@@ -72,6 +72,11 @@ FULL_MIRROR_DIRS=( "ui/graph-engine" "ui/visual-lang" "ui/aurora" )
 SUBSET_DIRS=( "ui/composed" "ui/primitives" )
 # Explicit loose ui/ files (no dir of their own) the engine/DNA layer depends on.
 UI_FILES=( "ui/motion-presets.ts" )
+# Files from packages/shared/src ROOT (not under ui/) that nexus vendors. Each
+# entry "ZINCRO_REL|NEXUS_REL": Zincro path under packages/shared/src → nexus
+# path under apps/web. dna-defaults.css is the DNA token root the primitives
+# are built against (nexus puts it in public/ so shared.css can @import it).
+SHARED_FILES=( "dna-defaults.css|public/dna-defaults.css" )
 # Explicit architect files (the engine's ONLY architect deps). chart-kpi.types
 # + graph-directive-runtime.types are pulled if present on Zincro.
 ARCHITECT_FILES=( bucket-sequence.ts fold-atoms.ts fold-atoms-calendar.ts \
@@ -160,6 +165,14 @@ for rel in "${UI_FILES[@]}"; do
   zf="$ZSRC/${rel#ui/}"; zf="$ZSRC/${rel}"
   # Zincro path mirrors nexus rel (ui/motion-presets.ts → packages/shared/src/ui/motion-presets.ts)
   [ -f "$zf" ] && handle "$zf" "$rel" || printf '  %-11s %s\n' "Z-MISSING" "$rel"
+done
+
+# Shared-root files (Zincro packages/shared/src ROOT → arbitrary nexus path)
+echo "── shared root (explicit, src|dest) ──"
+for pair in "${SHARED_FILES[@]}"; do
+  zrel="${pair%%|*}"; nrel="${pair##*|}"
+  zf="$ZSRC/$zrel"
+  [ -f "$zf" ] && handle "$zf" "$nrel" || printf '  %-11s %s\n' "Z-MISSING" "$zrel"
 done
 
 # ── Drift-UP detection: nexus OVERWRITE files may carry fixes Zincro lacks ────

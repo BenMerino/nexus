@@ -2,9 +2,20 @@
    NEXUS — Shared styles · dark CRIS foundation
    ═══════════════════════════════════════════════════════════ */
 
+/* Zincro DNA token root (vendored — synced from Zincro's dna-defaults.css).
+   Base layer the vendored ui/primitives + ui/composed are built against:
+   the control/nest cascade vars, status colors, bg-elevated, space scale, ramps.
+   nexus's own :root palette (below) overrides the surfaces it owns. */
+@import "./dna-defaults.css";
+
 /* Canonical token scales (spacing, radius roles, shadow, z-index,
    motion, type scale). Must precede all rules — see dna.css. */
 @import "./dna.css";
+
+/* nexus → Zincro alias bridge (nexus-owned). Maps the theme-handler surface
+   tokens onto Zincro's component-var names so the vendored layer renders with
+   nexus's live theme. Imported AFTER dna-defaults so aliases win. See theme.md. */
+@import "./dna-bridge.css";
 
 :root {
   color-scheme: dark;

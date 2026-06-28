@@ -1,5 +1,5 @@
 import React from 'react';
-import { SectionHead, Ico } from './ui-primitives';
+import { SectionHead, Ico } from './ui-kit';
 import type { DashboardData } from './dashboard-builders';
 import { TYPE_DISPLAY_LABELS } from './type-labels';
 

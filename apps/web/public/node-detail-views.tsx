@@ -1,5 +1,5 @@
 import React from 'react';
-import { Ico } from './ui-primitives';
+import { Ico } from './ui-kit';
 import { RichHtml } from './rich-text';
 
 export interface Paper { doi: string; title: string | null; published: string | null; citation_count: number | null; journal?: string | null }

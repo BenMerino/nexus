@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AuthorView, InstitutionView, JournalView, PaperView, EmptyState, type Detail } from './node-detail-views';
-import { Ico } from './ui-primitives';
+import { Ico } from './ui-kit';
 
 interface NodeDetailProps {
   nodeId: string | null;
