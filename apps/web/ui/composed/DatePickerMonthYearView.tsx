@@ -30,13 +30,18 @@ export const DatePickerMonthYearView: React.FC<DatePickerMonthYearViewProps> = (
     return (
         <BaseBox display="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridAutoRows: '1fr', gap: 'var(--space-1)', minHeight: '13.5rem' }}>
             {cells.map(c => (
+                /* Each cell reads as a real, VISIBLE button: `outline` gives the
+                 * tappable bordered surface (vs the old transparent bg that read
+                 * as bare text), and the active month/year fills with `primary`.
+                 * Surface comes from the variant — only the active fill + the
+                 * grid-fit (centred, full-height) are set here. */
                 <BaseAction
-                    key={c.key} type="button" size="sm" onClick={() => onPick(c.date)}
+                    key={c.key} type="button" size="sm"
+                    variant={c.active ? 'primary' : 'outline'}
+                    onClick={() => onPick(c.date)}
                     style={{
-                        justifyContent: 'center', height: '100%', fontWeight: 500,
+                        justifyContent: 'center', height: '100%',
                         textTransform: mode === 'months' ? 'capitalize' : undefined,
-                        background: c.active ? 'var(--primary)' : 'transparent',
-                        color: c.active ? 'var(--text-inverse)' : 'var(--text-main)',
                     }}
                 >
                     {c.label}

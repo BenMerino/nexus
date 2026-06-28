@@ -59,7 +59,7 @@ export interface UseMoleculeCanvasOpts {
 }
 
 interface LocalState {
-    bitmapCtx: ImageBitmapRenderingContext;
+    canvas: HTMLCanvasElement;
     /** Target: what buildCells most recently produced. */
     cellTarget: Float32Array;
     /** Current: lerped toward cellTarget each frame. This is what gets
@@ -95,16 +95,14 @@ export function useMoleculeCanvas(
     optsRef.current = opts;
     const stateRef = useRef<LocalState | null>(null);
 
-    /* Mount: acquire bitmaprenderer context on the visible canvas.
-     * No GPU acquisition here — the shared renderer owns the only
-     * GPU/WebGL context on the page. */
+    /* Mount: capture the visible canvas. No GPU acquisition here — the
+     * shared renderer owns presentation (a webgpu context per canvas for
+     * HDR, or the single shared WebGL context + bitmaprenderer fallback). */
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const bitmapCtx = canvas.getContext('bitmaprenderer');
-        if (!bitmapCtx) return;
         stateRef.current = {
-            bitmapCtx,
+            canvas,
             cellTarget: new Float32Array(0),
             cellCur: new Float32Array(0),
             cellArrCols: 0,
@@ -172,7 +170,7 @@ export function useMoleculeCanvas(
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
             const w = Math.max(1, Math.round(cur.cssWidth * dpr));
             const h = Math.max(1, Math.round(cur.cssHeight * dpr));
-            renderer.renderFrame(s.bitmapCtx, w, h, cur.cols, cur.rows, s.cellCur, {
+            renderer.renderFrame(s.canvas, w, h, cur.cols, cur.rows, s.cellCur, {
                 moleculeTime: cur.moleculeTime ?? 0,
                 density: cur.density ?? 0.6,
                 glow: cur.glow ?? 0.8,

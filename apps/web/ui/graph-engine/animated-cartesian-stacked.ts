@@ -73,12 +73,14 @@ export const animatedStackedBar: AnimatedFamily<StackedBarState> = {
                 const x0 = layout.xR[0] + xs * plotW;
                 const x1 = layout.xR[0] + xe * plotW;
                 const rawW = x1 - x0;
-                /* Edge bars drop outer padding — see `animatedBar`. */
+                /* Symmetric padding on EVERY bar — including the edges — so all
+                 *  bars render the SAME width. (The edge bars previously dropped
+                 *  their outer pad to sit flush to the plot edge, which made them
+                 *  ~10%-of-bucket wider than interior bars; uniform width wins
+                 *  over flush edges here.) Matches `positionAt`'s simple-bar pad. */
                 const pad = rawW * 0.1;
-                const leftPad = i === 0 ? 0 : pad;
-                const rightPad = i === aggsCount - 1 ? 0 : pad;
-                const x = x0 + leftPad;
-                const w = Math.max(0, rawW - leftPad - rightPad);
+                const x = x0 + pad;
+                const w = Math.max(0, rawW - 2 * pad);
                 let y0 = layout.yR[1];
                 for (let si = 0; si < series.length; si++) {
                     const sw = weightOf(series[si], chart.seriesWeights);

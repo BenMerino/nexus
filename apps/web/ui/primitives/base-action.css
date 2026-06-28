@@ -2,11 +2,33 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  /* Font + weight from the ONE control cascade (--_ctl-*), same source every
+   * other control reads. :root defaults them to the md tier; size below and a
+   * controlSize cluster republish per tier. */
+  font-size: var(--_ctl-font);
+  font-weight: var(--_ctl-weight);
   transition: all 0.15s ease;
   cursor: pointer;
   border: none;
   background: transparent;
+}
+
+/* Control-size cascade (--_ctl-*): the action ALWAYS reads the cluster
+ * height via var(--_ctl-h, auto), no flag needed. Hosted inside a
+ * `controlSize` BaseBox the var inherits and pins a uniform height so
+ * every control in the row matches by construction; unhosted the var is
+ * undefined → `auto` → the per-size padding rules below drive the box as
+ * before, so the rest of the app is untouched. This mirrors the radius
+ * cascade exactly: the child reads var(--_nest-r, fallback) rather than
+ * any ancestor selecting its descendants.
+ *
+ * box-sizing:border-box so the published height is the outer rectangle
+ * the eye reads (matches BaseTile's contract). The per-size rules below
+ * source their horizontal padding from --_ctl-px when hosted (the var
+ * resolves to the cluster value) and from their own scale otherwise. */
+.base-action {
+  height: var(--_ctl-h, auto);
+  box-sizing: border-box;
 }
 /* Per-size border-radius + padding — declared in CSS (not inline
  * style) so ancestor selectors can override via specificity. See
@@ -15,24 +37,66 @@
  * Bordered variants (secondary, outline) get the base padding;
  * borderless variants (ghost, primary, etc.) get +1px to compensate
  * for the missing 1px border so total footprint stays identical. */
-/* All button sizes share the `control` corner (var(--radius-control)) — a
- * control is a control regardless of size, and it matches chrome tiles by
- * construction. Only padding scales with size. (Icon-only stays full-pill.) */
-.base-action--sm { border-radius: var(--radius-control); padding: var(--space-1-5) var(--space-3); }
-.base-action--md { border-radius: var(--radius-control); padding: var(--space-2)   var(--space-4); }
-.base-action--lg { border-radius: var(--radius-control); padding: var(--space-3)   var(--space-6); }
+/* Corner: the flat control radius. A button is a control — its corner is
+ * --_ctl-radius regardless of nesting. CONCENTRIC is OPT-IN via the `.nest-row`
+ * class (rule below), the SAME explicit signal ListItem carries — NOT a blind
+ * read of inherited --_nest-corner. (That var is auto-published by EVERY
+ * `radius`+`pad` BaseBox in the app, incl. the DNA catalog's preview cards where
+ * radius-md − pad-4 − border clamps to 0px → a globally-concentric button went
+ * SQUARE. Opt-in keeps the leak out.)
+ * Padding reads the control cascade with the per-size scale as fallback. */
+.base-action--sm { border-radius: var(--_ctl-radius); padding: var(--_ctl-pad-block, var(--space-1-5)) var(--_ctl-px, var(--space-3)); }
+.base-action--md { border-radius: var(--_ctl-radius); padding: var(--_ctl-pad-block, var(--space-2))   var(--_ctl-px, var(--space-4)); }
+.base-action--lg { border-radius: var(--_ctl-radius); padding: var(--_ctl-pad-block, var(--space-3))   var(--_ctl-px, var(--space-6)); }
 
-.base-action--sm:not(.base-action--has-border) { padding: calc(var(--space-1-5) + 1px) calc(var(--space-3) + 1px); }
-.base-action--md:not(.base-action--has-border) { padding: calc(var(--space-2)   + 1px) calc(var(--space-4) + 1px); }
-.base-action--lg:not(.base-action--has-border) { padding: calc(var(--space-3)   + 1px) calc(var(--space-6) + 1px); }
+.base-action--sm:not(.base-action--has-border) { padding: var(--_ctl-pad-block, calc(var(--space-1-5) + 1px)) var(--_ctl-px, calc(var(--space-3) + 1px)); }
+.base-action--md:not(.base-action--has-border) { padding: var(--_ctl-pad-block, calc(var(--space-2)   + 1px)) var(--_ctl-px, calc(var(--space-4) + 1px)); }
+.base-action--lg:not(.base-action--has-border) { padding: var(--_ctl-pad-block, calc(var(--space-3)   + 1px)) var(--_ctl-px, calc(var(--space-6) + 1px)); }
 
-/* Icon-only buttons: square padding (symmetric all sides). Corner is the
- * concentric-nesting formula — host radius − host pad − border, read from
- * the --_nest-* publication; unhosted falls back to the capped pill role.
- * Perfectly-round chrome is banned (rounder corners only). */
-.base-action--icon-only.base-action--sm { padding: var(--space-1-5); border-radius: max(0px, calc(var(--_nest-r, var(--radius-pill)) - var(--_nest-pad, 0px) - 1px)); }
-.base-action--icon-only.base-action--md { padding: var(--space-2);   border-radius: max(0px, calc(var(--_nest-r, var(--radius-pill)) - var(--_nest-pad, 0px) - 1px)); }
-.base-action--icon-only.base-action--lg { padding: var(--space-3);   border-radius: max(0px, calc(var(--_nest-r, var(--radius-pill)) - var(--_nest-pad, 0px) - 1px)); }
+/* As a nest-row (a Disclosure header in a panel), the inline inset reads the
+ * shared compensated --nest-px so the header's label lands at the same x as the
+ * ListItem options + search input stacked beside it. Standalone actions keep
+ * --_ctl-px above. Per-size selectors match the specificity of the :not() rules
+ * above so this override actually wins. */
+.nest-row.base-action.base-action--sm,
+.nest-row.base-action.base-action--md,
+.nest-row.base-action.base-action--lg { padding-inline: var(--nest-px); }
+
+/* CONCENTRIC by surface — the ONE opt-in for "every control inside me curves
+ * parallel to my corner". A surface that publishes --_nest-corner AND adds class
+ * `nest-controls` makes ALL its descendant base-actions read that corner — Done,
+ * day cells, headers, the lot — by construction, instead of each call site
+ * remembering to set borderRadius inline (and being forgotten). Opt-in (a class,
+ * not a blind inherited read) keeps it OUT of padded cards that publish
+ * --_nest-corner incidentally (the DNA catalog preview, where it clamps to 0px →
+ * square). The :where() keeps specificity at the per-size rules' level + 1 class
+ * so it wins over the flat --_ctl-radius without out-specifying call-site styles. */
+.nest-controls .base-action.base-action--sm,
+.nest-controls .base-action.base-action--md,
+.nest-controls .base-action.base-action--lg,
+.nest-controls .base-action--icon-only.base-action--sm,
+.nest-controls .base-action--icon-only.base-action--md,
+.nest-controls .base-action--icon-only.base-action--lg {
+  border-radius: var(--_nest-corner, var(--_ctl-radius));
+}
+
+/* Icon-only buttons are a true SQUARE: width = height = --_ctl-h, glyph
+ * centred. Sizing by padding alone left the box content-width (narrower than its
+ * --_ctl-h height) → the glyph's side inset never matched its top/bottom (the
+ * tall-narrow chevron). Forcing width = --_ctl-h makes the inset uniform on all
+ * four sides by construction. Corner = the control radius (proportional to the
+ * square); the old --_nest-r − --_nest-pad − 1px collapsed to ~0 inside a padded
+ * popover (e.g. the date-picker header). Smooth-corner rule curves it. */
+.base-action--icon-only.base-action--sm,
+.base-action--icon-only.base-action--md,
+.base-action--icon-only.base-action--lg {
+  width: var(--_ctl-h);
+  padding: 0;
+  /* Flat control radius; concentric is opt-in via .nest-row (see text-button
+   * note above) — not a blind --_nest-corner read, which leaks from every padded
+   * card and went square in the catalog. */
+  border-radius: var(--_ctl-radius);
+}
 .base-action:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -40,13 +104,34 @@
 }
 .base-action:active { transform: scale(0.95); }
 
-.base-action--primary { color: var(--text-inverse); box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: none; }
+/* `--on-primary`, not `--text-inverse`: white is only legible on a DARK
+ * primary. A light/mid tenant primary (achromatic grey) gives white text
+ * ~3.9:1 (fails AA); --on-primary is derived from the gradient stops'
+ * lightness so the label stays legible for any tenant. Falls back to white. */
+.base-action--primary { color: var(--on-primary, var(--text-inverse)); box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: none; }
 .base-action--primary:hover { opacity: 0.9; }
+
+/* aurora: the living mesh-gradient canvas fills the button as its background.
+ * overflow:hidden clips it to the rounded chrome; `isolation:isolate` makes the
+ * button its own stacking context so the canvas's negative z-index drops BELOW
+ * the button content (including bare text-node labels — which can't take a
+ * z-index of their own, so hoisting siblings wouldn't lift them) while staying
+ * contained. White label for contrast over the saturated brand mesh. */
+.base-action--aurora {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--on-primary, var(--text-inverse));
+  border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.base-action--aurora > canvas { z-index: -1; }
+.base-action--aurora:hover { opacity: 0.92; }
 
 .base-action--secondary {
   background: var(--bg-card);
   color: var(--text-main);
-  border: 1px solid var(--border-main);
+  border: var(--_ctl-border) solid var(--border-main);
 }
 .base-action--secondary:hover { background: var(--bg-elevated); }
 
@@ -62,11 +147,56 @@
 .base-action--outline {
   background: transparent;
   color: var(--text-main);
-  border: 1px solid var(--border-main);
+  border: var(--_ctl-border) solid var(--border-main);
 }
 .base-action--outline:hover { background: var(--bg-elevated); }
 
+/* ── Soft status weight (LOW emphasis) ───────────────────────────────
+ * The recessive sibling of the solid status fills (--danger/--warning): an
+ * OUTLINE in the status tone that fills on hover, then deepens on press. ONE
+ * treatment parameterized by --_soft-tone, which each variant sets to its
+ * status token — so danger/warning/success/info soft pills exist by
+ * construction, not as four hand-rolled molecules. Bordered (has-border) so it
+ * shares the --_ctl-border footprint with secondary/outline. Replaces the
+ * bespoke DangerPill + danger-pill.css (an outline-fill pattern hand-rolled for
+ * danger only, with no press state). Label/glyph inherit the status colour via
+ * `color` + currentColor on the icon. */
+.base-action--danger-soft  { --_soft-tone: var(--status-error); }
+.base-action--warning-soft { --_soft-tone: var(--status-warning); }
+.base-action--success-soft { --_soft-tone: var(--status-success); }
+.base-action--info-soft    { --_soft-tone: var(--status-info); }
+.base-action--danger-soft,
+.base-action--warning-soft,
+.base-action--success-soft,
+.base-action--info-soft {
+  background: transparent;
+  color: var(--_soft-tone);
+  border: var(--_ctl-border) solid var(--_soft-tone);
+}
+.base-action--danger-soft:hover,
+.base-action--warning-soft:hover,
+.base-action--success-soft:hover,
+.base-action--info-soft:hover {
+  background: var(--_soft-tone);
+  color: var(--text-inverse);
+}
+/* Press: deepen the fill so the destructive/active action confirms the click —
+ * the state the old DangerPill never had. */
+.base-action--danger-soft:active,
+.base-action--warning-soft:active,
+.base-action--success-soft:active,
+.base-action--info-soft:active {
+  background: color-mix(in srgb, var(--_soft-tone) 80%, #000);
+  color: var(--text-inverse);
+}
+
 .base-action--full { width: 100%; }
-.base-action .action-icon { flex-shrink: 0; }
-.base-action .action-spinner { animation: spin 1s linear infinite; flex-shrink: 0; }
+/* Glyph size from the control cascade — ONE source. Hosted in a controlSize
+ * cluster the inherited --_ctl-icon wins; unhosted, each size falls back to
+ * its own --icon-control-* token. The call site never hand-stamps a size. */
+.base-action .action-icon { flex-shrink: 0; display: inline-flex; }
+.base-action--sm .action-icon svg { width: var(--_ctl-icon, var(--icon-control-sm)); height: var(--_ctl-icon, var(--icon-control-sm)); }
+.base-action--md .action-icon svg { width: var(--_ctl-icon, var(--icon-control-md)); height: var(--_ctl-icon, var(--icon-control-md)); }
+.base-action--lg .action-icon svg { width: var(--_ctl-icon, var(--icon-control-lg)); height: var(--_ctl-icon, var(--icon-control-lg)); }
+.base-action .action-spinner { animation: spin 1s linear infinite; flex-shrink: 0; width: var(--_ctl-icon); height: var(--_ctl-icon); }
 @keyframes spin { to { transform: rotate(360deg); } }

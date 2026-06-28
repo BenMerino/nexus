@@ -8,45 +8,74 @@
      * tile regardless of inner content. Locks the row's vertical
      * rhythm: every tile sits at the same baseline.
      *
+     * Reads the control-size cascade (--_ctl-h) when hosted inside a
+     * `controlSize` cluster so the tile matches sibling buttons/toggles
+     * by construction; unhosted it falls back to the tile family's own
+     * --space-8, leaving every existing tile untouched.
+     *
      * `box-sizing: border-box` so the height includes border + padding,
      * matching what the visual eye reads (the tile's outer rectangle). */
-    height: var(--space-8);
+    height: var(--_ctl-h);
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    /* `control` corner — chrome tiles share the one interactive radius
-     * with buttons/inputs (var(--radius-control), 9px). */
-    border-radius: var(--radius-control);
+    /* Corner from the ONE control cascade (--_ctl-radius) — the same radius
+     * buttons/inputs read; :root defaults it to var(--radius-control). */
+    border-radius: var(--_ctl-radius);
+    /* Parent-owned nesting (--_nest-*): the tile publishes its OWN painted
+     * radius + horizontal padding so a nested child (e.g. the ⌘K kbd badge)
+     * reads var(--_nest-corner) and curves PARALLEL to the tile — by
+     * construction, like every other --_nest-* surface. Anchored to the radius
+     * the tile actually paints (--_ctl-radius), so it stays concentric even if
+     * control-radius ever diverges from --radius-sm (the old Nestable
+     * parentRadius="sm" hardcode could not). --_nest-pad is set per shape below. */
+    --_nest-r: var(--_ctl-radius);
+    --_nest-corner: max(0px, calc(var(--_ctl-radius) - var(--_nest-pad, 0px) - 1px));
     /* Chrome tiles never wrap; their content is a single line. */
     white-space: nowrap;
     flex-shrink: 0;
     cursor: pointer;
     font-family: inherit;
+    /* Font + weight from the ONE control cascade (--_ctl-*) — the SAME source
+     * BaseAction and InputFrame read, so a tile-based trigger matches sibling
+     * controls by construction; the label never hand-picks size or weight. */
+    font-size: var(--_ctl-font);
+    font-weight: var(--_ctl-weight);
     transition:
         background var(--motion-normal) ease,
         border-color var(--motion-normal) ease,
         box-shadow var(--motion-normal) ease;
 }
 
+/* Glyph from the ONE control cascade — same --_ctl-icon source as BaseAction.
+ * :root defaults it; a controlSize cluster / size sets the tier. */
+.base-tile svg { width: var(--_ctl-icon); height: var(--_ctl-icon); }
+
 /* Width policies. */
 .base-tile--square {
-    /* Icon-only tiles — perfect square, padding centred. */
-    width: var(--space-8);
+    /* Icon-only tiles — perfect square: width tracks the control height so the
+     * box stays square at any tier (--_ctl-h). */
+    width: var(--_ctl-h);
     padding: var(--space-1-5);
     justify-content: center;
+    /* Parent-owned nesting: --_nest-pad = the tile's real padding so a nested
+     * child's concentric corner is computed from this distance to the border. */
+    --_nest-pad: var(--space-1-5);
 }
 .base-tile--auto {
     /* Content-sized tiles — width grows with children. Symmetric
      * horizontal padding gives the placeholder + text + kbd hint
-     * room to breathe. */
-    padding: 0 var(--space-3);
+     * room to breathe. Reads the cluster's --_ctl-px when hosted so
+     * the padding tracks the tier; --space-3 fallback when unhosted. */
+    padding: 0 var(--_ctl-px, var(--space-3));
+    --_nest-pad: var(--_ctl-px, var(--space-3));
 }
 
 /* ── Variant: default (neutral chrome) ── */
 .base-tile--default {
     background: var(--bg-card);
-    border: 1px solid var(--border-main);
+    border: var(--_ctl-border) solid var(--border-main);
     box-shadow: none;
     color: var(--text-main);
 }
@@ -92,11 +121,18 @@
 }
 /* When active + bare: promote to the default tile surface so the
  * selected nav item reads as a chrome tile (the same family the
- * header uses), not just a halo'd transparent box. */
+ * header uses), not just a halo'd transparent box.
+ *
+ * NO halo here: the surface (bg + border) IS the complete active
+ * treatment for a bare tile. The generic `.base-tile--active` halo below
+ * is for NON-bare filter chips ("carrying an applied filter"); on the
+ * sidebar's selected item it stacked an unwanted shadow on top of the
+ * surface (very visible in light mode). Suppress it for bare+active. */
 .base-tile--bare.base-tile--active {
     background: var(--bg-card);
     border-color: var(--border-main);
     color: var(--text-main);
+    box-shadow: none;
 }
 
 /* Active state — for filter triggers holding an open popover or
@@ -132,6 +168,14 @@
         0 0 0 2px var(--bg-card),
         0 0 0 4px var(--tile-ring-color),
         var(--shadow-halo);
+}
+/* Bare active+focused (selected sidebar item, keyboard focus): the surface is
+ * its active treatment, so keep ONLY the focus ring — no halo (matches the
+ * bare+active rule above, which suppresses it). */
+.base-tile--bare.base-tile--active:focus-visible {
+    box-shadow:
+        0 0 0 2px var(--bg-card),
+        0 0 0 4px var(--tile-ring-color);
 }
 /* On the primary gradient surface a --primary ring would be primary-on-
  * primary — it collides with the fill and reads as an alien border. The

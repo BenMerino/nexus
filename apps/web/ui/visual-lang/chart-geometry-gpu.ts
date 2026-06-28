@@ -152,6 +152,15 @@ export interface ChartDrawParams {
     edgeSoftness: number;
     /** Color saturation multiplier. */
     saturation: number;
+    /** Render only the soft bloom halo, not the crisp emitting geometry —
+     *  a glow with no visible border. Defaults to false (normal). */
+    bloomOnly?: boolean;
+    /** Halo reach: H+V blur iterations. Lower = shorter/tighter glow.
+     *  Undefined → renderer default (full diffuse halo). */
+    bloomSpread?: number;
+    /** Bloom intensity multiplier (× glow). Undefined → 4 (chart default).
+     *  The AI glow passes a small value so it doesn't blow out. */
+    bloomGain?: number;
 }
 
 /** Encode + submit a draw of `triCount` triangles' worth of vertices.

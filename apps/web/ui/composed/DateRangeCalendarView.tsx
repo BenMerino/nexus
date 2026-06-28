@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { format, parse } from 'date-fns';
-import { BaseAction, BaseBox, BaseText } from '../primitives/index.js';
+import { BaseBox, BaseText } from '../primitives/index.js';
+import { Button } from './Button.js';
 import { DatePickerCalendarSection } from './DatePickerCalendarSection.js';
 import type { DateRangeValue } from './DateRangePicker.js';
 
 /* ── DateRangeCalendarView ────────────────────────────────
- * TWO inline month grids side by side — pick the start on the left
- * calendar, the end on the right (with a Today quick action). Each
- * pick commits immediately; picking past the other endpoint drags
- * it along so the range can never invert. Pure panel content: hosts
- * decide the vessel (chart header chip popover; Disclosure tier in
- * the full DateRangePicker). */
+ * ONE calendar, click-click range selection — the modern pattern (click a
+ * day to set the start, click another to set the end; the days between fill
+ * with a primary tint; clicking again restarts). Replaces the old TWO-calendar
+ * side-by-side layout (pick-start-left / pick-end-right), which was wide,
+ * forced the user to map "left = start", and read dated.
+ *
+ * The range highlight is already owned by CalendarDayView (rangeStart/rangeEnd
+ * → tinted between-days); this just drives a two-click state machine on top of
+ * the single shared grid. Pure panel content — hosts decide the vessel (chart
+ * header chip popover; the DateRangePicker panel). Same props as before
+ * (`value` / `onCommit` / `max`) so it's a drop-in replacement. */
 
 export interface DateRangeCalendarViewProps {
     value: DateRangeValue;
@@ -20,57 +26,58 @@ export interface DateRangeCalendarViewProps {
 }
 
 const toDate = (iso: string): Date => parse(iso, 'yyyy-MM-dd', new Date());
+const iso = (d: Date): string => format(d, 'yyyy-MM-dd');
 
 export function DateRangeCalendarView({ value, onCommit, max }: DateRangeCalendarViewProps) {
-    /* All-time ranges start at the epoch — open both calendars at the
-     *  END month instead of paging back to 1970. */
-    const [startView, setStartView] = useState<Date>(() => toDate(value.preset === 'all' ? value.end : value.start));
-    const [endView, setEndView] = useState<Date>(() => toDate(value.end));
+    /* Open at the start month (or the end month for an all-time range, to avoid
+     *  paging back to 1970). */
+    const [viewDate, setViewDate] = useState<Date>(() => toDate(value.preset === 'all' ? value.end : value.start));
+    /* Two-click machine: `anchor` is the first-clicked day while we await the
+     *  second. null = no pick in progress (the next click STARTS a new range). */
+    const [anchor, setAnchor] = useState<string | null>(null);
 
-    const pickStart = (day: Date) => {
-        const iso = format(day, 'yyyy-MM-dd');
-        onCommit(iso, iso > value.end ? iso : value.end);
+    const pick = (day: Date) => {
+        const d = iso(day);
+        if (anchor === null) {
+            // First click: begin a new range at this day (collapsed to one day).
+            setAnchor(d);
+            onCommit(d, d);
+        } else {
+            // Second click: close the range; order the two endpoints so it can't invert.
+            const [start, end] = d < anchor ? [d, anchor] : [anchor, d];
+            setAnchor(null);
+            onCommit(start, end);
+        }
     };
-    const pickEnd = (day: Date) => {
-        const iso = format(day, 'yyyy-MM-dd');
-        onCommit(iso < value.start ? iso : value.start, iso);
-    };
 
-    const colStyle: React.CSSProperties = { minWidth: '15rem' };
-    const colLabel: React.CSSProperties = { textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 };
-    /* Both header rows share one height so the two calendars stay level
-     *  even though only End carries the Today quick action. */
-    const colHead: React.CSSProperties = { minHeight: '1.75rem', marginBottom: 'var(--space-1)' };
-
-    /* density="tight" = --space-2 per side of the divider, matching the host
-     * panel's pad="tight" — each column's content sits the same distance from
-     * the divider as from the panel border. */
+    /* `nest-controls` + radius="card" pad="row" publishes the --_nest-*
+     *  cascade (same as DatePicker's body wrapper). WITHOUT it --_nest-corner
+     *  is unset, so the day cell's selected pill + the range-segment band fall
+     *  back to a FLAT --radius-control instead of the concentric corner that
+     *  curves parallel to the panel — i.e. they stop following the corner-
+     *  construction pipeline. This wrapper is what makes dayRadius/pillRadius
+     *  (CalendarDayView) resolve to real nested values. */
     return (
-        <BaseBox display="flex" direction="row" density="tight" style={{ alignItems: 'flex-start' }}>
-            <BaseBox style={colStyle}>
-                <BaseBox display="flex" direction="row" align="center" style={colHead}>
-                    <BaseText variant="detail" color="muted" style={colLabel}>Start</BaseText>
-                </BaseBox>
-                <DatePickerCalendarSection viewDate={startView} setViewDate={setStartView} value="" onSelect={pickStart}
-                    rangeStart={value.start} rangeEnd={value.end} max={max} />
+        <BaseBox className="nest-controls" radius="card" pad="row"
+            display="flex" direction="col" density="tight" style={{ minWidth: '15rem' }}>
+            <BaseBox display="flex" direction="row" align="center" justify="between">
+                {/* `label` variant IS the uppercase micro-label (tracking + weight
+                 *  from tokens) — no inline textTransform/letterSpacing reimpl. */}
+                <BaseText variant="label" color="muted">
+                    {anchor !== null ? 'Pick end date' : 'Pick start date'}
+                </BaseText>
+                {/* Reuse the Button primitive + the canonical Today treatment
+                 *  (color: --primary), matching DatePickerFooter — not a
+                 *  hand-rolled BaseAction with inline font sizes. */}
+                <Button type="button" variant="ghost" size="sm" style={{ color: 'var(--primary)' }}
+                    onClick={() => { const now = new Date(); setViewDate(now); setAnchor(null); onCommit(value.start, iso(now)); }}>
+                    Today
+                </Button>
             </BaseBox>
-            <BaseBox style={{ width: '1px', alignSelf: 'stretch', background: 'var(--border-subtle, var(--border-main))' }} />
-            <BaseBox style={colStyle}>
-                <BaseBox display="flex" direction="row" align="center" justify="between" style={colHead}>
-                    <BaseText variant="detail" color="muted" style={colLabel}>End</BaseText>
-                    {/* Quick action: snap the range's end to today and
-                      * bring the calendar back to the current month. */}
-                    <BaseAction
-                        variant="ghost" size="sm"
-                        onClick={() => { const now = new Date(); setEndView(now); pickEnd(now); }}
-                        style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--primary-text, var(--text-main))' }}
-                    >
-                        Today
-                    </BaseAction>
-                </BaseBox>
-                <DatePickerCalendarSection viewDate={endView} setViewDate={setEndView} value="" onSelect={pickEnd}
-                    rangeStart={value.start} rangeEnd={value.end} max={max} />
-            </BaseBox>
+            <DatePickerCalendarSection
+                viewDate={viewDate} setViewDate={setViewDate} value="" onSelect={pick}
+                rangeStart={value.start} rangeEnd={value.end} max={max}
+            />
         </BaseBox>
     );
 }

@@ -21,6 +21,7 @@ export const tokens = {
     text: {
       heading: 'var(--text-main)', body: 'var(--text-main)',
       muted: 'var(--text-muted)', inverse: 'var(--text-inverse)',
+      success: 'var(--status-success)', error: 'var(--status-error)', warning: 'var(--status-warning)',
     },
     border: {
       subtle: 'var(--border-subtle)', standard: 'var(--border-main)', ghost: 'var(--border-ghost)',

@@ -15,6 +15,7 @@
  */
 
 export { compileShader, linkProgram } from './gl-boot.js';
+export { GLSL_NOISE } from './glsl-noise.js';
 export { resolveColor, hslToRgb } from './color.js';
 export {
     adsrEnvelope,
@@ -57,3 +58,32 @@ export {
     type BuildCells,
     type UseMoleculeCanvasOpts,
 } from './use-molecule-canvas.js';
+export {
+    useAiGlowEdge,
+    type UseAiGlowEdgeOpts,
+} from './use-ai-glow-edge.js';
+export {
+    useAiGlowHost,
+    type UseAiGlowHostOpts,
+} from './use-ai-glow-host.js';
+export {
+    DEFAULT_GLOW_COLORS,
+    AI_GLOW_COLORS,
+    DEFAULT_GLOW_PROFILE,
+    type GlowColors,
+    type GlowProfile,
+} from './ai-glow-ring.js';
+export {
+    useAiGlowText,
+    type UseAiGlowTextOpts,
+} from './use-ai-glow-text.js';
+export {
+    ACCENT_THEMES,
+    ACCENT_ORDER,
+    DEFAULT_ACCENT,
+    resolveAccent,
+    type AccentId,
+    type AccentTheme,
+} from './accent-themes.js';
+export { accentVars, writeAccentVars } from './apply-accent.js';
+export { ThemeAccentProvider, useAiGlowColors } from './ThemeAccentContext.js';

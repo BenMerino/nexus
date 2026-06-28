@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '../icons/index.js';
 import { BaseBox, BaseText, BaseAction } from '../primitives/index.js';
+import { NEST_LABEL } from './nest-row.js';
 import './disclosure.css';
 
 /* ── Disclosure ───────────────────────────────────────────
@@ -30,15 +31,14 @@ export function Disclosure({ label, summary, children, defaultOpen = false }: Di
             <BaseAction
                 variant="ghost"
                 size="sm"
-                fullWidth
                 onClick={() => setOpen(o => !o)}
-                className="disclosure__head"
+                className="nest-row disclosure__head"
             >
-                <BaseText variant="detail" className="disclosure__label">{label}</BaseText>
+                <BaseText as="span" className="disclosure__label" style={NEST_LABEL}>{label}</BaseText>
                 {summary != null && <BaseText variant="detail" color="muted">{summary}</BaseText>}
                 <ChevronDown
                     className="disclosure__chev"
-                    style={{ width: 14, height: 14, transform: open ? 'rotate(180deg)' : 'none' }}
+                    style={{ transform: open ? 'rotate(180deg)' : 'none' }}
                 />
             </BaseAction>
             {open && <BaseBox className="disclosure__body">{children}</BaseBox>}

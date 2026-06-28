@@ -140,7 +140,7 @@ function ContinuousLegend({ chart, clip }: { chart: GraphDirective; clip: ColorC
                 position: 'relative',
                 width: '8rem',
                 height: '0.4rem',
-                borderRadius: 'var(--radius-sm, 2px)',
+                borderRadius: 'var(--radius-sm)',
                 background: `linear-gradient(to right, ${stops})`,
                 border: '1px solid var(--border-ghost, var(--border-main))',
             }}>
@@ -213,7 +213,7 @@ function Handle({ pct, active, onPointerDown }: { pct: number; active: boolean; 
                 width: '4px',
                 height: '14px',
                 background: 'var(--text-main)',
-                borderRadius: '2px',
+                borderRadius: 'var(--radius-xs)',
                 boxShadow: active
                     ? '0 0 0 2px var(--bg-card), 0 0 0 3px var(--text-main)'
                     : '0 0 0 1px var(--bg-card)',

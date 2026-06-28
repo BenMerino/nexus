@@ -37,7 +37,7 @@ export interface UseChartCanvasOpts {
 }
 
 interface LocalState {
-    bitmapCtx: ImageBitmapRenderingContext;
+    canvas: HTMLCanvasElement;
     raf: number | null;
     startMs: number;
     /** Cached DPR-scaled vertex buffer. Reused across frames within a
@@ -57,14 +57,14 @@ export function useChartCanvas(
     optsRef.current = opts;
     const stateRef = useRef<LocalState | null>(null);
 
-    /* Mount: acquire bitmaprenderer on the visible canvas. */
+    /* Mount: capture the visible canvas. The shared renderer owns its
+     * presentation context (webgpu for HDR, or bitmaprenderer on the
+     * WebGL2 fallback) — we just hand over the element. */
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const bitmapCtx = canvas.getContext('bitmaprenderer');
-        if (!bitmapCtx) return;
         stateRef.current = {
-            bitmapCtx,
+            canvas,
             raf: null,
             startMs: performance.now(),
             scaledVerts: null,
@@ -114,7 +114,7 @@ export function useChartCanvas(
                 edgeSoftness: cur.edgeSoftness ?? 1,
                 saturation: cur.saturation ?? 1,
             };
-            renderer.renderChart(s.bitmapCtx, wPx, hPx, verts, cur.triCount, params);
+            renderer.renderChart(s.canvas, wPx, hPx, verts, cur.triCount, params);
 
             /* Animate continuously when iridescence is on (shimmer phase
              * needs `time` to advance). Otherwise draw once per opts

@@ -16,6 +16,10 @@ const TONE_TOKEN: Record<StatusTone, string> = {
     danger:  'var(--status-error)',
     info:    'var(--status-info)',
     neutral: 'var(--text-muted)',
+    // True orange (hue ~45). The DNA 'orange' ramp is actually hue-70 amber, and
+    // --status-warning is the same amber — both read mustard. This is the one
+    // clean orange in the tone system, ≈ #f97316.
+    orange:  'oklch(0.68 0.19 45)',
 };
 
 type DiscriminatedProps =
@@ -25,6 +29,9 @@ type DiscriminatedProps =
 export type StatusPillProps = DiscriminatedProps & {
     size?: 'sm' | 'md';
     className?: string;
+    /** Optional node before the label — a status dot, pulse, or small icon.
+     *  Inherits the pill's tone color via currentColor. */
+    leading?: React.ReactNode;
 };
 
 /** Atomic status indicator. Resolves a domain enum (orderStatus,
@@ -36,7 +43,7 @@ export type StatusPillProps = DiscriminatedProps & {
  *  Memoized: pure props in, pure DOM out. Tables can stamp 10+ instances
  *  per page — without memo, every parent re-render walks every pill. */
 const StatusPillImpl: React.FC<StatusPillProps> = (props) => {
-    const { size = 'sm', className } = props;
+    const { size = 'sm', className, leading } = props;
     let tone: StatusTone;
     let label: string;
     if ('tone' in props) {
@@ -54,6 +61,7 @@ const StatusPillImpl: React.FC<StatusPillProps> = (props) => {
             style={{ color: token, ['--pill-tint' as any]: token }}
             data-tone={tone}
         >
+            {leading}
             {label}
         </span>
     );

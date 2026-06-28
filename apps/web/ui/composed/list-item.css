@@ -1,0 +1,150 @@
+/* ── ListItem ──────────────────────────────────────────────
+ * Foundational primitive for list rows (sidebar items, dropdown
+ * menu items, avatar menu items). Visual reference is the avatar
+ * dropdown's items — that's the canonical look.
+ *
+ * Surface treatment:
+ *   - transparent at rest, --text-muted
+ *   - hover: --bg-elevated, --text-main
+ *   - active: --bg-main, --text-main
+ *   - danger: --status-error text, red-tinted hover
+ *
+ * Geometry:
+ *   - inset 4px from container edges (margin all around)
+ *   - inner radius derived from chrome-popover − border − inset
+ *     so the highlight pill nests cleanly when the item is adjacent
+ *     to a popover's rounded edge */
+
+.list-item {
+    /* Inset + width + concentric corner come from the shared `.nest-row`
+     * mechanism (theme.css) — NOT restated here. This file owns only the row's
+     * own concerns: height/font from the --_ctl-* cascade, surface treatment,
+     * and the icon/label/accessory layout. */
+    min-height: var(--_ctl-h);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    /* Inline inset = --nest-px, the shared compensated value published by
+     * .nest-row (theme.css). Row margin + --nest-px sum to --_ctl-px from the
+     * panel edge — identical to SearchField/InputFrame beside it, so the leading
+     * checkbox/icon aligns with the search lupe by construction. Block padding
+     * collapses to 0 when --_ctl-h pins the height (cluster), else the row's own
+     * space-2; box-sizing keeps the published height honest. */
+    box-sizing: border-box;
+    padding: var(--_ctl-pad-block, var(--space-2)) var(--nest-px, calc(var(--_ctl-px) - var(--row-inset)));
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-size: var(--_ctl-font);
+    font-weight: var(--_ctl-weight);
+    font-family: inherit;
+    cursor: pointer;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition:
+        background var(--motion-normal) ease,
+        color var(--motion-normal) ease;
+}
+
+.list-item:hover {
+    background: var(--bg-elevated);
+    color: var(--text-main);
+}
+
+.list-item--active {
+    background: var(--bg-main);
+    color: var(--text-main);
+    /* Inset ring (not border) so the active state adds no width and
+     * never shifts the label across states. */
+    box-shadow: inset 0 0 0 1px var(--border-main);
+}
+
+.list-item--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.list-item--disabled:hover {
+    background: transparent;
+    color: var(--text-muted);
+}
+
+/* Danger — red text at rest, stays red through hover, only swaps bg. */
+.list-item--danger {
+    color: var(--status-error);
+}
+.list-item--danger:hover {
+    background-color: color-mix(in srgb, var(--status-error) 5%, transparent);
+    color: var(--status-error);
+}
+
+/* Appointment — the calendar-block row. Republishes the WHOLE control tier (the
+ * same coherent --_ctl-* set CONTROL_SIZE.sm publishes, one source) so height,
+ * font, inset and corner all shrink TOGETHER and the inset stays uniform by
+ * construction — NOT a hand-set height that breaks the pipeline. Inherits the
+ * block's text colour (set on the surface), so no per-state colour here. */
+.list-item--appointment {
+    --_ctl-h: var(--space-7);
+    --_ctl-font: var(--text-detail);
+    --_ctl-icon: var(--icon-control-sm);
+    /* The LABEL reads --nest-label-font INLINE (NEST_LABEL), which beats
+     * --_ctl-font — so the smaller token must override THAT var to actually
+     * shrink the text. One token, the pipeline carries it. */
+    --nest-label-font: var(--text-detail);
+    --nest-label-weight: var(--weight-detail);
+    color: inherit;
+    /* No leading icon, so the row's icon-gutter padding (block --_ctl-pad ≠
+     * inline --nest-px) reads lopsided. ONE uniform inset on all four sides. */
+    min-height: 0;
+    padding: var(--space-1);
+}
+/* Ghost-button surface — like BaseAction variant="ghost", but tuned to read on
+ * the COLORED appointment block (where the base list-item's --bg-elevated hover
+ * is the wrong surface). A subtle scrim from the row's OWN text colour, so it
+ * adapts to whatever the block's foreground is. */
+.list-item--appointment:hover {
+    background: color-mix(in srgb, currentColor 12%, transparent);
+    color: inherit;
+}
+.list-item--appointment:active {
+    background: color-mix(in srgb, currentColor 20%, transparent);
+}
+/* The name row reads as the row's title; the service row recedes (muted). */
+.list-item--appointment.apt-card__name { font-weight: var(--weight-label); }
+.list-item--appointment.apt-card__service { opacity: 0.8; }
+
+/* Sub-elements — icon + label + accessory layout.
+ * The icon slot is a fixed --nest-lead box (the shared leading column) so the
+ * label after it starts at the same x as the search field's input beside it,
+ * whatever the glyph's own width. */
+.list-item__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: var(--nest-lead);
+}
+
+.list-item__label {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.list-item__accessory {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: var(--space-1);
+    /* No accessory may grow the row taller than its plain siblings — whatever it
+     * holds (a delete button, a status/unavailable pill, an icon). Cap the slot
+     * to the row's published height (--_ctl-h) and center the child: a TALL
+     * child (a padded button) is capped to the line; a SHORT child (a pill) sits
+     * centered, well under the cap. This replaces the old negative-margin trick,
+     * which hardcoded ONE child's padding (--space-2, a button) — so it
+     * over-cancelled a pill and would mis-fit any other accessory. Now the row
+     * height stays driven by the icon+label line for EVERY chip, by construction. */
+    min-height: 0;
+    max-height: var(--_ctl-h);
+}

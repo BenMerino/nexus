@@ -27,7 +27,10 @@ struct BloomUniforms {
     intensity: f32,
     /* Blur direction selector for the blur pass. 0 = horizontal, 1 = vertical. */
     axis: f32,
-    _pad0: f32,
+    /* Composite: weight of the crisp BASE geometry. 1 = normal (base over
+     * halo); 0 = halo only — the emitting band itself isn't drawn, leaving
+     * just the soft glow. */
+    baseMix: f32,
     _pad1: f32,
     _pad2: f32,
 };
@@ -116,7 +119,10 @@ fn fs_blur(in: VsOut) -> @location(0) vec4<f32> {
  * reads as a real glow without either artifact. */
 @fragment
 fn fs_composite(in: VsOut) -> @location(0) vec4<f32> {
-    let base = textureSampleLevel(srcTex, srcSampler, in.uv, 0.0);
+    /* baseMix scales the crisp emitting geometry. At 1 it's the usual
+     * base-over-halo; at 0 the band itself isn't drawn and only the soft
+     * halo remains (a glow with no visible border). */
+    let base = textureSampleLevel(srcTex, srcSampler, in.uv, 0.0) * u.baseMix;
     let bloom = textureSampleLevel(bloomTex, srcSampler, in.uv, 0.0);
     let halo = bloom * u.intensity;
     /* Standard "src-over" composite of base on top of halo:

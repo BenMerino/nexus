@@ -37,14 +37,15 @@ export function PlotDottedBackdrop({
                 top: `${plotYR[0]}px`,
                 width: `${plotXR[1] - plotXR[0]}px`,
                 height: `${plotYR[1] - plotYR[0]}px`,
-                /* Fade ramp: only the top ~25% of the plot rolls into
-                 * opaque card-bg (covering the dots so the marks' upper
-                 * register reads clean). The lower 75% sits at full
-                 * transparency, so the dots are clearly visible across
-                 * most of the plot. Earlier ramp made the dots barely
-                 * register anywhere. */
-                backgroundImage: `linear-gradient(to bottom, var(--bg-main) 0%, transparent 25%), radial-gradient(circle, var(--bg-dot-color) var(--bg-dot-size), transparent var(--bg-dot-size))`,
-                backgroundSize: `auto, var(--bg-dot-spacing) var(--bg-dot-spacing)`,
+                /* Fade ramp only: the top ~25% of the plot rolls into the
+                 * CARD background so the marks' upper register reads clean.
+                 * The dot texture was REPLACED by horizontal Y-tick gridlines
+                 * (drawn in ChartChromeLayer's YAxis, which owns the y-scale)
+                 * — those carry the in-plot value reference now. The fade
+                 * colour must be the SURFACE the chart sits on (--bg-card):
+                 * the chart wrapper is transparent, so a --bg-main fade would
+                 * paint a gray gradient over the card. */
+                backgroundImage: `linear-gradient(to bottom, var(--bg-card) 0%, transparent 25%)`,
             }} />
         </div>
     );

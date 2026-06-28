@@ -10,7 +10,6 @@
 
 import { linearScale, bandScale, pointScale, niceDomain } from './scales.js';
 import type { GraphDirective } from '../../architect/graph-composer.types.js';
-import { activeTierCount } from './chart-tier-groups.js';
 import { baseXAxisReserve } from './x-axis-reserve.js';
 
 /** The maximum number of tier rows any fold can render — `day` fold
@@ -53,22 +52,16 @@ export function buildCartesianLayout(
 ): CartesianLayout {
     const t = chart.type;
     const spark = t === 'sparkline';
-    /* Bottom margin sized to the ACTUAL rendered tier count, not the
-     *  theoretical max for this fold unit. `activeTierCount` peeks at
-     *  the bucket isos and reports how many tiers would emit ≥1 group.
-     *  E.g. a 90-day day-fold window has 'week','month' active but
-     *  'year' empty (no year transition inside 90 days) → 1 base + 2
-     *  tiers = 48px, not 1 + 3 = 62px. */
-    const renderedTiers = activeTierCount(chart);
     /* Base-label row reserve: a flat row is ~20px, but when the base labels
      *  are too wide to fit horizontally the renderer rotates them to -40°
      *  (ChromeXAxisBand) and they drop well below a flat strip. Size the
      *  base reserve from the SAME rotation prediction the renderer uses
      *  (x-axis-reserve, the shared authority) so long category labels —
      *  journal/country names — aren't clipped by the container's
-     *  overflow:hidden. Tier rows (always short: W3/May/2024) add 14px each
-     *  on top; they never rotate. Plot-width estimate uses the 36px L/R
-     *  gutters this same margin sets below. */
+     *  overflow:hidden. Coarser tier rows were removed (the header period
+     *  picker replaced them), so the bottom margin now reserves the base
+     *  label row only. Plot-width estimate uses the 36px L/R gutters this
+     *  same margin sets below. */
     const baseLabels = (chart.data as any[]).map((d: any) => String(d.label ?? ''));
     /* Curve check, computed up here so the categorical test (which gates the
      *  bottom-margin reserve below) can use it. Inlined rather than calling
@@ -78,7 +71,7 @@ export function buildCartesianLayout(
     const isCurveX = t === 'line' || t === 'multi-line' || t === 'area' || t === 'stacked-area' || spark;
     const categorical = !isCurveX && !chart.__foldUnit;
     const baseReserve = baseXAxisReserve(baseLabels, Math.max(1, width - 72), categorical);
-    const defaultBottom = baseReserve + renderedTiers * 14;
+    const defaultBottom = baseReserve;
     /* `right` matches `left` so the plot rect sits horizontally centered
      *  inside the chart canvas (left gutter holds y-axis tick labels;
      *  right gets the same width for visual symmetry, kept empty).
@@ -186,6 +179,26 @@ export interface DragEndpoint {
     iso?: string;
 }
 
+/** Bucket index → drag endpoint: the shared projection both resolvers
+ *  below build on. Folds stacked/multi series the same way the marks do
+ *  and reads the bucket's plot x/y from the layout so a tag pins to the
+ *  bar/point. */
+function cartesianEndpointAt(chart: GraphDirective, layout: CartesianLayout) {
+    const t = chart.type;
+    const data = chart.data as any[];
+    const isStacked = t === 'stacked-bar' || t === 'stacked-area';
+    const isMulti = t === 'multi-line';
+    const series = chart.series || [];
+    return (idx: number): DragEndpoint | null => {
+        if (idx < 0 || idx >= data.length) return null;
+        const d = data[idx];
+        const v = isStacked ? series.reduce((s: number, k: string) => s + (d[k] || 0), 0)
+            : isMulti ? series.reduce((s: number, k: string) => s + (d[k] || 0), 0) / Math.max(1, series.length)
+            : (d?.value ?? 0);
+        return { idx, label: layout.labels[idx], value: v, vbX: layout.pointAt(idx), vbY: layout.yS(v), iso: d?.__startISO as string | undefined };
+    };
+}
+
 export function cartesianDragResolve(
     chart: GraphDirective,
     layout: CartesianLayout,
@@ -194,31 +207,28 @@ export function cartesianDragResolve(
     /* Drag-range is meaningful for charts with discrete buckets along x. */
     if (t === 'scatter' || t === 'bubble' || t === 'sparkline') return null;
     const data = chart.data as any[];
-    const isStacked = t === 'stacked-bar' || t === 'stacked-area';
-    const isMulti = t === 'multi-line';
-    const series = chart.series || [];
-    const valueAt = (i: number): number => {
-        const d = data[i];
-        if (isStacked) return series.reduce((s: number, k: string) => s + (d[k] || 0), 0);
-        if (isMulti) return series.reduce((s: number, k: string) => s + (d[k] || 0), 0) / Math.max(1, series.length);
-        return d?.value ?? 0;
-    };
+    const at = cartesianEndpointAt(chart, layout);
     const pw = layout.xR[1] - layout.xR[0];
     return (viewportX: number, viewportRectWidth: number) => {
         if (viewportRectWidth <= 0 || data.length === 0) return null;
         const vbX = (viewportX / viewportRectWidth) * layout.width;
         const fracInPlot = (vbX - layout.xR[0]) / pw;
         const idx = Math.min(data.length - 1, Math.max(0, Math.floor(fracInPlot * data.length)));
-        const v = valueAt(idx);
-        return {
-            idx,
-            label: layout.labels[idx],
-            value: v,
-            vbX: layout.pointAt(idx),
-            vbY: layout.yS(v),
-            iso: data[idx]?.__startISO as string | undefined,
-        };
+        return at(idx);
     };
+}
+
+/** Endpoint resolver keyed by bucket INDEX (not pointer x). Lets the
+ *  renderer pre-seed a default selection — a 2-bar comparison opens with
+ *  the A→B %-delta tags already pinned, no drag needed. Same null rule as
+ *  the pointer resolver. */
+export function cartesianDragResolveByIdx(
+    chart: GraphDirective,
+    layout: CartesianLayout,
+): ((idx: number) => DragEndpoint | null) | null {
+    const t = chart.type;
+    if (t === 'scatter' || t === 'bubble' || t === 'sparkline') return null;
+    return cartesianEndpointAt(chart, layout);
 }
 
 /** Reverse projection — given a stored `iso` from a previous frame's

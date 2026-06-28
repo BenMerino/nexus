@@ -3,7 +3,7 @@
  *  Add a new domain by extending `STATUS_DICTIONARY` — the type system
  *  enforces every union member has a row. */
 
-export type StatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+export type StatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'orange';
 export interface StatusToneEntry { tone: StatusTone; label: string }
 
 const ORDER_STATUS = {
@@ -13,9 +13,10 @@ const ORDER_STATUS = {
 } as const satisfies Record<string, StatusToneEntry>;
 
 const PAYMENT_STATUS = {
-    paid:    { tone: 'neutral', label: 'Paid' },
-    partial: { tone: 'warning', label: 'Partial' },
-    unpaid:  { tone: 'danger',  label: 'Unpaid' },
+    paid:     { tone: 'neutral', label: 'Paid' },
+    partial:  { tone: 'warning', label: 'Partial' },
+    unpaid:   { tone: 'danger',  label: 'Unpaid' },
+    refunded: { tone: 'orange',  label: 'Refunded' },
 } as const satisfies Record<string, StatusToneEntry>;
 
 const APPOINTMENT_STATUS = {

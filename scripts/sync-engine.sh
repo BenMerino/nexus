@@ -63,11 +63,15 @@ fi
 NXUI="$NEXUS_ROOT/apps/web"
 
 # ── Boundary definition ──────────────────────────────────────────────────────
-# Full-mirror dirs: every Zincro file syncs (recursively).
-FULL_MIRROR_DIRS=( "ui/graph-engine" "ui/visual-lang" )
+# Full-mirror dirs: every Zincro file syncs (recursively). aurora is the GPU
+# "living button" layer BaseAction's aurora variant depends on — full mirror so
+# upstream shader/palette fixes cascade.
+FULL_MIRROR_DIRS=( "ui/graph-engine" "ui/visual-lang" "ui/aurora" )
 # Curated subset dirs: ONLY the files nexus already vendors sync (Zincro's dir
 # has 100s of files nexus doesn't want). New files are NOT pulled automatically.
 SUBSET_DIRS=( "ui/composed" "ui/primitives" )
+# Explicit loose ui/ files (no dir of their own) the engine/DNA layer depends on.
+UI_FILES=( "ui/motion-presets.ts" )
 # Explicit architect files (the engine's ONLY architect deps). chart-kpi.types
 # + graph-directive-runtime.types are pulled if present on Zincro.
 ARCHITECT_FILES=( bucket-sequence.ts fold-atoms.ts fold-atoms-calendar.ts \
@@ -148,6 +152,14 @@ echo "── architect (explicit engine deps) ──"
 for f in "${ARCHITECT_FILES[@]}"; do
   zf="$ZSRC/architect/$f"
   [ -f "$zf" ] && handle "$zf" "architect/$f" || true
+done
+
+# Explicit loose ui/ files
+echo "── ui (explicit loose files) ──"
+for rel in "${UI_FILES[@]}"; do
+  zf="$ZSRC/${rel#ui/}"; zf="$ZSRC/${rel}"
+  # Zincro path mirrors nexus rel (ui/motion-presets.ts → packages/shared/src/ui/motion-presets.ts)
+  [ -f "$zf" ] && handle "$zf" "$rel" || printf '  %-11s %s\n' "Z-MISSING" "$rel"
 done
 
 # ── Drift-UP detection: nexus OVERWRITE files may carry fixes Zincro lacks ────

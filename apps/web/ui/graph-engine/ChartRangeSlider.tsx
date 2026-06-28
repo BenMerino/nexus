@@ -175,7 +175,7 @@ export function ChartRangeSlider({
                     height: `${TRACK_HEIGHT_REM}rem`,
                     background: 'var(--bg-card)',
                     border: '1px solid var(--border-ghost, var(--border-main))',
-                    borderRadius: 'var(--radius-sm, 2px)',
+                    borderRadius: 'var(--radius-sm)',
                     pointerEvents: 'none',
                 }}>
                     {/* Tier ticks — auto-picked from span, minor + major.
@@ -260,7 +260,7 @@ function Handle({ fraction }: { fraction: number }) {
                 width: '4px',
                 height: '14px',
                 background: 'var(--text-main)',
-                borderRadius: '2px',
+                borderRadius: 'var(--radius-xs)',
                 boxShadow: '0 0 0 1px var(--bg-card), 0 0 0 2px color-mix(in srgb, var(--text-main) 30%, transparent)',
                 transition: 'box-shadow 120ms ease',
             }} />

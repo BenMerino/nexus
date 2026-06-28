@@ -1,27 +1,37 @@
-.seg-wrap { position: relative; align-self: flex-start; }
+.seg-wrap {
+  position: relative;
+  align-self: flex-start;
+  /* A SegmentedControl is a CONTROL, so the track reads the control radius
+   * (--radius-pill == --radius-control, 9px) — NOT a surface radius. Every
+   * variant shares this shape; they differ by TREATMENT (fill/shadow/case), not
+   * by roundness. (solid used to read --radius-surface-xl, 24px, which on a 32px
+   * control rounded into a bigger capsule than pill itself.)
+   *
+   * --seg-corner = track radius − inset. The .nest-row formula also subtracts a
+   * 1px BORDER, but this nesting has none: the track's stroke is an OUTLINE
+   * (outline-offset:-1px — zero box cost, not between track and child), and the
+   * ghost segment's border is none. The segment sits flush to the track (no
+   * padding); the indicator is inset --space-0-5 from it → --space-0-5 from the
+   * track edge, no border between. So corner = radius − inset (9−2 = 7px). The
+   * button (ghost, corner never paints) and indicator both read this one value;
+   * the indicator's corner runs parallel to the track. */
+  border-radius: var(--radius-pill);
+  --seg-corner: max(0px, calc(var(--radius-pill) - var(--space-0-5)));
+}
 
-/* Capped pill ROLE, not the raw surface scale: 24px shells clamp to a
- * capsule on a ~28px control — perfectly-round chrome is banned. The
- * indicator/buttons derive concentrically (shell − inset − border). */
 .seg-wrap-pill {
   background: var(--bg-elevated);
-  border-radius: var(--radius-pill);
   outline: 1px solid var(--border-main);
   outline-offset: -1px;
 }
 
-.seg-wrap-tab {
-  background: var(--bg-elevated);
-  border-radius: var(--radius-surface-md);
-  outline: 1px solid var(--border-main);
-  outline-offset: -1px;
-}
-
+/* solid differs from pill only in TREATMENT: a card-bg track + shadow (reads as
+ * a raised control), a brand-FILL indicator (--primary-fill, set inline) and
+ * uppercase --text-inverse labels. Same control shape as every variant. */
 .seg-wrap-solid {
   background: var(--bg-card);
   outline: 1px solid var(--border-main);
   outline-offset: -1px;
-  border-radius: var(--radius-surface-xl);
   box-shadow: var(--shadow-sm);
 }
 
@@ -30,22 +40,51 @@
   align-items: center;
   justify-content: center;
   transition: color 0.15s ease;
+  /* Every segment is a CONTROL: font + weight come from the cascade
+   * (--_ctl-font/--_ctl-weight, set inline via SEG_LABEL_STYLE), the corner
+   * from --seg-corner. ONE label treatment for all variants — they differ by
+   * fill/shadow only. (solid used to hand-set uppercase + a magic
+   * letter-spacing:0.05em, an off-system imitation of the --tracking-label
+   * role; dropped.) */
+  border-radius: var(--seg-corner);
 }
 
-.seg-btn-pill { font-weight: 700; border-radius: max(0px, calc(var(--radius-pill) - var(--space-0-5) - 1px)); }
-.seg-btn-tab { font-weight: 500; border-radius: var(--radius-md); }
-.seg-btn-solid { font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; border-radius: var(--radius-xl); }
-.seg-btn-underline { font-weight: 500; }
+/* Hover highlight follows the SAME nesting mechanic as the active indicator:
+ * inset --space-0-5, corner --seg-corner — so the hover pill and the active
+ * pill share geometry by construction (a hover previews where the indicator
+ * lands). Only inactive segments (:has(.seg-inactive)) get it; the active one
+ * already owns the white indicator. Fill is --bg-highest (one step above the
+ * track's --bg-elevated) so it reads as a hint, distinct from both the track
+ * and the white active pill. Replaces the ghost BaseAction's full-box
+ * :hover bg (--bg-elevated == the track colour → invisible, wrong geometry),
+ * which is suppressed just below. */
+.seg-btn:has(.seg-inactive)::before {
+  content: '';
+  position: absolute;
+  inset: var(--space-0-5);
+  border-radius: var(--seg-corner);
+  background: var(--bg-highest);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  /* z-index 0 (NOT -1): a negative z drops the pseudo BEHIND the track's own
+   * background, which then paints over --bg-highest (invisible). At 0 it sits
+   * above the track; the label (.seg-inactive, position:relative, painted after
+   * ::before) stays on top, so text reads over the highlight. */
+  z-index: 0;
+}
+.seg-btn:has(.seg-inactive):hover::before { opacity: 1; }
+/* The segment IS a ghost BaseAction, whose :hover paints a full-box
+ * --bg-elevated. Suppress it — the inset ::before above is the one highlight. */
+.seg-btn.base-action--ghost:hover { background: transparent; }
 
 .seg-indicator { position: absolute; }
-.seg-indicator-pill { inset: var(--space-0-5); background: var(--bg-card); border-radius: max(0px, calc(var(--radius-pill) - var(--space-0-5) - 1px)); box-shadow: var(--shadow-sm); }
-.seg-indicator-tab { inset: var(--space-0-5); background: var(--bg-card); border-radius: var(--radius-surface-sm); box-shadow: var(--shadow-sm); }
-.seg-indicator-solid { inset: var(--space-0-5); border-radius: var(--radius-surface-lg); box-shadow: var(--shadow-sm); }
-.seg-indicator-underline { bottom: 0; left: 0; right: 0; height: var(--space-0-5); border-radius: var(--radius-full); }
+.seg-indicator-pill { inset: var(--space-0-5); background: var(--bg-card); border-radius: var(--seg-corner); box-shadow: var(--shadow-sm); }
+.seg-indicator-solid { inset: var(--space-0-5); border-radius: var(--seg-corner); box-shadow: var(--shadow-sm); }
 
+/* Label colour (selected = --text-main/-inverse, unselected = --text-muted) is
+ * set INLINE in the component — BaseText injects its default colour inline, so
+ * a class here can't win. These keep only the stacking context the label needs
+ * to sit above the inset hover ::before / active indicator. */
+.seg-label { position: relative; }
 .seg-active { position: relative; }
-.seg-active-tab { color: var(--text-main); }
-.seg-active-solid { color: var(--text-inverse); }
-
-.seg-inactive { position: relative; color: var(--text-muted); }
-.seg-inactive:hover { color: var(--text-main); }
+.seg-inactive { position: relative; }

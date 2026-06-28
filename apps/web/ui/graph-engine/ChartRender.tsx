@@ -28,7 +28,7 @@ import { HitLayerWithRef } from './ChartHitLayer.js';
 import { ChartChromeLayer } from './ChartChromeLayer.js';
 import { TooltipOverlay, useTooltip } from './svg-parts.js';
 import { tipStateFromHover, anchorYFromHover } from './chart-hover-tooltip.js';
-import { useDragRange, RangeHighlight, RangeEndpointTags } from './drag-range.js';
+import { useDragRange, RangeHighlight, RangeEndpointTags, type DragRangeState } from './drag-range.js';
 import { defaultInteraction } from '../../architect/graph-composer.types.js';
 import { useChartTuning } from './ChartTuningContext.js';
 import { buildFamilyAnimation, isRadial, isPolar } from './chart-families.js';
@@ -97,7 +97,7 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
         chart.plotInsets, chart.gaussian, chart.range, chart.geo,
         width, height, axesOverride,
     ]);
-    const { layoutSize, dragResolve, isoToFrame, plotXR, plotYR } = animation;
+    const { layoutSize, dragResolve, dragResolveByIdx, isoToFrame, plotXR, plotYR } = animation;
 
     /* rAF-driven animation: sample → lerp → primitives + chrome. The
      * hook owns the loop; React re-renders when either output changes.
@@ -118,6 +118,18 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
     const ix = chart.interaction ?? defaultInteraction(chart.type);
     const dragEnabled = !!ix.dragRange && !!dragResolve && !!plotYR;
     const { range, onDown: dragDown, onDrag: dragMove, onUp: dragUp, clear: dragClear } = useDragRange();
+    /* Comparison pre-activation: a 2-value bar chart IS an A→B comparison,
+     *  so open it with the range-delta tags already pinned — the same
+     *  green/red %-growth mechanic a drag produces, no drag required. Wider
+     *  bar charts keep drag-to-select; only the 2-bar case auto-opens. The
+     *  user's live drag (when present) supersedes this default. */
+    const defaultRange = useMemo<DragRangeState | null>(() => {
+        if (!(chart.type === 'bar' && Array.isArray(chart.data) && chart.data.length === 2) || !dragResolveByIdx) return null;
+        const start = dragResolveByIdx(0);
+        const end = dragResolveByIdx(chart.data.length - 1);
+        return start && end ? { start, end, dragging: false } : null;
+    }, [chart.type, chart.data, dragResolveByIdx]);
+    const tagRange = (range.start && range.end) ? range : (defaultRange ?? range);
     const dragHandlers = dragEnabled ? {
         onMouseDown: (e: React.MouseEvent<SVGSVGElement>) => {
             const rect = e.currentTarget.getBoundingClientRect();
@@ -219,10 +231,14 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
     const hover = useMemo(() => tip ? { x: tip.vbX, y: tip.vbY } : null, [tip?.vbX, tip?.vbY]);
 
     return (
-        /* Active-area wrapper. Border + radius ring just the plot + axes
-         *  (title row and slider sit outside this div). Wrapper height
-         *  exactly matches the canvas — no padding shell. */
-        <div ref={wrapperRef} style={{ width: '100%', height: `${layoutSize.h}px`, position: 'relative', border: chart.hideFrame ? 'none' : '1px solid var(--border-main)', borderRadius: chart.hideFrame ? 0 : '0.75rem' }}>
+        /* Active-area wrapper around just the plot + axes (title row + slider sit
+         * outside it). It draws NO border/radius: GraphRender already rings the
+         * whole chart in THE card, so a frame here was a border-inside-a-border
+         * (the nested-card look) — both at --radius-card, one inside the other.
+         * The card is owned once, by GraphRender; the plot fills it. (`hideFrame`
+         * is retained as a prop for back-compat but is now the implicit default.)
+         * Height exactly matches the canvas — no padding shell. */
+        <div ref={wrapperRef} style={{ width: '100%', height: `${layoutSize.h}px`, position: 'relative' }}>
             <PlotDottedBackdrop plotXR={plotXR} plotYR={plotYR} layoutW={layoutSize.w} layoutH={layoutSize.h} />
             <ChartCanvasStack
                 primitives={primitives}
@@ -260,7 +276,7 @@ export function ChartRender({ chart: chartProp, width, height, axesOverride, onB
                 hover={hover}
                 onLabelClick={onBucketClick ? handleLabelClick : undefined}
             />
-            {dragEnabled && plotYR && <RangeEndpointTags range={range} scaleX={dragScale.x} scaleY={dragScale.y} currencyCfg={chart.currencyConfig} isoToFrame={isoToFrame} />}
+            {dragEnabled && plotYR && <RangeEndpointTags range={tagRange} scaleX={dragScale.x} scaleY={dragScale.y} currencyCfg={chart.currencyConfig} isoToFrame={isoToFrame} plotXR={plotXR} />}
             <TooltipOverlay
                 tip={tip}
                 yLabel={chart.yLabel}

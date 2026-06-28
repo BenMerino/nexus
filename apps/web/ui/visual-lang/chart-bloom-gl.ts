@@ -181,6 +181,7 @@ export function runBloomChainGl(
     p: ChartBloomGlProgram,
     canvasW: number, canvasH: number,
     threshold: number, intensity: number,
+    blurIterations = 12,
 ): void {
     if (!p.geometryTex || !p.bloomFB_A || !p.bloomFB_B || !p.bloomTex_A || !p.bloomTex_B) return;
     const { gl } = p;
@@ -200,8 +201,10 @@ export function runBloomChainGl(
     gl.bindTexture(gl.TEXTURE_2D, p.geometryTex);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-    /* Repeated H+V blur passes ping-ponging A ↔ B. */
-    const BLUR_ITERATIONS = 12;
+    /* Repeated H+V blur passes ping-ponging A ↔ B. More iterations = a wider,
+     * farther-reaching halo (defaults to 12 for chart callers; PrismTitle asks
+     * for more reach). */
+    const BLUR_ITERATIONS = blurIterations;
     gl.useProgram(p.blur);
     gl.uniform1i(p.uniforms.blur.uSrc, 0);
     gl.uniform2f(p.uniforms.blur.uTexel, 1 / halfW, 1 / halfH);

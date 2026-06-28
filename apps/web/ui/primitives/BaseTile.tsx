@@ -1,6 +1,5 @@
 import React from 'react';
 import { BaseBox, type BaseBoxProps } from './BaseBox.js';
-import { Nestable } from './BaseNested.js';
 import './base-tile.css';
 
 /* ── BaseTile ──────────────────────────────────────────────
@@ -70,26 +69,13 @@ export const BaseTile = React.forwardRef<HTMLElement, BaseTileProps>(function Ba
         active ? 'base-tile--active' : null,
         className,
     ].filter(Boolean).join(' ');
-    /* Publish the tile's radius family (`sm` — the chrome corner)
-     * AND its inner padding to nested descendants via <Nestable>.
-     * Any <BaseNested> child (e.g. the search trigger's ⌘K hint)
-     * reads this and:
-     *   - picks the matching --radius-sm-inner-<inset> inner-radius
-     *   - negates the parent's padding so its INSET is the total
-     *     visible gap from the tile's border, not gap-on-top-of-
-     *     gap (which would put nested badges floating mid-tile)
-     *
-     * Padding contract matches base-tile.css:
-     *   shape=square → padding: var(--space-1-5)  (both axes)
-     *   shape=auto   → padding: 0 var(--space-3)  (X only; Y is 0)
-     */
-    const padX = shape === 'square' ? 'var(--space-1-5)' : 'var(--space-3)';
-    const padY = shape === 'square' ? 'var(--space-1-5)' : '0px';
+    /* Parent-owned nesting: the tile publishes its concentric --_nest-* vars in
+     * base-tile.css (anchored to --_ctl-radius + per-shape --_nest-pad), so a
+     * nested child (e.g. the ⌘K hint) reads var(--_nest-corner). No context
+     * provider needed — the cascade flows through the DOM. */
     return (
-        <Nestable parentRadius="sm" parentPaddingX={padX} parentPaddingY={padY}>
-            <BaseBox ref={ref} as={as} className={cls} {...rest}>
-                {children}
-            </BaseBox>
-        </Nestable>
+        <BaseBox ref={ref} as={as} className={cls} {...rest}>
+            {children}
+        </BaseBox>
     );
 });

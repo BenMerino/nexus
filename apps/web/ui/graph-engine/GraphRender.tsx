@@ -70,15 +70,25 @@ export interface GraphRenderProps {
      * directives). When `false`, a dim/static variant renders so layout
      * doesn't jitter on disconnect. Wire via `controller.isLive`. */
     isLive?: boolean;
+    /** Opt in to showing the live/paused badge. Off by default — most
+     *  charts don't need to advertise their live wiring. `isLive` still
+     *  drives the badge's active/paused state when `showLive` is set. */
+    showLive?: boolean;
     /** Drill breadcrumbs from `useDirectiveController`. When non-empty,
      *  a "← Back" chip renders inside the chart's title row (NOT as a
      *  sibling row above). Wire via `controller.breadcrumbs`. */
     breadcrumbs?: { label: string }[];
     /** Pop one drill level. Wire via `controller.drillUp`. */
     onDrillUp?: () => void;
+    /** Suppress the chart's own card surface (border + radius + bg). GraphRender
+     *  OWNS the card by default — the single, identical chart card everywhere.
+     *  Pass `bare` only when the chart is ONE element inside a richer composite
+     *  card the host already draws (a landing feature card, a storefront block),
+     *  so it doesn't double-border. Chat charts ignore this (always glass). */
+    bare?: boolean;
 }
 
-export function GraphRender({ chart, onToggle, isLoading = false, error, onBucketClick, onWindowChange, isLive, breadcrumbs, onDrillUp }: GraphRenderProps) {
+export function GraphRender({ chart, onToggle, isLoading = false, error, onBucketClick, onWindowChange, isLive, showLive = false, breadcrumbs, onDrillUp, bare = false }: GraphRenderProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     // A choropleth is shape-locked to the world's 2:1 — size the container to
     // that aspect (no max-height cap) so the map fills it with no letterbox.
@@ -132,9 +142,22 @@ export function GraphRender({ chart, onToggle, isLoading = false, error, onBucke
      *  and the width inset so they never drift. */
     const CHART_BOX_PAD_X = 8;
     const isChat = chart.renderContext === 'chat';
-    const tightBorder = legibility === 'tight' ? 'var(--status-warning, #f59e0b)' : 'var(--border-ghost, var(--border-main))';
-    const contextBorder = isChat ? `1px solid ${tightBorder}` : `1px solid var(--border-main)`;
-    const contextBg = isChat ? 'var(--glass-bg, var(--bg-card))' : 'var(--bg-main)';
+    /* GraphRender owns THE chart card — the single source of the chart's surface
+     * (border + radius + bg). Pages place <GraphRender> directly and add NO card
+     * wrapper of their own; double-wrapping was the "card inside a card" (two
+     * borders, two radii) busy-ness. One owner → every chart card is identical
+     * with zero per-page discipline.
+     *   - chat: standalone glass bubble (blur + glass-bg).
+     *   - dashboard: a clean card on the page background (--bg-card surface). */
+    const tightBorder = legibility === 'tight' ? 'var(--status-warning, #f59e0b)' : 'var(--border-subtle, var(--border-main))';
+    /* THE one chart border — a HAIRLINE (--border-subtle), no shadow. Elevation
+     * comes from the page-gray vs card-white tone contrast, not a heavy frame
+     * (the calm Linear/Stripe dashboard look). The inner plot frame is gone, so
+     * this is the only border the chart draws.
+     * `bare` (chart inside a host composite card) → no surface, fill the host. */
+    const contextBorder = bare ? 'none' : (isChat ? `1px solid ${tightBorder}` : '1px solid var(--border-subtle)');
+    const contextBg = bare ? 'transparent' : (isChat ? 'var(--glass-bg, var(--bg-card))' : 'var(--bg-card)');
+    const contextRadius = bare ? '0' : 'var(--radius-card)';
 
     return (
         <HoverProbeProvider>
@@ -142,13 +165,16 @@ export function GraphRender({ chart, onToggle, isLoading = false, error, onBucke
                 ref={containerRef}
                 style={{
                     position: 'relative',
-                    marginTop: '0.5rem',
+                    /* marginTop only in chat (separates the bubble from the
+                     * message above). On a dashboard the page lays the card out
+                     * directly (its own gap), so no top margin here. */
+                    marginTop: isChat ? '0.5rem' : 0,
                     /* No outer padding — chart-config canvases extend to
                      * fill this card via position:absolute. Inner padding
                      * applies to chrome (title, slider, legend) so they
                      * stay readable while the molecule grid covers the
                      * entire card surface. */
-                    borderRadius: '0.75rem',
+                    borderRadius: contextRadius,
                     border: contextBorder,
                     background: contextBg,
                     backdropFilter: isChat ? 'blur(12px)' : undefined,
@@ -188,6 +214,7 @@ export function GraphRender({ chart, onToggle, isLoading = false, error, onBucke
                         error={error}
                         t={t}
                         isLive={isLive}
+                        showLive={showLive}
                         breadcrumbs={breadcrumbs}
                         onDrillUp={onDrillUp}
                     />

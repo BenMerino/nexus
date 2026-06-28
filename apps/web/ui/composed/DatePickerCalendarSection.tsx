@@ -19,9 +19,12 @@ export interface DatePickerCalendarSectionProps {
     rangeStart?: string;
     rangeEnd?: string;
     max?: string;
+    /** Passthrough to the day grid — per-day disable predicate (see
+     *  DatePickerCalendarView). Booking calendar greys closed days with it. */
+    isDisabled?: (iso: string) => boolean;
 }
 
-export function DatePickerCalendarSection({ viewDate, setViewDate, value, onSelect, rangeStart, rangeEnd, max }: DatePickerCalendarSectionProps) {
+export function DatePickerCalendarSection({ viewDate, setViewDate, value, onSelect, rangeStart, rangeEnd, max, isDisabled }: DatePickerCalendarSectionProps) {
     const [mode, setMode] = useState<CalendarHeaderMode>('days');
     return (
         <>
@@ -30,7 +33,7 @@ export function DatePickerCalendarSection({ viewDate, setViewDate, value, onSele
                 onModeToggle={(tier) => setMode(m => m === tier ? 'days' : tier)}
             />
             {mode === 'days'
-                ? <DatePickerCalendarView viewDate={viewDate} value={value} onSelect={onSelect} rangeStart={rangeStart} rangeEnd={rangeEnd} max={max} />
+                ? <DatePickerCalendarView viewDate={viewDate} value={value} onSelect={onSelect} rangeStart={rangeStart} rangeEnd={rangeEnd} max={max} isDisabled={isDisabled} />
                 : <DatePickerMonthYearView mode={mode} viewDate={viewDate} onPick={(d) => { setViewDate(d); setMode('days'); }} />}
         </>
     );

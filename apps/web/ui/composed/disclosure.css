@@ -7,7 +7,11 @@
   border-top: 1px solid var(--border-subtle);
 }
 
-.disclosure__head {
+.disclosure__head.base-action {
+  /* Inset + width + concentric corner come from the shared `.nest-row`
+   * mechanism (theme.css) — NOT restated here. This rule owns only the header's
+   * own layout. Kept as a 2-class selector to outspecify base-action's per-size
+   * padding; it deliberately sets NO geometry so .nest-row governs. */
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -22,6 +26,10 @@
 
 .disclosure__chev {
   flex-shrink: 0;
+  /* Glyph from the ONE control cascade — same --_ctl-icon every control reads,
+   * not a hardcoded px. */
+  width: var(--_ctl-icon);
+  height: var(--_ctl-icon);
   color: var(--text-muted);
   transition: transform 0.15s ease;
 }

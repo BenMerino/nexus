@@ -9,9 +9,14 @@ export interface Segment<T extends string> {
   value: T
   label: string
   icon?: React.ReactNode
+  /** Semantic active color for this segment (e.g. status red/green). When the
+   *  segment is active, its indicator tints to this color and the label adopts
+   *  it, instead of the default --primary. Used by the calendar status/payment
+   *  switchers where color encodes meaning. */
+  activeColor?: string
 }
 
-export type SegmentedControlVariant = 'pill' | 'tab' | 'solid' | 'underline'
+export type SegmentedControlVariant = 'pill' | 'solid'
 
 export interface SegmentedControlProps<T extends string> {
   segments: Segment<T>[]
@@ -28,6 +33,16 @@ export interface SegmentedControlProps<T extends string> {
 
 const SEG_BTN_STYLE: React.CSSProperties = { position: 'relative', zIndex: 10 }
 
+/* The label reads the control cascade — font/weight from the same --_ctl-* the
+ * button publishes, so a segment's text matches the same-tier button. BaseText
+ * defaults to variant="body" and injects --text-body/--weight-body INLINE; a
+ * CSS class can't beat that, so the role is passed inline here (the NEST_LABEL
+ * pattern). Without it every segment rendered at body size, not control size. */
+const SEG_LABEL_STYLE: React.CSSProperties = {
+  fontSize: 'var(--_ctl-font)',
+  fontWeight: 'var(--_ctl-weight)' as React.CSSProperties['fontWeight'],
+}
+
 function SegmentedControlInner<T extends string>({
   segments, value, onChange, variant = 'pill',
   stretch = false, layoutId: layoutIdProp,
@@ -39,53 +54,68 @@ function SegmentedControlInner<T extends string>({
   const autoId = React.useId()
   const layoutId = layoutIdProp ?? autoId
   const isActive = (v: T) => value === v
-  const usesPrimaryIndicator = variant === 'solid' || variant === 'underline'
-  /* `pill` and `underline` paint active text in the brand accent. Use
-   * `--primary-text` (the readable-on-surface accent) NOT raw `--primary`:
-   * a dark-theme primary (e.g. black) is invisible as text, but `--primary`
-   * is still correct as a FILL (the solid/underline indicator below). */
-  const usesPrimaryActiveText = variant === 'pill' || variant === 'underline'
+  const usesPrimaryIndicator = variant === 'solid'
 
   const indicatorStyle: React.CSSProperties = {
-    ...(variant !== 'underline' && { zIndex: -1 }),
-    /* `--primary-fill` (dark-legible), not raw `--primary`: the solid/
-     * underline indicator is a brand FILL — a near-black tenant primary
-     * would vanish on the dark wrapper. Floored in dark via dna-defaults. */
+    zIndex: -1,
+    /* `--primary-fill` (dark-legible), not raw `--primary`: the solid indicator
+     * is a brand FILL — a near-black tenant primary would vanish on the dark
+     * wrapper. Floored in dark via dna-defaults. */
     ...(usesPrimaryIndicator && { backgroundColor: 'var(--primary-fill)' }),
   }
 
-  const activeInlineStyle: React.CSSProperties | undefined = usesPrimaryActiveText
-    ? { color: 'var(--primary-text)' }
-    : undefined
+  /* Label colour MUST be inline: BaseText defaults color="body" and injects
+   * --text-main inline, which beats any .seg-active/.seg-inactive class — so
+   * colour is set here, where it can win. The standard segmented figure-ground:
+   *   selected   = strongest foreground (--text-main; --text-inverse on solid's
+   *                brand fill)
+   *   unselected = --text-muted (recedes)
+   * (Was --primary-text for pill — an accent that vanished for grey-primary
+   * tenants, so selected read the same grey as unselected.) The hover
+   * affordance is the inset highlight (::before), not a text shift. */
+  const activeTextColor = variant === 'solid' ? 'var(--text-inverse)' : 'var(--text-main)'
 
   return (
     <BaseBox className={clsx('seg-wrap', `seg-wrap-${variant}`, className)} display="flex" align="center">
-      {segments.map((seg) => (
+      {segments.map((seg) => {
+        const active = isActive(seg.value)
+        /* A segment's own activeColor (status red/green) overrides the default
+         * indicator fill + active text — color carries meaning here. */
+        const segIndicatorStyle = active && seg.activeColor
+          ? { ...indicatorStyle, backgroundColor: `color-mix(in srgb, ${seg.activeColor} 20%, transparent)`, border: `1px solid ${seg.activeColor}` }
+          : indicatorStyle
+        /* activeColor (status red/green) carries domain meaning → wins over the
+         * default active colour. Inactive segments always read muted. */
+        const labelColor = active
+          ? (seg.activeColor ?? activeTextColor)
+          : 'var(--text-muted)'
+        return (
         <BaseAction
           key={seg.value} type="button" size="sm"
-          onClick={() => { if (!isActive(seg.value)) onChange(seg.value) }}
+          onClick={() => { if (!active) onChange(seg.value) }}
           onMouseEnter={onHover ? () => onHover(seg.value) : undefined}
-          className={clsx('seg-btn', `seg-btn-${variant}`, stretch && 'flex-1')}
+          className={clsx('seg-btn', stretch && 'flex-1')}
           style={SEG_BTN_STYLE}
         >
-          {isActive(seg.value) && (
+          {active && (
             <motion.span
               layoutId={layoutId}
               className={clsx('seg-indicator', `seg-indicator-${variant}`)}
-              style={indicatorStyle}
+              style={segIndicatorStyle}
               {...MOTION.indicatorSlide}
             />
           )}
           <BaseText
             as="span"
-            className={clsx(isActive(seg.value) ? clsx('seg-active', `seg-active-${variant}`) : 'seg-inactive')}
-            style={isActive(seg.value) ? activeInlineStyle : undefined}
+            className={clsx('seg-label', active ? 'seg-active' : 'seg-inactive')}
+            style={{ ...SEG_LABEL_STYLE, color: labelColor }}
           >
             {seg.icon && <BaseText as="span" className="shrink-0 inline-flex">{seg.icon}</BaseText>}
             {seg.label}
           </BaseText>
         </BaseAction>
-      ))}
+        )
+      })}
     </BaseBox>
   )
 }

@@ -71,6 +71,12 @@ export interface ChartChromeAxisY {
     domain: { min: number; max: number; step: number };
     range: [number, number];
     x: number;
+    /** Optional plot x-span `[left, right]` in viewBox px. When set, the
+     *  renderer draws a faint horizontal gridline across the plot at each
+     *  INTERIOR tick (the baseline 0 and the top tick are skipped — the
+     *  axis frame already marks those). These replace the dotted backdrop
+     *  as the in-plot value reference. */
+    gridX?: [number, number];
 }
 
 export interface ChartChromeThresholdLine {

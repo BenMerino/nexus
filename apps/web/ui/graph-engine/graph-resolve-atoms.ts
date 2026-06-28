@@ -57,6 +57,23 @@ export function resolveAtomicDirective(chart: GraphDirective): GraphDirective {
     const totalDays = (lastDayEndKey - firstKey + 1) / HOURS_PER_DAY;
     const visibleDays = windowDays ?? totalDays;
     let windowStartKey = windowEndKey - visibleDays * HOURS_PER_DAY + 1;
+    /* Trim the window to the actual DATA EXTENT. A period drill sets the window
+     *  to the whole calendar period (e.g. a full year), but the data may only
+     *  cover part of it — drill "2026" with 11 months of data and the empty
+     *  leading/trailing month would still be plotted, eating ~1/12 of the plot
+     *  WIDTH for a blank bucket. Clamping the window edges to [firstKey,
+     *  lastDayEndKey] drops those out-of-data edge empties so the real buckets
+     *  fill the width. INTERIOR gaps (a missing month between two populated
+     *  ones) sit inside the extent and are untouched — they stay as honest
+     *  gaps. Only the edges, where the window overruns the data, are pulled in.
+     *  (No-op when the window already sits within the data, e.g. a rolling
+     *  slider window.) Skipped if the window doesn't overlap the data at all —
+     *  clamping a disjoint window would invert it; leave it for the empty-view
+     *  path to handle. */
+    if (windowEndKey >= firstKey && windowStartKey <= lastDayEndKey) {
+        windowEndKey = Math.min(windowEndKey, lastDayEndKey);
+        windowStartKey = Math.max(windowStartKey, firstKey);
+    }
     /* Does any atom carry sub-day data? Drives whether 'hour' is in
      *  the fold ladder. Daily-only atoms never reach the hour rung. */
     const hasHourly = chart.atoms.some(a => typeof a.hour === 'number' && a.hour > 0);

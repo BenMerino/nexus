@@ -15,11 +15,6 @@ import { type CartesianLayout, isCurve } from './chart-primitives-cartesian.js';
 import { xAxisLabelLayout } from './ChromeXAxisBand.js';
 import { valueLabelElements } from './chrome-value-labels.js';
 import { annotationElements, annotatedIndices } from './chrome-annotations.js';
-import {
-    coarserTiersFor,
-    groupByTier,
-    parentPeriodKey,
-} from './chart-tier-groups.js';
 
 export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout): ChartChrome {
     const t = chart.type;
@@ -135,40 +130,12 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
             ...(annAnchors && annAnchors.length ? { anchors: annAnchors } : {}),
         };
         elements.push(baseBand);
-        /* Hierarchical X-axis tiers: when buckets carry calendar
-         *  metadata, render coarser context rows beneath the base labels. */
-        const tiers = coarserTiersFor(chart.__foldUnit);
-        for (let tierIdx = 0; tierIdx < tiers.length; tierIdx++) {
-            const tierUnit = tiers[tierIdx];
-            const groups = groupByTier(chart, layout, tierUnit);
-            if (groups.length === 0) continue;
-            const tierY = layout.yR[1] + (tierIdx + 1) * 14;
-            /* Semantic anchors: labels marking the start of a coarser
-             *  period. The decimator MUST keep these whenever they fit,
-             *  so users always see e.g. "May W1" even when surrounding
-             *  W2/W3/W4 would crowd. */
-            const anchors: number[] = [];
-            for (let i = 1; i < groups.length; i++) {
-                if (parentPeriodKey(groups[i].key, tierUnit) !== parentPeriodKey(groups[i - 1].key, tierUnit)) {
-                    anchors.push(i);
-                }
-            }
-            elements.push({
-                kind: 'x-axis-band',
-                labels: groups.map(g => g.label),
-                keys: groups.map(g => g.key),
-                /* Tier-group keys already use the period grammar (`2026`,
-                 *  `2026-03`) — they ARE the drill identity. */
-                periodKeys: groups.map(g => g.key),
-                range: layout.xR,
-                xAt: (i: number) => groups[i].centerX,
-                y: tierY,
-                leadingEdgeXs: groups.map(g => g.startX),
-                trailingEdgeXs: groups.map(g => g.endX),
-                plotYR: layout.yR,
-                anchors,
-            });
-        }
+        /* Coarser context (month/year) is NO LONGER stacked as redundant
+         *  tier ROWS under the base labels — viewing January at day fold
+         *  used to repeat "Jan"/"2026" across every column. The base band
+         *  now shows ONLY the smallest bucket (the days), and the coarser
+         *  period is selected from the header period picker (ChartBody),
+         *  which drives the same period-narrow drill the tier labels did. */
     }
 
     /* Y-axis: tick values along the left edge of the plot rect. */
@@ -181,6 +148,7 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
             domain: yDom,
             range: [layout.yR[1], layout.yR[0]],
             x: layout.margin.left,
+            gridX: layout.xR,
         });
     } else {
         elements.push({
@@ -188,6 +156,7 @@ export function cartesianChrome(chart: GraphDirective, layout: CartesianLayout):
             domain: layout.yDom,
             range: [layout.yR[1], layout.yR[0]],
             x: layout.margin.left,
+            gridX: layout.xR,
         });
     }
 

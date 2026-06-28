@@ -4,12 +4,22 @@
  * the page. WebGPU-first; falls back to WebGL2 when the browser doesn't
  * expose `navigator.gpu` (Safari ≤25, older mobile, server-side render).
  *
- * One OffscreenCanvas + one render context for the whole page. Each
- * consumer's visible canvas uses the cheap `bitmaprenderer` context (not
- * GPU) and receives an `ImageBitmap` of the rendered frame via
- * `transferToImageBitmap()`. The shared renderer resizes its buffer to
- * the target's pixel dimensions, draws, then transfers — repeat per
- * consumer per frame. Total active GPU contexts: 1.
+ * Presentation differs by backend:
+ *  - WebGPU: one shared `GPUDevice` + shared pipelines; each consumer's
+ *    visible canvas gets its OWN `webgpu` context configured against that
+ *    device, and the renderer draws straight into it (no `bitmaprenderer`
+ *    hop, which would clamp to 8-bit SDR). The bloom/geometry math runs at
+ *    rgba16float headroom in OFFSCREEN targets; the visible canvas is
+ *    presented in the browser's preferred format (bgra8unorm) because
+ *    rgba16float is not a presentable canvas format on Safari ≤27 (it
+ *    composites opaque-black). With `standard` tone mapping the >1.0 values
+ *    are clamped at present anyway, so SDR presentation loses nothing the
+ *    glow relied on. Device + pipelines are shared (1 device), only the
+ *    per-canvas swapchain differs.
+ *  - WebGL2 (fallback): one OffscreenCanvas + one GL context for the whole
+ *    page; each consumer's visible canvas uses the cheap `bitmaprenderer`
+ *    context and receives an `ImageBitmap` per frame via
+ *    `transferToImageBitmap()`. SDR only. Total active GL contexts: 1.
  *
  * Public API is backend-agnostic — `renderFrame()` takes cell data and
  * uniforms and handles the entire lifecycle (clear, upload, draw,
@@ -49,9 +59,15 @@ export interface DrawParams {
 
 export interface SharedRenderer {
     backend: 'webgpu' | 'webgl2';
-    /** Render one molecule-grid frame (LoaderMolecule path). */
+    /** True when frames composite as extended-range HDR (WebGPU path).
+     *  False on the WebGL2 fallback, which is SDR-only. */
+    hdr: boolean;
+    /** Render one molecule-grid frame straight into the consumer's visible
+     *  canvas (LoaderMolecule path). The renderer owns the canvas's
+     *  presentation context (webgpu or bitmaprenderer) — the caller just
+     *  hands over the element. */
     renderFrame(
-        bitmapCtx: ImageBitmapRenderingContext,
+        canvas: HTMLCanvasElement,
         wPx: number, hPx: number,
         cols: number, rows: number,
         cellData: Float32Array,
@@ -62,7 +78,7 @@ export interface SharedRenderer {
      *  vertex (8 floats × 3 verts per triangle). All chart families feed
      *  through this single API. */
     renderChart(
-        bitmapCtx: ImageBitmapRenderingContext,
+        canvas: HTMLCanvasElement,
         wPx: number, hPx: number,
         vertices: Float32Array,
         triCount: number,
@@ -102,6 +118,7 @@ if (hot) {
     hot.accept('./chart-geometry-wgsl.js', () => { acquisition = null; });
     hot.accept('./chart-geometry-shaders.js', () => { acquisition = null; });
     hot.accept('./chart-bloom-gpu.js', () => { acquisition = null; });
+    hot.accept('./chart-bloom-gpu-run.js', () => { acquisition = null; });
     hot.accept('./chart-bloom-wgsl.js', () => { acquisition = null; });
     hot.accept('./chart-bloom-gl.js', () => { acquisition = null; });
     hot.accept('./chart-bloom-shaders.js', () => { acquisition = null; });

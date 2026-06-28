@@ -17,7 +17,7 @@
 import { CHART_BLOOM_WGSL } from './chart-bloom-wgsl.js';
 
 const UNIFORM_FLOATS = 8;
-const UNIFORM_BYTES = UNIFORM_FLOATS * 4;
+export const UNIFORM_BYTES = UNIFORM_FLOATS * 4;
 
 export interface ChartBloomGpuProgram {
     device: GPUDevice;
@@ -42,6 +42,7 @@ export interface ChartBloomGpuProgram {
 export function createChartBloomGpuProgram(
     device: GPUDevice,
     format: GPUTextureFormat,
+    canvasFormat: GPUTextureFormat,
 ): ChartBloomGpuProgram {
     const module = device.createShaderModule({
         label: 'chart-bloom-wgsl',
@@ -89,11 +90,17 @@ export function createChartBloomGpuProgram(
         fragment: { module, entryPoint: 'fs_blur', targets: [{ format, blend: blendOpaque }] },
         primitive: { topology: 'triangle-list' },
     });
+    /* Composite writes the VISIBLE canvas, so its target is the canvas's
+     * presentation format (preferred / bgra8unorm), not the rgba16float
+     * used for the offscreen bloom/geometry intermediates. Safari ≤27
+     * cannot present rgba16float — configuring the canvas with it composites
+     * opaque-black and the page never shows through. Extract/blur above
+     * write offscreen, so they stay `format`. */
     const compositePipeline = device.createRenderPipeline({
         label: 'chart-bloom-composite',
         layout: device.createPipelineLayout({ bindGroupLayouts: [compositeLayout] }),
         vertex: { module, entryPoint: 'vs_fullscreen' },
-        fragment: { module, entryPoint: 'fs_composite', targets: [{ format, blend: blendPremul }] },
+        fragment: { module, entryPoint: 'fs_composite', targets: [{ format: canvasFormat, blend: blendPremul }] },
         primitive: { topology: 'triangle-list' },
     });
 
@@ -161,140 +168,4 @@ export function ensureBloomTextures(
     p.cacheW = canvasW;
     p.cacheH = canvasH;
     return { geometryView: p.geometryTex.createView() };
-}
-
-/** Number of H+V Gaussian blur iterations. Each pair of passes spreads
- *  the halo further; with σ=2 9-tap kernel at half-res, 12 iterations
- *  give ~70px of bleed in source-canvas pixels — wide enough for a
- *  smooth diffuse halo without visible banding from over-strided
- *  sampling. Two pyramid levels would be cheaper, but at this iteration
- *  count we're still well under 1ms per chart frame. */
-const BLUR_ITERATIONS = 12;
-
-/** Run the full bloom chain: extract → N×(blur H + blur V) → composite
- *  to `canvasView`. Caller is responsible for the geometry pass writing
- *  into `geometryTex` BEFORE this is invoked. */
-export function runBloomChain(
-    p: ChartBloomGpuProgram,
-    canvasView: GPUTextureView,
-    canvasW: number,
-    canvasH: number,
-    threshold: number,
-    intensity: number,
-): void {
-    if (!p.geometryTex || !p.bloomA || !p.bloomB) return;
-    const halfW = Math.max(1, Math.floor(canvasW / 2));
-    const halfH = Math.max(1, Math.floor(canvasH / 2));
-    const f = p.uniformF32;
-
-    /* Sub-helper: write the current scratch into the uniform buffer
-     * AND submit a one-pass command buffer immediately. Doing each
-     * pass in its own submission guarantees writeBuffer-then-draw
-     * ordering — the alternative (one big encoder, multiple
-     * writeBuffers to the same offset) reads the FINAL value in every
-     * pass, which is why early versions of this had only-vertical
-     * blur. */
-    const submitOnePass = (
-        targetView: GPUTextureView,
-        pipeline: GPURenderPipeline,
-        bindGroup: GPUBindGroup,
-    ): void => {
-        const encoder = p.device.createCommandEncoder({ label: 'chart-bloom-pass' });
-        const pass = encoder.beginRenderPass({
-            colorAttachments: [{
-                view: targetView,
-                loadOp: 'clear', storeOp: 'store',
-                clearValue: { r: 0, g: 0, b: 0, a: 0 },
-            }],
-        });
-        pass.setPipeline(pipeline);
-        pass.setBindGroup(0, bindGroup);
-        pass.draw(3);
-        pass.end();
-        p.device.queue.submit([encoder.finish()]);
-    };
-
-    /* 1. Extract: geometryTex → bloomA at half-res. */
-    f[0] = 1 / canvasW; f[1] = 1 / canvasH;
-    f[2] = threshold; f[3] = 0; f[4] = 0;
-    f[5] = 0; f[6] = 0; f[7] = 0;
-    p.device.queue.writeBuffer(p.uniformBuffer, 0, p.uniformScratch, 0, UNIFORM_BYTES);
-    submitOnePass(
-        p.bloomA.createView(),
-        p.extractPipeline,
-        p.device.createBindGroup({
-            layout: p.extractLayout,
-            entries: [
-                { binding: 0, resource: { buffer: p.uniformBuffer } },
-                { binding: 1, resource: p.geometryTex.createView() },
-                { binding: 2, resource: p.sampler },
-            ],
-        }),
-    );
-
-    /* 2. Repeated H+V blur passes ping-ponging A ↔ B. */
-    for (let iter = 0; iter < BLUR_ITERATIONS; iter++) {
-        /* Blur H: A → B. */
-        f[0] = 1 / halfW; f[1] = 1 / halfH;
-        f[2] = 0; f[3] = 0; f[4] = 0; /* axis=0 (horizontal) */
-        f[5] = 0; f[6] = 0; f[7] = 0;
-        p.device.queue.writeBuffer(p.uniformBuffer, 0, p.uniformScratch, 0, UNIFORM_BYTES);
-        submitOnePass(
-            p.bloomB.createView(),
-            p.blurPipeline,
-            p.device.createBindGroup({
-                layout: p.extractLayout,
-                entries: [
-                    { binding: 0, resource: { buffer: p.uniformBuffer } },
-                    { binding: 1, resource: p.bloomA.createView() },
-                    { binding: 2, resource: p.sampler },
-                ],
-            }),
-        );
-        /* Blur V: B → A. */
-        f[4] = 1; /* axis=1 (vertical) */
-        p.device.queue.writeBuffer(p.uniformBuffer, 0, p.uniformScratch, 0, UNIFORM_BYTES);
-        submitOnePass(
-            p.bloomA.createView(),
-            p.blurPipeline,
-            p.device.createBindGroup({
-                layout: p.extractLayout,
-                entries: [
-                    { binding: 0, resource: { buffer: p.uniformBuffer } },
-                    { binding: 1, resource: p.bloomB.createView() },
-                    { binding: 2, resource: p.sampler },
-                ],
-            }),
-        );
-    }
-
-    /* 3. Composite: geometryTex + bloomA → canvas. */
-    f[0] = 1 / canvasW; f[1] = 1 / canvasH;
-    f[2] = 0; f[3] = intensity; f[4] = 0;
-    f[5] = 0; f[6] = 0; f[7] = 0;
-    p.device.queue.writeBuffer(p.uniformBuffer, 0, p.uniformScratch, 0, UNIFORM_BYTES);
-    {
-        const bg = p.device.createBindGroup({
-            layout: p.compositeLayout,
-            entries: [
-                { binding: 0, resource: { buffer: p.uniformBuffer } },
-                { binding: 1, resource: p.geometryTex.createView() },
-                { binding: 2, resource: p.sampler },
-                { binding: 3, resource: p.bloomA.createView() },
-            ],
-        });
-        const encoder = p.device.createCommandEncoder({ label: 'chart-bloom-composite-encoder' });
-        const pass = encoder.beginRenderPass({
-            colorAttachments: [{
-                view: canvasView,
-                loadOp: 'clear', storeOp: 'store',
-                clearValue: { r: 0, g: 0, b: 0, a: 0 },
-            }],
-        });
-        pass.setPipeline(p.compositePipeline);
-        pass.setBindGroup(0, bg);
-        pass.draw(3);
-        pass.end();
-        p.device.queue.submit([encoder.finish()]);
-    }
 }

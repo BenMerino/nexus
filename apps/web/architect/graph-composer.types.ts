@@ -62,7 +62,7 @@ export function defaultInteraction(type: string): InteractionMode {
     if (type === 'area' || type === 'stacked-area') return { crosshair: 'vertical', dragRange: true, transitionMs: 80, axes: 'standard' };
     if (type === 'heatmap') return { crosshair: 'cell', dragRange: false, transitionMs: 60, axes: 'marginal' };
     if (type === 'choropleth') return { crosshair: 'none', dragRange: false, transitionMs: 60, axes: 'none' };
-    if (type === 'bar' || type === 'stacked-bar') return { crosshair: 'none', dragRange: false, transitionMs: 60, axes: 'standard' };
+    if (type === 'bar' || type === 'stacked-bar') return { crosshair: 'none', dragRange: true, transitionMs: 60, axes: 'standard' };
     if (type === 'sparkline') return { crosshair: 'none', dragRange: false, transitionMs: 80, axes: 'none' };
     return { crosshair: 'none', dragRange: false, transitionMs: 0, axes: 'none' };
 }
@@ -161,11 +161,12 @@ export type GraphToggleSpec = ToggleSpec<GraphQuery>;
 export interface GraphDirective extends ReplayableDirective<GraphQuery>, GraphDirectiveRuntime {
     type: GraphType;
     title: string;
-    /** Optional KPI headline rendered ABOVE the chart: a large figure with
-     *  an uppercase caption and an optional rising/flat/falling trend chip.
-     *  Off by default. Two governed sources, split on the authoritative-vs-
-     *  cosmetic line (ANTI_PATTERNS §1):
-     *
+    /** Optional muted second line under the title (single-owner card heading). */
+    subtitle?: string;
+    /** Optional KPI headline rendered ABOVE the chart: a large figure with an
+     *  uppercase caption and an optional rising/flat/falling trend chip. Off by
+     *  default. Two governed sources, split on the authoritative-vs-cosmetic
+     *  line (ANTI_PATTERNS §1):
      *   • `reduce` — a COSMETIC reduction of the plotted series (mean/sum/
      *     slope/…). The engine derives the figure from the chart's own
      *     `__buckets` in `resolveAtomicDirective`, so it recomputes on
@@ -174,10 +175,8 @@ export interface GraphDirective extends ReplayableDirective<GraphQuery>, GraphDi
      *   • `figure` — an AUTHORITATIVE value the composer owns server-side
      *     (a "score", a booked revenue total). Pre-formatted, presented
      *     as-is; never re-derived client-side.
-     *
-     *  `trend.auto` classifies the reduction's slope into rising/flat/
-     *  falling (cosmetic path only). `trend` literal sets it explicitly. */
-    /** Optional KPI headline rendered ABOVE the chart. See `GraphKpi`. */
+     *  `trend.auto` classifies the reduction's slope into rising/flat/falling
+     *  (cosmetic path only); a `trend` literal sets it explicitly. */
     kpi?: GraphKpi;
     /** Pre-bucketed render data. Legacy field — directives that have NOT
      *  migrated to the atomic foundation still populate this directly.

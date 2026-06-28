@@ -1,0 +1,199 @@
+/* The ONE input shell. Border, radius, focus ring, padding, disabled — defined
+ * once here so every input molecule (Select, TimePicker, NumberField, ColorField)
+ * shares identical chrome instead of redrawing it. Height tracks the control-size
+ * cascade (--_ctl-h) when an ancestor sets controlSize; otherwise falls back. */
+
+.input-frame {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--_ctl-h);
+  padding-block: var(--_ctl-pad-block, var(--space-2));
+  /* As a `.nest-row` (SearchField inside a panel), read the shared compensated
+   * inset so the leading glyph aligns with the ListItem checkboxes beside it.
+   * Standalone (Select/NumberField, no .nest-row) `--nest-px` is unset → full
+   * `--_ctl-px`. One authority, no per-component re-derivation. */
+  padding-inline: var(--nest-px, var(--_ctl-px));
+  background: var(--bg-card);
+  border: var(--_ctl-border) solid var(--border-main);
+  /* Corner is the flat control radius by default. When inset inside a rounded
+   * surface, the host sets --input-frame-radius to the concentric value so the
+   * frame curves PARALLEL to the surface (like the ListItem pills beside it). */
+  border-radius: var(--input-frame-radius, var(--_ctl-radius));
+  font-size: var(--_ctl-font);
+  font-weight: var(--_ctl-weight);
+  color: var(--text-main);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+/* As a nest-row (SearchField in a panel) the typed text reads the shared label
+ * role, so it matches the ListItem options + disclosure header stacked with it.
+ * Standalone frames keep --_ctl-font above. The input inherits via `font:
+ * inherit`. */
+.nest-row.input-frame {
+  font-size: var(--nest-label-font);
+  font-weight: var(--nest-label-weight);
+}
+
+.input-frame:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.input-frame[data-disabled='true'] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* The editable guts stretch; affordances (icon, chevron, unit) hold their size. */
+.input-frame__body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+}
+
+.input-frame__affordance {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+/* The affordance slot is the SOLE authority for its glyph's size: a glyph
+ * dropped directly in it is clamped to --_ctl-icon, the same guard buttons have
+ * (.action-icon svg in base-action.css). Many call sites still pass raw lucide
+ * icons with an INLINE size — `icon={<Clock style={{width:14}} />}` — which a
+ * normal rule loses to (inline wins); that 14px-vs-BaseIcon-12px split is the
+ * NumberField-Clock vs TimePicker-Clock mismatch. `!important` makes the slot
+ * win regardless of how the glyph was passed, so the cascade size holds by
+ * construction — the caller can't outsize it. (The right call-site fix is still
+ * <BaseIcon>; this backstops the ones that aren't.)
+ *
+ * `> svg` (direct child) only: a glyph nested in a sub-control inside the slot
+ * (NumberField's stepper buttons, intentionally --icon-control-sm via BaseIcon
+ * size="xs") keeps its own size. */
+.input-frame__affordance > svg {
+  width: var(--_ctl-icon) !important;
+  height: var(--_ctl-icon) !important;
+}
+
+/* Leading affordance of a nest-row search field (the lupe): occupy the shared
+ * --nest-lead column so the input text lines up with the ListItem labels and
+ * the lupe lines up with the checkboxes below it. Scoped to .nest-row so
+ * standalone frames (Select, NumberField) keep content-width affordances. */
+.nest-row .input-frame__body > .input-frame__affordance {
+  width: var(--nest-lead);
+}
+
+/* Trailing-slot bulk actions (All/None) are pills, so their OWN box needs UNIFORM
+ * padding — the control cascade gives base-action `padding: 0 --_ctl-px` (0
+ * vertical / 12px horizontal: a wide, flat box, fine for a full-height control but
+ * lopsided for a free-floating pill). Override to ONE symmetric padding
+ * (--space-1-5) on all four sides + height:auto so the box wraps the label with an
+ * equal gutter every side (verify: `zincro render … ` → asymmetricBoxes should NOT
+ * list these). Concentric --_nest-corner; font (--_ctl-font) untouched. */
+.nest-row > .input-frame__affordance .base-action {
+  height: auto;
+  padding: var(--space-1-5);
+  line-height: 1;
+  border-radius: var(--_nest-corner);
+}
+/* The trailing affordance sits at the frame's CONTENT edge (inside both the
+ * --nest-px padding AND the 1px frame border). Its VERTICAL gutter is --row-inset,
+ * measured to the visible BORDER (the pill is centred in the border-box). To match
+ * that horizontally the pill's right edge must land --row-inset from the same
+ * BORDER — so pull the slot out by the padding it sits inside (--nest-px) AND the
+ * border it sits inside (--_ctl-border), leaving exactly --row-inset:
+ *   gutter = row-inset.  (The old `row-inset − nest-px` stopped at the content
+ *   edge, so the gutter measured to the border was row-inset + border = 5px, 1px
+ *   looser than the 4px vertical — the off-by-the-border misalignment.) */
+.nest-row > .input-frame__affordance {
+  margin-right: calc(var(--row-inset) - var(--nest-px) - var(--_ctl-border));
+  /* Size to the pills, not 2px short: the flex slot was resolving narrower than
+   * its content, so the trailing pill overflowed it on the RIGHT — the margin
+   * above positions the SLOT, so an overflowing pill defeated the gutter. */
+  width: max-content;
+}
+
+/* Bare input reset — the guts inherit the frame's font/color and carry no chrome
+ * of their own (the frame draws the border + focus ring). This OVERRIDES the
+ * global `input` reset in theme.css, which otherwise paints background, a 0.75rem
+ * radius, and (on :focus) a grey background — a rounded blob inside the frame.
+ * The :focus selector is required because `input:focus` outspecifies one class. */
+.input-frame__input,
+.input-frame__input:focus {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  /* Inherit the frame's text metrics via LONGHANDS, not the `font` shorthand:
+   * the shorthand also resets font-family, which (re-asserted on :focus with
+   * higher specificity than a call-site class) clobbered ColorField's
+   * `font-family: monospace` the moment the hex input was focused. So metrics
+   * inherit here on BOTH base + focus; font-family is inherited on the BASE rule
+   * ONLY (below) so a call-site family override survives focus. */
+  font-size: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  line-height: inherit;
+  color: inherit;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Kill the native number spinner — its rounded chrome reads as a doll too. */
+  appearance: none;
+  -moz-appearance: textfield;
+}
+
+/* font-family on the BASE rule ONLY (not :focus): a native <input> does NOT
+ * inherit font-family by default (form controls use the UA font — Arial), so
+ * without this every input-frame input rendered in Arial instead of Inter. Set
+ * here it inherits the frame's family; absent from :focus so a call-site family
+ * (ColorField's monospace) still wins on focus. */
+.input-frame__input {
+  font-family: inherit;
+}
+
+.input-frame__input::-webkit-outer-spin-button,
+.input-frame__input::-webkit-inner-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* NumberField steppers — our own up/down chevrons replacing the native spinner.
+ * Stacked, compact, muted; flat (no box) so they don't reintroduce a doll. */
+.number-field__steppers {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.number-field__step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Tracks the control cascade: the hit box is the glyph (--_ctl-icon) plus a
+   * touch of room, so two stacked steppers fit the control height and grow with
+   * the tier — not a fixed --space-4 that stayed 16px at every size. */
+  width: calc(var(--_ctl-icon) + var(--space-1));
+  height: calc(var(--_ctl-icon) + var(--space-1));
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+
+.number-field__step:hover:not(:disabled) {
+  color: var(--text-main);
+}

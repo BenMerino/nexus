@@ -1,0 +1,55 @@
+/* ── BaseCheckbox ──────────────────────────────────────────
+ * The one squared-rounded checkbox skin over a native <input>. Lifted from
+ * DataTable's `.dt-checkbox` so the table and the multi-select list share it.
+ * The check + dash geometry is em-relative so it scales with the box `size`.
+ * Raw dims here draw the glyph (S16-exempt, same as the original). */
+
+.base-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: var(--space-4);
+  height: var(--space-4);
+  cursor: pointer;
+  margin: 0;
+  vertical-align: middle;
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-xs);
+  background: var(--bg-card);
+  display: inline-block;
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--motion-normal) ease, border-color var(--motion-normal) ease;
+}
+.base-checkbox:hover { border-color: var(--primary); }
+/* Checked = a solid filled box. No inner checkmark — the fill alone signals
+ * selection (the indeterminate dash below is a distinct tri-state, kept). */
+.base-checkbox:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.base-checkbox:indeterminate {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.base-checkbox:indeterminate::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0.6em; /* arch-audit-ignore: S16 */
+  height: 2px; /* arch-audit-ignore: S16 */
+  background: var(--text-inverse, white);
+}
+.base-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Presentational — the host row owns the click; the box is inert visual. */
+.base-checkbox--presentational {
+  pointer-events: none;
+}
+.base-checkbox:focus-visible {
+  outline: 2px solid var(--primary); /* arch-audit-ignore: S16 */
+  outline-offset: 2px; /* arch-audit-ignore: S16 */
+}

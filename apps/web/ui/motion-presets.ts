@@ -37,6 +37,19 @@ export const MOTION = {
     exit: { opacity: 0, y: -4 },
     transition: { duration: 0.14, ease: 'easeOut' as const },
   },
+  /** Glass overlays (dropdown/menu/picker bodies) — the ONE preset for any
+   *  surface that carries `backdrop-filter`. Animates clip-path (a wipe from the
+   *  top edge) + a hair of scale; deliberately NO opacity. Opacity tweens flatten
+   *  the element into a group buffer, which detaches the child's backdrop-filter
+   *  from the real backdrop — the glass then only renders at the final frame.
+   *  Clip-reveal keeps the surface fully opaque so the blur is live + perfect for
+   *  every frame. Applied by <Popover> (the one popover engine), never hand-rolled. */
+  glassReveal: {
+    initial: { clipPath: 'inset(0 0 100% 0)', scale: 0.985 },
+    animate: { clipPath: 'inset(0 0 0% 0)', scale: 1 },
+    exit: { clipPath: 'inset(0 0 100% 0)', scale: 0.985 },
+    transition: { duration: 0.16, ease: [0.16, 1, 0.3, 1] as const },
+  },
   /** Cards, list items on scroll (viewport-triggered) */
   scrollEnter: {
     initial: { opacity: 0, y: 20 },

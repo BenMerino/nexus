@@ -116,10 +116,17 @@ export function RangeHighlight({ range, yR, isoToFrame }: {
  *  endpoint whose iso isn't visible in the current window is hidden;
  *  the other one stays. Δ% uses live values, so a partial-visibility
  *  view still reports the right percentage from the stored counterpart. */
-export function RangeEndpointTags({ range, scaleX, scaleY, currencyCfg, isoToFrame }: {
+export function RangeEndpointTags({ range, scaleX, scaleY, currencyCfg, isoToFrame, plotXR }: {
     range: DragRangeState; scaleX: number; scaleY: number;
     currencyCfg?: { currency?: string; currencyFormat?: string };
     isoToFrame?: ((iso: string) => DragEndpoint | null) | null;
+    /** Plot x-range in viewBox px. The end tag points right by default, but
+     *  the right edge of the card has no axis gutter — a right-pointing tag
+     *  on the last bucket overflows the clipped card. So when the end
+     *  endpoint sits in the right portion of the plot, the tag flips to point
+     *  inward (left) instead. The start tag keeps pointing left: the left
+     *  side has the y-axis gutter, so its outer tag always has room. */
+    plotXR?: [number, number] | null;
 }) {
     if (!range.start || !range.end) return null;
     if (range.start.idx === range.end.idx) return null;
@@ -134,6 +141,8 @@ export function RangeEndpointTags({ range, scaleX, scaleY, currencyCfg, isoToFra
     const pct = sVal !== 0 ? Math.round((delta / sVal) * 100) : 0;
     const deltaColor = delta >= 0 ? 'var(--status-success, #10b981)' : 'var(--status-error, #ef4444)';
     const sign = delta >= 0 ? '+' : '';
+    const span = plotXR ? Math.max(1, plotXR[1] - plotXR[0]) : 1;
+    const endSide: 'left' | 'right' = (plotXR && liveE && (liveE.vbX - plotXR[0]) / span > 0.6) ? 'left' : 'right';
     return (
         <>
             {liveS && (
@@ -146,7 +155,7 @@ export function RangeEndpointTags({ range, scaleX, scaleY, currencyCfg, isoToFra
             {liveE && (
                 <EndpointMarker
                     x={liveE.vbX * scaleX} y={liveE.vbY * scaleY}
-                    side="right" dotColor={deltaColor}
+                    side={endSide} dotColor={deltaColor}
                     label={liveE.label} value={fmtValue(liveE.value, currencyCfg)}
                     delta={sVal !== 0 ? `${sign}${pct}%` : undefined}
                     deltaColor={deltaColor}

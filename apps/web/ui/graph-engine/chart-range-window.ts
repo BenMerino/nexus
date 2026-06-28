@@ -14,6 +14,8 @@
 
 import type { GraphQuery } from '../../architect/graph-composer.types.js';
 import type { DateRangeValue, DateRangePreset } from '../composed/DateRangePicker.js';
+import type { Atom } from '../../architect/fold-atoms.js';
+import type { ToggleSpec } from '../../architect/replayable-directive.js';
 
 const DAY_MS = 86_400_000;
 
@@ -117,6 +119,39 @@ export function shortRangeLabel(startISO: string, endISO: string): string {
 }
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** Which range-toggle option values OVERSHOOT the loaded data — the set the
+ *  range popover greys out + annotates "No data". A range of N days asks to see
+ *  the last N days; when the data spans FEWER than N days, that range reaches
+ *  back before the data starts and shows mostly empty time — it's no more
+ *  informative than the next-smaller range (and ultimately than All time).
+ *
+ *  Rule: grey N when `N > availableDays` (data span shorter than the range). So
+ *  with 90 days of data, "1 quarter" (90) fits, but "6 months"/"1 year"/"2
+ *  years" overshoot → greyed; "All time" (null) always stays (it IS "show
+ *  everything", honestly sized to the data). Span is the data extent
+ *  [firstDay, lastDay], independent of `asOf`. Returns empty when there are no
+ *  atoms (can't judge → grey nothing). `asOf` reserved for future as-of windows
+ *  but not needed for the span test. */
+export function emptyRangeValuesFor(
+    toggle: ToggleSpec<GraphQuery> | undefined,
+    atoms: ReadonlyArray<Atom>,
+    _asOf?: string,
+): Set<string> {
+    const empty = new Set<string>();
+    if (!toggle || atoms.length === 0) return empty;
+    const firstDay = Math.floor(atoms[0].key / 24);
+    const lastDay = Math.floor(atoms[atoms.length - 1].key / 24);
+    const availableDays = lastDay - firstDay + 1;
+    for (const o of toggle.options) {
+        const v = String(o.value);
+        if (v === 'null') continue;                 // all-time always fits the data
+        const n = Number(v);
+        if (!Number.isFinite(n) || n <= 0) continue;
+        if (n > availableDays) empty.add(v);         // range longer than the data we have
+    }
+    return empty;
+}
 
 /** Human label for the chip when the query carries a calendar identity.
  *  Returns null when there's no periodKey — the picker then derives its

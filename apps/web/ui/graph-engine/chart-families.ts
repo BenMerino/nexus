@@ -16,6 +16,7 @@ import type { ChartChrome } from './chart-chrome.types.js';
 import {
     buildCartesianLayout,
     cartesianDragResolve,
+    cartesianDragResolveByIdx,
     cartesianIsoToFrame,
     type CartesianLayout,
     type DragEndpoint,
@@ -83,6 +84,7 @@ interface ChartTypeHandler {
      *  plot rectangle in viewBox px (xR × yR). */
     dragSupport: (chart: GraphDirective, layout: unknown) => {
         dragResolve: ((vx: number, vw: number) => DragEndpoint | null) | null;
+        dragResolveByIdx: ((idx: number) => DragEndpoint | null) | null;
         isoToFrame: ((iso: string) => DragEndpoint | null) | null;
         plotXR: [number, number] | null;
         plotYR: [number, number] | null;
@@ -98,6 +100,7 @@ const cartesianHandler: ChartTypeHandler = {
         const l = layout as CartesianLayout;
         return {
             dragResolve: cartesianDragResolve(chart, l),
+            dragResolveByIdx: cartesianDragResolveByIdx(chart, l),
             isoToFrame: cartesianIsoToFrame(chart, l),
             plotXR: l.xR,
             plotYR: l.yR,
@@ -116,7 +119,7 @@ const radialHandler: ChartTypeHandler = {
         const size = Math.min(w, h);
         return { w: size, h: size };
     },
-    dragSupport: () => ({ dragResolve: null, isoToFrame: null, plotXR: null, plotYR: null }),
+    dragSupport: () => ({ dragResolve: null, dragResolveByIdx: null, isoToFrame: null, plotXR: null, plotYR: null }),
 };
 
 const polarHandler: ChartTypeHandler = {
@@ -128,7 +131,7 @@ const polarHandler: ChartTypeHandler = {
         const size = Math.min(w, h);
         return { w: size, h: size };
     },
-    dragSupport: () => ({ dragResolve: null, isoToFrame: null, plotXR: null, plotYR: null }),
+    dragSupport: () => ({ dragResolve: null, dragResolveByIdx: null, isoToFrame: null, plotXR: null, plotYR: null }),
 };
 
 const gridHandler: ChartTypeHandler = {
@@ -143,7 +146,7 @@ const gridHandler: ChartTypeHandler = {
         return gridChrome(chart, l.width, l.height, l.axesOverride);
     },
     layoutSize: (_chart, w, h) => ({ w, h }),
-    dragSupport: () => ({ dragResolve: null, isoToFrame: null, plotXR: null, plotYR: null }),
+    dragSupport: () => ({ dragResolve: null, dragResolveByIdx: null, isoToFrame: null, plotXR: null, plotYR: null }),
 };
 
 const geoHandler: ChartTypeHandler = {
@@ -154,7 +157,7 @@ const geoHandler: ChartTypeHandler = {
     buildLayout: (_chart, w, h) => ({ width: w, height: h }),
     buildChrome: () => ({ elements: [] }),
     layoutSize: (_chart, w, h) => ({ w, h }),
-    dragSupport: () => ({ dragResolve: null, isoToFrame: null, plotXR: null, plotYR: null }),
+    dragSupport: () => ({ dragResolve: null, dragResolveByIdx: null, isoToFrame: null, plotXR: null, plotYR: null }),
 };
 
 /* Per-type entries — each gets its own animated family. The base
@@ -193,6 +196,9 @@ export interface FamilyAnimation {
     chrome: ChartChrome;
     layoutSize: { w: number; h: number };
     dragResolve: ((viewportX: number, viewportRectWidth: number) => DragEndpoint | null) | null;
+    /** Index → endpoint, for renderer-seeded default selections (2-bar
+     *  comparison opens with its A→B delta tags). Null off-cartesian. */
+    dragResolveByIdx: ((idx: number) => DragEndpoint | null) | null;
     /** Reverse projector: stored iso → endpoint in the CURRENT frame.
      *  Null for non-cartesian families. The renderer uses this to keep
      *  the drag selection glued to its timeline anchor across pan/zoom. */
@@ -222,17 +228,17 @@ export function buildFamilyAnimation(
             chart, layout: null,
             chrome: { elements: [] },
             layoutSize: { w: width, h: height },
-            dragResolve: null, isoToFrame: null, plotXR: null, plotYR: null,
+            dragResolve: null, dragResolveByIdx: null, isoToFrame: null, plotXR: null, plotYR: null,
         };
     }
     const layout = handler.buildLayout(chart, width, height, axesOverride);
     const chrome = handler.buildChrome(chart, layout);
     const layoutSize = handler.layoutSize(chart, width, height);
-    const { dragResolve, isoToFrame, plotXR, plotYR } = handler.dragSupport(chart, layout);
+    const { dragResolve, dragResolveByIdx, isoToFrame, plotXR, plotYR } = handler.dragSupport(chart, layout);
     return {
         family: handler.family,
         chart, layout, chrome, layoutSize,
-        dragResolve, isoToFrame, plotXR, plotYR,
+        dragResolve, dragResolveByIdx, isoToFrame, plotXR, plotYR,
     };
 }
 

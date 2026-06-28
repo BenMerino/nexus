@@ -7,8 +7,8 @@ import type { DateRangeValue } from './DateRangePicker.js';
 /* ── DateRangeCalendarSection ─────────────────────────────
  * The "Custom range" tier of the FULL DateRangePicker (presets +
  * custom): ONE disclosure row (collapsed by default, single chevron)
- * that expands the two-calendar range view. Hosts that vessel ONLY
- * custom dates (the chart header's Custom chip) mount
+ * that expands the single-calendar click-click range view. Hosts that
+ * vessel ONLY custom dates (the chart header's Custom chip) mount
  * `DateRangeCalendarView` directly instead. */
 
 export interface DateRangeCalendarSectionProps {

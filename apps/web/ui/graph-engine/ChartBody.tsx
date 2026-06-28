@@ -4,32 +4,17 @@ import { BaseText } from '../primitives/BaseText.js';
 import { ChartRender } from './ChartRender.js';
 import { LegibilityAlert } from './LegibilityAlert.js';
 import { QueryToggleBar } from './QueryToggleBar.js';
-import { FeatureToggleGroup, useChartFeatureToggles } from './FeatureToggleGroup.js';
+import { useChartFeatureToggles } from './FeatureToggleGroup.js';
+import { WindowRangeControl, GranularityControl, FeatureToggleControl, PeriodPickerControl } from './ChartHeaderControls.js';
+import { coarserPeriods } from './chart-tier-groups.js';
 import { LiveBadge } from '../composed/LiveBadge.js';
 import { DrillBreadcrumbChip } from './DrillBreadcrumbChip.js';
-import { Calendar } from 'lucide-react';
-import { eligibleFoldUnits, foldOpensFiner } from '../../architect/fold-atoms.js';
-import { FilterTrigger } from '../composed/FilterTrigger.js';
-import { DateRangeCalendarView } from '../composed/DateRangeCalendarView.js';
-import { rangeValueFromQuery, windowPatchFromRange, periodKeyLabel, shortRangeLabel } from './chart-range-window.js';
+import { foldOpensFiner } from '../../architect/fold-atoms.js';
+import { gateFoldUnitToggles } from './chart-foldunit-gate.js';
+import { rangeValueFromQuery, windowPatchFromRange, periodKeyLabel, shortRangeLabel, emptyRangeValuesFor } from './chart-range-window.js';
+import { narrowQueryToPeriod } from '../../architect/graph-drilldown.js';
 import type { GraphDirective, GraphQuery } from '../../architect/graph-composer.types.js';
 import type { ToggleSpec } from '../../architect/replayable-directive.js';
-
-/* Strip a foldUnit toggle's options down to the units that bucket READABLY
- * for the current visible span (eligibleFoldUnits: 3–120 buckets). Without
- * this a user could force e.g. "week" over a 170-year window → ~9k buckets,
- * crippling the fold/render. Non-foldUnit toggles pass through untouched, and
- * a foldUnit toggle keeps 'auto' (always eligible) plus whatever fits — so the
- * fine rungs reappear as the user narrows the window. */
-function gateFoldUnitToggles<T extends ToggleSpec<GraphQuery>>(toggles: T[], visibleDays: number): T[] {
-    if (!Number.isFinite(visibleDays) || visibleDays <= 0) return toggles;
-    const eligible = new Set(eligibleFoldUnits(visibleDays).map(String));
-    return toggles.map(tg => {
-        if (tg.field !== 'foldUnit' && tg.id !== 'foldUnit') return tg;
-        const options = tg.options.filter(o => eligible.has(o.value));
-        return { ...tg, options } as T;
-    });
-}
 
 /* ── ChartBody ───────────────────────────────────────────────
  * Renders the title row (title + range chip + toggles + LiveBadge) and
@@ -63,6 +48,11 @@ export interface ChartBodyProps {
     error?: string | null;
     t: string;
     isLive?: boolean;
+    /** Show the live/paused badge. Off by default — the badge is opt-in
+     *  chrome, not something every live-wired chart should advertise. A
+     *  host that wants it passes `showLive`; `isLive` still drives the
+     *  active/paused state when shown. */
+    showLive?: boolean;
     /** Drill breadcrumbs from `useDirectiveController` — when non-empty,
      *  a "← Back" chip + trail renders in the title row. The chart is
      *  the right owner of this chrome: putting the chip outside the card
@@ -73,7 +63,7 @@ export interface ChartBodyProps {
     onDrillUp?: () => void;
 }
 
-export function ChartBody({ chart, resolved, container, legibility, axesOverride, onBucketClick, onToggle, onToggleSeries, onWindowChange, isLoading, error, t, isLive, breadcrumbs, onDrillUp }: ChartBodyProps) {
+export function ChartBody({ chart, resolved, container, legibility, axesOverride, onBucketClick, onToggle, onToggleSeries, onWindowChange, isLoading, error, t, isLive, showLive = false, breadcrumbs, onDrillUp }: ChartBodyProps) {
     const allToggles = chart.toggles ?? [];
     const windowToggle = allToggles.find(tg => tg.id === 'windowDays' || tg.field === 'windowDays') as ToggleSpec<GraphQuery> | undefined;
     const otherToggles = allToggles.filter(tg => tg !== windowToggle);
@@ -119,7 +109,14 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     const visibleAtoms = windowDays != null ? Math.min(windowDays, totalDays) : (totalDays || visibleBuckets);
     /* Gate the granularity toggle to units readable at the CURRENT window, so
      *  the user can't force a fold that over-buckets (e.g. week over 170y). */
-    const gatedToggles = gateFoldUnitToggles(otherToggles, visibleAtoms);
+    const allGated = gateFoldUnitToggles(otherToggles, visibleAtoms);
+    /* The manual foldUnit (auto-bucket / granularity) toggle is no longer a
+     *  cramped pill ROW competing with the title — it now rides a popover
+     *  (GranularityControl), like the window range and overlays. Split it out
+     *  here; the remaining query toggles (e.g. scope) still render as pills. */
+    const isFoldUnit = (tg: ToggleSpec<GraphQuery>) => tg.field === 'foldUnit' || tg.id === 'foldUnit';
+    const granularityToggle = allGated.find(isFoldUnit) as ToggleSpec<GraphQuery> | undefined;
+    const gatedToggles = allGated.filter(tg => !isFoldUnit(tg));
     const daysPerBucket = visibleBuckets > 0 ? visibleAtoms / visibleBuckets : 1;
     const isHeatmap = t === 'heatmap';
     /* Two independent drill paths share this handler, gated separately:
@@ -152,6 +149,12 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
         if (!windowToggle || !q) return undefined;
         return { ...windowToggle, current: String(q.windowDays ?? 'null') } as ToggleSpec<GraphQuery>;
     }, [windowToggle, q]);
+    /* Range options that OVERSHOOT the data span → the range popover greys them
+     *  out + flags them. Pure data-span test; see emptyRangeValuesFor. */
+    const emptyRangeValues = React.useMemo(
+        () => emptyRangeValuesFor(windowToggle, atoms),
+        [windowToggle, atoms],
+    );
     const rangeValue = React.useMemo(
         () => (hasRangeChip ? rangeValueFromQuery(q!, []) : null),
         [hasRangeChip, q],
@@ -162,6 +165,18 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
             ? shortRangeLabel(rangeValue.start, rangeValue.end)
             : 'Custom');
 
+    /* Header period picker — replaces the stacked month/year tier rows.
+     *  Lists the coarser periods visible in the resolved view; picking one
+     *  narrows the window to that period (same drill as a tier-label click)
+     *  via `narrowQueryToPeriod`, which yields the `{windowDays, asOf,
+     *  periodKey}` patch onWindowChange wants. */
+    const periodOptions = React.useMemo(() => coarserPeriods(resolved), [resolved]);
+    const narrowToPeriod = React.useCallback((periodKey: string) => {
+        if (!q || !onWindowChange) return;
+        const child = narrowQueryToPeriod(q, periodKey);
+        if (child) onWindowChange({ windowDays: child.windowDays ?? null, asOf: child.asOf ?? null, periodKey: child.periodKey });
+    }, [q, onWindowChange]);
+
     // The header row carries the title + drill breadcrumbs (left) and the
     // range chip/toggles/feature controls/live badge (right). Skip it
     // entirely when there is nothing to show — e.g. a hideTitle chart with
@@ -170,65 +185,76 @@ export function ChartBody({ chart, resolved, container, legibility, axesOverride
     const showHeaderRow = (!chart.hideTitle && !!chart.title)
         || (!!breadcrumbs && breadcrumbs.length > 0 && !!onDrillUp)
         || hasRangeChip
-        || (otherToggles.length > 0 && !!onToggle)
+        || (periodOptions.length > 1 && !!onWindowChange)
+        || (!!granularityToggle && granularityToggle.options.length > 1 && !!onToggle)
+        || (gatedToggles.length > 0 && !!onToggle)
         || (featuresAvailable.length > 0 && !!featureScopeKey)
-        || isLive !== undefined;
+        || (showLive && isLive !== undefined);
 
     return (
         <>
             {t !== 'sparkline' && showHeaderRow && (
-                <BaseBox display="flex" direction="row" align="center" justify="between" style={{ marginBottom: '0.25rem', gap: 'var(--space-3, 0.75rem)' }}>
-                    <BaseBox display="flex" direction="row" align="center" density="tight" style={{ minWidth: 0 }}>
-                        {!chart.hideTitle && (
-                            <BaseText variant="detail" weight="semibold" style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                {chart.title}
+                /* align:start (not center) so a wrapped title+subtitle column
+                 * keeps the right-hand controls pinned to the top line. */
+                <BaseBox display="flex" direction="row" align="start" justify="between" style={{ marginBottom: 'var(--space-4, 1rem)', gap: 'var(--space-3, 0.75rem)' }}>
+                    <BaseBox display="flex" direction="col" style={{ minWidth: 0, gap: '2px' }}>
+                        <BaseBox display="flex" direction="row" align="center" density="tight" style={{ minWidth: 0 }}>
+                            {/* THE chart card heading — a real title (the card owns it;
+                              * hosts no longer draw a heading around the chart). */}
+                            {!chart.hideTitle && (
+                                <BaseText variant="h3" weight="bold" color="heading" style={{ fontSize: '1.0625rem', lineHeight: 1.3 }}>
+                                    {chart.title}
+                                </BaseText>
+                            )}
+                            {breadcrumbs && breadcrumbs.length > 0 && onDrillUp && (
+                                <DrillBreadcrumbChip crumbs={breadcrumbs} onUp={onDrillUp} />
+                            )}
+                        </BaseBox>
+                        {!chart.hideTitle && chart.subtitle && (
+                            <BaseText variant="detail" color="muted" style={{ minWidth: 0 }}>
+                                {chart.subtitle}
                             </BaseText>
                         )}
-                        {breadcrumbs && breadcrumbs.length > 0 && onDrillUp && (
-                            <DrillBreadcrumbChip crumbs={breadcrumbs} onUp={onDrillUp} />
-                        )}
                     </BaseBox>
-                    <BaseBox display="flex" direction="row" align="center" density="tight">
-                        {windowPill && onToggle && (
-                            <QueryToggleBar toggles={[windowPill]} isLoading={isLoading} onChange={onToggle} />
+                    <BaseBox display="flex" direction="row" align="center" density="tight" controlSize="sm">
+                        {periodOptions.length > 1 && onWindowChange && q && (
+                            <PeriodPickerControl periods={periodOptions} currentPeriodKey={q.periodKey} onNarrow={narrowToPeriod} />
                         )}
-                        {hasRangeChip && rangeValue && (
-                            <FilterTrigger
-                                icon={<Calendar style={{ width: 14, height: 14 }} />}
-                                label={customLabel}
-                                align="right"
-                            >
-                                {() => (
-                                    <BaseBox bg="var(--bg-card)" border="var(--border-main)" radius="card" shadow="lg" pad="tight">
-                                        {/* max = today: windowPatchFromRange clamps the window
-                                          * to today anyway — disabling future days makes that
-                                          * visible instead of silently collapsing the pick. */}
-                                        <DateRangeCalendarView
-                                            value={rangeValue}
-                                            max={new Date().toISOString().split('T')[0]}
-                                            onCommit={(start, end) => {
-                                                const p = windowPatchFromRange({ preset: 'custom', start, end });
-                                                onWindowChange!({ windowDays: p.windowDays, asOf: p.asOf ?? null, periodKey: p.periodKey });
-                                            }}
-                                        />
-                                    </BaseBox>
-                                )}
-                            </FilterTrigger>
+                        {windowPill && onToggle && (
+                            <WindowRangeControl
+                                toggle={windowPill}
+                                onChange={onToggle}
+                                emptyValues={emptyRangeValues}
+                                customLabel={!isPresetWindow ? customLabel : undefined}
+                                customStart={rangeValue?.start}
+                                customEnd={rangeValue?.end}
+                                maxDate={atoms.length > 0 ? new Date().toISOString().split('T')[0] : undefined}
+                                onCustomRange={onWindowChange
+                                    /* Custom start+end → a real window: windowPatchFromRange
+                                     * converts the picked range to {windowDays, asOf, periodKey}
+                                     * (clamps end to today; stamps a calendar periodKey when the
+                                     * span IS one). */
+                                    ? (start, end) => {
+                                        const p = windowPatchFromRange({ preset: 'custom', start, end });
+                                        onWindowChange({ windowDays: p.windowDays, asOf: p.asOf ?? null, periodKey: p.periodKey });
+                                    }
+                                    : undefined}
+                            />
+                        )}
+                        {granularityToggle && granularityToggle.options.length > 1 && onToggle && (
+                            <GranularityControl toggle={granularityToggle} onChange={onToggle} />
                         )}
                         {gatedToggles.length > 0 && onToggle && (
                             <QueryToggleBar toggles={gatedToggles} isLoading={isLoading} error={error} onChange={onToggle} />
                         )}
                         {featuresAvailable.length > 0 && featureScopeKey && (
-                            <FeatureToggleGroup
-                                scopeKey={featureScopeKey}
+                            <FeatureToggleControl
                                 features={featuresAvailable}
                                 activeKinds={featureToggles.activeKinds}
                                 onChange={featureToggles.setActiveKinds}
-                                isLoading={isLoading || featureToggles.status === 'loading'}
-                                foldUnit={resolved.__foldUnit}
                             />
                         )}
-                        {isLive !== undefined && <LiveBadge active={isLive} />}
+                        {showLive && isLive !== undefined && <LiveBadge active={isLive} />}
                     </BaseBox>
                 </BaseBox>
             )}

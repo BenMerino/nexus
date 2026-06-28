@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar } from '../icons/index.js';
 import { format, startOfMonth, startOfYear, subDays, subMonths, subYears } from 'date-fns';
-import { BaseAction, BaseBox, BaseText } from '../primitives/index.js';
+import { BaseAction, BaseBox, BaseText, BaseIcon } from '../primitives/index.js';
 import { FilterTrigger } from './FilterTrigger.js';
 import { DateRangeCalendarSection } from './DateRangeCalendarSection.js';
 
@@ -95,7 +95,7 @@ export function DateRangePicker({
 
     return (
         <FilterTrigger
-            icon={<Calendar style={{ width: 14, height: 14 }} />}
+            icon={<BaseIcon icon={Calendar} />}
             label={activeLabel}
             align={align}
         >

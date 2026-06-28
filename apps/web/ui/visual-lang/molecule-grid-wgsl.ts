@@ -230,8 +230,13 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
         let rayMultiplier = (1.0 - maxBody) * 2.5;
         rgb = rgb + rgb * (excess * rayMultiplier);
     }
-    rgb = min(rgb, vec3<f32>(1.0));
-    let finalMax = max(rgb.r, max(rgb.g, rgb.b));
+    /* HDR: rgb is NOT clamped to 1.0 — lit cells (lit up to ~1.5) and the
+     * highlight blowout above push channels past SDR white, and the canvas
+     * (rgba16float + extended tone mapping) carries that into the display's
+     * HDR headroom. Alpha still clamps to [0,1]; in premultiplied compositing
+     * rgb > alpha is a valid super-emissive pixel. On SDR displays / the
+     * WebGL2 fallback the excess clamps downstream, preserving the old look. */
+    let finalMax = clamp(max(rgb.r, max(rgb.g, rgb.b)), 0.0, 1.0);
     return vec4<f32>(rgb, max(fragColor.a, finalMax));
 }
 `;

@@ -46,10 +46,26 @@ export function tryAcquireWebGl2(): WebGl2Renderer | null {
     if (!chart) return null;
     const bloom = createChartBloomGlProgram(gl);
     if (!bloom) return null;
+    /* SDR fallback: one shared GL context draws to the offscreen canvas,
+     * each visible canvas presents via its own cheap `bitmaprenderer`
+     * context (cached by element). No HDR — the ImageBitmap hop is 8-bit. */
+    const bitmapCtxs = new WeakMap<HTMLCanvasElement, ImageBitmapRenderingContext>();
+    const bitmapCtxFor = (target: HTMLCanvasElement): ImageBitmapRenderingContext | null => {
+        let b = bitmapCtxs.get(target);
+        if (!b) {
+            b = target.getContext('bitmaprenderer');
+            if (!b) return null;
+            bitmapCtxs.set(target, b);
+        }
+        return b;
+    };
     return {
         backend: 'webgl2',
+        hdr: false,
         canvas, gl, grid, chart, bloom,
-        renderFrame(bitmapCtx, wPx, hPx, cols, rows, cellData, params) {
+        renderFrame(targetCanvas, wPx, hPx, cols, rows, cellData, params) {
+            const bitmapCtx = bitmapCtxFor(targetCanvas);
+            if (!bitmapCtx) return;
             if (canvas.width !== wPx) canvas.width = wPx;
             if (canvas.height !== hPx) canvas.height = hPx;
             gl.viewport(0, 0, wPx, hPx);
@@ -68,7 +84,9 @@ export function tryAcquireWebGl2(): WebGl2Renderer | null {
             const bitmap = canvas.transferToImageBitmap();
             bitmapCtx.transferFromImageBitmap(bitmap);
         },
-        renderChart(bitmapCtx, wPx, hPx, vertices, triCount, params) {
+        renderChart(targetCanvas, wPx, hPx, vertices, triCount, params) {
+            const bitmapCtx = bitmapCtxFor(targetCanvas);
+            if (!bitmapCtx) return;
             if (canvas.width !== wPx) canvas.width = wPx;
             if (canvas.height !== hPx) canvas.height = hPx;
             const useBloom = (params.glow ?? 0) > 0.001;
