@@ -153,11 +153,11 @@
      adds 1 (capped at 3). The shared shorthand for a glass fill at a given rung. */
   --surface-depth: 0;
 
-  /* ── Silver gradient mesh — the page backdrop the glass surfaces float over.
+  /* ── Silver gradient mesh — the ANIMATED page backdrop the glass floats over.
      A scatter of soft radial blobs in silver tones (derived from the tonal rungs
      + a faint accent breath), layered over --bg. Theme-aware (light/dark by
-     construction) and fixed so it doesn't scroll under the content. The blob
-     positions/sizes are a fixed pleasing arrangement — a "designed random". */
+     construction). The blobs slowly DRIFT (the .mesh-anim layer animates their
+     background-position) so the mesh is alive, not static. */
   --mesh-a: color-mix(in oklch, var(--fg) 8%,  var(--bg));
   --mesh-b: color-mix(in oklch, var(--fg) 4%,  var(--bg));
   --mesh-c: color-mix(in oklch, var(--accent) 6%, var(--bg));
@@ -168,6 +168,27 @@
     radial-gradient(45% 50% at 25% 88%, var(--mesh-c) 0%, transparent 55%),
     radial-gradient(40% 40% at 50% 50%, var(--mesh-b) 0%, transparent 65%),
     var(--bg);
+}
+
+/* The moving mesh — painted on a fixed full-viewport body::before so EVERY page
+   gets it with zero DOM changes. Behind all content (z-index -1). The gradient is
+   larger than the viewport so drifting its background-position reveals a slow
+   silver flow without seams. Compositor-friendly (only position animates).
+   Honors prefers-reduced-motion. */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: var(--page-mesh);
+  background-size: 180% 180%;
+  background-repeat: no-repeat;
+  animation: mesh-drift 32s ease-in-out infinite alternate;
+}
+@keyframes mesh-drift {
+  0%   { background-position:   0%   0%; }
+  50%  { background-position: 100%  60%; }
+  100% { background-position:  40% 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
 }
 
 /* The glass recipe — translucent fill + blur + grain + hairline. `.surface`
