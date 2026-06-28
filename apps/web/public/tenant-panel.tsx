@@ -1,4 +1,5 @@
 import React from 'react';
+import { SegmentedControl } from '../ui/composed/SegmentedControl';
 
 /* A chart panel — the mockup's card chrome: serif title + mono sub-label +
  * optional tag pill or action controls, wrapping any chart body. `className`
@@ -20,21 +21,16 @@ export function ChartPanel({ title, sub, tag, actions, className, children }: {
   );
 }
 
-/* Mono pill toggle, same visual as the contributors metric toggle. */
+/* Mono pill toggle, same visual as the contributors metric toggle — now the
+ * vendored SegmentedControl (pill variant: framer-motion indicator slide). */
 export function SegToggle<T extends string>({ value, options, onChange }: {
   value: T; options: { id: T; label: string }[]; onChange: (v: T) => void;
 }) {
   return (
-    <div style={{ display: 'flex', gap: 4, flex: 'none' }}>
-      {options.map(o => (
-        <button key={o.id} type="button" onClick={() => onChange(o.id)}
-          style={{ padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: 11,
-            border: '1px solid var(--border)',
-            background: value === o.id ? 'var(--primary)' : 'transparent',
-            color: value === o.id ? 'var(--bg)' : 'var(--fg-dim)' }}>
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl<T>
+      segments={options.map(o => ({ value: o.id, label: o.label }))}
+      value={value}
+      onChange={onChange}
+    />
   );
 }

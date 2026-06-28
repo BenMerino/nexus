@@ -1,6 +1,7 @@
 import React from 'react';
 import { ES } from './tenant-i18n';
 import { toggleMode } from './public-theme-toggle';
+import { BaseAction } from '../ui/primitives';
 
 interface TenantLike { name: string; ror_id: string | null; logo_url: string | null; }
 export interface PublicNavItem { id: string; label: string; }
@@ -14,8 +15,9 @@ function initial(name: string): string { return (name.trim()[0] || '·').toUpper
 // CSS flips which is visible on data-theme.
 function ThemeButton() {
   return (
-    <button className="theme-btn" aria-label={ES.themeToggle} title={ES.themeToggle}
-            onClick={() => toggleMode()}>
+    <BaseAction variant="ghost" iconOnly className="theme-btn"
+                aria-label={ES.themeToggle} title={ES.themeToggle}
+                onClick={() => toggleMode()}>
       <svg className="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
         <circle cx="12" cy="12" r="4.2" />
         <path d="M12 2.5v2.6M12 18.9v2.6M21.5 12h-2.6M5.1 12H2.5M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4 5.6 5.6" strokeLinecap="round" />
@@ -23,7 +25,7 @@ function ThemeButton() {
       <svg className="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
         <path d="M20 14.5A8 8 0 1 1 9.5 4a6.3 6.3 0 0 0 10.5 10.5z" strokeLinejoin="round" />
       </svg>
-    </button>
+    </BaseAction>
   );
 }
 

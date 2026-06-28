@@ -35,7 +35,7 @@ export function TenantYearPanel({ stats, tenantId, charts, unit }: {
 
   return (
     <ChartPanel className="full" title={ES.charts.pubsByYear} sub={sub}
-      actions={<SegToggle value={seg} options={options} onChange={setSeg} />}>
+      actions={<SegToggle<Seg> value={seg} options={options} onChange={setSeg} />}>
       {seg === 'index' && (
         <BatchedCharts kinds={['publications.byIndex']} tenantId={tenantId} unit={unit} bare />
       )}

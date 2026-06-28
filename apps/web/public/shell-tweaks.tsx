@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BaseAction } from '../ui/primitives';
 import { Ico } from './shell-icons';
 import type { CurrentUser } from './shell-helpers';
 import { useViewAs, effectiveRole } from './shell-helpers';
@@ -22,8 +23,11 @@ export function RoleSwitcher({ me }: { me: CurrentUser | null }) {
         {VIEW_AS_ROLES.map(r => {
           const isActive = (r.id || 'superadmin') === active;
           return (
-            <button
+            <BaseAction
               key={r.id ?? 'self'}
+              variant={isActive ? 'primary' : 'outline'}
+              size="sm"
+              aria-pressed={isActive}
               className={`role-btn ${isActive ? 'active' : ''}`}
               onClick={() => setViewAs(r.id)}
             >
@@ -32,7 +36,7 @@ export function RoleSwitcher({ me }: { me: CurrentUser | null }) {
                 <span className="role-btn-who">{r.id ? 'view-as' : me.user}</span>
               </span>
               {isActive && <span style={{ color: 'var(--accent)', fontSize: 16, lineHeight: 1 }}>●</span>}
-            </button>
+            </BaseAction>
           );
         })}
       </div>
@@ -66,30 +70,42 @@ export function TweaksPanel({ open, onClose }: { open: boolean; onClose: () => v
     <div className="tweaks-panel">
       <div className="tweaks-header">
         <span className="tweaks-title">Tweaks</span>
-        <button className="close" onClick={onClose} aria-label="Close">{Ico.close}</button>
+        <BaseAction variant="ghost" iconOnly className="close" onClick={onClose} aria-label="Close">{Ico.close}</BaseAction>
       </div>
       <div className="tweak">
         <div className="tweak-label">Density <span>{tweaks.density}</span></div>
         <div className="tweak-opts">
-          {(['compact', 'comfortable'] as const).map(d => (
-            <button
-              key={d}
-              className={`tweak-opt ${tweaks.density === d ? 'on' : ''}`}
-              onClick={() => setTweak('density', d)}
-            >{d}</button>
-          ))}
+          {(['compact', 'comfortable'] as const).map(d => {
+            const on = tweaks.density === d;
+            return (
+              <BaseAction
+                key={d}
+                variant={on ? 'primary' : 'outline'}
+                size="sm"
+                aria-pressed={on}
+                className={`tweak-opt ${on ? 'on' : ''}`}
+                onClick={() => setTweak('density', d)}
+              >{d}</BaseAction>
+            );
+          })}
         </div>
       </div>
       <div className="tweak">
         <div className="tweak-label">Graph grid</div>
         <div className="tweak-opts">
-          {[true, false].map(v => (
-            <button
-              key={String(v)}
-              className={`tweak-opt ${tweaks.showGrid === v ? 'on' : ''}`}
-              onClick={() => setTweak('showGrid', v)}
-            >{v ? 'on' : 'off'}</button>
-          ))}
+          {[true, false].map(v => {
+            const on = tweaks.showGrid === v;
+            return (
+              <BaseAction
+                key={String(v)}
+                variant={on ? 'primary' : 'outline'}
+                size="sm"
+                aria-pressed={on}
+                className={`tweak-opt ${on ? 'on' : ''}`}
+                onClick={() => setTweak('showGrid', v)}
+              >{v ? 'on' : 'off'}</BaseAction>
+            );
+          })}
         </div>
       </div>
     </div>

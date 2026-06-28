@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ES } from './tenant-i18n';
 import { fetchOrgTreeSummary } from './tenant-data';
 import { type Metric, type Unit, METRICS, valueOf, fmt, rank, Bar } from './tenant-org-row';
+import { BaseAction } from '../ui/primitives';
 
 /* Biggest contributors — the whole-university comparison, shown on the right at
  * "All organization" scope (hidden once a single unit is picked). Ranks
@@ -61,20 +62,18 @@ export function TenantContributors({ slug }: { slug: string }) {
           <span style={{ marginRight: 'auto', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--fg-muted)' }}>{ES.contributors.titleIn(drill.name)}</span>
         ) : null}
         {METRICS.map(m => (
-          <button key={m.id} type="button" onClick={() => setMetric(m.id)}
-            style={{ padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: 11,
-              border: '1px solid var(--border)',
-              background: metric === m.id ? 'var(--primary)' : 'transparent',
-              color: metric === m.id ? 'var(--bg)' : 'var(--fg-dim)' }}>
+          <BaseAction key={m.id} size="sm" variant={metric === m.id ? 'primary' : 'outline'}
+            onClick={() => setMetric(m.id)}
+            style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>
             {m.label}
-          </button>
+          </BaseAction>
         ))}
       </div>
       {drill ? (
-        <button type="button" onClick={() => setDrill(null)}
-          style={{ marginBottom: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', fontFamily: 'var(--mono)', fontSize: 12, padding: 0 }}>
+        <BaseAction variant="ghost" size="sm" onClick={() => setDrill(null)}
+          style={{ marginBottom: 12, color: 'var(--primary)', fontFamily: 'var(--mono)', fontSize: 12, padding: 0 }}>
           {ES.contributors.backToFaculties}
-        </button>
+        </BaseAction>
       ) : null}
       <Rows units={units} metric={metric} onDrill={drill ? undefined : setDrill} />
       <div style={{ marginTop: 12, fontSize: 11, color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>

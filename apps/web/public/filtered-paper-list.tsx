@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { DoiRecord } from './relationship-types';
+import { BaseAction } from '../ui/primitives';
 
 const PAGE_SIZE = 20;
 
@@ -8,11 +9,6 @@ function formatAuthors(authors: string[]): string {
   if (authors.length <= 3) return authors.join(', ');
   return `${authors.slice(0, 3).join(', ')} et al.`;
 }
-
-const btnStyle: React.CSSProperties = {
-  background: 'var(--bg-inset)', border: '1px solid var(--border-soft)', borderRadius: 4,
-  cursor: 'pointer', fontSize: 12, color: 'var(--fg-muted)', fontFamily: 'var(--mono)', padding: '6px 12px',
-};
 
 const cellStyle: React.CSSProperties = {
   padding: '8px 10px', fontSize: 12, fontFamily: 'var(--mono)',
@@ -32,9 +28,9 @@ export function FilteredPaperList({ papers }: { papers: DoiRecord[] }) {
 
   return (
     <div style={{ marginTop: 14 }}>
-      <button onClick={() => setExpanded(!expanded)} style={btnStyle}>
+      <BaseAction variant="secondary" size="sm" onClick={() => setExpanded(!expanded)}>
         {expanded ? 'Hide papers' : `Show ${papers.length} paper${papers.length !== 1 ? 's' : ''}`}
-      </button>
+      </BaseAction>
       {expanded && (
         <div style={{ marginTop: 10, border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'auto', maxHeight: 500, background: 'var(--bg-card)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -67,9 +63,10 @@ export function FilteredPaperList({ papers }: { papers: DoiRecord[] }) {
           </table>
           {hasMore && !showAll && (
             <div style={{ padding: 10, textAlign: 'center' }}>
-              <button onClick={() => setShowAll(true)} style={{ ...btnStyle, border: 'none', color: 'var(--accent)' }}>
+              <BaseAction variant="ghost" size="sm" onClick={() => setShowAll(true)}
+                style={{ color: 'var(--accent)' }}>
                 Show all {sorted.length} papers
-              </button>
+              </BaseAction>
             </div>
           )}
         </div>

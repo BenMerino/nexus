@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { DoiRecord } from './relationship-types';
+import { BaseAction } from '../ui/primitives';
 
 export function PaperCard({ doi, onClose, style, onHoverEnter, onHoverLeave }: {
   doi: string; onClose: () => void; style: React.CSSProperties;
@@ -30,10 +31,11 @@ export function PaperCard({ doi, onClose, style, onHoverEnter, onHoverLeave }: {
         <div style={{ fontSize: 13, fontWeight: 700, color: '#222', lineHeight: '18px', flex: 1, wordBreak: 'break-word' }}>
           {record?.title || doi}
         </div>
-        <button onClick={(e) => { e.stopPropagation(); onClose(); }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#999', padding: '0 0 0 8px', lineHeight: 1 }}>
+        <BaseAction variant="ghost" iconOnly aria-label="Close"
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          style={{ fontSize: 16, color: '#999', padding: '0 0 0 8px', lineHeight: 1 }}>
           x
-        </button>
+        </BaseAction>
       </div>
 
       {loading && <div style={{ fontSize: 11, color: '#999' }}>Loading...</div>}

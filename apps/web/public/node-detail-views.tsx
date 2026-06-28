@@ -1,4 +1,5 @@
 import React from 'react';
+import { BaseAction } from '../ui/primitives';
 import { Ico } from './ui-kit';
 import { RichHtml } from './rich-text';
 
@@ -24,7 +25,7 @@ function PaperRow({ p }: { p: Paper }) {
 }
 
 const CloseBtn = ({ onClose }: { onClose: () => void }) =>
-  <button className="close" onClick={onClose} aria-label="Close">{Ico.close}</button>;
+  <BaseAction variant="ghost" iconOnly className="close" aria-label="Close" onClick={onClose}>{Ico.close}</BaseAction>;
 
 export { AuthorView } from './node-author-view';
 

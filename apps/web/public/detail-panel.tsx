@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { BaseAction } from '../ui/primitives';
 import type { EnrichedTagNode, ProjectedEdge } from './relationship-types';
 import { COLORS, BG_COLORS, communityColor, communityBg } from './relationship-types';
 
@@ -45,7 +46,7 @@ export function DetailPanel({
             <span>{node.doiCount} paper{node.doiCount !== 1 ? 's' : ''}</span>
           </div>
         </div>
-        <button className="close" onClick={onClose} aria-label="Close">×</button>
+        <BaseAction variant="ghost" iconOnly className="close" aria-label="Close" onClick={onClose}>×</BaseAction>
       </div>
 
       <div className="detail-section-label">Connected tags ({connections.length})</div>

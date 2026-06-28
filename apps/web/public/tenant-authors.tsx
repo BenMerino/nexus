@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ES } from './tenant-i18n';
 import { AuthorTableRow } from './tenant-author-row';
+import { BaseAction } from '../ui/primitives';
 
 export interface AuthorRow {
   name: string;
@@ -128,12 +129,12 @@ export function AuthorsTable({ slug, unit }: { slug: string; unit?: string | nul
           {error ? `${ES.failedPrefix}: ${error}` : totalCount === 0 ? ES.authorsTable.empty : ES.authorsTable.rangeOf(start, end, totalCount.toLocaleString())}
         </span>
         <span style={{ marginLeft: 'auto' }} />
-        <button className="primary-btn" style={{ padding: '4px 12px' }}
+        <BaseAction variant="secondary" size="sm"
                 disabled={page <= 0 || loading}
-                onClick={() => setPage(p => Math.max(0, p - 1))}>‹</button>
-        <button className="primary-btn" style={{ padding: '4px 12px' }}
+                onClick={() => setPage(p => Math.max(0, p - 1))}>‹</BaseAction>
+        <BaseAction variant="secondary" size="sm"
                 disabled={end >= totalCount || loading}
-                onClick={() => setPage(p => p + 1)}>›</button>
+                onClick={() => setPage(p => p + 1)}>›</BaseAction>
       </div>
     </div>
   );

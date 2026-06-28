@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Tag, SectionHead } from './ui-kit';
+import { BaseAction } from '../ui/primitives';
 
 type Tone = 'ok' | 'err' | 'info';
 
@@ -43,7 +44,7 @@ export function ClaimPaperPanel({ onClaimed }: { onClaimed?: () => void }) {
           placeholder="10.1016/j.example.2009.01.001"
           style={{ flex: 1, padding: '8px 10px', background: 'var(--bg-inset)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--fg)', fontFamily: 'var(--mono)', fontSize: 12 }}
           onKeyDown={e => { if (e.key === 'Enter') claim(); }} disabled={busy} />
-        <button onClick={claim} disabled={busy || !doi.trim()} className="primary-btn">{busy ? '…' : 'Claim'}</button>
+        <BaseAction variant="primary" onClick={claim} disabled={busy || !doi.trim()}>{busy ? '…' : 'Claim'}</BaseAction>
       </div>
       {msg && <div className="mono" style={{ fontSize: 11, marginTop: 8, color: color(msg.tone) }}>{msg.text}</div>}
     </section>

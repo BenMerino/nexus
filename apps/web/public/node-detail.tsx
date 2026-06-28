@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AuthorView, InstitutionView, JournalView, PaperView, EmptyState, type Detail } from './node-detail-views';
-import { Ico } from './ui-kit';
+import { Ico, BaseAction } from './ui-kit';
 
 interface NodeDetailProps {
   nodeId: string | null;
@@ -91,9 +91,10 @@ export function NodeDetail({ nodeId, onClose, onBack, empty, accentColor }: Node
   const fallback = empty ?? <EmptyState />;
   const style = accentColor ? ({ ['--detail-accent' as string]: accentColor } as React.CSSProperties) : undefined;
   const back = onBack ? (
-    <button type="button" className="detail-back" onClick={onBack} aria-label="Back">
-      {Ico.back}<span>Back</span>
-    </button>
+    <BaseAction variant="ghost" size="sm" className="detail-back" onClick={onBack}
+      aria-label="Back" leftIcon={Ico.back}>
+      <span>Back</span>
+    </BaseAction>
   ) : null;
 
   const detailBody = (() => {

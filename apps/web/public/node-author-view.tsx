@@ -1,4 +1,5 @@
 import React from 'react';
+import { BaseAction } from '../ui/primitives';
 import { Ico } from './ui-kit';
 import type { AuthorD, Paper } from './node-detail-views';
 import { RichHtml } from './rich-text';
@@ -46,7 +47,7 @@ export function AuthorView({ d, onClose }: { d: AuthorD; onClose: () => void }) 
           {d.hIndex != null && <div className="detail-hindex"><span className="mono">h-index</span> {d.hIndex}</div>}
           {d.orcid && <div className="mono detail-id">ORCID {d.orcid}</div>}
         </div>
-        <button className="close" onClick={onClose} aria-label="Close">{Ico.close}</button>
+        <BaseAction variant="ghost" iconOnly className="close" aria-label="Close" onClick={onClose}>{Ico.close}</BaseAction>
       </div>
       {(d.faculty || d.role) && (
         <div className="detail-meta">

@@ -3,6 +3,7 @@ import type { EnrichedSimNode } from './relationship-types';
 import { COLORS } from './relationship-types';
 import type { Bucket } from './graph-contents-buckets';
 import { RichHtml } from './rich-text';
+import { ListItem } from '../ui/composed/ListItem';
 
 const ORCID_RE = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
 
@@ -32,10 +33,10 @@ function NodeList({ label, color, ns, onSelect, onHover }: ListProps) {
       <ul>
         {ns.map(n => (
           <li key={n.id}>
-            <button type="button"
+            <ListItem as="button"
               onClick={() => onSelect(n.id)}
               onMouseEnter={() => onHover?.(n.id)}
-              onMouseLeave={() => onHover?.(null)}><RichLabel raw={displayLabel(n)} /></button>
+              onMouseLeave={() => onHover?.(null)}><RichLabel raw={displayLabel(n)} /></ListItem>
           </li>
         ))}
       </ul>
@@ -53,7 +54,7 @@ export function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }
       onMouseEnter={() => onHullHover?.(b.key)}>
       <header className="gc-community-head">
         <span className="gc-swatch" style={{ background: b.color }} />
-        <button type="button" className="gc-community-title"
+        <ListItem as="button" className="gc-community-title" active={open}
           onClick={() => onToggle(b.key)}>
           <h4><RichLabel raw={b.label} /></h4>
           <div className="gc-community-metrics muted">
@@ -65,7 +66,7 @@ export function BucketView({ b, open, onToggle, onSelect, onHover, onHullHover }
             )}
             <span>{b.papers.length} {b.papers.length === 1 ? 'paper' : 'papers'}</span>
           </div>
-        </button>
+        </ListItem>
       </header>
       <div className="gc-community-body" aria-hidden={!open}>
         <div className="gc-community-body-inner">

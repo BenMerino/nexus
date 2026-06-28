@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import type { Category } from './relationship-types';
 import { COLORS, BG_COLORS } from './relationship-types';
+import { BaseAction } from '../ui/primitives';
 
 /* ── Draggable Category Strip ──────────────────────────────── */
 
@@ -46,7 +47,8 @@ export function CategoryStrip({ categories, counts, active, onToggle, onReorder 
         const isOver = overIdx === i && dragIdx !== null && dragIdx !== i;
         const orderNum = isActive ? activeList.indexOf(cat) + 1 : null;
         return (
-          <button key={cat} draggable onClick={() => onToggle(cat)}
+          <BaseAction key={cat} draggable size="sm" variant={isActive ? 'primary' : 'outline'}
+            aria-pressed={isActive} onClick={() => onToggle(cat)}
             onDragStart={(e) => onDragStart(e, i)} onDragOver={(e) => onDragOver(e, i)}
             onDrop={(e) => onDrop(e, i)} onDragEnd={onDragEnd}
             style={{
@@ -74,7 +76,7 @@ export function CategoryStrip({ categories, counts, active, onToggle, onReorder 
             )}
             {cat}
             <span style={{ fontSize: 10, opacity: 0.7 }}>({counts[cat] || 0})</span>
-          </button>
+          </BaseAction>
         );
       })}
     </div>
@@ -101,17 +103,18 @@ export function TagPicker({ category, tags, pinnedTags, pinnedOrder, onToggleTag
           {category}
         </span>
         {hasPins && (
-          <button onClick={() => { for (const t of tags) if (pinnedTags.has(t.id)) onToggleTag(t.id); }}
+          <BaseAction variant="secondary" size="sm" onClick={() => { for (const t of tags) if (pinnedTags.has(t.id)) onToggleTag(t.id); }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', padding: 0 }}>
             clear
-          </button>
+          </BaseAction>
         )}
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
         {visible.map(t => {
           const pinned = pinnedTags.has(t.id);
           return (
-            <button key={t.id} onClick={() => onToggleTag(t.id)}
+            <BaseAction key={t.id} size="sm" variant={pinned ? 'primary' : 'outline'}
+              aria-pressed={pinned} onClick={() => onToggleTag(t.id)}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 3,
                 padding: '2px 7px', borderRadius: 3,
@@ -124,14 +127,14 @@ export function TagPicker({ category, tags, pinnedTags, pinnedOrder, onToggleTag
               }}>
               {t.label}
               <span style={{ fontSize: 9, opacity: 0.65 }}>{t.doiCount}</span>
-            </button>
+            </BaseAction>
           );
         })}
         {tags.length > 12 && (
-          <button onClick={() => setExpanded(p => !p)}
+          <BaseAction size="sm" variant={expanded ? 'primary' : 'outline'} aria-pressed={expanded} onClick={() => setExpanded(p => !p)}
             style={{ background: 'transparent', border: '1px solid var(--border-soft)', borderRadius: 3, cursor: 'pointer', fontSize: 10, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', padding: '2px 7px' }}>
             {expanded ? 'less' : `+${tags.length - 12}`}
-          </button>
+          </BaseAction>
         )}
       </div>
     </div>
