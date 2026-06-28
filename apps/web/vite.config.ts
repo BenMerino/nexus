@@ -1,9 +1,44 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { readdirSync, mkdirSync, copyFileSync, existsSync } from "fs";
+import { readdirSync, mkdirSync, copyFileSync, existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 
 const SRC = resolve(__dirname, "public");
+
+// A legacy page that has migrated to a React-Router SPA route leaves behind a
+// redirect stub at <name>.html (meta-refresh + location.replace) so old links
+// like /dashboard.html still bounce to the new /dashboard. In production Caddy
+// resolves /dashboard via `try_files {path} /index.html` (NO {path}.html step),
+// so it falls through to the SPA. Vite's dev server, in MPA mode, instead maps
+// /dashboard → dashboard.html (the stub), which redirects to /dashboard, which
+// resolves to the stub again — an infinite refresh loop in `dev:web` only.
+//
+// This plugin mirrors Caddy in dev: for an extensionless GET whose matching
+// <name>.html is a redirect stub, serve index.html (the SPA) instead. Detecting
+// "is a stub" from file content auto-covers every migrated route (and future
+// ones) with no hardcoded path list.
+const STUB_RE = /http-equiv=["']refresh["']|location\.replace/i;
+function isRedirectStub(htmlPath: string): boolean {
+  try { return STUB_RE.test(readFileSync(htmlPath, "utf8")); }
+  catch { return false; }
+}
+const spaRouteFallback = {
+  name: "nexus-spa-route-fallback",
+  apply: "serve" as const,
+  configureServer(server: import("vite").ViteDevServer) {
+    server.middlewares.use((req, _res, next) => {
+      const url = (req.url || "").split("?")[0];
+      // extensionless path (a route, not an asset/.html), e.g. /dashboard
+      if (/^\/[^.]*$/.test(url) && url !== "/") {
+        const stub = resolve(SRC, `${url.slice(1)}.html`);
+        if (existsSync(stub) && isRedirectStub(stub)) {
+          req.url = "/index.html";
+        }
+      }
+      next();
+    });
+  },
+};
 const htmlEntries = Object.fromEntries(
   readdirSync(SRC)
     .filter(f => f.endsWith(".html"))
@@ -25,6 +60,7 @@ export default defineConfig({
   root: SRC,
   publicDir: false,
   plugins: [
+    spaRouteFallback,
     react(),
     {
       name: "nexus-theme-boot",
