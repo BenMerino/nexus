@@ -109,12 +109,9 @@
   --sans:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --mono:    'JetBrains Mono', 'SF Mono', Consolas, monospace;
 
-  /* Squared-off UI: every radius role collapses to 0. Rounded
-     corners are gone app-wide; chips/tags/charts keep their COLOR
-     but not their pill/round shape. */
-  --radius-sm: 0;
-  --radius:    0;
-  --radius-lg: 0;
+  /* Radius roles now flow from dna-defaults.css (sm 9 / control 9 /
+     pill 9 / card 18). The old square-off overrides that pinned these
+     to 0 are removed so the role tokens resolve to their DNA values. */
 
   /* Aliases consumed by graph-engine/*.tsx */
   --text-main:    var(--fg);
@@ -376,7 +373,7 @@ em {
 .main-fullbleed > * { flex: 1 1 auto; min-height: 0; }
 .main::-webkit-scrollbar { width: 10px; }
 .main::-webkit-scrollbar-track { background: transparent; }
-.main::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 5px; }
+.main::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: var(--radius-sm); }
 
 .view { padding: 32px 40px 64px; max-width: 1480px; margin: 0 auto; }
 @media (max-width: 1100px) { .view { padding: 24px 24px 48px; } }
@@ -403,7 +400,7 @@ em {
 /* ═══ TAGS ═══ */
 .tag {
   display: inline-flex; align-items: center;
-  padding: 4px 9px; border-radius: var(--radius-sm);
+  padding: 4px 9px; border-radius: var(--radius-pill);
   font-size: 11px; font-weight: 500; letter-spacing: 0.08em; line-height: 1;
   background: rgba(255,255,255,0.06); color: var(--fg-muted);
   border: 1px solid transparent;
@@ -423,7 +420,7 @@ em {
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   padding: 22px 24px;
 }
 .card h4 { margin: 0 0 10px; font-family: var(--display); font-weight: 400; font-size: 18px; }
@@ -437,7 +434,7 @@ em {
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 1px; background: var(--border-soft);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius); overflow: hidden; margin-bottom: 24px;
+  border-radius: var(--radius-card); overflow: hidden; margin-bottom: 24px;
 }
 .stat { background: var(--bg-card); padding: 22px 24px 20px; min-height: 122px; }
 .stat-label { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--fg-dim); margin-bottom: 18px; }
@@ -523,7 +520,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   pointer-events: none;
 }
 .skel * { color: transparent !important; visibility: hidden; }
-.skel-fill { position: absolute; inset: 0; border-radius: var(--radius); }
+.skel-fill { position: absolute; inset: 0; border-radius: var(--radius-card); }
 @media (prefers-reduced-motion: reduce) {
   .skel { animation-duration: 3.2s; }
 }
@@ -560,7 +557,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .graph-overlay-right {
   right: 18px;
   background: linear-gradient(180deg, rgba(20, 22, 26, 0.78), rgba(20, 22, 26, 0.62));
-  border: 1px solid var(--border-soft); border-radius: var(--radius);
+  border: 1px solid var(--border-soft); border-radius: var(--radius-card);
   backdrop-filter: blur(10px);
   pointer-events: auto;
   overflow: hidden;
@@ -618,7 +615,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .graph-filters {
   background: var(--bg-card); border: 1px solid var(--border-soft);
-  border-radius: var(--radius); padding: 18px;
+  border-radius: var(--radius-card); padding: 18px;
   display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
 }
 .filter-group { display: flex; flex-direction: column; gap: 8px; }
@@ -632,7 +629,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .check-box {
   width: 14px; height: 14px; border: 1px solid var(--border);
-  border-radius: 3px; background: var(--bg); flex-shrink: 0;
+  border-radius: var(--radius-control); background: var(--bg); flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   color: var(--bg); transition: background 0.15s;
 }
@@ -644,11 +641,11 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .year-range-track::before {
   content: ''; position: absolute; left: 0; right: 0; top: 50%;
   height: 3px; transform: translateY(-50%);
-  background: var(--border); border-radius: 2px;
+  background: var(--border); border-radius: var(--radius-sm);
 }
 .year-range-fill {
   position: absolute; top: 50%; height: 3px; transform: translateY(-50%);
-  background: var(--accent); border-radius: 2px; pointer-events: none;
+  background: var(--accent); border-radius: var(--radius-sm); pointer-events: none;
 }
 .year-range-input {
   position: absolute; inset: 0; width: 100%; height: 100%;
@@ -686,7 +683,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 
 .graph-canvas {
   background: var(--bg-card); border: 1px solid var(--border-soft);
-  border-radius: var(--radius); position: relative; overflow: hidden;
+  border-radius: var(--radius-card); position: relative; overflow: hidden;
   background-image: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%);
 }
 .canvas-corner-tl {
@@ -701,7 +698,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .tilt-toggle {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 10px; border-radius: 999px;
+  padding: 6px 10px; border-radius: var(--radius-pill);
   background: rgba(0, 0, 0, 0.45); border: 1px solid var(--border-soft);
   color: var(--fg-muted); font-family: var(--mono); font-size: 11px;
   letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
@@ -716,7 +713,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .tilt-toggle .tilt-glyph::before,
 .tilt-toggle .tilt-glyph::after {
   content: ''; position: absolute; left: 0; right: 0; height: 1.5px;
-  background: currentColor; border-radius: 1px;
+  background: currentColor; border-radius: var(--radius-sm);
   transition: transform 220ms ease;
 }
 .tilt-toggle .tilt-glyph::before { top: 2px; }
@@ -746,12 +743,12 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .layer-stack-handle:hover { color: var(--fg-muted); }
 .layer-stack-checks { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .layer-stack-fixed { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; padding: 2px 0; }
-.layer-stack-fixed-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.layer-stack-fixed-dot { width: 10px; height: 10px; border-radius: var(--radius-sm); flex-shrink: 0; }
 
 /* ═══ DETAIL PANEL ═══ */
 .detail-panel {
   background: var(--bg-card); border: 1px solid var(--border-soft);
-  border-radius: var(--radius); overflow: hidden; padding: 0;
+  border-radius: var(--radius-card); overflow: hidden; padding: 0;
 }
 .node-detail-pane { padding: 24px; }
 .detail-empty {
@@ -792,14 +789,14 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .detail-accented .detail-head { border-bottom-color: var(--detail-accent); }
 .detail-accented .detail-head h3 { color: var(--detail-accent); }
 .detail-accented .detail-head .eyebrow { color: var(--detail-accent); }
-.close { background: transparent; border: 0; color: var(--fg-dim); cursor: pointer; padding: 6px; border-radius: 3px; transition: color 0.15s, background 0.15s; }
+.close { background: transparent; border: 0; color: var(--fg-dim); cursor: pointer; padding: 6px; border-radius: var(--radius-control); transition: color 0.15s, background 0.15s; }
 .close:hover { color: var(--fg); background: rgba(255,255,255,0.06); }
 .detail-back {
   background: transparent; border: 0; color: var(--fg-dim); cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px;
   font: inherit; font-family: var(--mono); font-size: 11px;
   text-transform: uppercase; letter-spacing: 0.1em;
-  padding: 4px 8px 4px 4px; margin-bottom: 12px; border-radius: 3px;
+  padding: 4px 8px 4px 4px; margin-bottom: 12px; border-radius: var(--radius-control);
   transition: color 0.15s, background 0.15s;
 }
 .detail-back:hover { color: var(--fg); background: rgba(255,255,255,0.06); }
@@ -810,7 +807,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .detail-stats {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 1px;
   background: var(--border-soft); border: 1px solid var(--border-soft);
-  border-radius: 4px; overflow: hidden;
+  border-radius: var(--radius-card); overflow: hidden;
 }
 .detail-stats > div { background: var(--bg-inset); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
 .detail-stats span { font-family: var(--display); font-size: 28px; line-height: 1; color: var(--accent); letter-spacing: -0.02em; }
@@ -828,7 +825,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
  * shimmering gradient drifts across every sk-bar so the pane reads as
  * "loading, layout known" instead of blank. */
 .detail-skeleton .sk-bar {
-  display: block; border-radius: 3px;
+  display: block; border-radius: var(--radius-sm);
   background: linear-gradient(90deg, var(--bg-inset) 0%, var(--border-soft) 50%, var(--bg-inset) 100%);
   background-size: 200% 100%;
   animation: sk-shimmer 1.2s linear infinite;
@@ -852,7 +849,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   position: relative; padding: 16px 18px;
   background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   backdrop-filter: blur(8px);
   animation: gc-fade 120ms ease-out both;
   display: flex; flex-direction: column; gap: 10px;
@@ -899,7 +896,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .gc-community {
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius); padding: 12px 14px;
+  border-radius: var(--radius-card); padding: 12px 14px;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015)),
     var(--bg-inset);
@@ -919,7 +916,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .gc-community-title:hover { background: transparent; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; flex: 1; transition: color 0.12s; }
 .gc-community-title:hover { color: var(--accent); }
 .gc-community-title:focus { outline: none; background: transparent; }
-.gc-community-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+.gc-community-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
 .gc-community:hover {
   background:
     linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
@@ -939,7 +936,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   display: flex; flex-direction: column; gap: 10px;
 }
 .gc-community.open .gc-community-body { grid-template-rows: 1fr; opacity: 1; margin-top: 4px; }
-.gc-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.gc-swatch { width: 10px; height: 10px; border-radius: var(--radius-sm); flex-shrink: 0; }
 .gc-count { font-size: 11px; }
 .gc-list { display: flex; flex-direction: column; gap: 4px; }
 .gc-list-label {
@@ -969,7 +966,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 input, select, textarea {
   font-family: var(--sans); font-size: 14px;
   background: var(--bg-inset); color: var(--fg);
-  border: 1px solid var(--border); border-radius: 4px;
+  border: 1px solid var(--border); border-radius: var(--radius-control);
   padding: 8px 12px; outline: 0;
   transition: border-color 0.15s;
 }
@@ -1004,7 +1001,7 @@ button.secondary { background: transparent; }
 .paper-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .paper-card {
   background: var(--bg-card); border: 1px solid var(--border-soft);
-  border-radius: var(--radius); padding: 20px 22px;
+  border-radius: var(--radius-card); padding: 20px 22px;
   display: flex; flex-direction: column; gap: 10px;
 }
 .paper-meta-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -1023,7 +1020,7 @@ button.secondary { background: transparent; }
 .tweaks-panel {
   position: fixed; bottom: 20px; right: 20px; width: 280px;
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px 18px;
+  border-radius: var(--radius-card); padding: 16px 18px;
   z-index: 100; box-shadow: 0 16px 48px rgba(0,0,0,0.4);
 }
 .tweaks-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-soft); }
@@ -1033,7 +1030,7 @@ button.secondary { background: transparent; }
 .tweak-label { font-size: 11px; color: var(--fg-muted); display: flex; justify-content: space-between; }
 .tweak-label span { font-family: var(--mono); color: var(--accent); }
 .tweak-opts { display: flex; gap: 4px; }
-.tweak-opt { flex: 1; padding: 5px 8px; background: var(--bg-inset); border: 1px solid var(--border-soft); color: var(--fg-muted); font-size: 11px; border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+.tweak-opt { flex: 1; padding: 5px 8px; background: var(--bg-inset); border: 1px solid var(--border-soft); color: var(--fg-muted); font-size: 11px; border-radius: var(--radius-control); cursor: pointer; transition: all 0.15s; }
 .tweak-opt.on { background: var(--accent); color: #1a1612; border-color: var(--accent); }
 
 /* ═══ LEGACY HELPERS (kept for vanilla JS pages until converted) ═══ */
@@ -1050,22 +1047,22 @@ button.secondary { background: transparent; }
 .page { max-width: 1200px; margin: 0 auto; padding: 24px; }
 
 /* Source blocks (submit.html, explore record details) */
-.source { border: 1px solid var(--border-soft); border-radius: 4px; padding: 12px; margin: 8px 0; background: var(--bg-card); }
+.source { border: 1px solid var(--border-soft); border-radius: var(--radius-card); padding: 12px; margin: 8px 0; background: var(--bg-card); }
 .source h3 { margin: 0 0 8px 0; font-size: 13px; font-family: var(--mono); color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.1em; }
 .source .not-found { color: var(--fg-dim); }
 .source table { margin: 0; }
 .source td { padding: 3px 10px 3px 0; font-size: 13px; }
 .source td:first-child { font-weight: 500; white-space: nowrap; color: var(--fg-muted); }
-.normalized { border: 1px solid var(--accent); border-radius: 4px; padding: 16px; margin: 12px 0; background: var(--bg-card); }
+.normalized { border: 1px solid var(--accent); border-radius: var(--radius-card); padding: 16px; margin: 12px 0; background: var(--bg-card); }
 .normalized h3 { margin: 0 0 8px 0; font-family: var(--display); font-weight: 400; }
 .normalized td { padding: 4px 12px 4px 0; }
 .normalized td:first-child { font-weight: 500; white-space: nowrap; color: var(--fg-muted); }
 
 /* Profile popup (legacy from nav.js — retained until shell fully replaces it) */
 .profile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.profile-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; min-width: 320px; max-width: 400px; color: var(--fg); }
+.profile-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 24px; min-width: 320px; max-width: 400px; color: var(--fg); }
 .profile-header { text-align: center; margin-bottom: 16px; }
-.profile-logo { height: 48px; width: 48px; object-fit: contain; border-radius: 4px; margin-bottom: 8px; }
+.profile-logo { height: 48px; width: 48px; object-fit: contain; border-radius: var(--radius-control); margin-bottom: 8px; }
 .profile-name { font-size: 16px; font-family: var(--display); }
 .profile-titles { font-size: 12px; color: var(--fg-dim); margin-top: 2px; }
 .profile-table { width: 100%; margin-bottom: 16px; }
@@ -1082,16 +1079,14 @@ button.secondary { background: transparent; }
 .detail-panel::-webkit-scrollbar-thumb,
 .graph-filters::-webkit-scrollbar-thumb,
 .sidebar::-webkit-scrollbar-thumb,
-.nav-list::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 3px; }
+.nav-list::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: var(--radius-sm); }
 
 /* Graph container (legacy) */
-#graph-container { width: 100%; border: 1px solid var(--border-soft); border-radius: 4px; background: var(--bg-card); }
+#graph-container { width: 100%; border: 1px solid var(--border-soft); border-radius: var(--radius-card); background: var(--bg-card); }
 
-/* ═══ SQUARED-OFF OVERRIDE ═══
-   Boring, monochrome, fully square UI. The radius tokens above are
-   already 0, but many elements still carry raw radii (50% avatars/
-   dots, 999px pills, 2–5px corners) or inline border-radius. This
-   single primitive-layer rule strips them all so nothing is rounded.
-   Chips/tags/charts keep their COLOR (set elsewhere); only shape is
-   forced flat here. */
-*, *::before, *::after { border-radius: 0 !important; }
+/* ═══ ROUNDED + CONCENTRIC (2026-06-28) ═══
+   The global square-corner override was REMOVED when nexus adopted Zincro's
+   concentric-corner pipeline (radius tokens now flow from dna-defaults: card
+   18 / control 9 / pill 9, curved as squircles via corner-shape). A blanket
+   `border-radius: 0 !important` here would nullify every nested corner. If a
+   specific element must stay square, square it at that element, not globally. */

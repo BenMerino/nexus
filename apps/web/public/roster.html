@@ -12,7 +12,7 @@
     <main class="main">
       <style>
         .roster-drop { border: 1px dashed var(--border); border-radius: var(--radius); padding: 18px; background: var(--bg-inset); }
-        .roster-drop textarea { width: 100%; min-height: 160px; font-family: var(--mono); font-size: 11px; background: transparent; color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 10px; resize: vertical; }
+        .roster-drop textarea { width: 100%; min-height: 160px; font-family: var(--mono); font-size: 11px; background: transparent; color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 10px; resize: vertical; }
         .roster-stat { display: inline-block; margin-right: 24px; }
         .roster-stat b { font-size: 22px; font-family: var(--display); font-weight: 400; }
         .roster-stat span { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
@@ -24,7 +24,7 @@
         .admin-table tbody tr:last-child td { border-bottom: none; }
         .admin-table tbody tr:hover { background: var(--bg-inset); }
         .roster-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-        .roster-toolbar .tool-btn { background: var(--bg-inset); border: 1px solid var(--border); color: var(--fg); padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .roster-toolbar .tool-btn { background: var(--bg-inset); border: 1px solid var(--border); color: var(--fg); padding: 6px 14px; border-radius: var(--radius-control); cursor: pointer; font-size: 12px; }
         .roster-toolbar .tool-btn.active { border-color: var(--accent); color: var(--accent); }
         .tool-panel { border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; background: var(--bg-inset); }
         .tableScroll { max-height: 56vh; overflow: auto; }
@@ -40,7 +40,7 @@
           <div class="roster-toolbar">
             <button class="tool-btn" id="tool-import">Import roster</button>
             <button class="tool-btn" id="tool-ingest">Ingest publications</button>
-            <input type="text" id="ov-filter" placeholder="search name / faculty / department" style="margin-left:auto; font-size:12px; padding:6px 10px; width:280px; border:1px solid var(--border); border-radius:4px; background:var(--bg-inset); color:var(--fg);">
+            <input type="text" id="ov-filter" placeholder="search name / faculty / department" style="margin-left:auto; font-size:12px; padding:6px 10px; width:280px; border:1px solid var(--border); border-radius:var(--radius-control); background:var(--bg-inset); color:var(--fg);">
           </div>
 
           <!-- Live ingest indicator: shown only while a background paper-ingest
@@ -48,7 +48,7 @@
           <div id="ingest-banner" style="display:none; align-items:center; gap:10px; padding:10px 14px; margin-bottom:14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-inset); font-size:12px;">
             <span class="sync-pulse" id="ingest-banner-pulse"></span>
             <span id="ingest-banner-text">Ingesting publications…</span>
-            <div style="flex:1; height:6px; background:var(--border-soft); border-radius:3px; overflow:hidden; min-width:80px;">
+            <div style="flex:1; height:6px; background:var(--border-soft); border-radius:var(--radius-sm); overflow:hidden; min-width:80px;">
               <div id="ingest-banner-bar" style="height:100%; width:0%; background:var(--accent); transition:width 0.4s;"></div>
             </div>
             <span id="ingest-banner-pct" class="text-small text-muted" style="font-family:var(--mono);"></span>
@@ -58,7 +58,7 @@
           <div class="tool-panel" id="panel-import" style="display:none;">
             <div class="view-sub" style="margin-bottom:12px;">Import academics from a semicolon-delimited roster export (Nombre; Categoría; Departamento; Facultad; ORCID). Re-importing updates org fields without duplicating.</div>
             <input type="file" id="roster-file" accept=".csv,text/csv,text/plain" class="mb-8">
-            <textarea id="roster-text" placeholder="…or paste the CSV contents here" style="width:100%; min-height:140px; font-family:var(--mono); font-size:11px; background:transparent; color:var(--fg); border:1px solid var(--border); border-radius:4px; padding:10px; resize:vertical;"></textarea>
+            <textarea id="roster-text" placeholder="…or paste the CSV contents here" style="width:100%; min-height:140px; font-family:var(--mono); font-size:11px; background:transparent; color:var(--fg); border:1px solid var(--border); border-radius:var(--radius-card); padding:10px; resize:vertical;"></textarea>
             <div style="margin-top:12px;">
               <button class="primary-btn" id="roster-import-btn">Import roster</button>
               <span id="roster-status" class="text-small" style="margin-left:10px;"></span>

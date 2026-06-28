@@ -18,22 +18,22 @@
         .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .admin-table th, .admin-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-soft); }
         .admin-table th { font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: 0.12em; color: var(--fg-dim); font-family: var(--mono); }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 500; font-family: var(--mono); letter-spacing: 0.06em; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: var(--radius-control); font-size: 10px; font-weight: 500; font-family: var(--mono); letter-spacing: 0.06em; }
         .badge-superadmin { background: oklch(0.28 0.05 300 / 0.5); color: oklch(0.82 0.10 300); }
         .badge-director   { background: oklch(0.28 0.05 245 / 0.5); color: oklch(0.82 0.10 245); }
         .badge-secretary  { background: oklch(0.28 0.05 50  / 0.5); color: oklch(0.82 0.10 50); }
         .badge-academic   { background: oklch(0.28 0.05 145 / 0.5); color: oklch(0.82 0.10 145); }
         .color-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
         .color-row label { width: 130px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
-        .color-row input[type="color"] { width: 40px; height: 30px; border: 1px solid var(--border); cursor: pointer; background: transparent; border-radius: 3px; padding: 0; }
+        .color-row input[type="color"] { width: 40px; height: 30px; border: 1px solid var(--border); cursor: pointer; background: transparent; border-radius: var(--radius-control); padding: 0; }
         .form-row { margin: 10px 0; }
         .form-row label { display: block; font-family: var(--mono); font-size: 10px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.12em; color: var(--fg-dim); }
         .form-row input, .form-row select { width: 100%; }
         .branding-grid { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start; }
-        .logo-box { width: 80px; height: 80px; border: 1px dashed var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; background: var(--bg-inset); }
+        .logo-box { width: 80px; height: 80px; border: 1px dashed var(--border); border-radius: var(--radius-card); display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; background: var(--bg-inset); }
         .logo-box:hover { border-color: var(--accent); }
         .logo-box img { max-width: 80px; max-height: 80px; object-fit: contain; }
-        .tm-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 4px; padding: 14px; margin-bottom: 10px; }
+        .tm-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: var(--radius-card); padding: 14px; margin-bottom: 10px; }
         .tm-vals { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
         .tm-vals .tag { cursor: pointer; border: 2px solid transparent; }
         .tm-vals .tag.selected { border-color: var(--accent); font-weight: 500; }

@@ -62,4 +62,72 @@
   --_ctl-border:    1px;
   --_ctl-radius:    var(--radius-control);
   --_ctl-pad-block: 0px;
+
+  /* ── Concentric-corner (nest) root tokens — ported from Zincro theme.css.
+     The vendored ui/composed CSS (list-item, input-frame, base-action…) and
+     BaseBox's `nested` math reference these; without them ListItem/Disclosure/
+     nest-controls surfaces render flat. --row-inset is THE single inset value;
+     --nest-label-* is the one font role for every selectable value in a panel. */
+  --row-inset:         var(--space-1);
+  --nest-label-font:   var(--text-body);
+  --nest-label-weight: var(--weight-label);
+}
+
+/* ── Concentric corners (the Zincro "nested radius" pipeline) ─────────────────
+   A row inside a rounded, uniformly-padded surface curves PARALLEL to that
+   surface: child corner = parent radius − inset − 1px border, clamped at 0.
+   The math for `<BaseBox nested>` lives in BaseBox.tsx (publishes --_nest-r/
+   -pad/-corner at runtime); these class rules are the row/control opt-ins.
+   Ported from Zincro packages/shared/src/theme.css (nest section only — the
+   reset + utilities there collide with nexus's shared.css and are skipped). */
+.nest-row {
+  width: calc(100% - 2 * var(--row-inset));
+  margin: var(--row-inset);
+  /* Leading-gutter inset — ONE value for both axes (= the vertical-centering
+     remainder), so a row's first glyph has equal room left/top/bottom. */
+  --nest-px: calc((var(--_ctl-h) - var(--_ctl-icon)) / 2);
+  --nest-lead: var(--_ctl-icon);
+  /* The concentric corner, computed once and exposed so any row kind resolves it. */
+  --_nest-corner: max(0px, calc(var(--_nest-r, var(--radius-card)) - 1px - var(--row-inset)));
+  border-radius: var(--_nest-corner);
+  --input-frame-radius: var(--_nest-corner);
+}
+/* A BaseAction row (Disclosure header): 2-class selector outspecifies
+   base-action's own per-size radius so the nest corner wins. */
+.nest-row.base-action {
+  border-radius: var(--_nest-corner);
+}
+/* Scroll container for stacked nest-rows: pull up one inset so the row above's
+   bottom margin doesn't double with the first row's top across the BFC edge. */
+.nest-scroll:not(:first-child) {
+  margin-top: calc(-1 * var(--row-inset));
+}
+
+/* ── nexus app surfaces → concentric (the hand-written cards, not BaseBox) ────
+   The vendored pipeline publishes --_nest-* from <BaseBox radius pad>. nexus's
+   own card CSS (.panel/.tenant-rail/.card/.kpi) draws its box in CSS, so it
+   publishes the nest vars here instead, and its inner clickable rows read the
+   concentric corner — the same by-construction parallel curve, for plain DOM
+   rows that aren't ListItem. --_nest-pad is each surface's content inset. */
+.panel        { --_nest-r: var(--radius-card); --_nest-pad: var(--space-6);
+                --_nest-corner: max(0px, calc(var(--radius-card) - var(--space-6) - 1px)); }
+.tenant-rail  { --_nest-r: var(--radius-card); --_nest-pad: var(--space-2);
+                --_nest-corner: max(0px, calc(var(--radius-card) - var(--space-2) - 1px)); }
+.kpi, .card   { --_nest-r: var(--radius-card); --_nest-pad: var(--space-4);
+                --_nest-corner: max(0px, calc(var(--radius-card) - var(--space-4) - 1px)); }
+/* Inner rows curve parallel to their host surface's corner. --_nest-corner
+   inherits from the nearest publishing ancestor (.panel/.tenant-rail/.kpi), so
+   these read it regardless of intermediate wrapper divs. */
+.scope-unit,
+.contrib-row,
+.org-row.selectable { border-radius: var(--_nest-corner, var(--radius-control)); }
+
+/* Smooth corners — the squircle that makes Zincro's concentric corners read as
+   continuous (superellipse) rather than circular arcs. ONE knob (--corner-smooth,
+   from dna-defaults) applied to every radius by construction. @supports-guarded:
+   engines without corner-shape keep arcs, no regression. */
+@supports (corner-shape: superellipse(1.5)) {
+  *, *::before, *::after {
+    corner-shape: superellipse(var(--corner-smooth, 1));
+  }
 }

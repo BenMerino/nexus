@@ -43,11 +43,12 @@
 
   /* ── Radius roles ───────────────────────────────────────────
      --radius-sm/--radius/--radius-lg already exist in shared.css
-     (3/6/10px). These add role-based aliases so components say
-     what they are, not a magic size. */
-  --radius-control: 0;  /* inputs, buttons — squared */
-  --radius-card:    0;  /* cards, panels — squared */
-  --radius-pill:    0;  /* chips, toggles — squared (was 999px) */
+     (3/6/10px). The role tokens (control, card, pill, section, item,
+     surface) now come from the vendored dna-defaults.css
+     (control 9px, card 18px, pill 9px) so the
+     concentric-corner pipeline + squircle (corner-shape) render the
+     full Zincro look. (Was forced to 0 for square corners — reversed
+     2026-06-28 when adopting Zincro's concentric corners.) */
 
   /* ── Shadow scale ───────────────────────────────────────────
      Replaces the ad-hoc rgba(0,0,0,...) shadows in shared.css
