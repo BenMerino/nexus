@@ -213,7 +213,8 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
-  background: var(--bg);
+  background: var(--page-mesh);
+  background-attachment: fixed;
   color: var(--fg);
   font-family: var(--sans);
   font-size: 14px;
@@ -363,7 +364,9 @@ em {
    * doesn't shift sideways when the vertical scrollbar appears after data
    * loads. Without this the whole content area jitters on first render. */
   scrollbar-gutter: stable;
-  background: var(--bg);
+  /* transparent so the body's silver gradient mesh shows through behind the
+     glass content surfaces (was var(--bg), which hid the mesh). */
+  background: transparent;
 }
 /* Full-bleed variant for views that want to occupy the whole main area
  * with their own internal layout (graph explorer). No scroll, no padding,

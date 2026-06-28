@@ -152,6 +152,22 @@
   /* Each surface tracks its own depth; a nested .surface reads the parent's and
      adds 1 (capped at 3). The shared shorthand for a glass fill at a given rung. */
   --surface-depth: 0;
+
+  /* ── Silver gradient mesh — the page backdrop the glass surfaces float over.
+     A scatter of soft radial blobs in silver tones (derived from the tonal rungs
+     + a faint accent breath), layered over --bg. Theme-aware (light/dark by
+     construction) and fixed so it doesn't scroll under the content. The blob
+     positions/sizes are a fixed pleasing arrangement — a "designed random". */
+  --mesh-a: color-mix(in oklch, var(--fg) 8%,  var(--bg));
+  --mesh-b: color-mix(in oklch, var(--fg) 4%,  var(--bg));
+  --mesh-c: color-mix(in oklch, var(--accent) 6%, var(--bg));
+  --page-mesh:
+    radial-gradient(60% 50% at 12% 18%, var(--mesh-a) 0%, transparent 60%),
+    radial-gradient(50% 45% at 88% 12%, var(--mesh-b) 0%, transparent 55%),
+    radial-gradient(55% 55% at 78% 82%, var(--mesh-a) 0%, transparent 60%),
+    radial-gradient(45% 50% at 25% 88%, var(--mesh-c) 0%, transparent 55%),
+    radial-gradient(40% 40% at 50% 50%, var(--mesh-b) 0%, transparent 65%),
+    var(--bg);
 }
 
 /* The glass recipe — translucent fill + blur + grain + hairline. `.surface`
