@@ -64,6 +64,13 @@ async function start() {
   // Live tick: re-render each minute as the sun moves.
   setInterval(paint, 60000);
 
+  // Background tabs throttle/pause setInterval, so a long-backgrounded tab can
+  // hold a stale theme. Snap straight to the current sun the moment it's visible
+  // again instead of waiting up to a minute for the next tick.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") paint();
+  });
+
   // The theme handler (shell-mount) re-applies the static --accent + surface
   // tokens from /api/theme-tokens AFTER us, which would clobber the sky palette.
   // It announces that with this event — re-assert our sun tokens when it fires.
