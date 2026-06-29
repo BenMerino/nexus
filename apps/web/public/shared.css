@@ -17,6 +17,11 @@
    nexus's live theme. Imported AFTER dna-defaults so aliases win. See theme.md. */
 @import "./dna-bridge.css";
 
+/* The UNIFIED chrome DNA — floating glass header + sidebar + shell, the single
+   source for every page's chrome (no page hardcodes it; hard-rule N9). Imported
+   after dna-bridge because it consumes --glass-* and --_nest-corner from it. */
+@import "./app-chrome.css";
+
 :root {
   color-scheme: dark;
   /* Neutral grayscale surfaces/text/borders — chroma 0, no blue/beige cast. */
@@ -40,24 +45,27 @@
 
   /* Jewel-tone chrome: brand/accent are sapphire — the design's primary
      gemstone hue. Charts, tags and chips keep their own --chart-* color. */
-  --primary:    oklch(0.66 0.115 256);
+  /* COPPER THEME (2026-06): brand + chart/KPI accents are a copper family (warm
+     hues 25–80, no cool tones) so the whole platform reads copper. Surfaces/grays
+     and the data-semantic --metal-* / status colors are left to their own meaning. */
+  --primary:    oklch(0.62 0.13 45);   /* copper */
   --secondary:  oklch(0.62 0 0);
   --accent:     var(--primary);
-  --accent-dim: oklch(0.70 0.10 256);
+  --accent-dim: oklch(0.66 0.10 45);
 
-  /* Named jewel tones (design-DNA). The public dashboard chrome (KPI accent
-     bars, rail usage bars, ranked fills, crest gradient) sources these
-     directly; --chart-* stays the engine's categorical palette. Dark theme:
-     a touch lighter so the gems glow on the dark surface. */
-  --j-teal:     oklch(0.70 0.10 196);
-  --j-sapphire: oklch(0.66 0.115 256);
-  --j-amethyst: oklch(0.68 0.115 318);
-  --j-garnet:   oklch(0.68 0.13 22);
-  --j-emerald:  oklch(0.72 0.10 158);
-  --j-topaz:    oklch(0.76 0.11 72);
+  /* Copper-family series spread — replaces the old jewel tones. Each KPI/series
+     stays distinguishable via lightness + a hue spread inside the warm copper
+     band (rose-copper → copper → bronze → amber → gold), never blue/green/purple.
+     Dark theme: a touch lighter so they glow on the dark surface. */
+  --j-teal:     oklch(0.72 0.09 78);   /* light amber-gold */
+  --j-sapphire: oklch(0.64 0.13 45);   /* copper (primary KPI) */
+  --j-amethyst: oklch(0.60 0.13 30);   /* rose-copper */
+  --j-garnet:   oklch(0.58 0.14 22);   /* deep rust-copper */
+  --j-emerald:  oklch(0.66 0.11 60);   /* bronze */
+  --j-topaz:    oklch(0.76 0.12 75);   /* gold */
 
-  --talca:      oklch(0.55 0.13 250);
-  --journal:    oklch(0.68 0.14 320);
+  --talca:      oklch(0.55 0.13 40);   /* deep copper */
+  --journal:    oklch(0.66 0.13 65);   /* bronze-amber */
   --paper:      oklch(0.55 0.005 260);
 
   --ok:         oklch(0.78 0.14 145);
@@ -68,19 +76,20 @@
      Referenced by ui/graph-engine/svg-color-schemes.ts; without these every
      chart fill resolves to an undefined var and renders transparent (white).
      This block is the dark theme — higher lightness so series read on dark bg. */
-  /* Jewel tones: deep, SATURATED gemstone palette — emerald, sapphire,
-     amethyst, ruby, topaz, jade, violet, garnet. High chroma near the gamut
-     edge for richness; even lightness so no series dominates. Dark theme: a
-     touch lighter so the gems glow on dark. */
-  --chart-0: oklch(0.64 0.15 190);  /* teal/emerald — default single-series */
-  --chart-1: oklch(0.62 0.16 190);  /* emerald   */
-  --chart-2: oklch(0.58 0.18 265);  /* sapphire  */
-  --chart-3: oklch(0.60 0.19 330);  /* amethyst  */
-  --chart-4: oklch(0.62 0.19 30);   /* ruby      */
-  --chart-5: oklch(0.74 0.16 85);   /* topaz     */
-  --chart-6: oklch(0.66 0.17 150);  /* jade      */
-  --chart-7: oklch(0.55 0.19 300);  /* violet    */
-  --chart-8: oklch(0.58 0.18 10);   /* garnet    */
+  /* COPPER THEME (2026-06): the categorical palette is now a copper family —
+     warm hues 22–80 (copper, rose-copper, bronze, amber, gold, rust) at varied
+     lightness so multi-series charts still separate, but read copper not rainbow.
+     --chart-0 is the default single-series fill → straight copper. Dark theme:
+     a touch lighter so series read on dark bg. */
+  --chart-0: oklch(0.64 0.13 45);   /* copper — default single-series */
+  --chart-1: oklch(0.58 0.14 28);   /* rose-copper */
+  --chart-2: oklch(0.72 0.12 72);   /* gold      */
+  --chart-3: oklch(0.52 0.13 38);   /* deep copper */
+  --chart-4: oklch(0.68 0.11 60);   /* bronze    */
+  --chart-5: oklch(0.78 0.12 82);   /* amber-gold */
+  --chart-6: oklch(0.50 0.13 22);   /* rust      */
+  --chart-7: oklch(0.73 0.10 52);   /* light bronze */
+  --chart-8: oklch(0.60 0.14 35);   /* warm copper */
 
   /* Sequential ramps — each a saturated single-hue lightness ladder (dark→light). */
   --ramp-azure-1: oklch(0.40 0.12 250); --ramp-azure-2: oklch(0.51 0.16 250); --ramp-azure-3: oklch(0.61 0.18 250); --ramp-azure-4: oklch(0.72 0.15 250); --ramp-azure-5: oklch(0.83 0.09 250);
@@ -153,22 +162,22 @@
   --fg-muted:   oklch(0.44 0 0);
   --fg-dim:     oklch(0.56 0 0);
 
-  --primary:    oklch(0.50 0.108 256);
+  /* COPPER THEME — light: deeper + saturated so the coppers read rich on white. */
+  --primary:    oklch(0.52 0.12 45);   /* copper */
   --secondary:  oklch(0.50 0 0);
   --accent:     var(--primary);
-  --accent-dim: oklch(0.54 0.092 256);
+  --accent-dim: oklch(0.56 0.10 45);
 
-  /* Jewel tones — light theme: deep + saturated so gems read rich (not
-     pastel) on the white paper surface. */
-  --j-teal:     oklch(0.53 0.092 196);
-  --j-sapphire: oklch(0.50 0.108 256);
-  --j-amethyst: oklch(0.52 0.112 318);
-  --j-garnet:   oklch(0.54 0.122 22);
-  --j-emerald:  oklch(0.55 0.090 158);
-  --j-topaz:    oklch(0.64 0.104 72);
+  /* Copper-family series spread (light theme). */
+  --j-teal:     oklch(0.60 0.10 78);   /* amber-gold */
+  --j-sapphire: oklch(0.52 0.12 45);   /* copper (primary KPI) */
+  --j-amethyst: oklch(0.50 0.12 30);   /* rose-copper */
+  --j-garnet:   oklch(0.50 0.14 22);   /* deep rust-copper */
+  --j-emerald:  oklch(0.55 0.11 60);   /* bronze */
+  --j-topaz:    oklch(0.64 0.12 75);   /* gold */
 
-  --talca:      oklch(0.50 0.14 250);
-  --journal:    oklch(0.55 0.16 320);
+  --talca:      oklch(0.48 0.13 40);   /* deep copper */
+  --journal:    oklch(0.55 0.13 65);   /* bronze-amber */
   --paper:      oklch(0.50 0.005 260);
 
   --ok:         oklch(0.58 0.14 145);
@@ -177,15 +186,16 @@
 
   /* Chart palette — light theme, jewel tones: same hues, deep + saturated so
      gems read rich (not pastel) on white; ramps run light→dark. */
-  --chart-0: oklch(0.50 0.15 190);  /* emerald — default single-series */
-  --chart-1: oklch(0.50 0.16 190);  /* emerald  */
-  --chart-2: oklch(0.47 0.18 265);  /* sapphire */
-  --chart-3: oklch(0.48 0.19 330);  /* amethyst */
-  --chart-4: oklch(0.51 0.20 30);   /* ruby     */
-  --chart-5: oklch(0.60 0.16 85);   /* topaz    */
-  --chart-6: oklch(0.53 0.17 150);  /* jade     */
-  --chart-7: oklch(0.45 0.20 300);  /* violet   */
-  --chart-8: oklch(0.48 0.19 10);   /* garnet   */
+  /* COPPER THEME — light: deeper coppers so series read rich on white. */
+  --chart-0: oklch(0.52 0.13 45);   /* copper — default single-series */
+  --chart-1: oklch(0.48 0.14 28);   /* rose-copper */
+  --chart-2: oklch(0.60 0.13 72);   /* gold     */
+  --chart-3: oklch(0.46 0.13 38);   /* deep copper */
+  --chart-4: oklch(0.56 0.12 60);   /* bronze   */
+  --chart-5: oklch(0.64 0.13 82);   /* amber-gold */
+  --chart-6: oklch(0.46 0.14 22);   /* rust     */
+  --chart-7: oklch(0.60 0.11 52);   /* light bronze */
+  --chart-8: oklch(0.50 0.14 35);   /* warm copper */
 
   --ramp-azure-1: oklch(0.86 0.06 250); --ramp-azure-2: oklch(0.73 0.11 250); --ramp-azure-3: oklch(0.61 0.16 250); --ramp-azure-4: oklch(0.50 0.18 250); --ramp-azure-5: oklch(0.40 0.14 250);
   --ramp-crimson-1: oklch(0.87 0.06 20); --ramp-crimson-2: oklch(0.74 0.12 20); --ramp-crimson-3: oklch(0.62 0.18 20); --ramp-crimson-4: oklch(0.51 0.20 20); --ramp-crimson-5: oklch(0.42 0.16 20);
@@ -235,126 +245,6 @@ em {
 
 .mono  { font-family: var(--mono); font-size: 0.85em; letter-spacing: -0.01em; }
 .muted { color: var(--fg-dim); }
-
-/* ═══ APP SHELL ═══ */
-.app {
-  display: grid;
-  grid-template-columns: 232px 1fr;
-  grid-template-rows: 100vh;
-  height: 100vh;
-}
-.app.app-scroll { grid-template-rows: auto; height: auto; min-height: 100vh; align-items: start; }
-.app.app-scroll .sidebar { position: sticky; top: 0; height: 100vh; }
-
-/* ═══ SIDEBAR ═══ */
-#sidebar-mount {
-  display: contents;
-  background: var(--bg-inset);
-  border-right: 1px solid var(--border-soft);
-}
-#sidebar-mount:empty {
-  display: block;
-}
-.sidebar {
-  background: var(--bg-inset);
-  border-right: 1px solid var(--border-soft);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.tenant-chip { padding: 18px 20px 16px; border-bottom: 1px solid var(--border-soft); }
-.tenant-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.tenant-mark {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
-  position: relative; flex-shrink: 0; overflow: hidden;
-}
-.tenant-mark::after { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: var(--bg-inset); }
-.tenant-mark::before { content: ''; position: absolute; inset: 11px; border-radius: 50%; background: var(--accent); }
-.tenant-mark img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; z-index: 1; }
-.tenant-mark img + ::after, .tenant-mark img ~ ::before { display: none; }
-.brand-text { display: flex; flex-direction: column; }
-.brand-name { font-family: var(--display); font-size: 19px; letter-spacing: -0.01em; line-height: 1; }
-.brand-tenant { font-size: 11px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; font-family: var(--mono); }
-.tenant-chip-meta { display: flex; gap: 6px; flex-wrap: wrap; }
-
-.role-switcher { padding: 14px 14px 10px; border-bottom: 1px solid var(--border-soft); }
-.role-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--fg-dim); font-family: var(--mono); margin-bottom: 8px; padding: 0 6px; }
-.role-list { display: flex; flex-direction: column; gap: 2px; }
-.role-btn {
-  background: transparent; border: 0; text-align: left;
-  padding: 8px 10px; border-radius: var(--radius-sm);
-  color: var(--fg-muted); font: inherit; cursor: pointer;
-  display: flex; align-items: center; justify-content: space-between;
-  transition: background 0.15s, color 0.15s;
-}
-.role-btn:hover { background: rgba(255,255,255,0.03); color: var(--fg); }
-.role-btn.active { background: var(--bg-card); color: var(--fg); }
-.role-btn-label { display: flex; flex-direction: column; gap: 2px; }
-.role-btn-title { font-size: 13px; }
-.role-btn-who { font-size: 11px; color: var(--fg-dim); font-family: var(--mono); letter-spacing: 0.04em; }
-.role-btn.active .role-btn-who { color: var(--accent); }
-
-.sidebar-search { position: relative; padding: 12px 14px 6px; }
-.sidebar-search-input {
-  width: 100%; box-sizing: border-box;
-  background: var(--bg-card); border: 1px solid var(--border-soft);
-  color: var(--fg); font: inherit; font-size: 13px;
-  padding: 7px 10px; border-radius: var(--radius-sm);
-  transition: border-color 0.15s;
-}
-.sidebar-search-input::placeholder { color: var(--fg-dim); }
-.sidebar-search-input:focus { outline: none; border-color: var(--accent); }
-.sidebar-search-results {
-  position: absolute; left: 14px; right: 14px; top: calc(100% - 2px);
-  background: var(--bg-inset); border: 1px solid var(--border-soft);
-  border-radius: var(--radius-sm); z-index: 50;
-  max-height: 320px; overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-}
-.sidebar-search-empty { padding: 10px 12px; font-size: 12px; color: var(--fg-dim); font-family: var(--mono); }
-.sidebar-search-hit {
-  display: block; width: 100%; text-align: left;
-  background: transparent; border: 0; cursor: pointer; font: inherit;
-  padding: 8px 12px; border-bottom: 1px solid var(--border-soft);
-  color: var(--fg);
-}
-.sidebar-search-hit:last-child { border-bottom: 0; }
-.sidebar-search-hit:hover { background: var(--bg-card); }
-.sidebar-search-hit-name { font-size: 13px; }
-.sidebar-search-hit-meta { font-size: 11px; color: var(--fg-dim); font-family: var(--mono); margin-top: 2px; }
-
-.nav-list { padding: 14px 14px; flex: 1; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
-.nav-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px; border-radius: var(--radius-sm);
-  color: var(--fg-muted); cursor: pointer; font-size: 13px;
-  transition: background 0.15s, color 0.15s;
-  background: transparent; border: 0; width: 100%; text-align: left; font-family: inherit;
-  text-decoration: none;
-}
-.nav-item:hover { background: rgba(255,255,255,0.03); color: var(--fg); text-decoration: none; }
-.nav-item.active { background: var(--bg-card); color: var(--fg); }
-.nav-item.active svg { color: var(--accent); }
-.nav-section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--fg-dim); font-family: var(--mono); margin: 14px 6px 6px; }
-
-.sidebar-footer {
-  padding: 12px 14px; border-top: 1px solid var(--border-soft);
-  font-size: 11px; color: var(--fg-dim); font-family: var(--mono); line-height: 1.5;
-}
-.sync-pulse {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
-  display: inline-block; margin-right: 6px; box-shadow: 0 0 0 0 var(--ok);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(130, 200, 130, 0.5); }
-  70% { box-shadow: 0 0 0 6px rgba(130, 200, 130, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(130, 200, 130, 0); }
-}
-.sidebar-user-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
-.sidebar-user-row a { color: var(--fg-dim); font-family: var(--mono); font-size: 11px; }
-.sidebar-user-row a:hover { color: var(--accent); }
 
 /* ═══ MAIN AREA ═══ */
 .main {

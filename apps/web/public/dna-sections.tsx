@@ -11,7 +11,7 @@ import { Popover } from '../ui/composed/Popover';
  * themes them with nexus's palette. This is the gallery body. */
 
 const BASE_ACTION_VARIANTS = [
-  'primary', 'secondary', 'danger', 'warning', 'ghost', 'outline', 'aurora',
+  'primary', 'secondary', 'danger', 'warning', 'ghost', 'outline',
   'danger-soft', 'warning-soft', 'success-soft', 'info-soft',
 ] as const;
 

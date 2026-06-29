@@ -30,7 +30,7 @@ function ThemeButton() {
 }
 
 export function TenantPublicHeader({
-  tenant, items, currentId, onNavigate, yearRange, lastUpdated,
+  tenant, items, currentId, onNavigate, yearRange, lastUpdated, search,
 }: {
   tenant: TenantLike;
   items: PublicNavItem[];
@@ -38,6 +38,7 @@ export function TenantPublicHeader({
   onNavigate: (id: string) => void;
   yearRange?: { minYear: string | null; maxYear: string | null };
   lastUpdated?: string | null;
+  search?: React.ReactNode;
 }) {
   // Prefer the real corpus-change date (last DOI submission) over the max
   // publication year; yearRange may be absent if the analytics payload wins
@@ -61,6 +62,7 @@ export function TenantPublicHeader({
             </div>
           </div>
         </div>
+        {search ? <div className="public-header-search">{search}</div> : null}
         <nav className="public-tabs" aria-label="Section navigation">
           {items.map(it => (
             <a key={it.id} href={`#${it.id}`}

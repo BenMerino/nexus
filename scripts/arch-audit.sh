@@ -120,6 +120,23 @@ while IFS= read -r f; do
   fi
 done < <(staged | grep -E '.*-atoms\.js$' || true)
 
+# ── N9 — Shared chrome only (no hardcoded header/sidebar/shell) ────────────
+#  Chrome (floating glass header + sidebar + shell) is defined ONCE in
+#  apps/web/public/app-chrome.css. No page may redefine a chrome class in an
+#  inline <style> or a page CSS — pages compose the shared chrome and add only
+#  page-specific styles. Fires on an ADDED CSS rule for a chrome selector. The
+#  single source (app-chrome.css) is exempt; per-file opt-out: arch-audit-ignore: N9.
+while IFS= read -r f; do
+  [ -z "$f" ] && continue; [ -f "$f" ] || continue
+  optout N9 "$f" && continue
+  case "$f" in *app-chrome.css) continue;; esac
+  added=$(git diff --cached -U0 -- "$f" | grep -E '^\+[^+]' || true)
+  if echo "$added" | grep -qE '^\+[[:space:]]*\.(public-header|public-header-inner|public-app|public-main|public-content|sidebar|app)[[:space:]]*\{'; then
+    echo "N9 BLOCK  $f — chrome class defined here; chrome lives ONLY in app-chrome.css (the shared floating-glass DNA). Remove it and import the shared chrome."
+    HARD=$((HARD+1))
+  fi
+done < <(staged | grep -E '^apps/web/public/.*\.(html|css|ts|tsx|js)$' || true)
+
 [ "$SOFT" -gt 0 ] && echo "" && echo "$SOFT soft warning(s) (N1/N3) — not blocking."
 if [ "$HARD" -gt 0 ]; then
   echo ""

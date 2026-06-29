@@ -73,13 +73,13 @@ function App() {
     <div className="public-app">
       <TenantPublicHeader tenant={statsPayload.tenant} items={NAV} currentId="overview"
         onNavigate={() => {}} yearRange={statsPayload.stats.yearRange}
-        lastUpdated={statsPayload.stats.lastUpdated} />
+        lastUpdated={statsPayload.stats.lastUpdated}
+        search={<TenantSearch slug={slug} onSelectUnit={setUnit} />} />
       <main className="public-main">
         <div className="public-content">
-        {/* Omnibox left (researchers / publications / units), live "viewing
-            scope" flag right — reflects the unit selected in the rail. */}
+        {/* Live "viewing scope" flag — reflects the unit selected in the rail.
+            (Search moved into the floating header.) */}
         <div className="page-head">
-          <TenantSearch slug={slug} onSelectUnit={setUnit} />
           <div className="scope-flag">
             {ES.pageHead.scopeLabel}<br />
             <b>{unit?.name ?? ES.pageHead.allUnits}</b><br />

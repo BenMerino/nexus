@@ -9,7 +9,7 @@ import './base-action.css';
  * fills on hover. One treatment parameterized over the four status tones; the
  * sibling of the solid weight. (Replaced the bespoke DangerPill molecule.) */
 export type ButtonVariant =
-  | 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost' | 'outline' | 'aurora'
+  | 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost' | 'outline'
   | 'danger-soft' | 'warning-soft' | 'success-soft' | 'info-soft';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -54,10 +54,8 @@ export const BaseAction = React.forwardRef<HTMLButtonElement, BaseActionProps>((
 }, ref) => {
   const isDisabled = disabled || loading;
   const iconOnly = iconOnlyProp ?? !children;
-  const isAurora = variant === 'aurora';
-  const primaryBg = variant === 'primary'
-    ? { background: 'linear-gradient(135deg, var(--primary, #4f46e5), var(--secondary, #10b981))' }
-    : {};
+  // primary IS the living aurora surface now — the old linear-gradient is gone.
+  const isPrimary = variant === 'primary';
   const hasBorder = BORDERED_VARIANTS.has(variant);
 
   return (
@@ -72,12 +70,12 @@ export const BaseAction = React.forwardRef<HTMLButtonElement, BaseActionProps>((
         fullWidth && 'base-action--full',
         className
       )}
-      style={{ ...SIZE_VARS[size], ...primaryBg, ...style }}
+      style={{ ...SIZE_VARS[size], ...style }}
     >
-      {/* aurora variant: the living mesh-gradient renders as the fill behind
-       *  the label (the button is position:relative; content sits above via
-       *  base-action.css's .base-action--aurora rules). */}
-      {isAurora && <AuroraSurface />}
+      {/* primary IS the living mesh-gradient: the aurora surface renders as the
+       *  fill behind the label (content sits above via base-action.css's
+       *  .base-action--primary rules). */}
+      {isPrimary && <AuroraSurface />}
       {loading
         ? <Loader2 className="action-spinner" />
         : leftIcon && <span className="action-icon">{leftIcon}</span>}
