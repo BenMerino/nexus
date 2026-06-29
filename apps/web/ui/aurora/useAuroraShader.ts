@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { compileShader, linkProgram, resolveColor } from '../visual-lang/index.js';
 import { AURORA_VERT, AURORA_FRAG } from './aurora.shader.glsl.js';
 import { type AuroraTuning } from './aurora.tuning.js';
-import { buildPalette, type AuroraPalette } from './aurora.palettes.js';
+import { sunStops } from './aurora.palettes.js';
 
 const FULLSCREEN_TRI = new Float32Array([-1, -1, 3, -1, -1, 3]);
 const MAX_BLOBS = 5;
@@ -10,12 +10,11 @@ const MAX_BLOBS = 5;
 /** Drives the aurora mesh-gradient on its own WebGL2 context. Unlike the
  *  particle molecules, this fills its CONTAINER (a button) — a ResizeObserver
  *  tracks the element so the canvas always matches the button's box. Each frame
- *  it builds the palette stops from the live theme (so the light/dark 2:1 ratio
- *  flips automatically) unless the caller passed explicit `tuning.colors`. */
+ *  it reads the sun-pipeline stops live from :root (so the gradient tracks
+ *  day/night) unless the caller passed explicit `tuning.colors`. */
 export function useAuroraShader(
     canvasRef: React.RefObject<HTMLCanvasElement>,
     tuningRef: React.RefObject<AuroraTuning>,
-    paletteRef: React.RefObject<AuroraPalette>,
 ) {
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -73,14 +72,10 @@ export function useAuroraShader(
             if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
             gl.viewport(0, 0, w, h);
 
-            // Palette stops: explicit tuning.colors wins; otherwise generate
-            // from the palette's base hue + shared axes, with the light/dark
-            // 2:1 ratio flipped by the live theme (detected from <html>.dark).
-            const isDark = typeof document !== 'undefined'
-                && document.documentElement.classList.contains('dark');
-            const stops = t.colors.length
-                ? t.colors
-                : buildPalette(paletteRef.current ?? 'primary', isDark);
+            // Stops: explicit tuning.colors wins; otherwise the sun-pipeline
+            // tokens (sunStops), resolved live from :root so the gradient tracks
+            // day/night like the rest of the platform.
+            const stops = t.colors.length ? t.colors : sunStops();
 
             const count = Math.min(MAX_BLOBS, Math.max(2, stops.length));
             for (let i = 0; i < count; i++) {
@@ -111,5 +106,5 @@ export function useAuroraShader(
             gl.deleteShader(vs); gl.deleteShader(fs);
             gl.deleteBuffer(buf); gl.deleteVertexArray(vao);
         };
-    }, [canvasRef, tuningRef, paletteRef]);
+    }, [canvasRef, tuningRef]);
 }

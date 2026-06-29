@@ -7,5 +7,4 @@ export type { AuroraSurfaceProps } from './AuroraSurface.js';
 export { DEFAULT_AURORA_TUNING, AURORA_KNOBS } from './aurora.tuning.js';
 export type { AuroraTuning, AuroraKnob } from './aurora.tuning.js';
 
-export { AURORA_HUES, AURORA_PALETTE_IDS, buildPalette, anchorColor } from './aurora.palettes.js';
-export type { AuroraPalette } from './aurora.palettes.js';
+export { sunStops } from './aurora.palettes.js';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { clsx } from 'clsx';
 import { Loader2 } from '../icons/index.js';
-import { AuroraSurface, type AuroraPalette } from '../aurora/index.js';
+import { AuroraSurface } from '../aurora/index.js';
 import './base-action.css';
 
 /* Solid status weight (HIGH emphasis): 'danger' / 'warning' — filled.
@@ -15,9 +15,6 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface BaseActionProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
-  /** Color sub-variant for variant="aurora" — a semantic tone palette
-   *  (primary/success/warning/danger/info/neutral). Ignored for other variants. */
-  auroraPalette?: AuroraPalette;
   size?: ButtonSize;
   loading?: boolean;
   fullWidth?: boolean;
@@ -52,7 +49,7 @@ const BORDERED_VARIANTS = new Set<ButtonVariant>([
 ]);
 
 export const BaseAction = React.forwardRef<HTMLButtonElement, BaseActionProps>(({
-  variant = 'ghost', auroraPalette, size = 'md', loading = false, fullWidth = false,
+  variant = 'ghost', size = 'md', loading = false, fullWidth = false,
   leftIcon, rightIcon, iconOnly: iconOnlyProp, children, className, disabled, style, ...props
 }, ref) => {
   const isDisabled = disabled || loading;
@@ -80,7 +77,7 @@ export const BaseAction = React.forwardRef<HTMLButtonElement, BaseActionProps>((
       {/* aurora variant: the living mesh-gradient renders as the fill behind
        *  the label (the button is position:relative; content sits above via
        *  base-action.css's .base-action--aurora rules). */}
-      {isAurora && <AuroraSurface palette={auroraPalette} />}
+      {isAurora && <AuroraSurface />}
       {loading
         ? <Loader2 className="action-spinner" />
         : leftIcon && <span className="action-icon">{leftIcon}</span>}

@@ -12,9 +12,9 @@ export interface AuroraTuning {
     softness: number;
 }
 
-/** Colors default to EMPTY — the palette generator (buildPalette) supplies the
- *  stops from the selected sub-variant's base hue. A caller can still pass an
- *  explicit `colors` array to override the palette entirely. */
+/** Colors default to EMPTY — the shader then uses the sun-pipeline stops
+ *  (sunStops, sky-driven :root tokens). A caller can still pass an explicit
+ *  `colors` array to override entirely. */
 export const DEFAULT_AURORA_TUNING: AuroraTuning = {
     colors: [],
     speed: 0.5,
