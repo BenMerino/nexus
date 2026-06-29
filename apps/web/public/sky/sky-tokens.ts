@@ -4,10 +4,12 @@
 // Written as inline styles on :root, the same channel the theme handler uses
 // (N6) — so these win over the CSS baseline and update live with the sky tick.
 //
-// SCOPE (deliberate): only the neutral SURFACE tokens + fg + accent track the
-// sun. The copper categorical chart palette (--chart-*/--ramp-*/--j-*) is left
-// alone — it's tuned for multi-series separation; charts pick up the sun only
-// via --accent (single-series fills) and the surface they sit on.
+// SCOPE: surfaces + fg here; color tokens (accent, --chart-*, status) are added
+// by sky-colors.ts, which interpolates the design's own tuned dark↔light anchors
+// (hues fixed → series keep their separation). The --ramp-*/--j-* sets stay
+// static (rarely used, no light anchors to blend).
+
+import { sunColors } from "./sky-colors";
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -48,12 +50,9 @@ export function sunTokens(altitude: number): Record<string, string> {
   };
 }
 
-let applied = -1; // last altitude bucket, so we only touch the DOM when it moves
 export function applySunTokens(altitude: number) {
-  const bucket = Math.round(dayFactor(altitude) * 100);
-  if (bucket === applied) return;
-  applied = bucket;
+  const f = dayFactor(altitude);
   const root = document.documentElement;
-  const toks = sunTokens(altitude);
+  const toks = { ...sunTokens(altitude), ...sunColors(altitude, f) };
   for (const [k, v] of Object.entries(toks)) root.style.setProperty(k, v);
 }
