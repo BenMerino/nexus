@@ -77,15 +77,6 @@ function App() {
         search={<TenantSearch slug={slug} onSelectUnit={setUnit} />} />
       <main className="public-main">
         <div className="public-content">
-        {/* Live "viewing scope" flag — reflects the unit selected in the rail.
-            (Search moved into the floating header.) */}
-        <div className="page-head">
-          <div className="scope-flag">
-            {ES.pageHead.scopeLabel}<br />
-            <b>{unit?.name ?? ES.pageHead.allUnits}</b><br />
-            <span>{unit ? ES.pageHead.unitNote : ES.pageHead.allUnitsNote}</span>
-          </div>
-        </div>
         {/* KPI row spans the full width above the rail + chart grid (mockup). */}
         <ScopedSummary slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} unit={unit} />
         {/* Two-column: scope rail (the picker) pinned left, the scoped chart

@@ -18,14 +18,6 @@ export const ES = {
   updatedPrefix: 'Updated',
   themeToggle: 'Toggle light / dark',
 
-  /* Page head — the viewing-scope flag (headline + lede removed) */
-  pageHead: {
-    scopeLabel: 'Viewing scope',
-    allUnits: 'All units',
-    allUnitsNote: 'complete institutional corpus',
-    unitNote: 'unit-scoped corpus',
-  },
-
   /* Scope rail head + the "all units" row label */
   scopeRail: {
     title: 'Scope · Faculties & Institutes',

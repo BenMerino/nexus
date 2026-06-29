@@ -114,8 +114,10 @@
    floating bar with top padding (inset + bar + inset). */
 .public-main {
   flex: 1; overflow-y: auto; min-height: 0;
-  padding: calc(var(--chrome-inset) + var(--chrome-bar-h) + var(--chrome-inset))
-           var(--chrome-inset) 72px;
+  /* Uniform --chrome-inset on the sides and bottom (matching the header's margin);
+     the top additionally clears the fixed floating bar (inset + bar + inset). */
+  padding: calc(2 * var(--chrome-inset) + var(--chrome-bar-h))
+           var(--chrome-inset) var(--chrome-inset);
 }
 .public-content { padding: 0; }
 
