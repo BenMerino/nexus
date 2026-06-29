@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { PublicStats } from './tenant-builders';
-import type { UnitScope } from './tenant-unit-scope-type';
+import type { UnitScope } from './tenant-scope-rail';
 import { ES } from './tenant-i18n';
 import { KpiSpark, type SparkPoint } from './tenant-kpi-spark';
 import { useKpiSparks } from './use-kpi-sparks';

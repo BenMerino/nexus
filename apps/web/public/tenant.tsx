@@ -3,9 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { buildTenantCharts } from './tenant-builders';
 import { ScopedSummary } from './tenant-summary';
 import { TenantPublicHeader, type PublicNavItem } from './tenant-header';
-import { TenantSidebar } from './tenant-sidebar';
-import { TenantUnitFilter } from './tenant-unit-filter';
-import { firstLiveSectionId } from './tenant-sections';
+import { TenantScopeRail } from './tenant-scope-rail';
 import { useUnitScope } from './use-unit-scope';
 import { TenantSearch } from './tenant-search';
 import { TenantFooter } from './tenant-footer';
@@ -22,8 +20,8 @@ perfMark('boot'); // module evaluated — bundles parsed, app about to mount
 // deferring the code costs nothing visible.
 const TenantBody = React.lazy(() => import('./tenant-body'));
 
-// The IA sidebar (tenant-sidebar) is the left navigation; unit scoping moved to
-// an in-view dropdown. No top nav tabs in the header.
+// No tabs: org scheme is the left rail, and Authors folded into the Overview
+// (scoped to the rail's selection). One content view → no top nav tabs.
 const NAV: PublicNavItem[] = [];
 
 function App() {
@@ -33,15 +31,6 @@ function App() {
   // null = whole organization. URL mirroring + the deep-link chart gate live in
   // use-unit-scope (?unit= loads hold the chart grid until the rail resolves).
   const { initialUnitKey, unit, setUnit, unitReady, markUnitReady } = useUnitScope();
-  // Active IA section (the sidebar's selection). Leaf id is tracked for the
-  // active-row highlight; content is keyed off the section. Defaults to the
-  // first live section (Institutional Overview).
-  const [section, setSection] = useState<string>(() => firstLiveSectionId());
-  const [activeLeaf, setActiveLeaf] = useState<string | null>(null);
-  const onSelectSection = (sectionId: string, leafId: string) => {
-    setSection(sectionId);
-    setActiveLeaf(leafId);
-  };
 
   // Perf beacon: 'shell' = first paint with chrome (header/overview),
   // 'analytics' = heavy chart data merged in. The gap between them, and how
@@ -88,30 +77,30 @@ function App() {
         search={<TenantSearch slug={slug} onSelectUnit={setUnit} />} />
       <main className="public-main">
         <div className="public-content">
-        {/* KPI row spans the full width above the sidebar + section content. */}
+        {/* KPI row spans the full width above the rail + chart grid (mockup). */}
         <ScopedSummary slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} unit={unit} />
-        {/* Two-column: the IA section sidebar (the nav) pinned left, the active
-            section's content on the right. The unit dropdown (the scope picker)
-            sits above the content and re-scopes whatever section is open. */}
+        {/* Two-column: scope rail (the picker) pinned left, the scoped chart
+            grid + author directory on the right. */}
         <div className="tenant-layout">
           <aside className="tenant-rail">
-            <TenantSidebar activeSection={section} activeLeaf={activeLeaf} onSelect={onSelectSection} />
-          </aside>
-          <div className="tenant-content">
-            <div className="tenant-content-bar">
-              {/* The unit dropdown deep-link-resolves once (mirrors the old
-                  rail), gating the chart grid via unitReady so a ?unit= load
-                  doesn't flash All-units → narrowed. */}
-              <TenantUnitFilter slug={slug} selected={unit} onSelect={setUnit}
+            {/* The rail IS the scope picker: selecting a unit re-scopes the
+                right-side Overview; the "All units" row resets it. */}
+            <div className="tenant-rail-head">
+              <h2 className="tenant-rail-title">{ES.scopeRail.title}</h2>
+              <p className="tenant-rail-note">{ES.scopeRail.note}</p>
+            </div>
+            <div className="tenant-rail-list">
+              <TenantScopeRail slug={slug} tenantName={statsPayload.tenant.name} selected={unit} onSelect={setUnit}
                 initialKey={initialUnitKey} onInitialResolved={markUnitReady} />
             </div>
-            {/* Charts re-scope in place to the unit selected above (Philosophy:
-                scope is sovereign). Lazy (engine chunk); panels appear when the
-                code + data land. `section` keys which IA view renders. */}
+          </aside>
+          <div className="tenant-content">
+            {/* KPI cards + charts + author directory — all re-scope in place to
+                the unit selected in the rail (Philosophy: scope is sovereign).
+                Lazy (engine chunk); panels appear when the code lands. */}
             {unitReady ? (
               <Suspense fallback={<div style={{ minHeight: 600 }} />}>
-                <TenantBody slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id}
-                  charts={charts} unit={unit} section={section} />
+                <TenantBody slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} unit={unit} />
               </Suspense>
             ) : <div style={{ minHeight: 600 }} />}
           </div>

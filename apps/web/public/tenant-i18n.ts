@@ -18,17 +18,11 @@ export const ES = {
   updatedPrefix: 'Updated',
   themeToggle: 'Toggle light / dark',
 
-  /* Section sidebar (the 6-group public nav) + unit scope dropdown */
-  sidebar: {
-    comingSoon: 'Coming soon',
-    unitLabel: 'Unit',
-    allUnits: 'All units',
-  },
-
-  /* Empty/placeholder state for an unbuilt leaf (kept for future use when a
-     placeholder leaf ever becomes clickable; disabled leaves use comingSoon). */
-  placeholder: {
-    notAvailable: 'Not available yet.',
+  /* Scope rail head + the "all units" row label */
+  scopeRail: {
+    title: 'Scope · Faculties & Institutes',
+    note: 'Select a unit to focus every chart on its output.',
+    allUnitsKind: 'Institution-wide',
   },
   nav: {
     overview: 'Overview',
