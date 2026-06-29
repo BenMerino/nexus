@@ -8,7 +8,7 @@ import { useKpiSparks } from './use-kpi-sparks';
 // Fetch the unit-scoped summary KPIs; null unit → the tenant-wide summary in
 // `stats` (no extra request). Renders the KPI row. Used full-width above the
 // rail (mockup); the cards re-narrow when a unit is picked in the rail.
-const EMPTY_SUMMARY: PublicStats['summary'] = { totalPubs: 0, totalCitations: 0, oaCount: 0, citedCount: 0, authorCount: 0 };
+const EMPTY_SUMMARY: PublicStats['summary'] = { totalPubs: 0, totalCitations: 0, oaCount: 0, citedCount: 0, hIndex: 0, i10Index: 0, authorCount: 0 };
 
 export function ScopedSummary({ slug, stats, tenantId, unit }: { slug: string; stats: PublicStats; tenantId: number; unit: UnitScope | null }) {
   // stats.summary is absent if the analytics payload wins the load race (it
@@ -57,20 +57,50 @@ export function SummaryCards({ summary, sparks }: { summary: PublicStats['summar
     return `${per} per publication · ${citedPct}% of output cited`;
   };
   return (
-    <div className="kpi-grid">
-      {KPIS.map(k => (
-        <div key={k.key} className="kpi" style={{ ['--kpi-accent' as string]: k.accent }}>
+    <>
+      <div className="kpi-grid">
+        {KPIS.map(k => (
+          <div key={k.key} className="kpi" style={{ ['--kpi-accent' as string]: k.accent }}>
+            <div className="kpi-top">
+              <span className="kpi-label">{k.label}</span>
+              <span className="kpi-dot" />
+            </div>
+            <div className="kpi-body">
+              <div className="kpi-val num">{value(k.key)}</div>
+            </div>
+            <div className="kpi-foot">{foot(k)}</div>
+            {/* Full-card-width series strip below the foot. */}
+            <KpiSpark kind={k.spark} accent={k.accent}
+              series={sparks ? sparks[k.series] : undefined} />
+          </div>
+        ))}
+      </div>
+      <ImpactCards summary={summary} />
+    </>
+  );
+}
+
+// Institutional impact indices — h-index and i10-index. Scalar metrics with no
+// per-year series (they're cumulative-state figures), so they render as compact
+// spark-less stat cards beneath the main KPI row.
+function ImpactCards({ summary }: { summary: PublicStats['summary'] }) {
+  if (summary.hIndex == null && summary.i10Index == null) return null;
+  const cards: { label: string; val: number; foot: string; accent: string }[] = [
+    { label: ES.summary.hIndex, val: summary.hIndex ?? 0, foot: ES.summary.hIndexFoot, accent: 'var(--j-garnet)' },
+    { label: ES.summary.i10Index, val: summary.i10Index ?? 0, foot: ES.summary.i10IndexFoot, accent: 'var(--j-teal)' },
+  ];
+  return (
+    <div className="kpi-grid impact">
+      {cards.map(c => (
+        <div key={c.label} className="kpi" style={{ ['--kpi-accent' as string]: c.accent }}>
           <div className="kpi-top">
-            <span className="kpi-label">{k.label}</span>
+            <span className="kpi-label">{c.label}</span>
             <span className="kpi-dot" />
           </div>
           <div className="kpi-body">
-            <div className="kpi-val num">{value(k.key)}</div>
+            <div className="kpi-val num">{c.val.toLocaleString()}</div>
           </div>
-          <div className="kpi-foot">{foot(k)}</div>
-          {/* Full-card-width series strip below the foot. */}
-          <KpiSpark kind={k.spark} accent={k.accent}
-            series={sparks ? sparks[k.series] : undefined} />
+          <div className="kpi-foot">{c.foot}</div>
         </div>
       ))}
     </div>

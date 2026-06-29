@@ -53,6 +53,10 @@ export const ES = {
     citations: 'Citations',
     openAccess: 'Open access',
     authors: 'Authors',
+    hIndex: 'h-index',
+    i10Index: 'i10-index',
+    hIndexFoot: 'Papers with ≥ h citations',
+    i10IndexFoot: 'Papers with ≥ 10 citations',
   },
 
   /* Biggest-contributors ranking (Overview, university scope) */
