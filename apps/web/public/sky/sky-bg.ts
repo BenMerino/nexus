@@ -64,6 +64,11 @@ async function start() {
   // Live tick: re-render each minute as the sun moves.
   setInterval(paint, 60000);
 
+  // The theme handler (shell-mount) re-applies the static --accent + surface
+  // tokens from /api/theme-tokens AFTER us, which would clobber the sky palette.
+  // It announces that with this event — re-assert our sun tokens when it fires.
+  window.addEventListener("nexus:theme-tokens", () => paint());
+
   // Real viewer location once granted; keep the fallback sky until then.
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(

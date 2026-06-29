@@ -1,51 +1,57 @@
-// Sun-driven COLOR tokens (accent, chart series, status). Unlike the neutral
-// surfaces, these are NOT invented from scratch — the design already ships tuned
-// DARK (:root) and LIGHT (:root[data-theme=light]) values for every one. We just
-// interpolate between those two anchors by the same dayFactor, so:
-//   • night → the tuned dark palette, day → the tuned light palette;
-//   • hues stay FIXED (copper family), only L + C blend → series never lose their
-//     separation (verified: L-spread is preserved through twilight).
-// Accent additionally picks up a small WARMTH nudge at golden hour.
+// Sun-driven COLOR tokens, DERIVED FROM THE SKY ITSELF — not the static copper
+// theme. The accent + chart series take the live sky's dominant hue (blue by
+// day, amber/orange at golden hour, violet at night), so the platform's whole
+// color identity tracks the gradient. Lightness tilts with day/night so series
+// stay legible on the (also sun-driven) surfaces.
+//
+// Status colors (--ok/--warn/--err) are deliberately NOT overridden: green/amber/
+// red must stay semantically legible regardless of sky. Left to shared.css.
 
-type LCH = [number, number, number]; // [lightness, chroma, hue]
+import { skyFor } from "./sky-palette";
+
+type RGB = [number, number, number];
+const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const lch = (c: LCH) => `oklch(${c[0].toFixed(3)} ${c[1].toFixed(3)} ${c[2].toFixed(1)})`;
-// Blend L and C between dark/light anchors; hue from the (shared) dark anchor.
-const blend = (d: LCH, l: LCH, f: number): LCH => [lerp(d[0], l[0], f), lerp(d[1], l[1], f), d[2]];
 
-// [dark, light] anchor pairs, lifted verbatim from shared.css.
-const PAIRS: Record<string, [LCH, LCH]> = {
-  "--primary":   [[0.62, 0.13, 45], [0.52, 0.12, 45]],
-  "--accent-dim":[[0.66, 0.10, 45], [0.56, 0.10, 45]],
-  "--ok":        [[0.78, 0.14, 145], [0.58, 0.14, 145]],
-  "--warn":      [[0.80, 0.14, 80], [0.62, 0.13, 80]],
-  "--err":       [[0.68, 0.18, 25], [0.55, 0.20, 25]],
-  "--chart-0":   [[0.64, 0.13, 45], [0.52, 0.13, 45]],
-  "--chart-1":   [[0.58, 0.14, 28], [0.48, 0.14, 28]],
-  "--chart-2":   [[0.72, 0.12, 72], [0.60, 0.13, 72]],
-  "--chart-3":   [[0.52, 0.13, 38], [0.46, 0.13, 38]],
-  "--chart-4":   [[0.68, 0.11, 60], [0.56, 0.12, 60]],
-  "--chart-5":   [[0.78, 0.12, 82], [0.64, 0.13, 82]],
-  "--chart-6":   [[0.50, 0.13, 22], [0.46, 0.14, 22]],
-  "--chart-7":   [[0.73, 0.10, 52], [0.60, 0.11, 52]],
-  "--chart-8":   [[0.60, 0.14, 35], [0.50, 0.14, 35]],
-};
-
-// Golden-hour warmth: near the horizon (|alt|→0) nudge the accent hue a few
-// degrees toward orange and lift chroma slightly. Fades out by ~10°.
-function warmAccent(c: LCH, altitude: number): LCH {
-  const s = Math.max(0, 1 - Math.abs(altitude) / 10);
-  if (s <= 0) return c;
-  return [c[0], c[1] + 0.02 * s, c[2] - 8 * s]; // hue 45 → ~37 (more orange) at peak
+// sRGB(0..255) → OKLCH [L, C, H°]. Standard transform.
+const lin = (u: number) => { u /= 255; return u <= 0.04045 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4); };
+function rgb2oklch([r, g, b]: RGB): [number, number, number] {
+  const R = lin(r), G = lin(g), B = lin(b);
+  const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B);
+  const m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B);
+  const s = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B);
+  const L = 0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s;
+  const A = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+  const Bb = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
+  let H = Math.atan2(Bb, A) * 180 / Math.PI; if (H < 0) H += 360;
+  return [L, Math.hypot(A, Bb), H];
 }
+const lch = (L: number, C: number, H: number) => `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${H.toFixed(1)})`;
 
-export function sunColors(altitude: number, f: number): Record<string, string> {
+// 9-series fan: hue offsets + lightness steps tuned to keep series separated.
+const H_OFF = [0, -14, 12, -8, 16, -18, 8, -12, 18];
+const L_STEP = [0, 0.06, -0.05, 0.10, -0.08, 0.04, -0.10, 0.08, -0.03];
+
+export function sunColors(altitude: number, dayF: number): Record<string, string> {
+  // Dominant sky hue = the horizon color's hue (the vivid "where the sun is"
+  // band). Its chroma sets how saturated the palette reads.
+  const sky = skyFor(altitude);
+  const [, horC, horH] = rgb2oklch(sky.hor);
+  const baseC = clamp(horC + 0.04, 0.07, 0.16);  // floor chroma so day pastels still read
   const out: Record<string, string> = {};
-  for (const [name, [d, l]] of Object.entries(PAIRS)) {
-    let v = blend(d, l, f);
-    if (name === "--primary" || name === "--accent-dim") v = warmAccent(v, altitude);
-    out[name] = lch(v);
+
+  // Accent = the sky hue at a readable mid-lightness (tilts darker by day so it
+  // reads on light surfaces, lighter by night).
+  const accentL = lerp(0.66, 0.52, dayF);
+  out["--primary"] = lch(accentL, baseC, horH);
+  out["--accent"] = out["--primary"];
+  out["--accent-dim"] = lch(accentL + 0.04, baseC - 0.03, horH);
+
+  // Chart series fanned from the same hue.
+  const baseL = lerp(0.74, 0.50, dayF);
+  for (let i = 0; i < 9; i++) {
+    const L = clamp(baseL + L_STEP[i], 0.30, 0.86);
+    out[`--chart-${i}`] = lch(L, baseC, (horH + H_OFF[i] + 360) % 360);
   }
-  out["--accent"] = out["--primary"]; // accent mirrors primary (as in shared.css)
   return out;
 }
