@@ -1,44 +1,21 @@
-// Manual light/dark override for the public tenant page.
-//
-// The app normally follows the OS (prefers-color-scheme, see theme-config.ts).
-// The public dashboard adds a header button that lets a visitor pin a mode;
-// the choice persists in localStorage under PUBLIC_THEME_KEY and the no-FOUC
-// boot script (vite.config.ts) reads the same key before first paint, so a
-// pinned mode never flashes. Side-effect-free — safe to import anywhere.
+// Header theme toggle — a THREE-state cycle over the sun pipeline:
+//   live → day → night → live
+// 'live' lets the real sun drive the theme (the default); 'day'/'night' pin it
+// light/dark. These are NOT a separate theme system — they clamp the altitude
+// the sky pipeline (public/sky/) consumes, so one render path serves all three.
+// The choice is sticky in localStorage; the no-FOUC boot script (vite.config.ts)
+// reads the same key before first paint. Side-effect-free import.
 
-import { applyThemeMode, activeThemeMode, type Mode } from './spa/theme-config';
+import { getSkyMode, setSkyMode, nextSkyMode, type SkyMode } from './sky/sky-mode';
 
-export const PUBLIC_THEME_KEY = 'nexus.public-theme';
-const CACHE_KEY = 'nexus.theme-tokens';
+export type { SkyMode };
+export { getSkyMode };
 
-// The effective mode: a pinned choice wins over the OS setting.
-export function effectiveMode(): Mode {
-  try {
-    const pinned = localStorage.getItem(PUBLIC_THEME_KEY);
-    if (pinned === 'light' || pinned === 'dark') return pinned;
-  } catch { /* storage blocked — fall through to OS */ }
-  return activeThemeMode();
-}
-
-// Read the cached surface-token map shell-mount persisted, so applying a mode
-// also restores its customized surfaces (matches the boot script's source).
-function cachedTokens(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-  } catch { return {}; }
-}
-
-// Apply a mode and persist it as the pinned choice. Re-applies surface tokens
-// so the configured palette for that mode lands too.
-export function setMode(mode: Mode): void {
-  try { localStorage.setItem(PUBLIC_THEME_KEY, mode); } catch { /* ignore */ }
-  applyThemeMode(mode, cachedTokens());
-}
-
-// Flip to the opposite of whatever is currently on <html>.
-export function toggleMode(): Mode {
-  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-  const next: Mode = current === 'light' ? 'dark' : 'light';
-  setMode(next);
+// Cycle to the next mode, persist it, and tell the sky pipeline to repaint
+// (sky-bg listens for nexus:sky-mode and re-applies tokens + gradient instantly).
+export function cycleSkyMode(): SkyMode {
+  const next = nextSkyMode(getSkyMode());
+  setSkyMode(next);
+  window.dispatchEvent(new CustomEvent('nexus:sky-mode', { detail: next }));
   return next;
 }

@@ -105,10 +105,7 @@
 }
 .theme-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
 .theme-btn svg { width: 16px; height: 16px; }
-.theme-btn .icon-moon { display: block; }
-.theme-btn .icon-sun { display: none; }
-:root[data-theme="dark"] .theme-btn .icon-moon { display: none; }
-:root[data-theme="dark"] .theme-btn .icon-sun { display: block; }
+/* The icon is chosen in React per sky mode (live/day/night) — no CSS flip. */
 
 /* Scroll area: owns the full height (header is out of flow) and clears the
    floating bar with top padding (inset + bar + inset). */

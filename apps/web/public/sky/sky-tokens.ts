@@ -29,6 +29,10 @@ const DAY   = { bg: 0.95, elev: 0.97, card: 0.96, inset: 0.92, border: 0.82, bor
 const FLIP = 0.46;
 const gray = (L: number) => `oklch(${L.toFixed(3)} 0 0)`;
 
+// Is the sky in its "light" half at this altitude? Drives data-theme + the fg
+// flip. Exported so the boot script's logic can mirror it if needed.
+export const isLightSky = (altitude: number) => dayFactor(altitude) >= FLIP;
+
 export function sunTokens(altitude: number): Record<string, string> {
   const f = dayFactor(altitude);
   const light = f >= FLIP;
@@ -52,6 +56,9 @@ export function sunTokens(altitude: number): Record<string, string> {
 export function applySunTokens(altitude: number) {
   const f = dayFactor(altitude);
   const root = document.documentElement;
+  // Keep data-theme in sync so the [data-theme="light"] CSS blocks (the static
+  // non-surface light values: bg-inset, status, etc.) match the sky's half.
+  root.setAttribute("data-theme", isLightSky(altitude) ? "light" : "dark");
   const toks = { ...sunTokens(altitude), ...sunColors(altitude, f) };
   for (const [k, v] of Object.entries(toks)) root.style.setProperty(k, v);
 }

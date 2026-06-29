@@ -48,16 +48,13 @@ const htmlEntries = Object.fromEntries(
 // register it as its own entry to get a stable bundled chunk.
 htmlEntries["sky-bg"] = resolve(SRC, "sky/sky-bg.ts");
 
-// Before the first style computation: (1) pick the active mode — a visitor's
-// pinned choice (nexus.public-theme, set by the public dashboard's toggle) wins
-// over the OS prefers-color-scheme — and set data-theme so the page doesn't
-// paint the wrong baseline, and (2) apply the tenant's configured surface
-// tokens (cached in localStorage by loadThemeTokens) for the active mode, so a
-// customized --bg/--fg/... doesn't flash from the CSS baseline to the
-// configured color once the async /api/theme-tokens fetch resolves.
-// Synchronous, runs as the first thing in <head>. The token slug list must stay
-// in sync with SURFACE_TOKEN_KEYS; the pinned-key name with PUBLIC_THEME_KEY.
-const THEME_BOOT = `<script>try{var p=localStorage.getItem('nexus.public-theme');var m=(p==='light'||p==='dark')?p:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var d=document.documentElement;if(m==='light')d.setAttribute('data-theme','light');var t=JSON.parse(localStorage.getItem('nexus.theme-tokens')||'null');if(t){var ks=['bg','bg-elev','bg-card','border','fg','fg-muted','accent'];for(var i=0;i<ks.length;i++){var v=t['theme-'+m+'-'+ks[i]];if(v)d.style.setProperty('--'+ks[i],v)}}}catch(e){}</script>`;
+// Before the first style computation, set data-theme so the page doesn't paint
+// the wrong baseline. The sky pipeline (sky-bg.ts) owns the surface tokens, but
+// it loads async — so here we set data-theme from the sticky sky mode
+// (nexus.sky-mode): 'day' → light, 'night' → dark, 'live'/absent → a coarse OS
+// guess (the module corrects to the real sun within a frame). Synchronous, first
+// thing in <head>. Keep the key name in sync with SKY_MODE_KEY (sky/sky-mode.ts).
+const THEME_BOOT = `<script>try{var sm=localStorage.getItem('nexus.sky-mode');var m=sm==='day'?'light':sm==='night'?'dark':(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',m)}catch(e){}</script>`;
 
 // Live sun-driven sky background, injected into EVERY page (self-mounting module
 // that prepends a fixed canvas behind all content). Source-path tag; Vite serves

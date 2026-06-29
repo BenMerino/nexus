@@ -10,6 +10,7 @@ import { sunPosition } from "./sky-sun";
 import { skyFor, twilightTint, type Sky } from "./sky-palette";
 import { initSkyGPU, type SkyGPU } from "./sky-gpu";
 import { applySunTokens } from "./sky-tokens";
+import { effectiveAltitude } from "./sky-mode";
 
 type RGB = [number, number, number];
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -26,10 +27,13 @@ let gpu: SkyGPU | null = null;
 
 function paint() {
   const now = new Date();
-  const { altitude, azimuth } = sunPosition(now, coords.lat, coords.lon);
+  const real = sunPosition(now, coords.lat, coords.lon);
+  // Mode clamp: live = real sun; day/night pin the altitude (forces the look).
+  const altitude = effectiveAltitude(real.altitude);
+  const azimuth = real.azimuth;
   const rising = azimuth < 180;
 
-  // Drive the glass surface tokens off the same altitude (day→light, night→dark).
+  // Drive the glass surface tokens off the (possibly pinned) altitude.
   applySunTokens(altitude);
   const sky: Sky = twilightTint(skyFor(altitude), altitude, rising);
   const glowX = clamp(0.5 + (azimuth - 180) / 180 * 0.45, 0.05, 0.95);
@@ -75,6 +79,10 @@ async function start() {
   // tokens from /api/theme-tokens AFTER us, which would clobber the sky palette.
   // It announces that with this event — re-assert our sun tokens when it fires.
   window.addEventListener("nexus:theme-tokens", () => paint());
+
+  // The header toggle (sky-mode) repaints via this event after switching mode,
+  // so live/day/night applies instantly without a reload.
+  window.addEventListener("nexus:sky-mode", () => paint());
 
   // Real viewer location once granted; keep the fallback sky until then.
   if (navigator.geolocation) {
