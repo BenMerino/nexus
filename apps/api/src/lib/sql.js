@@ -29,17 +29,18 @@ if (!connectionString) {
 // the certificate chain isn't installed in stock Node images, so we accept
 // self-signed. This matches @vercel/postgres' previous behavior on Vercel.
 function buildPoolConfig(url) {
-  const isInternal = /\.railway\.internal(:|$|\/)/.test(url);
+  const noSsl = /\.railway\.internal(:|$|\/)|@(localhost|127\.0\.0\.1)(:|$|\/)/.test(url);
   // Strip sslmode/channel_binding from the URL so pg doesn't auto-derive
   // its own ssl config that overrides ours. We set `ssl` explicitly:
-  // - internal: no SSL (Railway's private network is plain TCP).
+  // - internal / localhost: no SSL (Railway's private network and local
+  //   Postgres both speak plain TCP).
   // - external: SSL with rejectUnauthorized=false (Railway/Neon use certs
   //   not in Node's default trust store; matches @vercel/postgres behavior).
   const cleaned = url.replace(/[?&](sslmode|channel_binding)=[^&]+/g, "")
                      .replace(/[?&]$/, "")
                      .replace(/\?&/, "?");
   const cfg = { connectionString: cleaned, max: 10 };
-  if (!isInternal) cfg.ssl = { rejectUnauthorized: false };
+  if (!noSsl) cfg.ssl = { rejectUnauthorized: false };
   return cfg;
 }
 

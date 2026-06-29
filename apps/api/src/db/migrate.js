@@ -26,13 +26,13 @@ async function runMigrations() {
     process.env.DATABASE_URL;
   if (!url) throw new Error("MIGRATION_DATABASE_URL / DATABASE_URL not set");
 
-  const isInternal = /\.railway\.internal(:|$|\/)/.test(url);
+  const noSsl = /\.railway\.internal(:|$|\/)|@(localhost|127\.0\.0\.1)(:|$|\/)/.test(url);
   const cleaned = url
     .replace(/[?&](sslmode|channel_binding)=[^&]+/g, "")
     .replace(/[?&]$/, "")
     .replace(/\?&/, "?");
   const cfg = { connectionString: cleaned };
-  if (!isInternal) cfg.ssl = { rejectUnauthorized: false };
+  if (!noSsl) cfg.ssl = { rejectUnauthorized: false };
 
   const client = new Client(cfg);
   await client.connect();

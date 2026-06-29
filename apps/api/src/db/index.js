@@ -21,13 +21,13 @@ const url =
   process.env.POSTGRES_URL_NON_POOLING;
 
 function buildPoolConfig(connectionString) {
-  const isInternal = /\.railway\.internal(:|$|\/)/.test(connectionString);
+  const noSsl = /\.railway\.internal(:|$|\/)|@(localhost|127\.0\.0\.1)(:|$|\/)/.test(connectionString);
   const cleaned = connectionString
     .replace(/[?&](sslmode|channel_binding)=[^&]+/g, "")
     .replace(/[?&]$/, "")
     .replace(/\?&/, "?");
   const cfg = { connectionString: cleaned, max: 10 };
-  if (!isInternal) cfg.ssl = { rejectUnauthorized: false };
+  if (!noSsl) cfg.ssl = { rejectUnauthorized: false };
   return cfg;
 }
 

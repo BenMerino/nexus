@@ -96,6 +96,17 @@ async function startServer() {
   const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`[boot] Nexus API listening on :${PORT}`);
   });
+  // Without this, a 'error' event on the server (commonly EADDRINUSE when a
+  // prior instance still holds the port) is unhandled and silently kills the
+  // process. Log it actionably and exit clean so the dev watcher can recover.
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`[boot] port ${PORT} already in use — free it with: lsof -ti:${PORT} | xargs kill`);
+    } else {
+      console.error("[boot] server error:", err);
+    }
+    process.exit(1);
+  });
   // Attach the directive Stream WS endpoint (/api/stream) to the same server,
   // so Caddy's /api/* reverse_proxy routes it in prod. Compiled TS; wrapped so
   // a missing build (e.g. running source directly) never blocks startup.
