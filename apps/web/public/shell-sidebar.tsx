@@ -64,7 +64,7 @@ export function Sidebar({ me, currentPath, roleSwitcher }: SidebarProps) {
             <div className="brand-tenant">{tenantName} · CRIS</div>
           </div>
         </div>
-        {me?.profile.ror && (
+        {me?.profile?.ror && (
           <div className="tenant-chip-meta">
             <Tag mono>ROR {me.profile.ror}</Tag>
           </div>
@@ -94,8 +94,8 @@ export function Sidebar({ me, currentPath, roleSwitcher }: SidebarProps) {
       <div className="sidebar-footer">
         <div><span className="sync-pulse" />Live · authenticated</div>
         <div className="sidebar-user-row">
-          <span title={me?.profile.name || me?.user}>
-            {me ? initials(me.profile.name || me.user) : '··'}
+          <span title={me?.profile?.name || me?.user}>
+            {me ? initials(me.profile?.name || me.user) : '··'}
           </span>
           <a href="/api/auth?action=logout">logout</a>
         </div>

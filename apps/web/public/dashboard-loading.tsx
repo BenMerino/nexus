@@ -26,8 +26,8 @@ export function DashboardLoading() {
   const viewingOther = typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).has('orcid');
   const tenantName = me?.tenant || 'Institution';
-  const displayName = viewingOther ? '' : (me?.profile.researcherName || me?.profile.name || me?.user || '');
-  const isPersonal = viewingOther || !!me?.profile.orcid;
+  const displayName = viewingOther ? '' : (me?.profile?.researcherName || me?.profile?.name || me?.user || '');
+  const isPersonal = viewingOther || !!me?.profile?.orcid;
 
   const stats = isPersonal ? PERSONAL_STATS : INSTITUTIONAL_STATS;
 

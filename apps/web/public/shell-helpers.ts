@@ -9,7 +9,7 @@ export interface CurrentUser {
   tenantAdmin?: boolean;
   primaryColor: string | null;
   secondaryColor: string | null;
-  profile: {
+  profile?: {
     name?: string;
     researcherName?: string;
     orcid?: string;

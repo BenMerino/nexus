@@ -22,7 +22,7 @@ const bareRor = (r: string | null | undefined) => (r ? r.replace(/^https?:\/\/ro
 
 export function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAuthor }: Args): Result {
   const homeInstitutionId = useMemo(() => {
-    const ror = bareRor(me?.profile.ror);
+    const ror = bareRor(me?.profile?.ror);
     if (!ror) return null;
     const hit = rawNodes.find(n => n.group === 'institution' && bareRor(n.ext_id) === ror);
     return hit?.id ?? null;
@@ -32,7 +32,7 @@ export function useExplorerEgo({ me, rawNodes, projectedNodes, institutionsByAut
   // a node, but its id is still needed for co-author classification and
   // focus-path resolution.
   const egoAuthorId = useMemo(() => {
-    const orcid = me?.profile.orcid;
+    const orcid = me?.profile?.orcid;
     if (!orcid) return null;
     const hit = rawNodes.find(n => n.group === 'author' && n.ext_id === orcid);
     return hit?.id ?? null;

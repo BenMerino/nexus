@@ -20,7 +20,7 @@ interface Result {
 
 export function useExplorerNodes({ projectedRaw, tagMeta, rawNodes, rawEdges, me }: Args): Result {
   const rawEgoAuthorId = useMemo(() => {
-    const orcid = me?.profile.orcid;
+    const orcid = me?.profile?.orcid;
     if (!orcid) return null;
     const hit = rawNodes.find(n => n.group === 'author' && n.ext_id === orcid);
     return hit?.id ?? null;
