@@ -39,9 +39,7 @@
 
     /* ── KPI cards: accent rail + mono label + serif value + sparkline ── */
     .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--chrome-inset); margin-bottom: var(--chrome-inset); }
-    /* Impact indices (h-index / i10): two cards, each spanning half the row. */
-    .kpi-grid.impact > .kpi { grid-column: span 2; }
-    @media (max-width: 980px) { .kpi-grid { grid-template-columns: 1fr 1fr; } .kpi-grid.impact > .kpi { grid-column: span 1; } }
+    @media (max-width: 980px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 560px) { .kpi-grid { grid-template-columns: 1fr; } }
     .kpi {
       position: relative; background: var(--bg-card); border: 1px solid var(--border);

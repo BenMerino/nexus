@@ -3,7 +3,6 @@ const { isPersonalScope } = require("./scope");
 const { resolvePubFilter } = require("./stats-scope");
 const { getAuthorCount } = require("./public-authors");
 const { normRor } = require("./entity-normalize");
-const { corpusHIndex } = require("./corpus-impact");
 
 // Dashboard stats — entity-backed (tags → entities migration). Personal scope
 // narrows to the user's own publications via authorship; admin scope is the
@@ -15,8 +14,7 @@ async function getSummary(scope) {
   const r = await sql.query(
     `SELECT COUNT(*) total_pubs, COALESCE(SUM(citation_count),0) total_citations,
             COUNT(DISTINCT CASE WHEN open_access THEN doi END) oa_count,
-            COUNT(*) FILTER (WHERE citation_count > 0) cited_count,
-            COUNT(*) FILTER (WHERE citation_count >= 10) i10_index
+            COUNT(*) FILTER (WHERE citation_count > 0) cited_count
      FROM publications p WHERE ${f.where}`, f.params);
   const row = r.rows[0];
   return {
@@ -24,8 +22,6 @@ async function getSummary(scope) {
     totalCitations: parseInt(row.total_citations),
     oaCount: parseInt(row.oa_count),
     citedCount: parseInt(row.cited_count),
-    i10Index: parseInt(row.i10_index),
-    hIndex: await corpusHIndex(f),
     authorCount: await authorCountFor(scope),
   };
 }
