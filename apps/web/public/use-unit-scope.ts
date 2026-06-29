@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { UnitScope } from './tenant-scope-rail';
+import type { UnitScope } from './tenant-unit-scope-type';
 
 /* The tenant page's scope lens: the selected unit (null = whole organization),
  * mirrored to ?unit=<unitKey> so a scoped view is shareable (and the

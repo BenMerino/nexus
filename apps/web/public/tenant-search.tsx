@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { authorProfileHref, fetchOrgTreeSummary } from './tenant-data';
 import { RichHtml } from './rich-text';
 import { ES } from './tenant-i18n';
-import type { UnitScope } from './tenant-scope-rail';
+import type { UnitScope } from './tenant-unit-scope-type';
 import { SearchField } from '../ui/composed/SearchField';
 import { Popover } from '../ui/composed/Popover';
 
