@@ -9,6 +9,7 @@
 import { sunPosition } from "./sky-sun";
 import { skyFor, twilightTint, type Sky } from "./sky-palette";
 import { initSkyGPU, type SkyGPU } from "./sky-gpu";
+import { applySunTokens } from "./sky-tokens";
 
 type RGB = [number, number, number];
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -27,6 +28,9 @@ function paint() {
   const now = new Date();
   const { altitude, azimuth } = sunPosition(now, coords.lat, coords.lon);
   const rising = azimuth < 180;
+
+  // Drive the glass surface tokens off the same altitude (day→light, night→dark).
+  applySunTokens(altitude);
   const sky: Sky = twilightTint(skyFor(altitude), altitude, rising);
   const glowX = clamp(0.5 + (azimuth - 180) / 180 * 0.45, 0.05, 0.95);
 
@@ -68,6 +72,11 @@ async function start() {
     );
   }
 }
+
+// Apply sun-driven surface tokens as early as this module runs (fallback coords),
+// so the glass lightness is right before the canvas mounts — minimizes the flash
+// from the boot-script's cached theme to the live sun theme.
+applySunTokens(sunPosition(new Date(), coords.lat, coords.lon).altitude);
 
 if (document.body) start();
 else addEventListener("DOMContentLoaded", start, { once: true });
