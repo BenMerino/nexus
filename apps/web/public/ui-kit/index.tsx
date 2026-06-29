@@ -19,7 +19,7 @@ import { MetaChip } from '../../ui/primitives';
 // Vendored primitives — the real DNA layer.
 export {
   BaseBox, BaseText, BaseAction, BaseTile, BaseCheckbox, BaseIcon,
-  Divider, MetaChip, StatusPill, TweenedNumber,
+  Divider, MetaChip, StatusPill, TweenedNumber, Skeleton,
 } from '../../ui/primitives';
 
 // nexus app molecules, rebuilt on the vendored primitives.

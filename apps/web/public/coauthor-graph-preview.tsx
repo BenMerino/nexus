@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Ico } from './ui-kit';
+import { Ico, Skeleton } from './ui-kit';
 import { CoAuthorSim } from './coauthor-graph-sim';
 import { CommunityLegend, type CommunityAdapter } from './community-graph';
 import type { CoauthorGraph, CoauthorNode } from './dashboard-builders';
@@ -64,13 +64,13 @@ export function CoAuthorGraphPanelSkeleton() {
           {legendNames.map((name, i) => (
             <span key={i} style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--bg-inset)' }} />
-              <span className="skel" style={{ fontSize: 11 }}>{name}</span>
+              <Skeleton as="span" style={{ fontSize: 11 }}>{name}</Skeleton>
             </span>
           ))}
         </div>
       </aside>
       <div style={{ position: 'relative', flex: 1, minHeight: 260 }}>
-        <div className="skel-fill skel" style={{ opacity: 0.4 }} />
+        <Skeleton fill style={{ opacity: 0.4 }} />
       </div>
     </section>
   );

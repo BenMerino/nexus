@@ -1,7 +1,8 @@
 import React from 'react';
 import { useCurrentUser } from './shell-helpers';
 import { StatSkeleton, SectionHead } from './ui-kit';
-import { TopJournalsSkeleton, PartnerInstitutionsSkeleton, BarChartSkeleton, RecentlyIndexedSkeleton } from './dashboard-panels-skeletons';
+import { TopJournalsSkeleton, PartnerInstitutionsSkeleton, BarChartSkeleton } from './dashboard-panels-skeletons';
+import { RecentlyIndexed } from './dashboard-panels';
 import { CoAuthorGraphPanelSkeleton } from './coauthor-graph-preview';
 import { VelocityPanelSkeleton } from './portfolio-velocity';
 import { CadencePanelSkeleton } from './portfolio-cadence';
@@ -88,7 +89,7 @@ function InstitutionalCards() {
       <CoAuthorGraphPanelSkeleton />
       <TopJournalsSkeleton />
       <PartnerInstitutionsSkeleton />
-      <RecentlyIndexedSkeleton />
+      <RecentlyIndexed.Skeleton />
     </>
   );
 }

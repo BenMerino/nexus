@@ -1,4 +1,5 @@
 import React from 'react';
+import { Skeleton } from '../ui/primitives';
 import { RecomposeChart, ScopedChart } from './recompose-chart';
 import { TYPE_DISPLAY_LABELS } from './type-labels';
 
@@ -47,17 +48,17 @@ export function CadencePanelSkeleton() {
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <div className="skel" style={{ display: 'inline-block', ...FIGURE }}>0.0</div>
+        <Skeleton block style={FIGURE}>0.0</Skeleton>
         <div style={CAPTION}>papers / year (avg)</div>
       </div>
       <div style={{ height: 140, position: 'relative' }}>
-        <div className="skel-fill skel" style={{ opacity: 0.5 }} />
+        <Skeleton fill style={{ opacity: 0.5 }} />
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', marginTop: 10, fontSize: 11 }}>
         {legendPlaceholders.map((label, i) => (
           <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)' }}>
             <span style={{ width: 10, height: 10, background: 'var(--bg-inset)', borderRadius: 2, display: 'inline-block' }} />
-            <span className="skel" style={{ display: 'inline-block' }}>{label}</span>
+            <Skeleton as="span">{label}</Skeleton>
           </span>
         ))}
       </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Skeleton } from '../ui/primitives';
 
 export type Concept = { name: string; works: number; score: number };
 
@@ -45,8 +46,8 @@ export function ConceptsPanelSkeleton({ rows = 6 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-            <span className="skel" style={{ fontSize: 13 }}>{names[i % names.length]}</span>
-            <span className="skel" style={{ fontFamily: 'var(--mono)', fontSize: 11, whiteSpace: 'nowrap' }}>00 works · 00%</span>
+            <Skeleton as="span" style={{ fontSize: 13 }}>{names[i % names.length]}</Skeleton>
+            <Skeleton as="span" style={{ fontFamily: 'var(--mono)', fontSize: 11, whiteSpace: 'nowrap' }}>00 works · 00%</Skeleton>
           </div>
           <div style={{ height: 6, background: 'var(--bg-inset)', borderRadius: 3, overflow: 'hidden' }}>
             <div style={{ width: `${bars[i % bars.length]}%`, height: '100%', background: 'var(--border-soft)' }} />

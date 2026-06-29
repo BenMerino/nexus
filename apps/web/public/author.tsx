@@ -16,23 +16,6 @@ function readParams(): { slug: string | null; orcid: string | null } {
   };
 }
 
-// Hero placeholder while the profile fetch is in flight — keeps the page from
-// sitting blank on a cold load (no cached chrome on this route).
-function ProfileSkeleton() {
-  return (
-    <section className="profile-hero profile-skel" aria-hidden="true">
-      <div className="profile-head">
-        <div className="profile-avatar skel-block" />
-        <div className="profile-id">
-          <div className="skel-line" style={{ width: 120 }} />
-          <div className="skel-line" style={{ width: 320, height: 28, marginTop: 10 }} />
-          <div className="skel-line" style={{ width: 220, marginTop: 12 }} />
-        </div>
-      </div>
-    </section>
-  );
-}
-
 interface Chrome {
   tenant: { id: number; name: string; slug: string | null; ror_id: string | null; logo_url: string | null; primary_color: string | null; secondary_color: string | null };
   stats: { yearRange?: { minYear: string | null; maxYear: string | null } };
@@ -90,7 +73,7 @@ function App() {
           )}
           {profile && slug
             ? <AuthorProfile d={profile} slug={slug} />
-            : <ProfileSkeleton />}
+            : <AuthorProfile.Skeleton />}
         </div>
       </main>
     </div>

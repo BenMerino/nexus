@@ -1,7 +1,15 @@
 import React from 'react';
-import { SectionHead, Ico } from './ui-kit';
+import { SectionHead, Ico, Skeleton } from './ui-kit';
 import type { DashboardData } from './dashboard-builders';
 import { TYPE_DISPLAY_LABELS } from './type-labels';
+
+const SKELETON_TITLES = [
+  'A representative paper title for the recently indexed table layout',
+  'Another placeholder title with a typical length',
+  'A longer placeholder title that may wrap to two lines on narrow widths',
+  'Short placeholder title',
+  'Medium-length placeholder title for a recent paper',
+];
 
 export function RecentlyIndexed({ data }: { data: DashboardData }) {
   const papers = data.recentPapers || [];
@@ -27,3 +35,30 @@ export function RecentlyIndexed({ data }: { data: DashboardData }) {
     </section>
   );
 }
+
+/** Loading state, co-located: same card + table shell as RecentlyIndexed, each
+ *  cell ghosted by the Skeleton primitive so the geometry matches the real row. */
+RecentlyIndexed.Skeleton = function RecentlyIndexedSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <section className="card card-span-2">
+      <SectionHead eyebrow="Ledger" title="Recently indexed" />
+      <table className="paper-table">
+        <thead><tr><th>Title</th><th>Type</th><th>Journal</th><th>Published</th><th>Cites</th></tr></thead>
+        <tbody>
+          {Array.from({ length: rows }).map((_, i) => (
+            <tr key={i}>
+              <td className="paper-title">
+                <Skeleton as="span">{SKELETON_TITLES[i % SKELETON_TITLES.length]}</Skeleton>
+                <div className="mono paper-doi"><Skeleton as="span">10.0000/example.0000.000000</Skeleton></div>
+              </td>
+              <td><Skeleton as="span" className="tag type mono">Article</Skeleton></td>
+              <td><Skeleton as="span">Revista Médica de Chile</Skeleton></td>
+              <td><Skeleton as="span">2024</Skeleton></td>
+              <td><Skeleton as="span">000</Skeleton></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+};

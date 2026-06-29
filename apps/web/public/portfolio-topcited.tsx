@@ -1,4 +1,5 @@
 import React from 'react';
+import { Skeleton } from '../ui/primitives';
 
 export type TopCitedItem = { doi: string; title: string | null; year: string | null; citation_count: number | null };
 
@@ -50,13 +51,13 @@ export function TopCitedPanelSkeleton({ rows = 5 }: { rows?: number }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', minWidth: 0, flex: 1 }}>
               <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-dim)', minWidth: 18 }}>#{i + 1}</span>
-              <span className="skel" style={{ fontSize: 13, lineHeight: 1.35, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+              <Skeleton as="span" style={{ fontSize: 13, lineHeight: 1.35, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                 {titles[i % titles.length]}
-              </span>
+              </Skeleton>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, whiteSpace: 'nowrap' }}>
-              <span className="skel" style={{ fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 600 }}>0,000</span>
-              <span className="skel" style={{ fontFamily: 'var(--mono)', fontSize: 10 }}>0000</span>
+              <Skeleton as="span" style={{ fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 600 }}>0,000</Skeleton>
+              <Skeleton as="span" style={{ fontFamily: 'var(--mono)', fontSize: 10 }}>0000</Skeleton>
             </div>
           </div>
           <div style={{ height: 3, background: 'var(--bg-inset)', borderRadius: 2, overflow: 'hidden' }}>

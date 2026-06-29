@@ -133,3 +133,9 @@ export function AuthorProfile({ d, slug }: { d: AuthorProfileData; slug: string 
     </>
   );
 }
+
+// The hero skeleton is co-located as a sibling (author-profile-skeleton.tsx)
+// and attached here as AuthorProfile.Skeleton — kept out-of-file only because
+// author-profile.tsx is at the N5 line cap.
+import { AuthorProfileSkeleton } from './author-profile-skeleton';
+AuthorProfile.Skeleton = AuthorProfileSkeleton;

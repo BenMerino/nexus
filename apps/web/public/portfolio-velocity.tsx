@@ -1,4 +1,5 @@
 import React from 'react';
+import { Skeleton } from '../ui/primitives';
 
 // Citation velocity types + loading skeleton. The chart itself is now SERVER-
 // COMPOSED (publications.velocity): the public tenant page renders it via
@@ -30,13 +31,13 @@ export function VelocityPanelSkeleton() {
     <div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 12 }}>
         <div>
-          <div className="skel" style={{ display: 'inline-block', ...FIGURE }}>0.00</div>
+          <Skeleton block style={FIGURE}>0.00</Skeleton>
           <div style={CAPTION}>score</div>
         </div>
-        <div className="skel" style={{ display: 'inline-block', fontSize: 16, fontFamily: 'var(--mono)' }}>▲ rising</div>
+        <Skeleton block style={{ fontSize: 16, fontFamily: 'var(--mono)' }}>▲ rising</Skeleton>
       </div>
       <div style={{ height: 140, position: 'relative' }}>
-        <div className="skel-fill skel" style={{ opacity: 0.5 }} />
+        <Skeleton fill style={{ opacity: 0.5 }} />
       </div>
     </div>
   );

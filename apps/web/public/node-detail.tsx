@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AuthorView, InstitutionView, JournalView, PaperView, EmptyState, type Detail } from './node-detail-views';
-import { Ico, BaseAction } from './ui-kit';
+import { Ico, BaseAction, Skeleton } from './ui-kit';
 
 interface NodeDetailProps {
   nodeId: string | null;
@@ -65,20 +65,20 @@ function DetailSkeleton({ nodeId }: { nodeId: string }) {
       <div className="detail-head">
         <div>
           <div className="eyebrow">{eyebrow}</div>
-          <div className="sk-bar sk-title" />
-          <div className="sk-bar sk-subtitle" />
+          <Skeleton block height={28} width="70%" style={{ margin: '6px 0' }} />
+          <Skeleton block height={12} width="40%" />
         </div>
       </div>
       <div className="detail-stats">
-        <div><span className="sk-bar sk-stat" /><label>&nbsp;</label></div>
-        <div><span className="sk-bar sk-stat" /><label>&nbsp;</label></div>
+        <div><Skeleton block height={28} width={60} /><label>&nbsp;</label></div>
+        <div><Skeleton block height={28} width={60} /><label>&nbsp;</label></div>
       </div>
       <div className="detail-section">
         <div className="detail-section-label">Recent papers</div>
         {[0, 1, 2, 3].map(i => (
           <div key={i} className="detail-item">
-            <div className="sk-bar sk-row" />
-            <div className="sk-bar sk-row-sub" />
+            <Skeleton block height={14} width="85%" />
+            <Skeleton block height={11} width="45%" style={{ marginTop: 4 }} />
           </div>
         ))}
       </div>
