@@ -4,6 +4,8 @@
 // color identity tracks the gradient. Lightness tilts with day/night so series
 // stay legible on the (also sun-driven) surfaces.
 //
+// Covers --accent/--primary, the --chart-0..8 series, and the --j-* KPI tokens
+// (aliased onto the chart series — one palette, no separate KPI colors).
 // Status colors (--ok/--warn/--err) are deliberately NOT overridden: green/amber/
 // red must stay semantically legible regardless of sky. Left to shared.css.
 
@@ -53,5 +55,11 @@ export function sunColors(altitude: number, dayF: number): Record<string, string
     const L = clamp(baseL + L_STEP[i], 0.30, 0.86);
     out[`--chart-${i}`] = lch(L, baseC, (horH + H_OFF[i] + 360) % 360);
   }
+
+  // KPI jewel tokens (--j-*) are not their own palette — alias them onto the
+  // pipeline's chart series so KPI sparks track the sky too. Distinct indices
+  // keep the four KPI cards visually separated.
+  const J = ["--j-sapphire", "--j-amethyst", "--j-emerald", "--j-topaz", "--j-teal", "--j-garnet"];
+  J.forEach((name, i) => { out[name] = out[`--chart-${i}`]; });
   return out;
 }

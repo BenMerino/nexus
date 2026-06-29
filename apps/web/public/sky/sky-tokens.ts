@@ -4,10 +4,9 @@
 // Written as inline styles on :root, the same channel the theme handler uses
 // (N6) — so these win over the CSS baseline and update live with the sky tick.
 //
-// SCOPE: surfaces + fg here; color tokens (accent, --chart-*, status) are added
-// by sky-colors.ts, which interpolates the design's own tuned dark↔light anchors
-// (hues fixed → series keep their separation). The --ramp-*/--j-* sets stay
-// static (rarely used, no light anchors to blend).
+// SCOPE: surfaces + fg here; color tokens (accent, --chart-*, --j-* KPI) are
+// added by sky-colors.ts, derived from the live sky hue. --ramp-* stays static
+// (sequential ramps, rarely used); status colors stay semantic.
 
 import { sunColors } from "./sky-colors";
 
