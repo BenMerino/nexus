@@ -49,6 +49,8 @@
   --status-warning: var(--warn);
   --status-error:   var(--err);
   --status-info:    var(--primary);
+  /* (The categorical --chart-0..8 copper palette lives in shared.css :root, which
+     loads after this @import and wins — see "COPPER THEME" there.) */
 
   /* ── Control cascade root defaults (the "md" row from BaseBox CONTROL_SIZE).
      Primitives read --_ctl-* published at runtime by a wrapping <BaseBox
@@ -132,68 +134,45 @@
    Glass-in-glass compounds blur and goes muddy, so the TONAL step is the primary
    stacking signal (always legible) and the blur is modest + capped at depth 3. */
 :root {
-  /* Tonal ladder — opaque shades, deepest → highest. Each rung mixes ~6% more
-     --fg into --bg than the last; --tonal-0 IS the page bg. */
+  /* Tonal ladder — opaque shades, deepest → highest. WIDE steps (~9% --fg per
+     rung) so each stacked layer is clearly a different shade — small steps wash
+     out through the translucency and stacked glass collapses to one look. */
   --tonal-0: var(--bg);
-  --tonal-1: color-mix(in oklch, var(--fg) 5%,  var(--bg));
-  --tonal-2: color-mix(in oklch, var(--fg) 10%, var(--bg));
-  --tonal-3: color-mix(in oklch, var(--fg) 15%, var(--bg));
+  --tonal-1: color-mix(in oklch, var(--fg) 6%,  var(--bg));
+  --tonal-2: color-mix(in oklch, var(--fg) 12%, var(--bg));
+  --tonal-3: color-mix(in oklch, var(--fg) 18%, var(--bg));
 
-  /* Glass = a ladder rung at reduced alpha (so the backdrop shows through the
-     blur). --glass-alpha tunes translucency in one place. */
-  --glass-alpha: 72%;
-  --glass-0: color-mix(in oklch, var(--tonal-0) var(--glass-alpha), transparent);
-  --glass-1: color-mix(in oklch, var(--tonal-1) var(--glass-alpha), transparent);
-  --glass-2: color-mix(in oklch, var(--tonal-2) var(--glass-alpha), transparent);
-  --glass-3: color-mix(in oklch, var(--tonal-3) var(--glass-alpha), transparent);
+  /* Glass = a ladder rung at reduced alpha. The depth between stacked layers
+     comes from the TINT accumulating (even +6% per rung), NOT from ramping the
+     opacity — alpha is held ~constant (~0.70) so every pane stays equally
+     see-through, like real frosted panes stacking. A 2-deep stack then reads as
+     genuine glass-on-glass (mesh visible through both, planes distinct by tone)
+     instead of "light card / near-solid dark card". Earlier this ramped alpha to
+     0.92 to force separation; that slammed deeper rungs near-solid and killed the
+     translucency — the even-tint model gives the separation without that. */
+  --glass-0: color-mix(in oklch, var(--tonal-0) 62%, transparent);
+  --glass-1: color-mix(in oklch, var(--tonal-1) 70%, transparent);
+  --glass-2: color-mix(in oklch, var(--tonal-2) 70%, transparent);
+  --glass-3: color-mix(in oklch, var(--tonal-3) 72%, transparent);
   --glass-blur: 14px;
-  /* Procedural grain (fractal noise, baked alpha) — the frosted texture. */
-  --glass-grain: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'200'%20height%3D'200'%3E%3Cfilter%20id%3D'g'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.7'%20numOctaves%3D'4'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20values%3D'1%200%200%200%200%200%201%200%200%200%200%200%201%200%200%200%200%200%200.05%200'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20filter%3D'url(%23g)'%2F%3E%3C%2Fsvg%3E");
   /* Each surface tracks its own depth; a nested .surface reads the parent's and
      adds 1 (capped at 3). The shared shorthand for a glass fill at a given rung. */
   --surface-depth: 0;
 
-  /* ── Silver gradient mesh — the ANIMATED page backdrop the glass floats over.
-     A scatter of soft radial blobs in silver tones (derived from the tonal rungs
-     + a faint accent breath), layered over --bg. Theme-aware (light/dark by
-     construction). The blobs slowly DRIFT (the .mesh-anim layer animates their
-     background-position) so the mesh is alive, not static. */
-  --mesh-a: color-mix(in oklch, var(--fg) 8%,  var(--bg));
-  --mesh-b: color-mix(in oklch, var(--fg) 4%,  var(--bg));
-  --mesh-c: color-mix(in oklch, var(--accent) 6%, var(--bg));
-  --page-mesh:
-    radial-gradient(60% 50% at 12% 18%, var(--mesh-a) 0%, transparent 60%),
-    radial-gradient(50% 45% at 88% 12%, var(--mesh-b) 0%, transparent 55%),
-    radial-gradient(55% 55% at 78% 82%, var(--mesh-a) 0%, transparent 60%),
-    radial-gradient(45% 50% at 25% 88%, var(--mesh-c) 0%, transparent 55%),
-    radial-gradient(40% 40% at 50% 50%, var(--mesh-b) 0%, transparent 65%),
-    var(--bg);
 }
 
-/* The moving mesh — painted on a fixed full-viewport body::before so EVERY page
-   gets it with zero DOM changes. Behind all content (z-index -1). The gradient is
-   larger than the viewport so drifting its background-position reveals a slow
-   silver flow without seams. Compositor-friendly (only position animates).
-   Honors prefers-reduced-motion. */
-body::before {
-  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: var(--page-mesh);
-  background-size: 180% 180%;
-  background-repeat: no-repeat;
-  animation: mesh-drift 32s ease-in-out infinite alternate;
-}
-@keyframes mesh-drift {
-  0%   { background-position:   0%   0%; }
-  50%  { background-position: 100%  60%; }
-  100% { background-position:  40% 100%; }
-}
-@media (prefers-reduced-motion: reduce) {
-  body::before { animation: none; }
+/* The page backdrop is the live sun-driven sky — a fixed WebGPU/CSS canvas
+   (#sky-bg) prepended to <body> at z-index 0 by public/sky/sky-bg.ts (injected
+   into every page via vite.config.ts). It replaces the old bronze mesh; the
+   glass surfaces float over it. Content roots sit above the canvas at z-index 1. */
+body > #sidebar-mount, body > .app, body > .public-app,
+body > #dna-mount, body > main, body > div {
+  position: relative; z-index: 1;
 }
 
-/* The glass recipe — translucent fill + blur + grain + hairline. `.surface`
-   (or nexus's card classes below) wear it; the tonal rung comes from --glass-N
-   chosen by depth. Grain rides a ::before so text stays sharp above it. */
+/* The glass recipe — translucent fill + blur + hairline. `.surface` (or nexus's
+   card classes below) wear it; the tonal rung comes from --glass-N chosen by
+   depth. (Grain layer removed — surfaces are clean glass over the sky.) */
 .surface, .glass-surface {
   position: relative;
   background-color: var(--glass-1);
@@ -201,19 +180,22 @@ body::before {
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   border: 1px solid var(--border);
 }
-.surface::before, .glass-surface::before {
-  content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background-image: var(--glass-grain); background-repeat: repeat;
-  border-radius: inherit;
-}
-.surface > *, .glass-surface > * { position: relative; z-index: 1; }
 
 /* TONAL STACKING — a glass surface nested inside another steps to the next rung,
-   so each layer is a distinct shade. Depth 1→2→3, then clamps (no muddier). */
+   so each layer is a distinct shade. Depth 1→2→3, then clamps (no muddier).
+   Nested layers also DROP the backdrop-filter: re-blurring the already-frosted
+   parent muddied it and erased the step. Only the outermost glass blurs the page;
+   inner layers are tints (their more-opaque rung does the visual separation). */
 .surface .surface,
-.glass-surface .glass-surface { background-color: var(--glass-2); }
+.glass-surface .glass-surface {
+  background-color: var(--glass-2);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
 .surface .surface .surface,
-.glass-surface .glass-surface .glass-surface { background-color: var(--glass-3); }
+.glass-surface .glass-surface .glass-surface {
+  background-color: var(--glass-3);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
 .surface .surface .surface .surface,
 .glass-surface .glass-surface .glass-surface .glass-surface { background-color: var(--glass-3); }
 
@@ -224,15 +206,33 @@ body::before {
    after shared.css in each HTML <style> — without resorting to !important. */
 :root .card, :root .panel, :root .kpi, :root .tenant-rail, :root .stat,
 :root .gc-community, :root .omni-pop, :root .sidebar-search-results,
-:root .tweaks-panel {
+:root .tweaks-panel,
+/* author page (author.html) surfaces */
+:root .profile-hero, :root .profile-panel, :root .profile-stat,
+/* paper / hover / detail cards */
+:root .paper-card, :root .hover-card, :root .node-detail-pane {
   position: relative;
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
 }
-/* A surface nested inside a nexus card steps to rung 2. */
+/* A surface nested inside a nexus card steps to rung 2 (and drops the re-blur). */
 :root .panel .panel, :root .card .card, :root .kpi .stat,
-:root .panel .stat { background-color: var(--glass-2); }
+:root .panel .stat, :root .panel .card, :root .card .stat {
+  background-color: var(--glass-2);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+
+/* Charts have NO surface of their own — they rely on the card's glass as their
+   background. The vendored engine paints its surface + PlotDottedBackdrop's top
+   fade from var(--bg-card); inside a chart panel we remap that one var to
+   TRANSPARENT so the engine paints nothing and the card's glass (+ page mesh)
+   shows straight through. Scoped to chart panels; standalone cards' fill comes
+   from the rule above, not --bg-card. */
+:root .panel, :root .card-chart, :root .card-graph-preview,
+:root .profile-panel, :root .profile-hero {
+  --bg-card: transparent;
+}
 
 /* Smooth corners — the squircle that makes Zincro's concentric corners read as
    continuous (superellipse) rather than circular arcs. ONE knob (--corner-smooth,
