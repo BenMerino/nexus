@@ -36,8 +36,12 @@ export function sunStops(): string[] {
     const [r, g, b] = resolveColor('var(--accent, #4f6df0)');
     const [h, sRaw] = rgbToHsl(r, g, b);
     const s = Math.max(55, Math.min(92, sRaw || 80)); // keep it vivid even from pastels
+    // Lightest stop capped at L66 (not 74): the label is a static white (the
+    // mesh lightness is fixed ~mid all day, so white always wins — no flip
+    // needed), and 66 keeps white's contrast comfortable (gap ≥34) even where
+    // the airy blob surfaces under the text. Still 32% L spread → mesh depth.
     return [
-        hsl(h - HUE_FAN, s - 12, 74),       // 1 lightest, airy (fanned)
+        hsl(h - HUE_FAN, s - 12, 66),       // 1 lightest, airy (fanned, capped)
         hsl(h - HUE_FAN * 0.4, s, 62),      // 2 light, cute side
         hsl(h, s, 48),                      // 3 vibrant mid — the identity
         hsl(h + HUE_FAN * 0.3, s, 34),      // 4 deep vibrant
