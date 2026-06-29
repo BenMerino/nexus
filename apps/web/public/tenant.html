@@ -14,13 +14,16 @@
        lines up with the headline (the mockup's --maxw). Wide enough to keep
        side gutters tight on large monitors. */
     .public-app { --maxw: 1500px; display: flex; flex-direction: column; height: 100vh; }
-    /* Sticky frosted top-bar — full-bleed bar, inner row capped to --maxw. */
+    /* Detached frosted top-bar — a floating rounded card inset by uniform
+       margins on all sides; inner row capped to --maxw. */
     .public-header {
       display: flex; justify-content: center;
       padding: 0 28px; min-height: 60px;
+      margin: 16px;
       background: color-mix(in oklch, var(--bg) 86%, transparent);
       backdrop-filter: blur(14px) saturate(1.4);
-      border-bottom: 1px solid var(--border-soft);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-card);
       flex: none; z-index: 30;
     }
     .public-header-inner {
@@ -221,7 +224,7 @@
       .tenant-rail-list { max-height: none; }
     }
     @media (max-width: 700px) {
-      .public-header { padding: 8px 14px; gap: 12px; }
+      .public-header { padding: 8px 14px; gap: 12px; margin: 10px; }
       .public-tabs { width: 100%; margin-left: 0; }
       .public-header-aux { display: none; }
     }
