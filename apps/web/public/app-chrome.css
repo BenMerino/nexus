@@ -32,25 +32,19 @@
    content passes UNDER it and the glass blur frosts what's behind. The scroll
    area's own side padding insets it → sky shows beside the bar (a detached glass
    pill, not a full-width slab). No fixed-overlay, no padding-clearance hack. */
+/* FIXED floating chrome: header + sidebar are pinned (out of flow) and the
+   content is the ONLY thing that scrolls — under the header, beside the sidebar.
+   A detached glass bar inset on top + sides. */
 .public-header {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  top: var(--chrome-inset);
+  left: var(--chrome-inset);
+  right: var(--chrome-inset);
   min-height: var(--chrome-bar-h);
-  margin-bottom: var(--chrome-inset);
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   border-radius: var(--radius-card);
-  z-index: 30;
-}
-/* In the .app grid the header is ROW 1, spanning both columns — a full-width
-   floating glass bar across the top. The sidebar + content (row 2) start BELOW
-   it. Inset by --chrome-inset so it floats detached; sticky at the viewport top
-   so row-2 content scrolls under it. */
-.app > .public-header {
-  grid-column: 1 / -1;
-  position: sticky; top: var(--chrome-inset);
-  margin: var(--chrome-inset) var(--chrome-inset) 0;
   z-index: 40;
 }
 
@@ -121,18 +115,28 @@
 .theme-btn svg { width: 16px; height: 16px; }
 /* The icon is chosen in React per sky mode (live/day/night) — no CSS flip. */
 
-/* Scroll area: the sticky header is its first child, so NO top-clearance hack —
-   uniform --chrome-inset padding all around gives the sky gap on every side, and
-   the sticky bar floats at top:0 within this padding box (so it sits inset from
-   the edges). Content flows after the header and scrolls under it. */
+/* Content is the ONLY scroller. It starts at the very top so content scrolls
+   UNDER the fixed header (the glass blur frosts what passes behind); the top
+   padding just keeps the FIRST item from sitting under the bar at rest. Left
+   padding clears the fixed sidebar. Sides/bottom get the --chrome-inset sky gap. */
 .public-main {
   flex: 1; overflow-y: auto; min-height: 0;
-  padding: var(--chrome-inset);
+  padding:
+    calc(2 * var(--chrome-inset) + var(--chrome-bar-h)) /* top: clear the fixed header */
+    var(--chrome-inset)                                  /* right */
+    var(--chrome-inset)                                  /* bottom */
+    calc(var(--sidebar-w) + 2 * var(--chrome-inset));    /* left: clear the fixed sidebar */
 }
 .public-content { padding: 0; }
 
-/* In the .app grid, the scroll area fills its body-row cell. */
+/* Public shell: header + sidebar are FIXED (out of flow), so the grid's column/
+   row reservation isn't needed — .public-app just fills the viewport and
+   .public-main scrolls within it (offset by the fixed-chrome padding above). */
+.app:has(> .public-header) {
+  display: block; height: 100vh;
+}
 .app > .public-app { height: 100%; min-height: 0; }
+.app:has(> .public-header) > .public-app { height: 100vh; }
 .app .public-main { padding: var(--chrome-inset); }
 
 /* The live "updated" pulse dot (public header) — emerald, distinct from the
@@ -184,6 +188,19 @@
   --_nest-corner: max(0px, calc(var(--radius-card) - var(--space-2) - 1px));
 }
 .app.app-scroll .sidebar { position: sticky; top: var(--chrome-inset); }
+
+/* PUBLIC pages (tenant/author): both header AND sidebar are FIXED chrome, only
+   the content scrolls. The sidebar is pinned at the left, starting BELOW the
+   fixed header (top = inset + bar + inset). Scoped via :has so the authed app's
+   sidebar (no .public-header) is untouched. */
+.app:has(> .public-header) .sidebar {
+  position: fixed;
+  left: var(--chrome-inset);
+  top: calc(2 * var(--chrome-inset) + var(--chrome-bar-h));
+  height: calc(100vh - 3 * var(--chrome-inset) - var(--chrome-bar-h));
+  margin: 0;
+  z-index: 35;
+}
 
 .tenant-chip { padding: 18px 20px 16px; border-bottom: var(--border-w) solid var(--border-soft); }
 .tenant-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
