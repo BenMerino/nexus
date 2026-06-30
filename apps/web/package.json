@@ -11,8 +11,6 @@
     "gen:type:check": "node scripts/gen-type-scale.mjs --check"
   },
   "dependencies": {
-    "@liquid-dom/core": "^0.1.1",
-    "@liquid-dom/react": "^0.1.1",
     "@react-three/fiber": "^9.6.0",
     "clsx": "^2.1.1",
     "d3-force": "^3.0.0",

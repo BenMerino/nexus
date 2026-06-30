@@ -7,7 +7,6 @@ import { PrimitivesSection } from './dna-sections';
 import { ComposedSection } from './dna-composed';
 import { ConcentricSection, GlassSection } from './dna-sections-corners';
 import { TypographySection } from './dna-typography';
-import { LiquidDomSection } from './dna-liquid-demo';
 import { SkyScrub } from './dna-sky-scrub';
 
 /* /dna — the live DNA catalog. Renders the vendored Zincro primitives + composed
@@ -15,7 +14,7 @@ import { SkyScrub } from './dna-sky-scrub';
  * so this page is also the visual proof the contract resolves. Wrapped in
  * GraphProviders for the single DNA/accent control point. */
 
-type Tab = 'typography' | 'primitives' | 'composed' | 'concentric' | 'glass' | 'liquid-dom';
+type Tab = 'typography' | 'primitives' | 'composed' | 'concentric' | 'glass';
 
 function Gallery() {
   const [tab, setTab] = useState<Tab>('typography');
@@ -37,7 +36,6 @@ function Gallery() {
           { value: 'composed', label: 'Composed' },
           { value: 'concentric', label: 'Concentric' },
           { value: 'glass', label: 'Glass' },
-          { value: 'liquid-dom', label: 'Liquid-dom' },
         ]}
         value={tab}
         onChange={setTab}
@@ -46,8 +44,7 @@ function Gallery() {
         : tab === 'primitives' ? <PrimitivesSection />
         : tab === 'composed' ? <ComposedSection />
         : tab === 'concentric' ? <ConcentricSection />
-        : tab === 'glass' ? <GlassSection />
-        : <LiquidDomSection />}
+        : <GlassSection />}
     </BaseBox>
   );
 }
