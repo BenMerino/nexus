@@ -17,7 +17,10 @@
     .omni { position: relative; flex: 1 1 280px; max-width: 520px; min-width: 0; }
     .omni-input {
       width: 100%; padding: 10px 14px; font-size: var(--text-detail); color: var(--fg);
-      background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+      background: var(--glass-2);
+      backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+      border: var(--border-w) solid var(--border-glass); box-shadow: var(--shadow-sm);
     }
     .omni-input::placeholder { color: var(--fg-dim); }
     .omni-input:focus { outline: none; border-color: var(--accent); }
