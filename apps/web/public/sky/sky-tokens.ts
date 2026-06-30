@@ -23,19 +23,29 @@ export const dayFactor = (altitude: number) => clamp((altitude + 6) / 16, 0, 1);
 const NIGHT = { bg: 0.16, elev: 0.20, card: 0.22, inset: 0.14, border: 0.32, borderSoft: 0.27 };
 const DAY   = { bg: 0.95, elev: 0.97, card: 0.96, inset: 0.92, border: 0.82, borderSoft: 0.88 };
 
-// fg is a HARD flip, not a crossfade: text color crossing through mid-gray on a
-// mid-gray surface would collapse contrast. Light text below the flip, dark text
-// above. Threshold 0.46 maximizes the worst-case fg/surface contrast.
-const FLIP = 0.46;
 const gray = (L: number) => `oklch(${L.toFixed(3)} 0 0)`;
 
-// Is the sky in its "light" half at this altitude? Drives data-theme + the fg
-// flip. Exported so the boot script's logic can mirror it if needed.
-export const isLightSky = (altitude: number) => dayFactor(altitude) >= FLIP;
+// Text is DERIVED from the surface it sits on, not hard-flipped at a fixed point.
+// The old fixed flip left a twilight hole: the card surface ramps continuously to
+// mid-gray, but text only flipped at dayFactor 0.46 — so around sunset (card
+// ~0.45, text still dark-theme light-gray) the muted/dim greys collapsed into the
+// surface (gap 0.10, "invisible"). Now each text role sits a GUARANTEED lightness
+// gap from the live card on its opposite side, so contrast holds at every
+// altitude (worst gap ~0.38 vs the old 0.10). fg=strongest, dim=softest, all legible.
+const cardL = (f: number) => lerp(NIGHT.card, DAY.card, f);
+function textOn(card: number, gap: number): string {
+  // Dark surface → light text (card+gap); light surface → dark text (card−gap).
+  const L = card < 0.5 ? clamp(card + gap, 0, 1) : clamp(card - gap, 0, 1);
+  return gray(L);
+}
+
+// "Light" once the dominant surface passes mid-gray — same crossover the text
+// uses, so data-theme + the [data-theme=light] CSS stay consistent with it.
+export const isLightSky = (altitude: number) => cardL(dayFactor(altitude)) >= 0.5;
 
 export function sunTokens(altitude: number): Record<string, string> {
   const f = dayFactor(altitude);
-  const light = f >= FLIP;
+  const card = cardL(f);
   const L = (k: keyof typeof NIGHT) => gray(lerp(NIGHT[k], DAY[k], f));
 
   return {
@@ -45,11 +55,11 @@ export function sunTokens(altitude: number): Record<string, string> {
     "--bg-inset": L("inset"),
     "--border": L("border"),
     "--border-soft": L("borderSoft"),
-    "--fg": light ? gray(0.20) : gray(0.96),
-    "--fg-muted": light ? gray(0.42) : gray(0.72),
-    "--fg-dim": light ? gray(0.55) : gray(0.55),
-    // color-scheme so native form controls / scrollbars match the surface.
-    "color-scheme": light ? "light" : "dark",
+    // Contrast tiers off the live card lightness — never collapse into it.
+    "--fg": textOn(card, 0.74),
+    "--fg-muted": textOn(card, 0.50),
+    "--fg-dim": textOn(card, 0.38),
+    "color-scheme": card < 0.5 ? "dark" : "light",
   };
 }
 
