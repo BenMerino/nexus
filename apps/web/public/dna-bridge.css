@@ -264,6 +264,16 @@ body > #dna-mount, body > main, body > div {
   --bg-card: transparent;
 }
 
+/* Nested · rung 2 for the plot area: the chart's host card is rung 1; the plot
+   surface itself steps to --glass-2 (denser glass, blur dropped — re-blurring the
+   frosted card muddies it) so the chart sits on a distinct nested glass plane,
+   not straight on the card. The engine still paints transparent (--bg-card above),
+   so the marks draw over this rung-2 backdrop. */
+:root .chart-surface {
+  background-color: var(--glass-2);
+  border-radius: var(--_nest-corner, var(--radius-control));
+}
+
 /* Smooth corners — the squircle that makes Zincro's concentric corners read as
    continuous (superellipse) rather than circular arcs. ONE knob (--corner-smooth,
    from dna-defaults) applied to every radius by construction. @supports-guarded:

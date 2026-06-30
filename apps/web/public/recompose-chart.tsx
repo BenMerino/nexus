@@ -19,7 +19,7 @@ function ComposedView({ directive, failed, minHeight, hideTitle }: { directive: 
   if (failed || seed === null) {
     return <div style={{ minHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>—</div>;
   }
-  return <div style={{ minHeight }}><DirectiveChart seed={seed} /></div>;
+  return <div className="chart-surface" style={{ minHeight }}><DirectiveChart seed={seed} /></div>;
 }
 
 function useComposed(doFetch: () => Promise<Response>, deps: unknown[]) {
