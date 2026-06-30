@@ -12,19 +12,19 @@
 
 import React, { useEffect } from "react";
 
+/* Page-specific bits only, all token-driven (no opaque bg, no raw px borders/
+   radius, no hardcoded hex). The import card itself uses the `.card` class so it
+   gets glass via the central roster — not its own surface. */
 const importStyles = `
-  .import-card {
-    margin-top: 24px; padding: 20px 22px;
-    background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: var(--radius);
-  }
-  .import-card h3 { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--fg-dim); margin: 0 0 6px; font-weight: 500; }
-  .import-card p { font-size: 13px; color: var(--fg-muted); margin: 0 0 12px; }
-  .import-btn { background: var(--accent); color: #1a1612; border: 0; padding: 10px 18px; border-radius: 4px; font-weight: 500; cursor: pointer; font: inherit; }
+  .import-card { margin-top: var(--space-6); }  /* surface + padding from .card */
+  .import-card h3 { font-family: var(--font-mono); font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); margin: 0 0 6px; font-weight: var(--weight-label); }
+  .import-card p { font-size: var(--text-detail); color: var(--fg-muted); margin: 0 0 12px; }
+  .import-btn { background: var(--accent); color: var(--on-primary, #fff); border: 0; padding: 10px 18px; border-radius: var(--radius-control); font-weight: var(--weight-label); cursor: pointer; font: inherit; }
   .import-btn:hover { filter: brightness(1.08); }
   .import-btn:disabled { opacity: 0.5; cursor: default; }
-  .import-progress { margin-top: 10px; font-size: 12px; color: var(--fg-dim); font-family: var(--mono); }
-  .progress-bar { height: 4px; background: var(--border-soft); border-radius: 2px; margin-top: 8px; overflow: hidden; }
-  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+  .import-progress { margin-top: 10px; font-size: var(--text-label); color: var(--fg-dim); font-family: var(--font-mono); }
+  .progress-bar { height: 4px; background: var(--bg-inset); border-radius: var(--radius-xs); margin-top: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: var(--radius-xs); transition: width 0.3s; }
 `;
 
 export function DashboardPage() {
@@ -52,7 +52,7 @@ export function DashboardPage() {
           display:'' on #import-section after fetching /api/auth?action=me
           and confirming role==='superadmin'. The button's onclick is
           startImport(), set on window by dashboard-import.js. */}
-      <div className="import-card" id="import-section" style={{ display: "none" }}>
+      <div className="card import-card" id="import-section" style={{ display: "none" }}>
         <h3>Bulk import · OpenAlex</h3>
         <p>Import all publications affiliated with your institution.</p>
         <button
