@@ -75,6 +75,14 @@ export function sunColors(altitude: number, dayF: number): Record<string, string
   out["--sky-primary"] = rgb(primary);
   out["--sky-companion"] = rgb(companion);
 
+  // Label color for the primary button/gradient (--on-primary). Derived from the
+  // GRADIENT's own luminance, not --bg: night gradients are dark (→ white text),
+  // day gradients are light (→ dark text). Keys off the pair average so the label
+  // contrasts the actual button, fixing the invisible dark-on-dark-violet at night.
+  const lum = (c: RGB) => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+  const gradLum = (lum(primary) + lum(companion)) / 2;
+  out["--on-primary"] = gradLum < 0.55 ? "oklch(1 0 0)" : "oklch(0.20 0 0)";
+
   // Charts are the COMPANION family — daylight charts read warm/gold (the
   // sunshine companion), never blue (blue is the accent/primary). LIGHTNESS-
   // dominant: the 9 series step lightness 82→26 (the separation), with only a

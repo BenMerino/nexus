@@ -36,13 +36,17 @@
   --text-inverse:  var(--bg);
 
   /* ── Brand: nexus --primary IS the brand; --accent === --primary already.
-     Re-point Zincro's derived primary names at it. on-primary = label color
-     that sits ON a primary fill → nexus's base bg reads correctly in both modes. */
+     Re-point Zincro's derived primary names at it. --on-primary (label color on
+     a primary fill) is DERIVED from the gradient's luminance by the sun pipeline
+     (sky-colors.ts) — white on dark night gradients, dark on light day ones — so
+     the label always contrasts the actual button, not --bg. This is the fallback
+     for when the pipeline isn't mounted (SSR / no sky-bg): white, the safe
+     default over a saturated brand gradient. */
   --primary:        var(--accent);
   --primary-bright: var(--accent);
   --primary-fill:   var(--accent);
   --primary-text:   var(--accent);
-  --on-primary:     var(--bg);
+  --on-primary:     oklch(1 0 0);
 
   /* ── Status: Zincro --status-* ← nexus semantic status tokens ─────────── */
   --status-success: var(--ok);
