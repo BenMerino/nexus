@@ -143,20 +143,23 @@
      (--sky-primary, set by the sun pipeline) into the neutral base: panels read
      subtly blue by day, warm at golden hour, violet at night. --glass-tint is the
      one knob; it falls back to transparent so without the pipeline the glass
-     stays neutral grey. (Was 8% — below the eye's threshold through blur, read as
-     white; 18% gives a clear-but-soft cast while keeping the glass light + text
-     legible.) */
-  --glass-tint: 18%;
+     stays neutral grey. (8% → invisible; 18% → still washed out, esp. in light
+     mode where mixing colour into near-white desaturates fast; 30% gives the
+     glass a real, readable colour cast on both modes while staying legible.) */
+  --glass-tint: 30%;
   --tonal-base: color-mix(in oklch, var(--sky-primary, transparent) var(--glass-tint), var(--bg));
 
   /* Tonal ladder — opaque shades, deepest → highest. WIDE steps (~9% --fg per
      rung) so each stacked layer is clearly a different shade — small steps wash
      out through the translucency and stacked glass collapses to one look. Built
      on --tonal-base (the sky-tinted bg) so the whole ladder carries the tint. */
+  /* Rung stepper = a blend of --fg (lightness contrast) + the sky colour (so
+     each deeper rung keeps the hue instead of desaturating back to grey). */
+  --tonal-step: color-mix(in oklch, var(--fg) 55%, var(--sky-primary, var(--fg)));
   --tonal-0: var(--tonal-base);
-  --tonal-1: color-mix(in oklch, var(--fg) 6%,  var(--tonal-base));
-  --tonal-2: color-mix(in oklch, var(--fg) 12%, var(--tonal-base));
-  --tonal-3: color-mix(in oklch, var(--fg) 18%, var(--tonal-base));
+  --tonal-1: color-mix(in oklch, var(--tonal-step) 6%,  var(--tonal-base));
+  --tonal-2: color-mix(in oklch, var(--tonal-step) 12%, var(--tonal-base));
+  --tonal-3: color-mix(in oklch, var(--tonal-step) 18%, var(--tonal-base));
 
   /* Glass = a ladder rung at reduced alpha. The depth between stacked layers
      comes from the TINT accumulating (even +6% per rung), NOT from ramping the
