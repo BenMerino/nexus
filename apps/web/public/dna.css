@@ -52,13 +52,14 @@
 
   /* ── Border width — THE single control point ────────────────
      Every border in nexus-owned CSS uses var(--border-w): one knob
-     changes the whole platform's stroke thickness (set 0 for a
-     border-less look, 1.5px for heavier). --border-w-emphasis is the
-     thicker accent stroke (active tab underline, focus rings).
-     Border COLOR is sun-pipeline-driven (--border/--border-soft, set
-     live by sky-tokens.ts). So borders are tightly controlled on both
-     axes: width here, colour by the day/night pipeline. */
-  --border-w:          1px;
+     changes the whole platform's stroke thickness. Set to 0 (2026-06):
+     the BORDERLESS look — surfaces separate purely by glass tonal rung
+     (glass-1/2/3 + the sky tint) and shadow, no strokes. --border-w-emphasis
+     stays non-zero for the few accent strokes that ARE the signal (active
+     tab underline). Border COLOR is still sun-pipeline-driven
+     (--border/--border-soft) for the emphasis strokes + anything that opts
+     back in by setting its own width. */
+  --border-w:          0px;
   --border-w-emphasis: 2px;
 
   /* ── Shadow scale ───────────────────────────────────────────

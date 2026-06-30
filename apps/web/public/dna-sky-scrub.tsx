@@ -23,17 +23,19 @@ const fmt = (min: number) =>
 export function SkyScrub() {
   const [mode, setMode] = useState<SkyMode>(() => getSkyMode());
   const [min, setMin] = useState<number>(() => getManualMinutes());
-  const [borders, setBorders] = useState(true);
+  // Default OFF — borderless is now the platform default (--border-w: 0). The
+  // toggle here lets you preview borders BACK on for comparison.
+  const [borders, setBorders] = useState(false);
 
   useEffect(() => { setSkyMode(mode); repaint(); }, [mode]);
 
-  // Borderless preview: every border routes through --border-w (the single width
-  // token), so setting it to 0 removes them all. Inline on :root; clearing the
-  // override restores the dna.css default. Dev-only, never committed.
+  // Borders preview: every border routes through --border-w. The platform
+  // default is now 0 (borderless); "on" forces 1px back inline to compare,
+  // "off" clears the override (→ the dna.css 0 default). Dev-only.
   useEffect(() => {
     const root = document.documentElement;
-    if (borders) root.style.removeProperty('--border-w');
-    else root.style.setProperty('--border-w', '0px');
+    if (borders) root.style.setProperty('--border-w', '1px');
+    else root.style.removeProperty('--border-w');
   }, [borders]);
 
   // sky-mode is shared across ALL pages — don't leak a dev 'manual'/forced scrub
