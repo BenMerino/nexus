@@ -83,6 +83,7 @@ export function TenantPublicHeader({
   }, []);
 
   return (
+    <>
     <header className="public-header" ref={ref}>
       <div className="public-header-inner">
         <div className="public-brand">
@@ -97,7 +98,6 @@ export function TenantPublicHeader({
             </div>
           </div>
         </div>
-        {search ? <div className="public-header-search">{search}</div> : null}
         <div className="public-header-aux">
           <span className="public-updated"><span className="sync-pulse" /> <span>{updated}</span></span>
           <a href="/login.html" className="public-signin">{ES.signIn}</a>
@@ -105,5 +105,9 @@ export function TenantPublicHeader({
         </div>
       </div>
     </header>
+    {/* Search is its OWN detached floating glass bar, centred in the header zone,
+        separate from the main bar above. */}
+    {search ? <div className="public-search-bar">{search}</div> : null}
+    </>
   );
 }
