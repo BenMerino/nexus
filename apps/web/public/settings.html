@@ -16,12 +16,12 @@
         .logo-box:hover { border-color: var(--accent); }
         .logo-box img { max-width: 96px; max-height: 96px; object-fit: contain; }
         .color-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
-        .color-row label { width: 140px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); }
+        .color-row label { width: 140px; font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); }
         .color-row input[type="color"] { width: 40px; height: 32px; border: 1px solid var(--border); border-radius: var(--radius-control); cursor: pointer; padding: 0; background: transparent; }
-        .color-row .hex { font-size: 11px; color: var(--fg-dim); font-family: var(--mono); }
+        .color-row .hex { font-size: var(--text-micro); color: var(--fg-dim); font-family: var(--font-mono); }
         .indices-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
         #idx-checks { display: flex; gap: 14px; flex-wrap: wrap; }
-        #idx-checks label { display: inline-flex; gap: 6px; align-items: center; font-family: var(--mono); font-size: 12px; }
+        #idx-checks label { display: inline-flex; gap: 6px; align-items: center; font-family: var(--font-mono); font-size: var(--text-label); }
       </style>
       <div class="view">
         <header class="view-head">
@@ -31,7 +31,7 @@
         </header>
 
         <div class="card" id="branding-card" style="display:none;">
-          <h3 id="branding-title" style="font-family: var(--display); font-weight: 400; font-size: 22px; margin-bottom: 18px;">University branding</h3>
+          <h3 id="branding-title" style="font-family: var(--font-display); font-weight: var(--weight-body); font-size: var(--text-h2); margin-bottom: 18px;">University branding</h3>
           <div class="branding-grid">
             <div>
               <div class="logo-box" id="logo-preview" onclick="document.getElementById('logo-input').click()" title="Click to upload logo">
@@ -59,7 +59,7 @@
         </div>
 
         <div class="card" id="indices-card" style="display:none; margin-top:18px;">
-          <h3 style="font-family: var(--display); font-weight: 400; font-size: 22px; margin-bottom: 6px;">Accepted indices (faculty)</h3>
+          <h3 style="font-family: var(--font-display); font-weight: var(--weight-body); font-size: var(--text-h2); margin-bottom: 6px;">Accepted indices (faculty)</h3>
           <div class="text-small text-muted" style="margin-bottom:16px;">Define which citation indices count as a qualified publication when evaluating the academic faculty.</div>
           <div class="indices-row">
             <div id="idx-checks"></div>

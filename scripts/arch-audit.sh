@@ -84,8 +84,8 @@ done < <(staged | grep -E '^apps/web/.*\.(ts|tsx|js|css)$' \
 # ── N3-type (hard) — no hardcoded typography outside the token system ───────
 #  Type is GENERATED from ui/dna/type-scale.js into dna.css + tokens.ts (one
 #  source, no loose horses). A newly-added raw font-size/weight/family literal
-#  in web code bypasses it. Build palettes/type from tokens (var(--text-*),
-#  var(--weight-*), var(--font-*)) or render <BaseText variant=…>.
+#  in web code (incl. inline <style> in .html) bypasses it. Build type from
+#  tokens (var(--text-*), var(--weight-*), var(--font-*)) or <BaseText variant=…>.
 #  Exempt: the primitives layer (it IS the resolution layer), the generated
 #  source/artifacts, the raw family stacks in shared.css, and ui/graph-engine/
 #  (vendored from Zincro + SVG <text> numeric fontSize that can't take CSS vars;
@@ -105,7 +105,7 @@ while IFS= read -r f; do
     echo "N3 BLOCK  $f — hardcoded typography (font-size/weight/family). Edit ui/dna/type-scale.js + npm run gen:type, use var(--text-*/--weight-*/--font-*), or <BaseText variant=…>."
     HARD=$((HARD+1))
   fi
-done < <(staged | grep -E '^apps/web/.*\.(ts|tsx|js|css)$' \
+done < <(staged | grep -E '^apps/web/.*\.(ts|tsx|js|css|html)$' \
                 | grep -vE '^apps/web/ui/primitives/' \
                 | grep -vE '^apps/web/ui/graph-engine/' \
                 | grep -vE '(type-scale\.js|gen-type-scale\.mjs)$' \

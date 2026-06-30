@@ -9,14 +9,14 @@
        (imported via shared.css) — see N9. Page-specific styles only below. */
 
     /* ── Page head: serif headline + lede ───────────────────────────── */
-    .page-title { font-family: var(--display); font-size: 40px; line-height: 1.02; letter-spacing: -0.01em; font-weight: 400; max-width: 18ch; margin: 0; }
+    .page-title { font-family: var(--font-display); font-size: var(--text-display); line-height: 1.02; letter-spacing: var(--tracking-h); font-weight: var(--weight-body); max-width: 18ch; margin: 0; }
     .page-title em { font-style: italic; color: var(--fg-muted); }
-    .page-lede { color: var(--fg-muted); font-size: 14.5px; max-width: 46ch; margin-top: 10px; line-height: 1.55; }
+    .page-lede { color: var(--fg-muted); font-size: var(--text-body); max-width: 46ch; margin-top: 10px; line-height: 1.55; }
 
     /* ── Omnibox: input + grouped results popover (page-head, left) ──── */
     .omni { position: relative; flex: 1 1 280px; max-width: 520px; min-width: 0; }
     .omni-input {
-      width: 100%; padding: 10px 14px; font-size: 13px; color: var(--fg);
+      width: 100%; padding: 10px 14px; font-size: var(--text-detail); color: var(--fg);
       background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
     }
     .omni-input::placeholder { color: var(--fg-dim); }
@@ -26,16 +26,16 @@
       background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
       max-height: 420px; overflow-y: auto;
     }
-    .omni-group { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-dim); padding: 10px 13px 4px; }
+    .omni-group { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); padding: 10px 13px 4px; }
     .omni-row {
       display: flex; align-items: baseline; gap: 10px; width: 100%; text-align: left;
       padding: 7px 13px; border: none; background: none; cursor: pointer;
-      color: var(--fg); text-decoration: none; font-size: 13px; font-family: inherit;
+      color: var(--fg); text-decoration: none; font-size: var(--text-detail); font-family: inherit;
     }
     .omni-row:hover { background: var(--bg-inset); }
     .omni-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .omni-sub { font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim); flex: none; }
-    .omni-empty { padding: 12px 13px; font-family: var(--mono); font-size: 12px; color: var(--fg-dim); }
+    .omni-sub { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); flex: none; }
+    .omni-empty { padding: 12px 13px; font-family: var(--font-mono); font-size: var(--text-label); color: var(--fg-dim); }
 
     /* ── KPI cards: accent rail + mono label + serif value + sparkline ── */
     .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--chrome-inset); margin-bottom: var(--chrome-inset); }
@@ -48,18 +48,18 @@
       border-radius: var(--radius-card);
     }
     .kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .kpi-label { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.13em; color: var(--fg-dim); }
+    .kpi-label { font-family: var(--font-mono); font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); }
     .kpi-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--kpi-accent, var(--j-sapphire)); }
     .kpi-body { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-top: auto; }
-    .kpi-val { font-family: var(--display); font-size: 44px; line-height: 0.92; letter-spacing: -0.012em; font-weight: 400; font-variant-numeric: tabular-nums; }
-    .kpi-val .pct { font-size: 28px; color: var(--fg-muted); }
+    .kpi-val { font-family: var(--font-display); font-size: var(--text-display); line-height: 0.92; letter-spacing: var(--tracking-h); font-weight: var(--weight-body); font-variant-numeric: tabular-nums; }
+    .kpi-val .pct { font-size: var(--text-h2); color: var(--fg-muted); }
     .kpi-spark { display: block; flex: none; }
     /* Series sparkline as a full-bleed bottom strip: negative margins cancel
        the card padding so the area gradient runs edge-to-edge; the SVG inside
        is drawn at the strip's measured width (no stretch distortion). */
     .kpi-spark-strip { margin: 0 -22px -20px; height: 44px; overflow: hidden; }
     .kpi-spark-strip .kpi-spark { width: 100%; height: 100%; }
-    .kpi-foot { font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim); letter-spacing: 0.04em; }
+    .kpi-foot { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); letter-spacing: 0.04em; }
 
     /* ── Chart panels: card chrome wrapping the engine charts ────────── */
     .panel { background: var(--bg-card); border: 1px solid var(--border); padding: 22px 24px 24px; box-shadow: var(--shadow-sm); min-width: 0;
@@ -68,9 +68,9 @@
          the intrinsic-size estimate keeps the scrollbar from jumping. */
       content-visibility: auto; contain-intrinsic-size: auto 420px; }
     .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
-    .panel-title { font-family: var(--display); font-size: 22px; font-weight: 400; line-height: 1.05; letter-spacing: -0.005em; margin: 0; }
-    .panel-sub { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.13em; color: var(--fg-dim); margin-top: 7px; }
-    .panel-tag { font-family: var(--mono); font-size: 10px; color: var(--fg-dim); border: 1px solid var(--border); padding: 3px 8px; letter-spacing: 0.06em; white-space: nowrap; flex: none; }
+    .panel-title { font-family: var(--font-display); font-size: var(--text-h2); font-weight: var(--weight-body); line-height: 1.05; letter-spacing: var(--tracking-h); margin: 0; }
+    .panel-sub { font-family: var(--font-mono); font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); margin-top: 7px; }
+    .panel-tag { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); border: 1px solid var(--border); padding: 3px 8px; letter-spacing: 0.06em; white-space: nowrap; flex: none; }
     /* 2-col chart grid: .tall spans two rows (contributors hero), .full both cols. */
     .chart-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--chrome-inset); min-width: 0; align-items: start; }
     .chart-grid .tall { grid-row: span 2; }
@@ -90,15 +90,15 @@
     .tenant-rail-head { padding: 16px 16px 12px; border-bottom: 1px solid var(--border-soft); }
     .tenant-rail-list { max-height: calc(100vh - 200px); overflow-y: auto; padding: 8px; }
     .tenant-rail-title {
-      font-family: var(--mono); font-weight: 400; font-size: 11px;
-      text-transform: uppercase; letter-spacing: 0.13em; color: var(--fg-dim);
+      font-family: var(--font-mono); font-weight: var(--weight-body); font-size: var(--text-micro);
+      text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim);
       margin: 0 0 4px;
     }
-    .tenant-rail-note { font-size: 11.5px; color: var(--fg-dim); line-height: 1.45; margin: 0 0 12px; }
+    .tenant-rail-note { font-size: var(--text-micro); color: var(--fg-dim); line-height: 1.45; margin: 0 0 12px; }
 
     /* ── Flat scope rail: unit rows (name + kind + count + usage bar) ── */
     .scope-list { display: flex; flex-direction: column; gap: 2px; }
-    .scope-rail-empty { padding: 14px; color: var(--fg-dim); font-family: var(--mono); font-size: 13px; }
+    .scope-rail-empty { padding: 14px; color: var(--fg-dim); font-family: var(--font-mono); font-size: var(--text-detail); }
     .scope-unit {
       display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto;
       gap: 2px 10px; padding: 9px 11px; cursor: pointer;
@@ -107,10 +107,10 @@
     .scope-unit:hover { background: var(--bg-inset); }
     .scope-unit.active { background: var(--bg-inset); border-color: var(--border-soft); }
     .scope-unit.active::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--primary); }
-    .scope-unit-name { grid-column: 1; grid-row: 1; font-size: 13px; color: var(--fg); line-height: 1.25; }
-    .scope-unit.active .scope-unit-name { font-weight: 500; }
-    .scope-unit-val { grid-column: 2; grid-row: 1; align-self: center; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--fg-muted); }
-    .scope-unit-kind { grid-column: 1; grid-row: 2; font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); }
+    .scope-unit-name { grid-column: 1; grid-row: 1; font-size: var(--text-detail); color: var(--fg); line-height: 1.25; }
+    .scope-unit.active .scope-unit-name { font-weight: var(--weight-label); }
+    .scope-unit-val { grid-column: 2; grid-row: 1; align-self: center; text-align: right; font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-muted); }
+    .scope-unit-kind { grid-column: 1; grid-row: 2; font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); }
     .scope-unit-bar { grid-column: 1 / -1; grid-row: 3; height: 3px; background: var(--bg-inset); margin-top: 6px; overflow: hidden; }
     .scope-unit-bar i { display: block; height: 100%; background: var(--j-sapphire); opacity: 0.55; }
     .scope-unit.active .scope-unit-bar i { opacity: 1; }
@@ -124,26 +124,26 @@
     /* ── Publication list rows (most cited / recent panels) ──────────── */
     .work-item { padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
     .work-item:last-child { border-bottom: none; }
-    .work-title { font-size: 13.5px; line-height: 1.4; }
+    .work-title { font-size: var(--text-body); line-height: 1.4; }
     .work-title a { color: var(--fg); }
     .work-title a:hover { color: var(--accent); }
-    .work-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim); align-items: baseline; }
-    .work-journal { font-style: italic; font-family: var(--serif, serif); font-size: 12px; color: var(--fg-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .work-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); align-items: baseline; }
+    .work-journal { font-style: italic; font-family: var(--serif, serif); font-size: var(--text-label); color: var(--fg-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     .work-cites { margin-left: auto; flex: none; }
-    .work-empty { color: var(--fg-dim); font-family: var(--mono); font-size: 12px; padding: 12px 0; }
+    .work-empty { color: var(--fg-dim); font-family: var(--font-mono); font-size: var(--text-label); padding: 12px 0; }
 
     /* ── Provenance footer ────────────────────────────────────────────── */
     .public-foot {
       max-width: var(--maxw); margin: 48px auto 0; padding-top: 18px;
       border-top: 1px solid var(--border-soft);
-      font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim);
+      font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim);
       line-height: 1.8; letter-spacing: 0.04em;
     }
 
     /* Roster-style table: bordered, full-width, sticky header, hover rows. */
-    .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: var(--text-label); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
     .admin-table th, .admin-table td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border-soft); }
-    .admin-table th { position: sticky; top: 0; z-index: 1; background: var(--bg-inset); font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: 0.12em; color: var(--fg-dim); font-family: var(--mono); user-select: none; }
+    .admin-table th { position: sticky; top: 0; z-index: 1; background: var(--bg-inset); font-weight: var(--weight-label); text-transform: uppercase; font-size: var(--text-micro); letter-spacing: var(--tracking-label); color: var(--fg-dim); font-family: var(--font-mono); user-select: none; }
     .admin-table tbody tr:last-child td { border-bottom: none; }
     .admin-table tbody tr:hover { background: var(--bg-inset); }
     .roster-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -151,7 +151,7 @@
     /* Org tree — file-explorer style with CSS-drawn connector lines.
        Each subtree carries a vertical guide on the left; each direct
        child grows a horizontal hook into its row's vertical center. */
-    .org-tree { font-size: 13px; --tree-guide: var(--border); }
+    .org-tree { font-size: var(--text-detail); --tree-guide: var(--border); }
     .org-node { position: relative; }
     .org-node > .org-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; cursor: pointer; position: relative; }
     .org-node > .org-row:hover { background: var(--bg-inset); }
@@ -161,18 +161,18 @@
     .org-row.selectable { border-radius: var(--radius-control); }
     .org-row.active { background: var(--bg-inset); box-shadow: inset 2px 0 0 var(--primary); }
     .org-row.active .org-name { color: var(--primary); }
-    .org-twist { width: 12px; color: var(--fg-dim); font-size: 10px; flex: none; transition: transform 0.12s; text-align: center; }
+    .org-twist { width: 12px; color: var(--fg-dim); font-size: var(--text-micro); flex: none; transition: transform 0.12s; text-align: center; }
     .org-twist.open { transform: rotate(90deg); }
     .org-name { flex: 1; }
-    .org-name.fac { font-family: var(--display); font-size: 15px; }
+    .org-name.fac { font-family: var(--font-display); font-size: var(--text-body); }
     /* Kind tag in its own fixed-width slot so every tag aligns into one column,
        regardless of the unit name's length (department rows leave it empty). */
     .org-kind-slot { flex: none; width: 76px; display: flex; justify-content: flex-start; }
-    .org-kind { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 5px; white-space: nowrap; }
+    .org-kind { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 5px; white-space: nowrap; }
     .org-name.dep { color: var(--fg); }
-    .org-name.person { color: var(--fg-dim); font-size: 12px; }
+    .org-name.person { color: var(--fg-dim); font-size: var(--text-label); }
     .org-metrics { display: flex; gap: 6px; align-items: center; flex: none; }
-    .org-pill { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; padding: 2px 7px; border-radius: var(--radius-pill); background: var(--bg-inset); border: 1px solid var(--border); color: var(--fg-dim); white-space: nowrap; }
+    .org-pill { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: 0.04em; padding: 2px 7px; border-radius: var(--radius-pill); background: var(--bg-inset); border: 1px solid var(--border); color: var(--fg-dim); white-space: nowrap; }
     .org-pill.cov-full { border-color: var(--accent); color: var(--accent); }
 
     /* Ranked metric bar on each unit row — the scheme as a contributors chart.
@@ -180,7 +180,7 @@
     .org-bar { display: flex; align-items: center; gap: 8px; flex: none; width: 132px; }
     .org-bar-track { flex: 1; height: 7px; background: var(--bg-inset); border-radius: var(--radius-sm); overflow: hidden; }
     .org-bar-fill { display: block; height: 100%; background: var(--chart-1); border-radius: var(--radius-sm); }
-    .org-bar-val { font-family: var(--mono); font-size: 11px; color: var(--fg-dim); min-width: 40px; text-align: right; white-space: nowrap; }
+    .org-bar-val { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); min-width: 40px; text-align: right; white-space: nowrap; }
     /* Departments' bars a touch dimmer so faculty bars read as the primary tier. */
     .org-children .org-bar-fill { background: var(--chart-2); }
 
@@ -189,7 +189,7 @@
     .contrib-row { display: flex; align-items: center; gap: 12px; padding: 5px 6px; border-radius: var(--radius-control); }
     .contrib-row.drillable { cursor: pointer; }
     .contrib-row.drillable:hover { background: var(--bg-inset); }
-    .contrib-name { flex: 1; min-width: 0; font-size: 13px; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .contrib-name { flex: 1; min-width: 0; font-size: var(--text-detail); color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .contrib-row .org-bar { width: 180px; }
 
     /* Top-level faculties: light card stripe so they read as roots. */
@@ -217,9 +217,9 @@
       height: 18px; width: 1px; background: var(--tree-guide);
     }
 
-    .org-orcid { font-family: var(--mono); font-size: 10px; color: var(--fg-dim); }
+    .org-orcid { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); }
     .org-orcid.none { opacity: 0.45; }
-    .org-err { color: var(--danger, #d66); font-size: 11px; font-family: var(--mono); }
+    .org-err { color: var(--danger, #d66); font-size: var(--text-micro); font-family: var(--font-mono); }
   </style>
 </head>
 <body class="shell-fixed">

@@ -21,12 +21,15 @@
  * theming is the 7 surface colors via the N6 theme handler, not type).
  */
 
-/** Font families. Raw stacks live in shared.css :root (--display/--sans/--mono)
- *  because the theme handler owns that block; bound to role tokens here. */
+/** Font families — the Apple/Google model: ONE sans for all UI text + ONE mono
+ *  for technical microcopy. No serif in the product UI (Apple keeps New York
+ *  serif for editorial only; Material uses Roboto + Roboto Mono). Raw stacks
+ *  live in shared.css :root; bound to role tokens here. `display` keeps its own
+ *  token (a future editorial serif is a one-line swap) but points at the sans. */
 export const FAMILIES = {
-  display: { token: '--font-display', value: 'var(--display)', note: 'serif — hero/stat/section titles' },
-  body:    { token: '--font-body',    value: 'var(--sans)',    note: 'sans — body, headings, UI' },
-  mono:    { token: '--font-mono',    value: 'var(--mono)',    note: 'mono — labels, codes, micro' },
+  display: { token: '--font-display', value: 'var(--sans)', note: 'sans — hero/stat/section titles (one-family model)' },
+  body:    { token: '--font-body',    value: 'var(--sans)', note: 'sans — body, headings, UI' },
+  mono:    { token: '--font-mono',    value: 'var(--mono)', note: 'mono — labels, codes, micro (technical only)' },
 };
 
 /**
@@ -44,7 +47,7 @@ export const FAMILIES = {
 /** THE roles — the whole type system. Order = catalog/emit order.
  *  @type {Record<string, TypeRole>} */
 export const TYPE_ROLES = {
-  display: { family: 'display', size: '2.75rem',   px: 44, weight: 400, leading: 1.05, tracking: '-0.015em', note: 'stat values, hero titles' },
+  display: { family: 'display', size: '2.75rem',   px: 44, weight: 600, leading: 1.05, tracking: '-0.02em', note: 'stat values, hero titles (sans, semibold for presence)' },
   h1:      { family: 'body',    size: '2.25rem',   px: 36, weight: 600, leading: 1.1,  tracking: '-0.005em', note: 'page title' },
   h2:      { family: 'body',    size: '1.375rem',  px: 22, weight: 600, leading: 1.2,  tracking: '-0.005em', note: 'section titles' },
   h3:      { family: 'body',    size: '1.125rem',  px: 18, weight: 600, leading: 1.3,  tracking: 'inherit',  note: 'card headings' },

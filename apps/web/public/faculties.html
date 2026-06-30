@@ -11,13 +11,13 @@
     .org-node { display: flex; flex-direction: column; }
     .org-row { display: flex; align-items: center; gap: 10px; padding: 9px 6px; position: relative; }
     .org-row:hover { background: var(--bg-inset); }
-    .org-twist { font-size: 9px; color: var(--fg-dim); width: 12px; flex: none; }
-    .org-name { font-size: 14px; }
-    .org-name.fac { font-weight: 500; }
-    .org-name.dep { color: var(--fg-muted); font-size: 13px; }
-    .org-kind { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); }
+    .org-twist { font-size: var(--text-micro); color: var(--fg-dim); width: 12px; flex: none; }
+    .org-name { font-size: var(--text-body); }
+    .org-name.fac { font-weight: var(--weight-label); }
+    .org-name.dep { color: var(--fg-muted); font-size: var(--text-detail); }
+    .org-kind { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); }
     .org-metrics { margin-left: auto; display: flex; gap: 6px; flex: none; }
-    .org-pill { font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim); border: 1px solid var(--border-soft); padding: 2px 8px; border-radius: var(--radius-pill); white-space: nowrap; }
+    .org-pill { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); border: 1px solid var(--border-soft); padding: 2px 8px; border-radius: var(--radius-pill); white-space: nowrap; }
     .org-children { display: flex; flex-direction: column; }
   </style>
 </head>

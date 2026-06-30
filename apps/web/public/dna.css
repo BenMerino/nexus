@@ -94,12 +94,12 @@
 
   /* @generated:type-scale css — DO NOT EDIT. Source: ui/dna/type-scale.js. Run: npm run gen:type */
   /* Families — role tokens (raw stacks in shared.css :root). */
-  --font-display: var(--display);   /* serif — hero/stat/section titles */
+  --font-display: var(--sans);      /* sans — hero/stat/section titles (one-family model) */
   --font-body:    var(--sans);      /* sans — body, headings, UI */
-  --font-mono:    var(--mono);      /* mono — labels, codes, micro */
+  --font-mono:    var(--mono);      /* mono — labels, codes, micro (technical only) */
 
   /* Sizes (rem so they scale with root font-size). */
-  --text-display: 2.75rem;   /* 44px — stat values, hero titles */
+  --text-display: 2.75rem;   /* 44px — stat values, hero titles (sans, semibold for presence) */
   --text-h1:      2.25rem;   /* 36px — page title */
   --text-h2:      1.375rem;  /* 22px — section titles */
   --text-h3:      1.125rem;  /* 18px — card headings */
@@ -110,7 +110,7 @@
   --text-micro:   0.6875rem; /* 11px — dense chips, nav, meta */
 
   /* Weights. */
-  --weight-display: 400;
+  --weight-display: 600;
   --weight-h1:      600;
   --weight-h2:      600;
   --weight-h3:      600;
@@ -138,7 +138,7 @@
   --tracking-tight:   -0.015em;
   --tracking-h:       -0.005em;  /* sans headings */
   --tracking-body:    0;
-  --tracking-display: -0.015em;
+  --tracking-display: -0.02em;
   --tracking-label:   0.12em;
   /* @end:type-scale css */
 }

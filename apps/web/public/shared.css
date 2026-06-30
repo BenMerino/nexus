@@ -114,9 +114,13 @@
   --metal-rust:        oklch(0.50 0.12 30);
   --metal-unknown:     oklch(0.55 0.005 260);
 
-  --display: 'Instrument Serif', 'Times New Roman', serif;
-  --sans:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --mono:    'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  /* ONE-FAMILY model (Apple/Google): a single sans for all UI text + a mono for
+     technical microcopy. --display is kept as a named slot (so a future
+     editorial serif is a one-line swap) but currently equals --sans, so every
+     var(--display) / var(--font-display) call site renders in the one sans. */
+  --sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --display: var(--sans);
+  --mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
   /* Radius roles now flow from dna-defaults.css (sm 9 / control 9 /
      pill 9 / card 18). The old square-off overrides that pinned these

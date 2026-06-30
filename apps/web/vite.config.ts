@@ -66,6 +66,14 @@ const THEME_BOOT = `<script>try{var sm=localStorage.getItem('nexus.sky-mode');va
 // it in dev and bundles it in build (sky-bg is a rollup input below).
 const SKY_BG = `<script type="module" src="/sky/sky-bg.ts"></script>`;
 
+// Webfonts — the one-family model: Inter (all UI text) + JetBrains Mono
+// (technical microcopy). Injected into EVERY page <head> so the families named
+// in shared.css (--sans/--mono) actually load instead of falling back to system
+// fonts. preconnect warms the Google Fonts hosts; display=swap avoids a blocking
+// FOUT. (Privacy note: this is a third-party request; self-host woff2 later if a
+// restricted-network tenant needs it — swap this constant for local @font-face.)
+const FONT_LINKS = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">`;
+
 export default defineConfig({
   root: SRC,
   publicDir: false,
@@ -77,7 +85,7 @@ export default defineConfig({
       transformIndexHtml: {
         order: "pre",
         handler: (html) =>
-          html.replace("</title>", "</title>\n  " + THEME_BOOT + "\n  " + SKY_BG),
+          html.replace("</title>", "</title>\n  " + FONT_LINKS + "\n  " + THEME_BOOT + "\n  " + SKY_BG),
       },
     },
     {
