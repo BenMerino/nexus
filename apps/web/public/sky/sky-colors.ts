@@ -23,8 +23,8 @@ const KEYS: { alt: number; p: RGB; c: RGB }[] = [
   { alt: -6,  p: [92, 74, 150],  c: [86, 124, 168] }, // nautical
   { alt: 0,   p: [224, 96, 92],  c: [236, 150, 110] },// sunrise: warm red + peach
   { alt: 5,   p: [240, 150, 70], c: [240, 120, 96] }, // golden: amber + coral
-  { alt: 14,  p: [96, 152, 224], c: [248, 196, 96] }, // morning: light blue + sunshine
-  { alt: 60,  p: [86, 150, 230], c: [250, 200, 100] },// day: light blue + sunshine
+  { alt: 14,  p: [114, 172, 230], c: [248, 196, 96] },// morning: clearer light blue + sunshine
+  { alt: 60,  p: [120, 176, 232], c: [250, 200, 100] },// day: clear soft sky blue + sunshine
 ];
 
 function pairAt(altitude: number): [RGB, RGB] {
