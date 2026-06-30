@@ -29,6 +29,12 @@
 	@tenant path_regexp tenant ^/t/[^/]+$
 	rewrite @tenant /tenant.html
 
+	# Public entity views: /t/:slug/{faculties,academics,papers,journals} → the
+	# same tenant.html shell (it client-routes by URL). Shareable, deep-linkable.
+	# Listed before the author rule so /a/:orcid isn't captured by a generic seg.
+	@tenantEntity path_regexp tenantEntity ^/t/[^/]+/(faculties|academics|papers|journals)$
+	rewrite @tenantEntity /tenant.html
+
 	# Individual academic profile: /t/:slug/a/:orcid → author.html.
 	@authorPage path_regexp authorPage ^/t/[^/]+/a/[^/]+$
 	rewrite @authorPage /author.html

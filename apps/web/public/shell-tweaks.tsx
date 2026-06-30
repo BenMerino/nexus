@@ -35,7 +35,7 @@ export function RoleSwitcher({ me }: { me: CurrentUser | null }) {
                 <span className="role-btn-title">{r.label}</span>
                 <span className="role-btn-who">{r.id ? 'view-as' : me.user}</span>
               </span>
-              {isActive && <span style={{ color: 'var(--accent)', fontSize: 16, lineHeight: 1 }}>●</span>}
+              {isActive && <span style={{ color: 'var(--accent)', fontSize: 'var(--text-h3)', lineHeight: 1 }}>●</span>}
             </BaseAction>
           );
         })}

@@ -23,8 +23,8 @@ export interface VelocityLabels {
   forecast: string;
 }
 
-const FIGURE: React.CSSProperties = { fontFamily: 'var(--display)', fontSize: 42, letterSpacing: '-0.02em', color: 'var(--accent)', lineHeight: 1 };
-const CAPTION: React.CSSProperties = { fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 };
+const FIGURE: React.CSSProperties = { fontFamily: 'var(--display)', fontSize: 'var(--text-display)', letterSpacing: '-0.02em', color: 'var(--accent)', lineHeight: 1 };
+const CAPTION: React.CSSProperties = { fontSize: 'var(--text-micro)', textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 };
 
 export function VelocityPanelSkeleton() {
   return (
@@ -34,7 +34,7 @@ export function VelocityPanelSkeleton() {
           <Skeleton block style={FIGURE}>0.00</Skeleton>
           <div style={CAPTION}>score</div>
         </div>
-        <Skeleton block style={{ fontSize: 16, fontFamily: 'var(--mono)' }}>▲ rising</Skeleton>
+        <Skeleton block style={{ fontSize: 'var(--text-h3)', fontFamily: 'var(--mono)' }}>▲ rising</Skeleton>
       </div>
       <div style={{ height: 140, position: 'relative' }}>
         <Skeleton fill style={{ opacity: 0.5 }} />

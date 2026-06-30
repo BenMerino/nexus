@@ -21,7 +21,7 @@ export function GraphSearch({ nodes, onSelect }: {
         onChange={e => { setQuery(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder="Search nodes…"
-        style={{ fontFamily: 'var(--mono)', fontSize: 12, padding: '6px 10px', width: 180 }} />
+        style={{ fontFamily: 'var(--mono)', fontSize: 'var(--text-label)', padding: '6px 10px', width: 180 }} />
       {open && matches.length > 0 && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, zIndex: 10,
@@ -33,7 +33,7 @@ export function GraphSearch({ nodes, onSelect }: {
             <div key={n.id} tabIndex={0}
               onMouseDown={(e) => { e.preventDefault(); onSelect(n.id); setQuery(''); setOpen(false); }}
               style={{
-                padding: '6px 10px', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--mono)',
+                padding: '6px 10px', cursor: 'pointer', fontSize: 'var(--text-micro)', fontFamily: 'var(--mono)',
                 display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--border-soft)',
                 color: 'var(--fg)',
               }}
@@ -41,7 +41,7 @@ export function GraphSearch({ nodes, onSelect }: {
               onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS[n.group], flexShrink: 0 }} />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.label}</span>
-              <span style={{ color: 'var(--fg-dim)', fontSize: 10, marginLeft: 'auto' }}>{n.group}</span>
+              <span style={{ color: 'var(--fg-dim)', fontSize: 'var(--text-micro)', marginLeft: 'auto' }}>{n.group}</span>
             </div>
           ))}
         </div>

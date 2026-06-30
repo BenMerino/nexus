@@ -26,8 +26,8 @@
   position: absolute;
   top: 6px;
   left: 4px;
-  font-family: var(--mono);
-  font-size: 10px;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
   letter-spacing: 0.06em;
   color: var(--fg-dim);
   text-transform: uppercase;
@@ -58,17 +58,17 @@
   overflow: hidden;
 }
 .gantt-title {
-  font-size: 12px;
+  font-size: var(--text-label);
   color: var(--fg);
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  line-height: 1.2;
+  line-height: var(--leading-snug);
 }
 .gantt-ir {
-  font-size: 10px;
+  font-size: var(--text-micro);
   color: var(--fg-dim);
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -107,8 +107,8 @@
   border-color: oklch(0.55 0.10 245 / 0.8);
 }
 .gantt-bar-label {
-  font-family: var(--mono);
-  font-size: 10px;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
   color: var(--fg);
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -129,9 +129,9 @@
 .gantt-legend {
   display: flex;
   gap: 16px;
-  font-size: 11px;
+  font-size: var(--text-micro);
   color: var(--fg-dim);
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   letter-spacing: 0.04em;
   flex-wrap: wrap;
 }

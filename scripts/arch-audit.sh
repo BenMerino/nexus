@@ -2,9 +2,11 @@
 # Nexus arch-audit — enforces invariants N1–N5 on STAGED files at commit time.
 # Canon: .claude/rules/hard-rules.md. Run standalone: `bash scripts/arch-audit.sh`.
 #
-# Hard (block commit): N2 dead-tree edits, N4 data-layer leaks, N5 file size.
+# Hard (block commit): N2 dead-tree edits, N4 data-layer leaks, N5 file size,
+#                       N3-type (hardcoded font-size/weight/family) + N3-gen (type
+#                       artifacts drifted from ui/dna/type-scale.js).
 # Soft (warn only):     N1 handler gate (baseline clean — promote to hard if it stays clean),
-#                       N3 token bypass (DNA migration still in progress).
+#                       N3 hex/--chart-N bypass (color DNA migration still in progress).
 # Per-file opt-out: add a comment `arch-audit-ignore: N1` (or N2/N3/N4/N5) to the file.
 
 set -uo pipefail
@@ -78,6 +80,46 @@ while IFS= read -r f; do
 done < <(staged | grep -E '^apps/web/.*\.(ts|tsx|js|css)$' \
                 | grep -vE '(shared|dna)\.css$' \
                 | grep -vE '(theme-config|tokens)\.ts$' || true)
+
+# ── N3-type (hard) — no hardcoded typography outside the token system ───────
+#  Type is GENERATED from ui/dna/type-scale.js into dna.css + tokens.ts (one
+#  source, no loose horses). A newly-added raw font-size/weight/family literal
+#  in web code bypasses it. Build palettes/type from tokens (var(--text-*),
+#  var(--weight-*), var(--font-*)) or render <BaseText variant=…>.
+#  Exempt: the primitives layer (it IS the resolution layer), the generated
+#  source/artifacts, the raw family stacks in shared.css, and ui/graph-engine/
+#  (vendored from Zincro + SVG <text> numeric fontSize that can't take CSS vars;
+#  chart-tick type is Zincro-owned debt, fixed upstream then synced).
+#  Per-file: arch-audit-ignore: N3.
+while IFS= read -r f; do
+  [ -z "$f" ] && continue; [ -f "$f" ] || continue
+  optout N3 "$f" && continue
+  added=$(git diff --cached -U0 -- "$f" | grep -E '^\+[^+]' || true)
+  # font-size/letter-spacing with a literal px/rem/em (not inside var()), OR a
+  # numeric font-weight, OR a raw font-family naming a font stack.
+  hits=$(echo "$added" \
+    | grep -viE 'var\(--' \
+    | grep -iE "(font-size|letter-spacing)[[:space:]]*:[[:space:]]*-?[0-9.]+(px|rem|em)|fontSize[[:space:]]*:[[:space:]]*['\"]?-?[0-9.]+(px|rem|em)|font-weight[[:space:]]*:[[:space:]]*[1-9]00|fontWeight[[:space:]]*:[[:space:]]*[1-9]00|font-family[[:space:]]*:[[:space:]]*['\"]?(Inter|Instrument|JetBrains|monospace|sans-serif|serif)" \
+    || true)
+  if [ -n "$hits" ]; then
+    echo "N3 BLOCK  $f — hardcoded typography (font-size/weight/family). Edit ui/dna/type-scale.js + npm run gen:type, use var(--text-*/--weight-*/--font-*), or <BaseText variant=…>."
+    HARD=$((HARD+1))
+  fi
+done < <(staged | grep -E '^apps/web/.*\.(ts|tsx|js|css)$' \
+                | grep -vE '^apps/web/ui/primitives/' \
+                | grep -vE '^apps/web/ui/graph-engine/' \
+                | grep -vE '(type-scale\.js|gen-type-scale\.mjs)$' \
+                | grep -vE '^apps/web/public/(shared|dna-defaults)\.css$' || true)
+
+# ── N3-gen (hard) — generated type artifacts must match their source ────────
+#  If type-scale.js, dna.css, or tokens.ts is staged, the generated blocks must
+#  be in sync (no hand-edit between the @generated/@end sentinels).
+if staged | grep -qE '^apps/web/(ui/dna/type-scale\.js|public/dna\.css|ui/primitives/tokens\.ts)$'; then
+  if ! ( cd apps/web && node scripts/gen-type-scale.mjs --check >/dev/null 2>&1 ); then
+    echo "N3 BLOCK  type artifacts drifted from ui/dna/type-scale.js — run 'npm run gen:type' (web) and stage the result."
+    HARD=$((HARD+1))
+  fi
+fi
 
 # ── N8 — Analytics foundation (catalog-as-source / sparse atoms) ───────────
 # N8a: client-side chart data-shaping. A GraphDirective literal with a chart

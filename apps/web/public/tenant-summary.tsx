@@ -102,7 +102,7 @@ SummaryCards.Skeleton = function SummaryCardsSkeleton() {
 
 export function SectionPlaceholder({ label, error }: { label: string; error?: string | null }) {
   return (
-    <div style={{ padding: 24, color: error ? 'var(--danger, #c00)' : 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>
+    <div style={{ padding: 24, color: error ? 'var(--danger, #c00)' : 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 'var(--text-detail)' }}>
       {error ? `${ES.failedPrefix}: ${error}` : ES.loadingLabel(label)}
     </div>
   );

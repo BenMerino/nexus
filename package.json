@@ -7,6 +7,7 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "concurrently -k -n api,web -c green,cyan --restart-tries -1 --restart-after 1000 \"npm run dev:api\" \"npm run dev:web\"",
     "dev:api": "npm run dev --workspace=@nexus/api",
     "dev:web": "npm run dev --workspace=@nexus/web",
     "build:web": "npm run build --workspace=@nexus/web",

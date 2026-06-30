@@ -5,16 +5,17 @@ import { SegmentedControl } from '../ui/composed/SegmentedControl';
 import { GraphProviders } from '../ui/graph-engine-providers';
 import { PrimitivesSection, ComposedSection } from './dna-sections';
 import { ConcentricSection, GlassSection } from './dna-sections-corners';
+import { TypographySection } from './dna-typography';
 
 /* /dna — the live DNA catalog. Renders the vendored Zincro primitives + composed
  * components against nexus's token contract (dna-defaults.css + dna-bridge.css),
  * so this page is also the visual proof the contract resolves. Wrapped in
  * GraphProviders for the single DNA/accent control point. */
 
-type Tab = 'primitives' | 'composed' | 'concentric' | 'glass';
+type Tab = 'typography' | 'primitives' | 'composed' | 'concentric' | 'glass';
 
 function Gallery() {
-  const [tab, setTab] = useState<Tab>('primitives');
+  const [tab, setTab] = useState<Tab>('typography');
   return (
     <BaseBox display="flex" flexDirection="col" gap="6"
       style={{ maxWidth: '960px', margin: '0 auto', padding: 'var(--space-8)' }}>
@@ -28,6 +29,7 @@ function Gallery() {
       </BaseBox>
       <SegmentedControl<Tab>
         segments={[
+          { value: 'typography', label: 'Typography' },
           { value: 'primitives', label: 'Primitives' },
           { value: 'composed', label: 'Composed' },
           { value: 'concentric', label: 'Concentric' },
@@ -36,7 +38,8 @@ function Gallery() {
         value={tab}
         onChange={setTab}
       />
-      {tab === 'primitives' ? <PrimitivesSection />
+      {tab === 'typography' ? <TypographySection />
+        : tab === 'primitives' ? <PrimitivesSection />
         : tab === 'composed' ? <ComposedSection />
         : tab === 'concentric' ? <ConcentricSection />
         : <GlassSection />}

@@ -60,21 +60,25 @@ export const tokens = {
   },
 } as const;
 
+/* The canonical type roles. Each binds family + size + weight + leading +
+ * tracking from the dna.css contract — so picking a variant is picking a
+ * complete role, never assembling properties by hand. The map below is
+ * GENERATED from ui/dna/type-scale.js (the single source) — DO NOT EDIT it;
+ * edit the source and run `npm run gen:type`. Role docs live in the source. */
+const w = (v: string) => v as React.CSSProperties['fontWeight'];
+/* @generated:type-scale tokens — DO NOT EDIT. Source: ui/dna/type-scale.js. Run: npm run gen:type */
 export const typography: Record<string, React.CSSProperties> = {
-  display: { fontSize: 'var(--text-display)', fontWeight: 'var(--weight-display)' as React.CSSProperties['fontWeight'], letterSpacing: 'var(--tracking-display)' },
-  h1: { fontSize: 'var(--text-h1)', fontWeight: 'var(--weight-h1)' as React.CSSProperties['fontWeight'], lineHeight: 'var(--leading-h1)' },
-  h2: { fontSize: 'var(--text-h2)', fontWeight: 'var(--weight-h2)' as React.CSSProperties['fontWeight'], lineHeight: 'var(--leading-h2)' },
-  h3: { fontSize: 'var(--text-h3)', fontWeight: 'var(--weight-h3)' as React.CSSProperties['fontWeight'] },
-  body: { fontSize: 'var(--text-body)', fontWeight: 'var(--weight-body)' as React.CSSProperties['fontWeight'] },
-  detail: { fontSize: 'var(--text-detail)', fontWeight: 'var(--weight-detail)' as React.CSSProperties['fontWeight'] },
-  /* Sentence-style helper text — section descriptions, hint copy under inputs.
-   * Sentence-case, normal letter-spacing, slightly relaxed line-height. Use
-   * this instead of `label` whenever the content is a sentence. */
-  caption: { fontSize: 'var(--text-caption, var(--text-detail))', fontWeight: 'var(--weight-caption, var(--weight-detail))' as React.CSSProperties['fontWeight'], lineHeight: 'var(--leading-caption, 1.5)' },
-  /* Tag-style microcopy — single words above a value, badge text, "DETAILS"
-   * "TOTAL", "PAID". Uppercase + tracked. Don't use for sentences. */
-  label: { fontSize: 'var(--text-label)', fontWeight: 'var(--weight-label)' as React.CSSProperties['fontWeight'], textTransform: 'uppercase', letterSpacing: 'var(--tracking-label)' },
+  display: { fontFamily: 'var(--font-display)', fontSize: 'var(--text-display)', fontWeight: w('var(--weight-display)'), lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' },
+  h1: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-h1)', fontWeight: w('var(--weight-h1)'), lineHeight: 'var(--leading-h1)', letterSpacing: 'var(--tracking-h)' },
+  h2: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-h2)', fontWeight: w('var(--weight-h2)'), lineHeight: 'var(--leading-h2)', letterSpacing: 'var(--tracking-h)' },
+  h3: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-h3)', fontWeight: w('var(--weight-h3)'), lineHeight: 'var(--leading-h3)' },
+  body: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-body)', fontWeight: w('var(--weight-body)'), lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' },
+  detail: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-detail)', fontWeight: w('var(--weight-detail)'), lineHeight: 'var(--leading-detail)' },
+  caption: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-caption)', fontWeight: w('var(--weight-caption)'), lineHeight: 'var(--leading-caption)' },
+  label: { fontFamily: 'var(--font-mono)', fontSize: 'var(--text-label)', fontWeight: w('var(--weight-label)'), lineHeight: 'var(--leading-label)', letterSpacing: 'var(--tracking-label)', textTransform: 'uppercase' },
+  micro: { fontFamily: 'var(--font-mono)', fontSize: 'var(--text-micro)', fontWeight: w('var(--weight-micro)'), lineHeight: 'var(--leading-micro)' },
 };
+  /* @end:type-scale tokens */
 
 export type SpacingToken = keyof typeof tokens.spacing;
 export type ColorToken = string;

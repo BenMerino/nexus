@@ -6,7 +6,9 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite --port=9000 --host=0.0.0.0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "gen:type": "node scripts/gen-type-scale.mjs",
+    "gen:type:check": "node scripts/gen-type-scale.mjs --check"
   },
   "dependencies": {
     "@react-three/fiber": "^9.6.0",

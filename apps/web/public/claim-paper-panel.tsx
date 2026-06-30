@@ -36,17 +36,17 @@ export function ClaimPaperPanel({ onClaimed }: { onClaimed?: () => void }) {
   return (
     <section className="card">
       <SectionHead eyebrow="Add" title="Claim a paper by DOI" right={<Tag mono tone="muted">pre-ORCID work</Tag>} />
-      <p className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
+      <p className="muted" style={{ fontSize: 'var(--text-label)', marginBottom: 10 }}>
         Found an older paper of yours not on this dashboard? Paste its DOI — Nexus will fetch metadata and tag it to your profile.
       </p>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <input type="text" value={doi} onChange={e => setDoi(e.target.value)}
           placeholder="10.1016/j.example.2009.01.001"
-          style={{ flex: 1, padding: '8px 10px', background: 'var(--bg-inset)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--fg)', fontFamily: 'var(--mono)', fontSize: 12 }}
+          style={{ flex: 1, padding: '8px 10px', background: 'var(--bg-inset)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--fg)', fontFamily: 'var(--mono)', fontSize: 'var(--text-label)' }}
           onKeyDown={e => { if (e.key === 'Enter') claim(); }} disabled={busy} />
         <BaseAction variant="primary" onClick={claim} disabled={busy || !doi.trim()}>{busy ? '…' : 'Claim'}</BaseAction>
       </div>
-      {msg && <div className="mono" style={{ fontSize: 11, marginTop: 8, color: color(msg.tone) }}>{msg.text}</div>}
+      {msg && <div className="mono" style={{ fontSize: 'var(--text-micro)', marginTop: 8, color: color(msg.tone) }}>{msg.text}</div>}
     </section>
   );
 }

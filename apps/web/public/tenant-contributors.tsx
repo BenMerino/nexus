@@ -17,7 +17,7 @@ interface OrgTree { faculties: Faculty[]; }
 function Rows({ units, metric, onDrill }: { units: Unit[]; metric: Metric; onDrill?: (u: Faculty) => void }) {
   const ranked = useMemo(() => rank(units, metric).filter(u => valueOf(u, metric) > 0), [units, metric]);
   const max = ranked.length ? valueOf(ranked[0], metric) : 0;
-  if (!ranked.length) return <div style={{ padding: 14, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>{ES.contributors.noData}</div>;
+  if (!ranked.length) return <div style={{ padding: 14, color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 'var(--text-detail)' }}>{ES.contributors.noData}</div>;
   // Top 5 only — bar scale stays anchored to the true leader (max from the full
   // ranking), the list shows just the leaders.
   const top5 = ranked.slice(0, 5);
@@ -59,24 +59,24 @@ export function TenantContributors({ slug }: { slug: string }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginBottom: 14, flexWrap: 'wrap' }}>
         {drill ? (
-          <span style={{ marginRight: 'auto', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--fg-muted)' }}>{ES.contributors.titleIn(drill.name)}</span>
+          <span style={{ marginRight: 'auto', fontFamily: 'var(--mono)', fontSize: 'var(--text-label)', color: 'var(--fg-muted)' }}>{ES.contributors.titleIn(drill.name)}</span>
         ) : null}
         {METRICS.map(m => (
           <BaseAction key={m.id} size="sm" variant={metric === m.id ? 'primary' : 'outline'}
             onClick={() => setMetric(m.id)}
-            style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>
+            style={{ fontFamily: 'var(--mono)', fontSize: 'var(--text-micro)' }}>
             {m.label}
           </BaseAction>
         ))}
       </div>
       {drill ? (
         <BaseAction variant="ghost" size="sm" onClick={() => setDrill(null)}
-          style={{ marginBottom: 12, color: 'var(--primary)', fontFamily: 'var(--mono)', fontSize: 12, padding: 0 }}>
+          style={{ marginBottom: 12, color: 'var(--primary)', fontFamily: 'var(--mono)', fontSize: 'var(--text-label)', padding: 0 }}>
           {ES.contributors.backToFaculties}
         </BaseAction>
       ) : null}
       <Rows units={units} metric={metric} onDrill={drill ? undefined : setDrill} />
-      <div style={{ marginTop: 12, fontSize: 11, color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>
+      <div style={{ marginTop: 12, fontSize: 'var(--text-micro)', color: 'var(--fg-dim)', fontFamily: 'var(--mono)' }}>
         {ES.contributors.footnote}
       </div>
     </div>

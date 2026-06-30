@@ -27,10 +27,10 @@ export function AuthorTableRow({ a, slug }: { a: AuthorRowData; slug: string }) 
       <td style={num} title={hIndexTooltip(a.hIndexByType)}>{a.hIndex}</td>
       <td style={num}>{a.totalCitations.toLocaleString()}</td>
       <td>{a.orcid
-        ? <a href={`https://orcid.org/${a.orcid}`} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{a.orcid}</a>
+        ? <a href={`https://orcid.org/${a.orcid}`} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--mono)', fontSize: 'var(--text-micro)' }}>{a.orcid}</a>
         : <span className="text-muted text-small">{ES.authorsTable.none}</span>}</td>
       <td style={{ textAlign: 'right' }}>{a.orcid && (
-        <a className="primary-btn" style={{ padding: '3px 10px', fontSize: 11, textDecoration: 'none' }}
+        <a className="primary-btn" style={{ padding: '3px 10px', fontSize: 'var(--text-micro)', textDecoration: 'none' }}
            href={authorProfileHref(slug, a.orcid)} title={ES.profile.viewProfileTitle}>
           {ES.profile.viewProfile} →
         </a>

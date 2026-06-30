@@ -11,7 +11,7 @@ export function ConceptsPanel({ concepts }: { concepts: Concept[] }) {
   const totalWorks = concepts.reduce((s, c) => s + c.works, 0);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '0 0 4px 0' }}>
+      <p style={{ fontSize: 'var(--text-label)', color: 'var(--fg-dim)', margin: '0 0 4px 0' }}>
         Topics on your works, by OpenAlex Concept (top {concepts.length}).
       </p>
       {concepts.map(c => {
@@ -20,8 +20,8 @@ export function ConceptsPanel({ concepts }: { concepts: Concept[] }) {
         return (
           <div key={c.name} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontSize: 13 }}>{c.name}</span>
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-dim)', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 'var(--text-detail)' }}>{c.name}</span>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 'var(--text-micro)', color: 'var(--fg-dim)', whiteSpace: 'nowrap' }}>
                 {c.works} {c.works === 1 ? 'work' : 'works'} <span style={{ opacity: 0.6 }}>· {share}%</span>
               </span>
             </div>
@@ -40,14 +40,14 @@ export function ConceptsPanelSkeleton({ rows = 6 }: { rows?: number }) {
   const bars = [92, 78, 64, 50, 36, 22];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '0 0 4px 0' }}>
+      <p style={{ fontSize: 'var(--text-label)', color: 'var(--fg-dim)', margin: '0 0 4px 0' }}>
         Topics on your works, by OpenAlex Concept.
       </p>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-            <Skeleton as="span" style={{ fontSize: 13 }}>{names[i % names.length]}</Skeleton>
-            <Skeleton as="span" style={{ fontFamily: 'var(--mono)', fontSize: 11, whiteSpace: 'nowrap' }}>00 works · 00%</Skeleton>
+            <Skeleton as="span" style={{ fontSize: 'var(--text-detail)' }}>{names[i % names.length]}</Skeleton>
+            <Skeleton as="span" style={{ fontFamily: 'var(--mono)', fontSize: 'var(--text-micro)', whiteSpace: 'nowrap' }}>00 works · 00%</Skeleton>
           </div>
           <div style={{ height: 6, background: 'var(--bg-inset)', borderRadius: 3, overflow: 'hidden' }}>
             <div style={{ width: `${bars[i % bars.length]}%`, height: '100%', background: 'var(--border-soft)' }} />

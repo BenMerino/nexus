@@ -2,7 +2,7 @@ import React, { createContext, useContext } from 'react';
 import { tokens, sp, WEIGHT_MAP, SpacingToken, typography, TypographyVariant } from './tokens';
 
 const VARIANT_ELEMENT: Record<string, React.ElementType> = {
-  display: 'h1', h1: 'h2', h2: 'h3', h3: 'h4', body: 'p', detail: 'span', caption: 'span', label: 'span',
+  display: 'h1', h1: 'h2', h2: 'h3', h3: 'h4', body: 'p', detail: 'span', caption: 'span', label: 'span', micro: 'span',
 };
 
 const BLOCK_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);

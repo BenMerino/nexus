@@ -12,8 +12,8 @@ const defaultTypeLabel = (t: string) => TYPE_DISPLAY_LABELS[t] || (t === 'unknow
 export interface CadenceLabels { avgPerYear: string; }
 const DEFAULT_LABELS: CadenceLabels = { avgPerYear: 'papers / year (avg)' };
 
-const FIGURE: React.CSSProperties = { fontFamily: 'var(--display)', fontSize: 42, letterSpacing: '-0.02em', color: 'var(--accent)', lineHeight: 1 };
-const CAPTION: React.CSSProperties = { fontSize: 10, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 };
+const FIGURE: React.CSSProperties = { fontFamily: 'var(--display)', fontSize: 'var(--text-display)', letterSpacing: '-0.02em', color: 'var(--accent)', lineHeight: 1 };
+const CAPTION: React.CSSProperties = { fontSize: 'var(--text-micro)', textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginTop: 4 };
 
 // Publication cadence — papers per period by work-type. The CHART directive is
 // SERVER-COMPOSED (PublicationCharts.composeCadence → per-day ISO atoms), fetched
@@ -54,7 +54,7 @@ export function CadencePanelSkeleton() {
       <div style={{ height: 140, position: 'relative' }}>
         <Skeleton fill style={{ opacity: 0.5 }} />
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', marginTop: 10, fontSize: 11 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', marginTop: 10, fontSize: 'var(--text-micro)' }}>
         {legendPlaceholders.map((label, i) => (
           <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)' }}>
             <span style={{ width: 10, height: 10, background: 'var(--bg-inset)', borderRadius: 2, display: 'inline-block' }} />

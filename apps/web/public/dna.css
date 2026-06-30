@@ -73,24 +73,74 @@
   --motion-slow:   0.3s;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* ── Typography scale ───────────────────────────────────────
-     Font FAMILIES (--display/--sans/--mono) live in shared.css.
-     This adds the SIZE + leading + tracking scale that shared.css
-     applied ad-hoc (11/12/13/14/15/18/19/20/22/24/28/44px). */
-  --text-display: 2.75rem;  /* 44px — stat values, hero titles */
-  --text-h1:      2.25rem;  /* 36px */
-  --text-h2:      1.375rem; /* 22px — section titles */
-  --text-h3:      1.125rem; /* 18px — card headings */
-  --text-body:    0.875rem; /* 14px — base */
-  --text-detail:  0.8125rem;/* 13px */
-  --text-label:   0.75rem;  /* 12px — mono uppercase labels */
+  /* ── Typography scale — the canonical type contract ─────────
+     ONE home for the full role system: family + size + weight +
+     leading + tracking, per role. dna.css imports AFTER the
+     vendored dna-defaults.css, so these win for the nexus app
+     contract (the dna-defaults own size/weight tokens stay for
+     the primitives internal use; the app reads THESE).
 
-  --leading-tight: 1.1;
-  --leading-snug:  1.25;
-  --leading-base:  1.5;
+     Best-practice model: a small set of named ROLES, each binding
+     every typographic property, so a call site picks ONE role
+     instead of assembling family+size+weight+leading+tracking by
+     hand. Families are bound per role here (display→serif,
+     label/detail micro→mono, everything else→sans) so a role
+     carries its family too.
 
-  --tracking-tight: -0.015em;  /* display headings */
-  --tracking-label: 0.12em;    /* uppercase mono labels */
+     Replaces the ad-hoc 9/10/11/12/13/14/15/17/18/19/20/22/44px
+     and the ~40 hand-rolled `font-family:var(--mono);font-size:Npx`
+     blocks scattered through the CSS + TSX. The 15px/17px one-offs
+     are dropped (snap to body/h3), not enshrined. */
+
+  /* @generated:type-scale css — DO NOT EDIT. Source: ui/dna/type-scale.js. Run: npm run gen:type */
+  /* Families — role tokens (raw stacks in shared.css :root). */
+  --font-display: var(--display);   /* serif — hero/stat/section titles */
+  --font-body:    var(--sans);      /* sans — body, headings, UI */
+  --font-mono:    var(--mono);      /* mono — labels, codes, micro */
+
+  /* Sizes (rem so they scale with root font-size). */
+  --text-display: 2.75rem;   /* 44px — stat values, hero titles */
+  --text-h1:      2.25rem;   /* 36px — page title */
+  --text-h2:      1.375rem;  /* 22px — section titles */
+  --text-h3:      1.125rem;  /* 18px — card headings */
+  --text-body:    0.875rem;  /* 14px — base copy */
+  --text-detail:  0.8125rem; /* 13px — secondary / table text */
+  --text-caption: 0.8125rem; /* 13px — sentence helper / hint copy */
+  --text-label:   0.75rem;   /* 12px — uppercase mono labels */
+  --text-micro:   0.6875rem; /* 11px — dense chips, nav, meta */
+
+  /* Weights. */
+  --weight-display: 400;
+  --weight-h1:      600;
+  --weight-h2:      600;
+  --weight-h3:      600;
+  --weight-body:    400;
+  --weight-detail:  400;
+  --weight-caption: 400;
+  --weight-label:   500;
+  --weight-micro:   500;
+
+  /* Leading — per role + general escape hatches. */
+  --leading-tight:   1.1;
+  --leading-snug:    1.25;
+  --leading-base:    1.5;
+  --leading-display: 1.05;
+  --leading-h1:      1.1;
+  --leading-h2:      1.2;
+  --leading-h3:      1.3;
+  --leading-body:    1.5;
+  --leading-detail:  1.5;
+  --leading-caption: 1.5;
+  --leading-label:   1.25;
+  --leading-micro:   1.25;
+
+  /* Tracking — per role (roles with tracking:inherit are omitted) + general. */
+  --tracking-tight:   -0.015em;
+  --tracking-h:       -0.005em;  /* sans headings */
+  --tracking-body:    0;
+  --tracking-display: -0.015em;
+  --tracking-label:   0.12em;
+  /* @end:type-scale css */
 }
 
 /* ───────────────────────────────────────────────────────────

@@ -64,7 +64,7 @@ export function CoAuthorGraphPanelSkeleton() {
           {legendNames.map((name, i) => (
             <span key={i} style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--bg-inset)' }} />
-              <Skeleton as="span" style={{ fontSize: 11 }}>{name}</Skeleton>
+              <Skeleton as="span" style={{ fontSize: 'var(--text-micro)' }}>{name}</Skeleton>
             </span>
           ))}
         </div>

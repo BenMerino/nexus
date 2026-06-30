@@ -96,7 +96,7 @@ export function AuthorsTable({ slug, unit }: { slug: string; unit?: string | nul
           placeholder={ES.authorsTable.searchPlaceholder}
           defaultValue={q}
           onChange={e => onFilterChange(e.target.value)}
-          style={{ marginLeft: 'auto', fontSize: 12, padding: '6px 10px', width: 280, border: '1px solid var(--border)', borderRadius: 4, background: 'var(--bg-inset)', color: 'var(--fg)' }}
+          style={{ marginLeft: 'auto', fontSize: 'var(--text-label)', padding: '6px 10px', width: 280, border: '1px solid var(--border)', borderRadius: 4, background: 'var(--bg-inset)', color: 'var(--fg)' }}
         />
       </div>
       <div className="tableScroll">

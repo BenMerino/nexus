@@ -11,7 +11,7 @@ function formatAuthors(authors: string[]): string {
 }
 
 const cellStyle: React.CSSProperties = {
-  padding: '8px 10px', fontSize: 12, fontFamily: 'var(--mono)',
+  padding: '8px 10px', fontSize: 'var(--text-label)', fontFamily: 'var(--mono)',
   borderBottom: '1px solid var(--border-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
   color: 'var(--fg-muted)',
 };
@@ -36,11 +36,11 @@ export function FilteredPaperList({ papers }: { papers: DoiRecord[] }) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'var(--bg-inset)', textAlign: 'left' }}>
-                <th style={{ ...cellStyle, fontWeight: 500, width: '40%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 11 }}>Title</th>
-                <th style={{ ...cellStyle, fontWeight: 500, width: '25%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 11 }}>Authors</th>
-                <th style={{ ...cellStyle, fontWeight: 500, width: '10%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 11 }}>Year</th>
-                <th style={{ ...cellStyle, fontWeight: 500, width: '15%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 11 }}>Journal</th>
-                <th style={{ ...cellStyle, fontWeight: 500, width: '10%', textAlign: 'right', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 11 }}>Cited</th>
+                <th style={{ ...cellStyle, fontWeight: 'var(--weight-label)', width: '40%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 'var(--text-micro)' }}>Title</th>
+                <th style={{ ...cellStyle, fontWeight: 'var(--weight-label)', width: '25%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 'var(--text-micro)' }}>Authors</th>
+                <th style={{ ...cellStyle, fontWeight: 'var(--weight-label)', width: '10%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 'var(--text-micro)' }}>Year</th>
+                <th style={{ ...cellStyle, fontWeight: 'var(--weight-label)', width: '15%', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 'var(--text-micro)' }}>Journal</th>
+                <th style={{ ...cellStyle, fontWeight: 'var(--weight-label)', width: '10%', textAlign: 'right', color: 'var(--fg-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 'var(--text-micro)' }}>Cited</th>
               </tr>
             </thead>
             <tbody>
