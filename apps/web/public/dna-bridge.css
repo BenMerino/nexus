@@ -138,9 +138,11 @@
      it. Our glass floats over the live sky, so we whisper the current sky colour
      (--sky-primary, set by the sun pipeline) into the neutral base: panels read
      subtly blue by day, warm at golden hour, violet at night. --glass-tint is the
-     one knob (8% ≈ a hint, not a colour wash); it falls back to transparent so
-     without the pipeline the glass stays the neutral grey it was. */
-  --glass-tint: 8%;
+     one knob; it falls back to transparent so without the pipeline the glass
+     stays neutral grey. (Was 8% — below the eye's threshold through blur, read as
+     white; 18% gives a clear-but-soft cast while keeping the glass light + text
+     legible.) */
+  --glass-tint: 18%;
   --tonal-base: color-mix(in oklch, var(--sky-primary, transparent) var(--glass-tint), var(--bg));
 
   /* Tonal ladder — opaque shades, deepest → highest. WIDE steps (~9% --fg per
