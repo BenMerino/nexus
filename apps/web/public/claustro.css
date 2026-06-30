@@ -33,7 +33,7 @@
 }
 .form-input {
   background: var(--bg-inset); border: var(--border-w) solid var(--border);
-  color: var(--fg); padding: 9px 12px; border-radius: 4px;
+  color: var(--fg); padding: 9px 12px; border-radius: var(--radius-control);
   font: inherit; font-size: var(--text-detail); outline: 0;
   transition: border-color 0.15s; width: 100%;
 }
@@ -54,21 +54,21 @@ textarea.form-input { font-family: inherit; resize: vertical; }
   background: var(--bg-inset); border: var(--border-w) solid var(--border);
   color: var(--fg-dim); font: inherit; font-size: var(--text-micro);
   font-weight: var(--weight-h3); letter-spacing: 0.08em;
-  height: 36px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
+  height: 36px; border-radius: var(--radius-control); cursor: pointer; transition: all 0.15s;
 }
 .ir-btn:hover { color: var(--fg); }
 .ir-btn.on { background: var(--accent); color: #1a1612; border-color: var(--accent); }
 .remove-btn {
   background: transparent; border: var(--border-w) solid var(--border-soft);
   color: var(--fg-dim); font: inherit; font-size: var(--text-h3);
-  height: 36px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
+  height: 36px; border-radius: var(--radius-control); cursor: pointer; transition: all 0.15s;
 }
 .remove-btn:hover:not(:disabled) { color: var(--err); border-color: var(--err); }
 .remove-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .add-inv-btn {
   background: transparent; border: 1px dashed var(--border);
   color: var(--fg-muted); font: inherit; font-size: var(--text-label);
-  padding: 9px 12px; border-radius: 4px;
+  padding: 9px 12px; border-radius: var(--radius-control);
   cursor: pointer; transition: all 0.15s; margin-top: 4px;
 }
 .add-inv-btn:hover { color: var(--accent); border-color: var(--accent); }
@@ -78,7 +78,7 @@ textarea.form-input { font-family: inherit; resize: vertical; }
 }
 .secondary-btn {
   background: transparent; border: var(--border-w) solid var(--border);
-  color: var(--fg-muted); padding: 12px 20px; border-radius: 4px;
+  color: var(--fg-muted); padding: 12px 20px; border-radius: var(--radius-control);
   font: inherit; cursor: pointer; transition: color 0.15s;
 }
 .secondary-btn:hover { color: var(--fg); }
@@ -111,7 +111,7 @@ textarea.form-input { font-family: inherit; resize: vertical; }
 .project-action-btn {
   background: transparent; border: var(--border-w) solid transparent;
   color: var(--fg-dim); font: inherit; font-size: var(--text-micro);
-  padding: 4px 8px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
+  padding: 4px 8px; border-radius: var(--radius-control); cursor: pointer; transition: all 0.15s;
 }
 .project-action-btn:hover { color: var(--accent); border-color: var(--border); }
 .project-action-btn.danger:hover { color: var(--err); border-color: var(--err); }
@@ -144,7 +144,7 @@ textarea.form-input { font-family: inherit; resize: vertical; }
 .inv-role-badge {
   font-family: var(--font-mono); font-size: var(--text-micro); font-weight: var(--weight-h3);
   letter-spacing: 0.08em; color: #1a1612;
-  padding: 2px 6px; border-radius: 2px;
+  padding: 2px 6px; border-radius: var(--radius-xs);
   min-width: 22px; text-align: center;
   background: var(--accent);
 }
@@ -162,3 +162,4 @@ textarea.form-input { font-family: inherit; resize: vertical; }
   .project-grid { grid-template-columns: 1fr; }
   .investigator-row { grid-template-columns: 1fr; }
 }
+

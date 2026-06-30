@@ -4,7 +4,8 @@
 #
 # Hard (block commit): N2 dead-tree edits, N4 data-layer leaks, N5 file size,
 #                       N3-type (hardcoded font-size/weight/family) + N3-gen (type
-#                       artifacts drifted from ui/dna/type-scale.js).
+#                       artifacts drifted from ui/dna/type-scale.js) + N3-radius
+#                       (hardcoded border-radius px — use --radius-*/--_nest-corner).
 # Soft (warn only):     N1 handler gate (baseline clean — promote to hard if it stays clean),
 #                       N3 hex/--chart-N bypass (color DNA migration still in progress).
 # Per-file opt-out: add a comment `arch-audit-ignore: N1` (or N2/N3/N4/N5) to the file.
@@ -109,6 +110,31 @@ done < <(staged | grep -E '^apps/web/.*\.(ts|tsx|js|css|html)$' \
                 | grep -vE '^apps/web/ui/primitives/' \
                 | grep -vE '^apps/web/ui/graph-engine/' \
                 | grep -vE '(type-scale\.js|gen-type-scale\.mjs)$' \
+                | grep -vE '^apps/web/public/(shared|dna-defaults)\.css$' || true)
+
+# ── N3-radius (hard) — corners come from the radius tokens / concentric mech ──
+#  Every corner is system-controlled: a --radius-* token, or --_nest-corner (the
+#  concentric mechanism, curving parallel to its host). A newly-added literal
+#  `border-radius: Npx` bypasses it. Use var(--radius-* | --_nest-corner). Exempt
+#  shapes (999px pill, 50% circle, 0), var() values, the primitives + vendored
+#  graph-engine layers, and the token source files. Per-file: arch-audit-ignore: N3.
+while IFS= read -r f; do
+  [ -z "$f" ] && continue; [ -f "$f" ] || continue
+  optout N3 "$f" && continue
+  added=$(git diff --cached -U0 -- "$f" | grep -E '^\+[^+]' || true)
+  # border-radius / borderRadius with a literal px/rem/em, not var(), not a
+  # full-pill (999px) / circle (50%) / 0.
+  hits=$(echo "$added" \
+    | grep -ivE 'var\(--|999px|50%|:[[:space:]]*0(px)?[;\"]' \
+    | grep -iE "border-?[Rr]adius[[:space:]]*:[[:space:]]*['\"]?[0-9.]+(px|rem|em)" \
+    || true)
+  if [ -n "$hits" ]; then
+    echo "N3 BLOCK  $f — hardcoded border-radius; use var(--radius-* ) or var(--_nest-corner) (concentric)."
+    HARD=$((HARD+1))
+  fi
+done < <(staged | grep -E '^apps/web/.*\.(ts|tsx|js|css|html)$' \
+                | grep -vE '^apps/web/ui/primitives/' \
+                | grep -vE '^apps/web/ui/graph-engine/' \
                 | grep -vE '^apps/web/public/(shared|dna-defaults)\.css$' || true)
 
 # ── N3-gen (hard) — generated type artifacts must match their source ────────

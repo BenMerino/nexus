@@ -84,7 +84,7 @@
   position: absolute;
   top: 6px;
   bottom: 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   padding: 0 8px;
@@ -139,7 +139,7 @@
 .legend-dot {
   display: inline-block;
   width: 12px; height: 12px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   border: var(--border-w) solid currentColor;
 }
 .legend-dot.ir      { background: oklch(0.55 0.16 70 / 0.85); color: oklch(0.70 0.18 70 / 0.95); }
