@@ -32,8 +32,7 @@
 @supports (backdrop-filter: url(#nexus-liquid)) or (-webkit-backdrop-filter: url(#nexus-liquid)) {
   :root[data-liquid] .surface,
   :root[data-liquid] .glass-surface,
-  :root[data-liquid] .public-header,
-  :root[data-liquid] .public-search-bar .omni-input,
+  :root[data-liquid] .public-header-seg,
   :root[data-liquid] .sidebar,
   :root[data-liquid] .card,
   :root[data-liquid] .panel,
@@ -48,8 +47,7 @@
   /* Bright specular rim — the lit edge of a glass lens (top-left light source). */
   :root[data-liquid] .surface,
   :root[data-liquid] .glass-surface,
-  :root[data-liquid] .public-header,
-  :root[data-liquid] .public-search-bar .omni-input,
+  :root[data-liquid] .public-header-seg,
   :root[data-liquid] .sidebar,
   :root[data-liquid] .card,
   :root[data-liquid] .panel,

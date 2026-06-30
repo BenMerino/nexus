@@ -83,9 +83,11 @@ export function TenantPublicHeader({
   }, []);
 
   return (
-    <>
+    /* The header is THREE separate floating glass bars on one top row — left
+       (brand), centre (search), right (aux) — each the bar height, gaps between.
+       .public-header is the fixed flex row; each .public-header-seg is a bar. */
     <header className="public-header" ref={ref}>
-      <div className="public-header-inner">
+      <div className="public-header-seg public-header-left">
         <div className="public-brand">
           {tenant.logo_url
             ? <img className="public-logo" src={tenant.logo_url} alt="" />
@@ -98,16 +100,13 @@ export function TenantPublicHeader({
             </div>
           </div>
         </div>
-        <div className="public-header-aux">
-          <span className="public-updated"><span className="sync-pulse" /> <span>{updated}</span></span>
-          <a href="/login.html" className="public-signin">{ES.signIn}</a>
-          <ThemeButton />
-        </div>
+      </div>
+      {search ? <div className="public-header-seg public-header-center">{search}</div> : null}
+      <div className="public-header-seg public-header-right">
+        <span className="public-updated"><span className="sync-pulse" /> <span>{updated}</span></span>
+        <a href="/login.html" className="public-signin">{ES.signIn}</a>
+        <ThemeButton />
       </div>
     </header>
-    {/* Search is its OWN detached floating glass bar, centred in the header zone,
-        separate from the main bar above. */}
-    {search ? <div className="public-search-bar">{search}</div> : null}
-    </>
   );
 }

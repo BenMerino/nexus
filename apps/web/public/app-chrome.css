@@ -32,52 +32,39 @@
    content passes UNDER it and the glass blur frosts what's behind. The scroll
    area's own side padding insets it → sky shows beside the bar (a detached glass
    pill, not a full-width slab). No fixed-overlay, no padding-clearance hack. */
-/* FIXED floating chrome: header + sidebar are pinned (out of flow) and the
-   content is the ONLY thing that scrolls — under the header, beside the sidebar.
-   A detached glass bar inset on top + sides. */
+/* The header is a fixed, TRANSPARENT flex row spanning the top inset zone — it
+   carries no surface; its three segments are the floating glass bars. */
 .public-header {
   position: fixed;
   top: var(--chrome-inset);
   left: var(--chrome-inset);
   right: var(--chrome-inset);
   min-height: var(--chrome-bar-h);
-  background-color: var(--glass-1);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-sm);   /* same lift as the cards */
+  display: flex; align-items: stretch; gap: var(--chrome-inset);
   z-index: 40;
 }
 
-.public-header-inner {
-  display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: nowrap;
-  width: 100%; height: 100%; min-height: var(--chrome-bar-h);
-  padding: 0 18px;
-}
-
-/* The search input IS the bar — no wrapping surface. .public-search-bar is just a
-   transparent fixed positioning shell, centred in the header zone; the .omni-input
-   inside fills it and carries the floating glass bar look directly. */
-.public-search-bar {
-  position: fixed;
-  top: var(--chrome-inset);
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(440px, 42vw);
-  z-index: 41;
-}
-.public-search-bar .omni { width: 100%; max-width: none; }
-/* The input becomes the bar: full bar height, glass recipe, lift, rounded. */
-.public-search-bar .omni-input {
+/* Each segment is its own floating glass bar — full bar height, same glass recipe
+   + lift as the cards. Left/right shrink to content; centre (search) flexes. */
+.public-header-seg {
+  display: flex; align-items: center;
   min-height: var(--chrome-bar-h);
+  padding: 0 18px;
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  border: 0;
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-sm);
-  padding: 0 18px;
 }
+.public-header-left  { flex: none; }
+.public-header-right { flex: none; gap: 14px; }
+.public-header-center { flex: 1 1 auto; min-width: 0; padding: 0 8px; }
+.public-header-center .omni { width: 100%; max-width: none; }
+.public-header-center .omni-input {
+  width: 100%; min-height: calc(var(--chrome-bar-h) - 16px);
+  background: transparent; border: 0; box-shadow: none; padding: 0 10px;
+}
+
 .public-brand { display: flex; align-items: center; gap: 13px; flex: none; }
 .public-logo { height: 36px; width: auto; max-width: 120px; object-fit: contain; }
 /* Gemstone crest: gradient sapphire→amethyst tile with the tenant initial. */
@@ -116,9 +103,9 @@
 }
 .public-tab:hover { color: var(--fg); }
 .public-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
-.public-header-aux {
-  display: flex; align-items: center; gap: 14px;
-  font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); flex: none;
+/* Right segment's content typography (font/colour for the updated + sign-in). */
+.public-header-right {
+  font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim);
 }
 .public-updated { display: flex; align-items: center; gap: 7px; letter-spacing: 0.04em; }
 .public-signin { color: var(--fg-dim); }
@@ -338,5 +325,5 @@
 /* ── Responsive: collapse floating chrome gutters on small screens ──────────── */
 @media (max-width: 700px) {
   :root { --chrome-inset: 10px; }
-  .public-header-aux { display: none; }
+  .public-header-right { display: none; }
 }
