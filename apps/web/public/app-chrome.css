@@ -218,7 +218,10 @@
 .sidebar-search { position: relative; padding: 12px 14px 6px; }
 .sidebar-search-input {
   width: 100%; box-sizing: border-box;
-  background: var(--bg-card); border: var(--border-w) solid var(--border-soft);
+  background: var(--glass-2);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border: var(--border-w) solid var(--border-glass);
   color: var(--fg); font: inherit; font-size: var(--text-detail);
   padding: 7px 10px; border-radius: var(--radius-control);
   transition: border-color 0.15s;
@@ -249,11 +252,21 @@
   padding: 8px 10px; border-radius: var(--_nest-corner, var(--radius-control));
   color: var(--fg-muted); cursor: pointer; font-size: var(--text-detail);
   transition: background 0.15s, color 0.15s;
-  background: transparent; border: 0; width: 100%; text-align: left; font-family: inherit;
+  background: transparent; width: 100%; text-align: left; font-family: inherit;
+  /* transparent border at rest so .active's glass border doesn't shift the box. */
+  border: var(--border-w) solid transparent;
   text-decoration: none;
 }
 .nav-item:hover { background: rgba(255,255,255,0.03); color: var(--fg); text-decoration: none; }
-.nav-item.active { background: var(--bg-card); color: var(--fg); }
+/* Selected nav-item: glass, like the searchbox — a denser rung (--glass-2 +
+   blur) so it reads distinctly over the already-glass sidebar (glass-on-glass). */
+.nav-item.active {
+  background: var(--glass-2);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border: var(--border-w) solid var(--border-glass);
+  color: var(--fg);
+}
 .nav-item.active svg { color: var(--accent); }
 .nav-section-label { font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); font-family: var(--font-mono); margin: 14px 6px 6px; }
 
