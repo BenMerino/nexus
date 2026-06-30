@@ -19,9 +19,11 @@
    .surface backdrop blur (dna-bridge.css) still does the frost; this ADDS the
    bent-rim highlight. One path, identical in every browser, no feature-detection.
 
-   The displacement map is procedural (see dna-liquid.ts): a radial gradient
-   encoded into R (x-shift) and G (y-shift) — neutral at centre, ramped at the
-   rim — so displacement is 0 in the middle and max at the edge, like a lens.
+   The displacement map is PHYSICALLY derived per element (see liquid/) — the
+   kube.io Snell's-law math: a beveled glass surface, refraction angle from the
+   surface normal, rounded-rect aware so the bevel hugs the card's real corners.
+   Each surface gets its own map (geometry-specific), regenerated on resize, and
+   carries it via --liquid-filter (read by filter: below).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root[data-liquid] {
@@ -69,7 +71,9 @@
     transparent 62%,
     color-mix(in oklch, white 10%, transparent)
   );
-  filter: url(#nexus-liquid-edge);
+  /* Per-element, geometry-specific refraction map built by liquid/liquid-glass.ts
+     (faithful Snell's-law math). Falls back to no filter until the map mounts. */
+  filter: var(--liquid-filter, none);
 }
 
 /* Real content rides above the overlay (the ::before is z-index 0). */
