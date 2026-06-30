@@ -36,7 +36,7 @@
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  border: 1px solid var(--border-soft);
+  border: var(--border-w) solid var(--border-soft);
   border-radius: var(--radius-card);
   z-index: 30;
 }
@@ -60,7 +60,7 @@
   position: relative; display: grid; place-items: center;
   height: 38px; width: 38px; flex: none; overflow: hidden;
   border-radius: var(--radius-control);
-  border: 1px solid var(--border); background: var(--bg-card);
+  border: var(--border-w) solid var(--border); background: var(--bg-card);
 }
 .public-logo-fallback::before {
   content: ""; position: absolute; inset: 0; opacity: 0.92;
@@ -90,7 +90,7 @@
 .public-tabs::-webkit-scrollbar { display: none; }
 .public-tab {
   padding: 8px 14px; font-size: var(--text-detail); color: var(--fg-dim);
-  border-bottom: 2px solid transparent; cursor: pointer; text-decoration: none;
+  border-bottom: var(--border-w-emphasis) solid transparent; cursor: pointer; text-decoration: none;
   transition: color 0.15s, border-color 0.15s;
 }
 .public-tab:hover { color: var(--fg); }
@@ -108,7 +108,7 @@
   width: 34px; height: 34px; flex: none; cursor: pointer;
   display: grid; place-items: center;
   border-radius: var(--radius-control);
-  border: 1px solid var(--border); background: var(--bg-card); color: var(--fg-muted);
+  border: var(--border-w) solid var(--border); background: var(--bg-card); color: var(--fg-muted);
   transition: color 0.15s, border-color 0.15s;
 }
 .theme-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
@@ -173,7 +173,7 @@
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  border: 1px solid var(--border-soft);
+  border: var(--border-w) solid var(--border-soft);
   border-radius: var(--radius-card);
   display: flex; flex-direction: column; overflow: hidden;
   /* Publish the concentric corner so inner rows curve parallel to the card. */
@@ -182,7 +182,7 @@
 }
 .app.app-scroll .sidebar { position: sticky; top: var(--chrome-inset); }
 
-.tenant-chip { padding: 18px 20px 16px; border-bottom: 1px solid var(--border-soft); }
+.tenant-chip { padding: 18px 20px 16px; border-bottom: var(--border-w) solid var(--border-soft); }
 .tenant-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .tenant-mark {
   width: 26px; height: 26px; border-radius: 50%;
@@ -198,7 +198,7 @@
 .brand-tenant { font-size: var(--text-micro); color: var(--fg-dim); text-transform: uppercase; letter-spacing: var(--tracking-label); margin-top: 4px; font-family: var(--font-mono); }
 .tenant-chip-meta { display: flex; gap: 6px; flex-wrap: wrap; }
 
-.role-switcher { padding: 14px 14px 10px; border-bottom: 1px solid var(--border-soft); }
+.role-switcher { padding: 14px 14px 10px; border-bottom: var(--border-w) solid var(--border-soft); }
 .role-label { font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); font-family: var(--font-mono); margin-bottom: 8px; padding: 0 6px; }
 .role-list { display: flex; flex-direction: column; gap: 2px; }
 .role-btn {
@@ -218,7 +218,7 @@
 .sidebar-search { position: relative; padding: 12px 14px 6px; }
 .sidebar-search-input {
   width: 100%; box-sizing: border-box;
-  background: var(--bg-card); border: 1px solid var(--border-soft);
+  background: var(--bg-card); border: var(--border-w) solid var(--border-soft);
   color: var(--fg); font: inherit; font-size: var(--text-detail);
   padding: 7px 10px; border-radius: var(--radius-control);
   transition: border-color 0.15s;
@@ -227,7 +227,7 @@
 .sidebar-search-input:focus { outline: none; border-color: var(--accent); }
 .sidebar-search-results {
   position: absolute; left: 14px; right: 14px; top: calc(100% - 2px);
-  background: var(--bg-inset); border: 1px solid var(--border-soft);
+  background: var(--bg-inset); border: var(--border-w) solid var(--border-soft);
   border-radius: var(--radius-card); z-index: 50;
   max-height: 320px; overflow-y: auto;
   box-shadow: 0 8px 24px rgba(0,0,0,0.35);
@@ -236,7 +236,7 @@
 .sidebar-search-hit {
   display: block; width: 100%; text-align: left;
   background: transparent; border: 0; cursor: pointer; font: inherit;
-  padding: 8px 12px; border-bottom: 1px solid var(--border-soft); color: var(--fg);
+  padding: 8px 12px; border-bottom: var(--border-w) solid var(--border-soft); color: var(--fg);
 }
 .sidebar-search-hit:last-child { border-bottom: 0; }
 .sidebar-search-hit:hover { background: var(--bg-card); }
@@ -258,7 +258,7 @@
 .nav-section-label { font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); font-family: var(--font-mono); margin: 14px 6px 6px; }
 
 .sidebar-footer {
-  padding: 12px 14px; border-top: 1px solid var(--border-soft);
+  padding: 12px 14px; border-top: var(--border-w) solid var(--border-soft);
   font-size: var(--text-micro); color: var(--fg-dim); font-family: var(--font-mono); line-height: var(--leading-body);
 }
 /* Sidebar's "live" pulse — green --ok dot. */

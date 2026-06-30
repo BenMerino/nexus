@@ -61,7 +61,7 @@
   --_ctl-font:      var(--text-control);
   --_ctl-weight:    var(--weight-control);
   --_ctl-icon:      var(--icon-control-md);
-  --_ctl-border:    1px;
+  --_ctl-border:    var(--border-w);
   --_ctl-radius:    var(--radius-control);
   --_ctl-pad-block: 0px;
 
@@ -178,7 +178,7 @@ body > #dna-mount, body > main, body > div {
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  border: 1px solid var(--border);
+  border: var(--border-w) solid var(--border);
 }
 
 /* TONAL STACKING — a glass surface nested inside another steps to the next rung,

@@ -4,7 +4,7 @@
  * out [label · summary · chevron]. */
 
 .disclosure + .disclosure {
-  border-top: 1px solid var(--border-subtle);
+  border-top: var(--border-w) solid var(--border-subtle);
 }
 
 .disclosure__head.base-action {
@@ -36,5 +36,5 @@
 
 /* Hairline separates the revealed body from its header. */
 .disclosure__body {
-  border-top: 1px solid var(--border-subtle);
+  border-top: var(--border-w) solid var(--border-subtle);
 }

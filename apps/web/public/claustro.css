@@ -11,7 +11,7 @@
 }
 .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
 .pill {
-  background: var(--bg-card); border: 1px solid var(--border-soft);
+  background: var(--bg-card); border: var(--border-w) solid var(--border-soft);
   color: var(--fg-muted); padding: 6px 12px; font: inherit; font-size: var(--text-label);
   border-radius: 999px; cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
@@ -32,7 +32,7 @@
   color: var(--fg-dim); margin-bottom: 0;
 }
 .form-input {
-  background: var(--bg-inset); border: 1px solid var(--border);
+  background: var(--bg-inset); border: var(--border-w) solid var(--border);
   color: var(--fg); padding: 9px 12px; border-radius: 4px;
   font: inherit; font-size: var(--text-detail); outline: 0;
   transition: border-color 0.15s; width: 100%;
@@ -51,7 +51,7 @@ textarea.form-input { font-family: inherit; resize: vertical; }
   gap: 6px; align-items: center;
 }
 .ir-btn {
-  background: var(--bg-inset); border: 1px solid var(--border);
+  background: var(--bg-inset); border: var(--border-w) solid var(--border);
   color: var(--fg-dim); font: inherit; font-size: var(--text-micro);
   font-weight: var(--weight-h3); letter-spacing: 0.08em;
   height: 36px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
@@ -59,7 +59,7 @@ textarea.form-input { font-family: inherit; resize: vertical; }
 .ir-btn:hover { color: var(--fg); }
 .ir-btn.on { background: var(--accent); color: #1a1612; border-color: var(--accent); }
 .remove-btn {
-  background: transparent; border: 1px solid var(--border-soft);
+  background: transparent; border: var(--border-w) solid var(--border-soft);
   color: var(--fg-dim); font: inherit; font-size: var(--text-h3);
   height: 36px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
 }
@@ -74,10 +74,10 @@ textarea.form-input { font-family: inherit; resize: vertical; }
 .add-inv-btn:hover { color: var(--accent); border-color: var(--accent); }
 .form-actions {
   display: flex; justify-content: flex-end; gap: 10px;
-  margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border-soft);
+  margin-top: 22px; padding-top: 18px; border-top: var(--border-w) solid var(--border-soft);
 }
 .secondary-btn {
-  background: transparent; border: 1px solid var(--border);
+  background: transparent; border: var(--border-w) solid var(--border);
   color: var(--fg-muted); padding: 12px 20px; border-radius: 4px;
   font: inherit; cursor: pointer; transition: color 0.15s;
 }
@@ -96,7 +96,7 @@ textarea.form-input { font-family: inherit; resize: vertical; }
 
 .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .project-card {
-  background: var(--bg-card); border: 1px solid var(--border-soft);
+  background: var(--bg-card); border: var(--border-w) solid var(--border-soft);
   border-radius: var(--radius); padding: 22px 24px;
   display: flex; flex-direction: column; gap: 14px;
   position: relative;
@@ -109,7 +109,7 @@ textarea.form-input { font-family: inherit; resize: vertical; }
 .project-flags { display: flex; gap: 4px; align-items: center; }
 .project-actions { display: flex; gap: 4px; margin-left: 6px; }
 .project-action-btn {
-  background: transparent; border: 1px solid transparent;
+  background: transparent; border: var(--border-w) solid transparent;
   color: var(--fg-dim); font: inherit; font-size: var(--text-micro);
   padding: 4px 8px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
 }
@@ -124,7 +124,7 @@ textarea.form-input { font-family: inherit; resize: vertical; }
   display: grid; grid-template-columns: repeat(2, 1fr);
   gap: 4px 12px; font-size: var(--text-label);
   padding: 12px 0;
-  border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft);
+  border-top: var(--border-w) solid var(--border-soft); border-bottom: var(--border-w) solid var(--border-soft);
 }
 .project-meta > div {
   display: flex; justify-content: space-between; gap: 8px; padding: 3px 0;
@@ -137,7 +137,7 @@ textarea.form-input { font-family: inherit; resize: vertical; }
 .project-notes {
   font-size: var(--text-label); color: var(--fg-muted);
   font-style: italic; line-height: var(--leading-body);
-  padding-bottom: 4px; border-bottom: 1px solid var(--border-soft);
+  padding-bottom: 4px; border-bottom: var(--border-w) solid var(--border-soft);
 }
 .project-investigators { display: flex; flex-direction: column; gap: 6px; }
 .inv-line { display: flex; align-items: center; gap: 10px; font-size: var(--text-label); }

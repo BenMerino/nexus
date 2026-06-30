@@ -50,6 +50,17 @@
      full Zincro look. (Was forced to 0 for square corners — reversed
      2026-06-28 when adopting Zincro's concentric corners.) */
 
+  /* ── Border width — THE single control point ────────────────
+     Every border in nexus-owned CSS uses var(--border-w): one knob
+     changes the whole platform's stroke thickness (set 0 for a
+     border-less look, 1.5px for heavier). --border-w-emphasis is the
+     thicker accent stroke (active tab underline, focus rings).
+     Border COLOR is sun-pipeline-driven (--border/--border-soft, set
+     live by sky-tokens.ts). So borders are tightly controlled on both
+     axes: width here, colour by the day/night pipeline. */
+  --border-w:          1px;
+  --border-w-emphasis: 2px;
+
   /* ── Shadow scale ───────────────────────────────────────────
      Replaces the ad-hoc rgba(0,0,0,...) shadows in shared.css
      (dropdowns, tweaks panel, profile overlay, range thumbs). */

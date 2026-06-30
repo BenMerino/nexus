@@ -93,7 +93,7 @@
      * corners, leaving a bright fringe that reads as a phantom second
      * border ringing the tile. Padding-box clip removes that seam. */
     background-clip: padding-box;
-    border: 1px solid transparent;
+    border: var(--border-w) solid transparent;
     color: var(--text-inverse, white);
 }
 .base-tile--primary:hover {
@@ -110,7 +110,7 @@
  * appears on hover. */
 .base-tile--bare {
     background: transparent;
-    border: 1px solid transparent;
+    border: var(--border-w) solid transparent;
     box-shadow: none;
     color: var(--text-muted);
 }
