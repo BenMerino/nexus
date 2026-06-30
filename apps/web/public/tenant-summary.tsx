@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Skeleton } from '../ui/primitives';
 import type { PublicStats } from './tenant-builders';
 import type { UnitScope } from './tenant-scope-rail';
 import { ES } from './tenant-i18n';
@@ -77,6 +78,28 @@ export function SummaryCards({ summary, sparks }: { summary: PublicStats['summar
   );
 }
 
+/** The KPI row's loading state, co-located: same .kpi-grid/.kpi shape, each
+ *  value + foot + spark ghosted by the Skeleton primitive. */
+SummaryCards.Skeleton = function SummaryCardsSkeleton() {
+  return (
+    <div className="kpi-grid">
+      {KPIS.map(k => (
+        <div key={k.key} className="kpi" style={{ ['--kpi-accent' as string]: k.accent }}>
+          <div className="kpi-top">
+            <span className="kpi-label">{k.label}</span>
+            <span className="kpi-dot" />
+          </div>
+          <div className="kpi-body">
+            <Skeleton as="div" className="kpi-val num">0,000</Skeleton>
+          </div>
+          <Skeleton as="div" className="kpi-foot">{k.foot}</Skeleton>
+          <div className="kpi-spark-strip"><Skeleton fill style={{ opacity: 0.5 }} /></div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export function SectionPlaceholder({ label, error }: { label: string; error?: string | null }) {
   return (
     <div style={{ padding: 24, color: error ? 'var(--danger, #c00)' : 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>
@@ -94,3 +117,6 @@ export function TabPane({ id, active, seen, children }: {
   if (!seen.has(id)) return null;
   return <section id={id} style={{ display: active === id ? 'block' : 'none' }}>{children}</section>;
 }
+
+// ScopedSummary's loading state is the KPI skeleton (same row, no data fetch).
+ScopedSummary.Skeleton = SummaryCards.Skeleton;

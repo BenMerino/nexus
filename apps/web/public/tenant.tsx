@@ -8,6 +8,7 @@ import { useUnitScope } from './use-unit-scope';
 import { TenantSearch } from './tenant-search';
 import { TenantFooter } from './tenant-footer';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
+import { TenantLoading, TenantLoadingBody } from './tenant-loading';
 import { ES } from './tenant-i18n';
 import { bootStreamBridge } from '../architect/websocket-connector';
 import { perfMark, perfAutoFlush } from './perf-marks';
@@ -64,9 +65,19 @@ function App() {
     return <div className="public-app"><main className="public-main" style={{ color: 'var(--danger, #c00)' }}>{fatalError}</main></div>;
   }
   if (!statsPayload) {
-    // Chrome lands in ~0.5s, so show a quiet blank shell, not a "Loading…"
-    // flash. An error still surfaces (it's not transient).
-    return <div className="public-app"><main className="public-main" style={{ color: 'var(--fg-dim)' }}>{statsError ? `${ES.failedPrefix}: ${statsError}` : ''}</main></div>;
+    // Cold load: render the shell with the skeleton tree (built from the
+    // co-located component skeletons). An error replaces it (not transient).
+    return (
+      <div className="public-app">
+        <main className="public-main">
+          <div className="public-content">
+            {statsError
+              ? <div style={{ color: 'var(--danger, #c00)' }}>{`${ES.failedPrefix}: ${statsError}`}</div>
+              : <TenantLoading />}
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -99,10 +110,10 @@ function App() {
                 the unit selected in the rail (Philosophy: scope is sovereign).
                 Lazy (engine chunk); panels appear when the code lands. */}
             {unitReady ? (
-              <Suspense fallback={<div style={{ minHeight: 600 }} />}>
+              <Suspense fallback={<TenantLoadingBody />}>
                 <TenantBody slug={slug} stats={statsPayload.stats} tenantId={statsPayload.tenant.id} charts={charts} unit={unit} />
               </Suspense>
-            ) : <div style={{ minHeight: 600 }} />}
+            ) : <TenantLoadingBody />}
           </div>
         </div>
         <TenantFooter yearRange={statsPayload.stats.yearRange} />
