@@ -35,12 +35,15 @@ export function LiquidGlass({ children, cornerRadius = 14 }: {
   if (!ok || !parts) return <>{children}</>;
 
   const { LiquidCanvas, GlassContainer, Glass, Html } = parts;
+  // Canonical liquid-dom shape (per their README): the scene measures via the
+  // host element (ResizeObserver), and Html sizing="intrinsic" hugs the content's
+  // natural size — so the glass wraps the real DOM tightly, no fixed Frame needed.
   return (
     <LiquidCanvas style={{ display: 'inline-block' }} frameloop="demand">
       <GlassContainer blur={8} bezelWidth={8} thickness={90} ior={1.46}
         specularStrength={0.5} surfaceProfile="convexCircle" lightDirection={-150}>
         <Glass cornerRadius={cornerRadius} cornerSmoothing={0.6} pointerEvents>
-          <Html sizing="fill">{children}</Html>
+          <Html sizing="intrinsic">{children}</Html>
         </Glass>
       </GlassContainer>
     </LiquidCanvas>
