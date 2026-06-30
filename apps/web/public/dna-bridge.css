@@ -261,7 +261,11 @@ body > #dna-mount, body > main, body > div {
    overflow:hidden clips the chart canvas to that curve (a canvas ignores
    border-radius without it — that was the squared-corner cause). */
 :root .card .chart-surface, :root .panel .chart-surface {
-  border-radius: max(0px, calc(var(--_nest-r, var(--radius-card)) - var(--_nest-pad, var(--space-4)) - 1px));
+  /* The canonical concentric corner — host radius − 1px border − the nest inset
+     (--row-inset, the small nesting gap), exactly as .nest-row computes it. (The
+     bug was using the card's CONTENT padding here, which exceeds the radius and
+     collapsed the corner to ~0 = square.) */
+  border-radius: max(0px, calc(var(--_nest-r, var(--radius-card)) - 1px - var(--row-inset)));
   overflow: hidden;
 }
 
