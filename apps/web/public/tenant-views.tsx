@@ -1,10 +1,9 @@
 import React, { Suspense, useEffect, useState } from 'react';
-import { SectionHead, Skeleton } from './ui-kit';
+import { SectionHead } from './ui-kit';
 import { AuthorsTable } from './tenant-authors';
 import { TenantWorks } from './tenant-works';
 import { TenantJournals } from './tenant-journals';
 import { ScopedSummary } from './tenant-summary';
-import { TenantScopeRail, type UnitScope } from './tenant-scope-rail';
 import { TenantLoadingBody } from './tenant-loading';
 import { buildTenantCharts } from './tenant-builders';
 import type { useTenantData } from './tenant-data';
@@ -60,73 +59,6 @@ export function JournalsView({ slug }: { slug: string }) {
   return <TenantJournals slug={slug} />;
 }
 
-// ── Faculties: the public org tree (faculty → department → headcount) ────────
-type Dept = { name: string; headcount: number; papers: number };
-type Faculty = { name: string; kind?: string; headcount: number; papers: number; departments: Dept[] };
-
-const KIND_LABEL: Record<string, string> = { faculty: 'Faculty', institute: 'Institute', other: 'Other' };
-
-function FacultyNode({ f }: { f: Faculty }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="org-node">
-      <div className="org-row" onClick={() => setOpen(o => !o)} style={{ cursor: 'pointer' }}>
-        <span className="org-twist">{open ? '▼' : '▶'}</span>
-        <span className="org-name fac">{f.name}{f.kind && <span className="org-kind"> {KIND_LABEL[f.kind] || ''}</span>}</span>
-        <span className="org-metrics">
-          <span className="org-pill">{f.headcount} people</span>
-          <span className="org-pill">{f.papers} papers</span>
-        </span>
-      </div>
-      {open && (
-        <div className="org-children open">
-          {f.departments.map((d, i) => (
-            <div key={i} className="org-row" style={{ paddingLeft: 24 }}>
-              <span className="org-name dep">{d.name}</span>
-              <span className="org-metrics"><span className="org-pill">{d.papers} papers</span></span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function FacultiesView({ slug, tenantName }: { slug: string; tenantName?: string }) {
-  const [faculties, setFaculties] = useState<Faculty[] | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  // Local selection — highlights a unit in the ranked rail. No cross-view
-  // scoping (Faculties is its own view), so the selection is presentational.
-  const [selected, setSelected] = useState<UnitScope | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/public/${encodeURIComponent(slug)}/org-tree`)
-      .then(r => (r.ok ? r.json() : Promise.reject(r.statusText)))
-      .then((d: { faculties: Faculty[] }) => { if (!cancelled) setFaculties(d.faculties || []); })
-      .catch(e => { if (!cancelled) setErr(String(e)); });
-    return () => { cancelled = true; };
-  }, [slug]);
-  return (
-    <section className="card">
-      {/* Insight layer: units RANKED by output, an all-units total, and a usage
-          bar per unit (each unit's share) — the old scope-rail insight, reused. */}
-      <div className="tenant-rail-head">
-        <h2 className="tenant-rail-title">{ES.scopeRail.title}</h2>
-        <p className="tenant-rail-note">{ES.scopeRail.note}</p>
-      </div>
-      <TenantScopeRail slug={slug} tenantName={tenantName} selected={selected} onSelect={setSelected} />
-      {/* Structure layer: the collapsible faculty → department org tree. */}
-      <h3 className="panel-title" style={{ margin: '24px 0 12px' }}>{ES.orgTree.structureLabel}</h3>
-      {err && <div className="status error">Error: {err}</div>}
-      <div className="org-tree">
-        {faculties
-          ? (faculties.length === 0
-              ? <div className="muted">No faculties yet.</div>
-              : faculties.map((f, i) => <FacultyNode key={i} f={f} />))
-          : Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} block height={36} width="100%" style={{ marginBottom: 6 }} />
-            ))}
-      </div>
-    </section>
-  );
-}
+// Faculties (card grid) + UnitDetailView live in tenant-faculties.tsx — the
+// entity is rich enough to warrant its own file. Re-exported for the shell.
+export { FacultiesView, UnitDetailView } from './tenant-faculties';

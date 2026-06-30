@@ -220,6 +220,34 @@
     .org-orcid { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); }
     .org-orcid.none { opacity: 0.45; }
     .org-err { color: var(--danger, #d66); font-size: var(--text-micro); font-family: var(--font-mono); }
+
+    /* ── Faculties card grid (page-specific, not chrome — N9). Each unit a
+          clickable card carrying its output-share insight; opens a unit page. */
+    .fac-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: var(--chrome-inset); margin-top: 16px;
+    }
+    .fac-card {
+      display: flex; flex-direction: column; gap: 4px; text-align: left;
+      padding: 18px; cursor: pointer; min-width: 0;
+      background: var(--glass-2); border: 1px solid var(--border-soft);
+      border-radius: var(--radius-card); color: inherit; font: inherit;
+      transition: border-color 0.15s, transform 0.12s;
+    }
+    .fac-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .fac-card-kind {
+      font-family: var(--font-mono); font-size: var(--text-micro);
+      letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim);
+    }
+    .fac-card-name { font-family: var(--font-display); font-size: var(--text-h3); line-height: 1.1; margin-top: 2px; }
+    .fac-card-figure { font-size: var(--text-detail); color: var(--fg-muted); margin-top: 8px; }
+    .fac-card-figure b { font-family: var(--font-mono); font-size: var(--text-h3); color: var(--fg); font-weight: var(--weight-label); }
+    .fac-card-bar { height: 4px; background: var(--bg-inset); border-radius: var(--radius-pill); overflow: hidden; margin-top: 8px; }
+    .fac-card-bar i { display: block; height: 100%; background: var(--accent); opacity: 0.8; }
+    .fac-card-meta {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px;
+      font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim);
+    }
   </style>
 </head>
 <body class="shell-fixed">

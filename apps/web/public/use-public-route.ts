@@ -1,52 +1,72 @@
 import { useEffect, useState, useCallback } from 'react';
 
 /* Client routing for the public tenant shell. Entities are real, shareable
- * URLs — /t/:slug            → overview
- *        /t/:slug/academics  → academics   (etc.)
- * Caddy rewrites every /t/:slug[/<entity>] to tenant.html, so deep-links and
- * refresh resolve server-side; this hook reads which entity the URL names and
- * navigates between them via history.pushState (instant, no reload). Dev (no
- * Caddy) falls back to ?view=<entity>. */
+ * URLs — /t/:slug                       → overview
+ *        /t/:slug/academics             → academics   (etc.)
+ *        /t/:slug/faculties/:unitKey     → one unit's detail (drill-in)
+ * Caddy rewrites every /t/:slug[/...] to tenant.html, so deep-links and refresh
+ * resolve server-side; this hook reads the URL and navigates via pushState
+ * (instant, no reload). Dev (no Caddy) falls back to ?view=&unit=. */
 
 export const PUBLIC_VIEWS = ['overview', 'faculties', 'academics', 'papers', 'journals'] as const;
 export type PublicView = typeof PUBLIC_VIEWS[number];
 
-function readView(): PublicView {
-  // /t/:slug/<entity> — the segment after the slug
-  const m = window.location.pathname.match(/^\/t\/[^/]+\/([^/?#]+)/);
-  const seg = m ? m[1] : new URLSearchParams(window.location.search).get('view');
-  return (PUBLIC_VIEWS as readonly string[]).includes(seg || '') ? (seg as PublicView) : 'overview';
+export interface PublicRoute { view: PublicView; unitKey: string | null; }
+
+function readRoute(): PublicRoute {
+  const path = window.location.pathname;
+  const q = new URLSearchParams(window.location.search);
+  // /t/:slug/<entity>[/<unitKey>]
+  const m = path.match(/^\/t\/[^/]+\/([^/?#]+)(?:\/([^/?#]+))?/);
+  const seg = m ? m[1] : q.get('view');
+  const view = (PUBLIC_VIEWS as readonly string[]).includes(seg || '') ? (seg as PublicView) : 'overview';
+  const unitKey = view === 'faculties'
+    ? (m && m[2] ? decodeURIComponent(m[2]) : q.get('unit'))
+    : null;
+  return { view, unitKey };
 }
 
-// Build the path for an entity, preserving the existing /t/:slug or ?slug= form.
+function base(): string | null {
+  const m = window.location.pathname.match(/^\/t\/([^/?#]+)/);
+  return m ? `/t/${m[1]}` : null;
+}
+
 function viewHref(view: PublicView): string {
-  const path = window.location.pathname;
-  const tMatch = path.match(/^\/t\/([^/?#]+)/);
-  if (tMatch) {
-    const base = `/t/${tMatch[1]}`;
-    return view === 'overview' ? base : `${base}/${view}`;
-  }
-  // dev / ?slug= form: keep slug, swap ?view=
+  const b = base();
+  if (b) return view === 'overview' ? b : `${b}/${view}`;
   const q = new URLSearchParams(window.location.search);
   if (view === 'overview') q.delete('view'); else q.set('view', view);
+  q.delete('unit');
   const qs = q.toString();
-  return `${path}${qs ? `?${qs}` : ''}`;
+  return `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+}
+
+function unitHref(unitKey: string): string {
+  const b = base();
+  if (b) return `${b}/faculties/${encodeURIComponent(unitKey)}`;
+  const q = new URLSearchParams(window.location.search);
+  q.set('view', 'faculties'); q.set('unit', unitKey);
+  return `${window.location.pathname}?${q.toString()}`;
 }
 
 export function usePublicRoute() {
-  const [view, setView] = useState<PublicView>(() => readView());
+  const [route, setRoute] = useState<PublicRoute>(() => readRoute());
 
   useEffect(() => {
-    const onPop = () => setView(readView());
+    const onPop = () => setRoute(readRoute());
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
   const navigate = useCallback((next: PublicView) => {
-    if (next === view) return;
     window.history.pushState(null, '', viewHref(next));
-    setView(next);
-  }, [view]);
+    setRoute({ view: next, unitKey: null });
+  }, []);
 
-  return { view, navigate, hrefFor: viewHref };
+  const navigateUnit = useCallback((unitKey: string) => {
+    window.history.pushState(null, '', unitHref(unitKey));
+    setRoute({ view: 'faculties', unitKey });
+  }, []);
+
+  return { view: route.view, unitKey: route.unitKey, navigate, navigateUnit, hrefFor: viewHref, unitHrefFor: unitHref };
 }

@@ -7,7 +7,7 @@ import { TenantFooter } from './tenant-footer';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { TenantLoading } from './tenant-loading';
 import { usePublicRoute, type PublicView } from './use-public-route';
-import { OverviewView, AcademicsView, PapersView, JournalsView, FacultiesView } from './tenant-views';
+import { OverviewView, AcademicsView, PapersView, JournalsView, FacultiesView, UnitDetailView } from './tenant-views';
 import { ES } from './tenant-i18n';
 import { bootStreamBridge } from '../architect/websocket-connector';
 import { perfMark, perfAutoFlush } from './perf-marks';
@@ -16,11 +16,15 @@ perfMark('boot'); // module evaluated — bundles parsed, app about to mount
 
 // Map the active entity view to its content. Overview keeps its rich layout;
 // the others are slug-scoped composed views (instant client-side swap).
-function ViewContent({ view, slug, payload }: {
-  view: PublicView; slug: string; payload: NonNullable<ReturnType<typeof useTenantData>['statsPayload']>;
+function ViewContent({ view, unitKey, slug, payload, navigateUnit, navigate }: {
+  view: PublicView; unitKey: string | null; slug: string;
+  payload: NonNullable<ReturnType<typeof useTenantData>['statsPayload']>;
+  navigateUnit: (k: string) => void; navigate: (v: PublicView) => void;
 }) {
   switch (view) {
-    case 'faculties': return <FacultiesView slug={slug} tenantName={payload.tenant.name} />;
+    case 'faculties': return unitKey
+      ? <UnitDetailView slug={slug} payload={payload} unitKey={unitKey} back={() => navigate('faculties')} />
+      : <FacultiesView slug={slug} navigateUnit={navigateUnit} />;
     case 'academics': return <AcademicsView slug={slug} />;
     case 'papers':    return <PapersView slug={slug} />;
     case 'journals':  return <JournalsView slug={slug} />;
@@ -31,7 +35,7 @@ function ViewContent({ view, slug, payload }: {
 function App() {
   const [slug] = useState<string | null>(() => readSlugFromUrl());
   const { statsPayload, statsError, fatalError } = useTenantData(slug);
-  const { view, navigate, hrefFor } = usePublicRoute();
+  const { view, unitKey, navigate, navigateUnit, hrefFor } = usePublicRoute();
 
   useEffect(() => {
     if (!statsPayload) return;
@@ -71,7 +75,8 @@ function App() {
                   ? <div style={{ color: 'var(--danger, #c00)' }}>{`${ES.failedPrefix}: ${statsError}`}</div>
                   : <TenantLoading />)
               : (<>
-                  <ViewContent view={view} slug={slug} payload={statsPayload} />
+                  <ViewContent view={view} unitKey={unitKey} slug={slug} payload={statsPayload}
+                    navigateUnit={navigateUnit} navigate={navigate} />
                   <TenantFooter yearRange={statsPayload.stats.yearRange} />
                 </>)}
           </div>
