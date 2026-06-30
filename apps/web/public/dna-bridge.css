@@ -169,10 +169,13 @@
      instead of "light card / near-solid dark card". Earlier this ramped alpha to
      0.92 to force separation; that slammed deeper rungs near-solid and killed the
      translucency — the even-tint model gives the separation without that. */
-  --glass-0: color-mix(in oklch, var(--tonal-0) 62%, transparent);
-  --glass-1: color-mix(in oklch, var(--tonal-1) 70%, transparent);
-  --glass-2: color-mix(in oklch, var(--tonal-2) 70%, transparent);
-  --glass-3: color-mix(in oklch, var(--tonal-3) 72%, transparent);
+  /* Opacity per rung — lowered (was 62/70/70/72%) so more sky shows through and
+     the panes read as real glass, not near-solid cards. Deeper rungs stay a touch
+     more opaque to preserve the stacking separation. */
+  --glass-0: color-mix(in oklch, var(--tonal-0) 48%, transparent);
+  --glass-1: color-mix(in oklch, var(--tonal-1) 55%, transparent);
+  --glass-2: color-mix(in oklch, var(--tonal-2) 58%, transparent);
+  --glass-3: color-mix(in oklch, var(--tonal-3) 62%, transparent);
   --glass-blur: 14px;
   /* Glass borders: a translucent hairline (the edge a real glass pane catches),
      not the opaque --border. Mostly the border colour at reduced alpha so it
