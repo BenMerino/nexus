@@ -42,14 +42,26 @@ function pairAt(altitude: number): [RGB, RGB] {
 }
 
 const rgb = (c: RGB) => `rgb(${Math.round(c[0])} ${Math.round(c[1])} ${Math.round(c[2])})`;
-// Shift an RGB toward lighter/darker for the chart lightness ladder (lerp to
-// white above 0, to black below — keeps hue, only changes value).
 const shade = (c: RGB, d: number): RGB =>
   d >= 0 ? mix(c, [255, 255, 255], d) : mix(c, [0, 0, 0], -d);
 
-// Chart series: alternate primary / companion, stepping lightness so same-hue
-// series stay distinct. dayF tilts the ladder lighter at night / darker by day.
-const L_STEP = [0, 0.18, -0.16, 0.32, -0.28, 0.10, -0.10, 0.24, -0.22];
+// RGB(0..255) → [h°, s%, l%], for fanning the chart series around a base hue.
+function rgbToHsl([r, g, b]: RGB): [number, number, number] {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  let h = 0;
+  if (d > 1e-6) {
+    if (mx === r) h = ((g - b) / d) % 6;
+    else if (mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h = (h * 60 + 360) % 360;
+  }
+  const l = (mx + mn) / 2;
+  const s = d < 1e-6 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  return [h, s * 100, l * 100];
+}
+const hslStr = (h: number, s: number, l: number) =>
+  `hsl(${(((h % 360) + 360) % 360).toFixed(1)} ${Math.round(s)}% ${Math.round(l)}%)`;
 
 export function sunColors(altitude: number, dayF: number): Record<string, string> {
   const [primary, companion] = pairAt(altitude);
@@ -63,11 +75,22 @@ export function sunColors(altitude: number, dayF: number): Record<string, string
   out["--sky-primary"] = rgb(primary);
   out["--sky-companion"] = rgb(companion);
 
-  // Lighter overall at night (glow on dark), darker by day (read on light).
-  const bias = lerp(0.12, -0.12, dayF);
+  // Charts are the COMPANION family — daylight charts read warm/gold (the
+  // sunshine companion), never blue (blue is the accent/primary). LIGHTNESS-
+  // dominant: the 9 series step lightness 82→26 (the separation), with only a
+  // SMALL 16° hue fan toward the companion's SAFE side (away from the 56–165°
+  // green wall). So day stays gold→amber (never coral/red, which belongs to
+  // sunrise/sunset), night stays in its blue-cyan band, all 9 stay distinct.
+  const [ch, cs] = rgbToHsl(companion);
+  const sat = Math.max(58, cs);
+  const warm = ch < 90 || ch > 320;    // fan down (toward orange) for warm bases,
+  const lTop = lerp(84, 82, dayF);     // up (toward cyan) for cool ones
   for (let i = 0; i < 9; i++) {
-    const base = i % 2 === 0 ? primary : companion;
-    out[`--chart-${i}`] = rgb(shade(base, clamp(bias + L_STEP[i], -0.5, 0.5)));
+    const t = i / 8;
+    const fan = (warm ? -1 : 1) * 16 * t;
+    const lt = lTop - 56 * t;          // wide lightness ramp carries the separation
+    const h = ((ch + fan) % 360 + 360) % 360;
+    out[`--chart-${i}`] = hslStr(h, sat, lt);
   }
 
   const J = ["--j-sapphire", "--j-amethyst", "--j-emerald", "--j-topaz", "--j-teal", "--j-garnet"];
