@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import {
   BaseBox, BaseText, BaseAction, BaseCheckbox, Divider, StatusPill, MetaChip,
 } from '../ui/primitives';
-import { Button } from '../ui/composed/Button';
-import { SegmentedControl } from '../ui/composed/SegmentedControl';
-import { Popover } from '../ui/composed/Popover';
 
 /* The DNA catalog sections — live renders of the vendored Zincro primitives +
  * composed components, proving the token contract (dna-defaults + dna-bridge)
@@ -57,46 +54,3 @@ export function PrimitivesSection() {
   );
 }
 
-export function ComposedSection() {
-  const [seg, setSeg] = useState<'day' | 'week' | 'month'>('week');
-  return (
-    <div>
-      <Row title="Button (composed) — variants">
-        <Button variant="primary">Primary</Button>
-        <Button variant="secondary">Secondary</Button>
-        <Button variant="danger">Danger</Button>
-        <Button variant="ghost">Ghost</Button>
-        <Button variant="outline">Outline</Button>
-      </Row>
-      <Row title="SegmentedControl">
-        <SegmentedControl<'day' | 'week' | 'month'>
-          segments={[
-            { value: 'day', label: 'Day' },
-            { value: 'week', label: 'Week' },
-            { value: 'month', label: 'Month' },
-          ]}
-          value={seg}
-          onChange={setSeg}
-        />
-      </Row>
-      <Row title="Popover (the composition engine)">
-        <Popover
-          trigger={({ toggle, ref }) => (
-            <BaseAction ref={ref as any} variant="secondary" onClick={toggle}>Open popover</BaseAction>
-          )}
-        >
-          {(close) => (
-            <BaseBox display="flex" flexDirection="col" gap="2" p="4"
-              style={{ minWidth: '200px' }}>
-              <BaseText variant="body">Popover panel content.</BaseText>
-              <BaseText variant="detail" color="muted">
-                Viewport-aware, edge-flip, glass reveal.
-              </BaseText>
-              <BaseAction variant="primary" size="sm" onClick={close}>Close</BaseAction>
-            </BaseBox>
-          )}
-        </Popover>
-      </Row>
-    </div>
-  );
-}
