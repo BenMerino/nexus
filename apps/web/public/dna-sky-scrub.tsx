@@ -27,8 +27,9 @@ export function SkyScrub() {
   // Default OFF — borderless is now the platform default (--border-w: 0). The
   // toggle here lets you preview borders BACK on for comparison.
   const [borders, setBorders] = useState(false);
-  // Liquid-glass DNA variant: SVG refraction on the glass surfaces (data-liquid).
-  const [liquid, setLiquid] = useState(false);
+  // Liquid-glass is the platform default now (sky-bg sets data-liquid on every
+  // page). The toggle defaults ON and lets you preview it OFF for comparison.
+  const [liquid, setLiquid] = useState(true);
 
   useEffect(() => { setSkyMode(mode); repaint(); }, [mode]);
 
@@ -52,7 +53,7 @@ export function SkyScrub() {
   useEffect(() => () => {
     setSkyMode('live'); repaint();
     document.documentElement.style.removeProperty('--border-w');
-    document.documentElement.removeAttribute('data-liquid');
+    document.documentElement.setAttribute('data-liquid', '');  // restore the platform default
   }, []);
 
   const onScrub = (v: number) => {

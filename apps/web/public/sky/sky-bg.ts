@@ -11,6 +11,7 @@ import { skyFor, twilightTint, type Sky } from "./sky-palette";
 import { initSkyGPU, type SkyGPU } from "./sky-gpu";
 import { applySunTokens } from "./sky-tokens";
 import { getSkyMode, forcedAltitude, getManualMinutes } from "./sky-mode";
+import "../dna-liquid";  // self-mounting: injects the liquid-glass SVG refraction filter
 
 type RGB = [number, number, number];
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -99,6 +100,10 @@ async function start() {
     );
   }
 }
+
+// Liquid-glass DNA platform-wide: sky-bg loads on EVERY page, so enabling it here
+// applies the SVG-refraction glass everywhere (Chrome/Edge; @supports-guarded).
+document.documentElement.setAttribute("data-liquid", "");
 
 // Apply sun-driven surface tokens as early as this module runs (fallback coords),
 // so the glass lightness is right before the canvas mounts — minimizes the flash
