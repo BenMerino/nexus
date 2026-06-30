@@ -139,7 +139,9 @@
 }
 .app > .public-app { height: 100%; min-height: 0; }
 .app:has(> .public-header) > .public-app { height: 100vh; }
-.app .public-main { padding: var(--chrome-inset); }
+/* (Removed the old `.app .public-main { padding: --chrome-inset }` grid-era
+   override — it reset the fixed-chrome offset padding, dropping content BEHIND
+   the header + sidebar. The base .public-main padding now governs.) */
 
 /* The live "updated" pulse dot (public header) — emerald, distinct from the
    sidebar's --ok pulse below. */
