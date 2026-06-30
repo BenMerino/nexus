@@ -104,26 +104,17 @@
 }
 .base-action:active { transform: scale(0.95); }
 
-/* `--on-primary`, not `--text-inverse`: white is only legible on a DARK
- * primary. A light/mid tenant primary (achromatic grey) gives white text
- * ~3.9:1 (fails AA); --on-primary is derived from the gradient stops'
- * lightness so the label stays legible for any tenant. Falls back to white. */
-/* primary IS the living aurora mesh-gradient (the old linear-gradient is gone).
- * The mesh canvas fills the button as its background: overflow:hidden clips it to
- * the rounded chrome; `isolation:isolate` makes the button its own stacking
- * context so the canvas's negative z-index drops BELOW the button content
- * (including bare text-node labels — which can't take a z-index of their own, so
- * hoisting siblings wouldn't lift them) while staying contained. White label for
- * contrast over the saturated, sun-driven brand mesh. */
+/* primary = a two-colour linear gradient from the sun-driven pair tokens
+ * (--sky-primary → --sky-companion), so it tracks the sky like everything else.
+ * White label over the saturated brand gradient (text-shadow keeps it legible
+ * where the gradient is lightest). */
 .base-action--primary {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
+  background: linear-gradient(135deg, var(--sky-primary, var(--primary)), var(--sky-companion, var(--secondary)));
   color: var(--on-primary, var(--text-inverse));
   border: none;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
-.base-action--primary > canvas { z-index: -1; }
 .base-action--primary:hover { opacity: 0.92; }
 
 .base-action--secondary {

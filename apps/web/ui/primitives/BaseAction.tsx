@@ -1,7 +1,6 @@
 import React from 'react';
 import { clsx } from 'clsx';
 import { Loader2 } from '../icons/index.js';
-import { AuroraSurface } from '../aurora/index.js';
 import './base-action.css';
 
 /* Solid status weight (HIGH emphasis): 'danger' / 'warning' — filled.
@@ -54,8 +53,6 @@ export const BaseAction = React.forwardRef<HTMLButtonElement, BaseActionProps>((
 }, ref) => {
   const isDisabled = disabled || loading;
   const iconOnly = iconOnlyProp ?? !children;
-  // primary IS the living aurora surface now — the old linear-gradient is gone.
-  const isPrimary = variant === 'primary';
   const hasBorder = BORDERED_VARIANTS.has(variant);
 
   return (
@@ -72,10 +69,6 @@ export const BaseAction = React.forwardRef<HTMLButtonElement, BaseActionProps>((
       )}
       style={{ ...SIZE_VARS[size], ...style }}
     >
-      {/* primary IS the living mesh-gradient: the aurora surface renders as the
-       *  fill behind the label (content sits above via base-action.css's
-       *  .base-action--primary rules). */}
-      {isPrimary && <AuroraSurface />}
       {loading
         ? <Loader2 className="action-spinner" />
         : leftIcon && <span className="action-icon">{leftIcon}</span>}
