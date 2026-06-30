@@ -20,7 +20,7 @@ function ViewContent({ view, slug, payload }: {
   view: PublicView; slug: string; payload: NonNullable<ReturnType<typeof useTenantData>['statsPayload']>;
 }) {
   switch (view) {
-    case 'faculties': return <FacultiesView slug={slug} />;
+    case 'faculties': return <FacultiesView slug={slug} tenantName={payload.tenant.name} />;
     case 'academics': return <AcademicsView slug={slug} />;
     case 'papers':    return <PapersView slug={slug} />;
     case 'journals':  return <JournalsView slug={slug} />;

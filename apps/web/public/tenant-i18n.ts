@@ -107,6 +107,7 @@ export const ES = {
     paperOne: 'paper',
     paperMany: 'papers',
     orcidNone: 'no ORCID',
+    structureLabel: 'Organization structure',
   },
 
   /* Chart panel section titles (tenant-i18n-labels.ts, N5 split) */

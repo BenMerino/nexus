@@ -4,6 +4,7 @@ import { AuthorsTable } from './tenant-authors';
 import { TenantWorks } from './tenant-works';
 import { TenantJournals } from './tenant-journals';
 import { ScopedSummary } from './tenant-summary';
+import { TenantScopeRail, type UnitScope } from './tenant-scope-rail';
 import { TenantLoadingBody } from './tenant-loading';
 import { buildTenantCharts } from './tenant-builders';
 import type { useTenantData } from './tenant-data';
@@ -91,9 +92,12 @@ function FacultyNode({ f }: { f: Faculty }) {
   );
 }
 
-export function FacultiesView({ slug }: { slug: string }) {
+export function FacultiesView({ slug, tenantName }: { slug: string; tenantName?: string }) {
   const [faculties, setFaculties] = useState<Faculty[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  // Local selection — highlights a unit in the ranked rail. No cross-view
+  // scoping (Faculties is its own view), so the selection is presentational.
+  const [selected, setSelected] = useState<UnitScope | null>(null);
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/public/${encodeURIComponent(slug)}/org-tree`)
@@ -104,12 +108,15 @@ export function FacultiesView({ slug }: { slug: string }) {
   }, [slug]);
   return (
     <section className="card">
-      {/* The scope rail head moved here from the Overview — Faculties IS the
-          unit picker. The org tree below is the browsable unit structure. */}
+      {/* Insight layer: units RANKED by output, an all-units total, and a usage
+          bar per unit (each unit's share) — the old scope-rail insight, reused. */}
       <div className="tenant-rail-head">
         <h2 className="tenant-rail-title">{ES.scopeRail.title}</h2>
         <p className="tenant-rail-note">{ES.scopeRail.note}</p>
       </div>
+      <TenantScopeRail slug={slug} tenantName={tenantName} selected={selected} onSelect={setSelected} />
+      {/* Structure layer: the collapsible faculty → department org tree. */}
+      <h3 className="panel-title" style={{ margin: '24px 0 12px' }}>{ES.orgTree.structureLabel}</h3>
       {err && <div className="status error">Error: {err}</div>}
       <div className="org-tree">
         {faculties
