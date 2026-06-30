@@ -1,0 +1,61 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   dna-liquid.css — the LIQUID-GLASS DNA variant (opt-in via data-liquid on :root).
+
+   Ports the SVG-refraction technique (kube.io / ObaidQatan's liquid-glass lib) to
+   our own --glass-* surfaces: instead of a flat backdrop blur, the backdrop is
+   DISPLACED through an SVG feDisplacementMap — light bends at the pane edges
+   (refraction), the Apple "liquid glass" read. Framework-agnostic CSS + one inline
+   SVG filter; no React lib, no Tailwind/Framer deps.
+
+   The displacement map is procedural: a radial gradient encoded into R (x-shift)
+   and G (y-shift) — strong at the rim, zero in the centre — so the backdrop
+   refracts only near the edges, like a real lens. (The reference precomputes 127
+   refraction rays; this radial approximation gives the same edge-bend read at a
+   fraction of the cost.)
+
+   CAVEAT: backdrop-filter:url(#…) is Chrome/Edge-only. The @supports guard scopes
+   the refraction there; Safari/Firefox keep our standard blur glass (the base
+   .surface recipe still applies — this only ADDS the filter where supported).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root[data-liquid] {
+  /* Refraction strength + the displacement-map data-URI. --liquid-scale is the
+     one knob (feDisplacementMap scale = px of edge-bend). The map: a 2-stop
+     radial gradient, transparent-centre → R/G-encoded rim, so displacement is 0
+     at centre and max at the edge. */
+  --liquid-scale: 60;
+  --liquid-blur: 6px;
+}
+
+/* The SVG filter lives in an injected <svg> (see dna-liquid mount); this rule
+   only switches the glass surfaces to USE it where backdrop-filter:url works. */
+@supports (backdrop-filter: url(#nexus-liquid)) or (-webkit-backdrop-filter: url(#nexus-liquid)) {
+  :root[data-liquid] .surface,
+  :root[data-liquid] .glass-surface,
+  :root[data-liquid] .public-header,
+  :root[data-liquid] .sidebar,
+  :root[data-liquid] .card,
+  :root[data-liquid] .panel,
+  :root[data-liquid] .kpi,
+  :root[data-liquid] .tenant-rail {
+    /* refraction (displacement) + a lighter blur, instead of the heavy flat blur */
+    backdrop-filter: blur(var(--liquid-blur)) saturate(1.5) url(#nexus-liquid);
+    -webkit-backdrop-filter: blur(var(--liquid-blur)) saturate(1.5) url(#nexus-liquid);
+    /* a touch more translucent so the refracted backdrop reads through */
+    background-color: color-mix(in oklch, var(--tonal-1) 42%, transparent);
+  }
+  /* Bright specular rim — the lit edge of a glass lens (top-left light source). */
+  :root[data-liquid] .surface,
+  :root[data-liquid] .glass-surface,
+  :root[data-liquid] .public-header,
+  :root[data-liquid] .sidebar,
+  :root[data-liquid] .card,
+  :root[data-liquid] .panel,
+  :root[data-liquid] .kpi,
+  :root[data-liquid] .tenant-rail {
+    box-shadow:
+      var(--shadow-sm),
+      inset 1px 1px 0 color-mix(in oklch, white 40%, transparent),
+      inset -1px -1px 0 color-mix(in oklch, white 12%, transparent);
+  }
+}

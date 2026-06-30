@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   getSkyMode, setSkyMode, getManualMinutes, setManualMinutes, type SkyMode,
 } from './sky/sky-mode';
+import './dna-liquid';  // self-mounting: injects the liquid-glass SVG filter
 
 /* DEV/PREVIEW sky scrub — a 4th 'manual' mode that pins an exact time of day so
  * you can drag through dawn→noon→dusk→night and watch every sun-driven token
@@ -26,8 +27,16 @@ export function SkyScrub() {
   // Default OFF — borderless is now the platform default (--border-w: 0). The
   // toggle here lets you preview borders BACK on for comparison.
   const [borders, setBorders] = useState(false);
+  // Liquid-glass DNA variant: SVG refraction on the glass surfaces (data-liquid).
+  const [liquid, setLiquid] = useState(false);
 
   useEffect(() => { setSkyMode(mode); repaint(); }, [mode]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (liquid) root.setAttribute('data-liquid', '');
+    else root.removeAttribute('data-liquid');
+  }, [liquid]);
 
   // Borders preview: every border routes through --border-w. The platform
   // default is now 0 (borderless); "on" forces 1px back inline to compare,
@@ -43,6 +52,7 @@ export function SkyScrub() {
   useEffect(() => () => {
     setSkyMode('live'); repaint();
     document.documentElement.style.removeProperty('--border-w');
+    document.documentElement.removeAttribute('data-liquid');
   }, []);
 
   const onScrub = (v: number) => {
@@ -91,6 +101,16 @@ export function SkyScrub() {
           color: borders ? 'var(--fg-muted)' : 'var(--on-primary, #fff)', font: 'inherit',
         }}>
         {borders ? 'Borders: on' : 'Borders: off'}
+      </button>
+      <button onClick={() => setLiquid(v => !v)}
+        title="Liquid-glass DNA: SVG refraction on the glass surfaces (Chrome/Edge)"
+        style={{
+          flex: 'none', padding: '4px 10px', borderRadius: 'var(--radius-control)',
+          cursor: 'pointer', border: 'var(--border-w) solid var(--border)',
+          background: liquid ? 'var(--accent)' : 'transparent',
+          color: liquid ? 'var(--on-primary, #fff)' : 'var(--fg-muted)', font: 'inherit',
+        }}>
+        {liquid ? 'Liquid: on' : 'Liquid: off'}
       </button>
     </div>
   );

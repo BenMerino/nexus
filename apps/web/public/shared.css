@@ -22,6 +22,11 @@
    after dna-bridge because it consumes --glass-* and --_nest-corner from it. */
 @import "./app-chrome.css";
 
+/* Liquid-glass DNA variant — opt-in via data-liquid on :root (SVG refraction on
+   the glass surfaces). Inert until the attribute is set; loaded last so it
+   overrides the base glass recipe where supported. */
+@import "./dna-liquid.css";
+
 :root {
   color-scheme: dark;
   /* Neutral grayscale surfaces/text/borders — chroma 0, no blue/beige cast. */
