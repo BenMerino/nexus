@@ -249,7 +249,10 @@ body > #dna-mount, body > main, body > div {
 /* author page (author.html) surfaces */
 :root .profile-hero, :root .profile-panel, :root .profile-stat,
 /* paper / hover / detail cards */
-:root .paper-card, :root .hover-card, :root .node-detail-pane {
+:root .paper-card, :root .hover-card, :root .node-detail-pane,
+/* graph-explorer + detail/source surfaces (were opaque --bg-card holdouts) */
+:root .graph-filters, :root .graph-canvas, :root .detail-panel,
+:root #graph-container, :root .source, :root .normalized, :root .profile-card {
   position: relative;
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
