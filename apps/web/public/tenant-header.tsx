@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ES } from './tenant-i18n';
 import { cycleSkyMode, getSkyMode, type SkyMode } from './public-theme-toggle';
 import { BaseAction } from '../ui/primitives';
@@ -65,8 +65,25 @@ export function TenantPublicHeader({
     ? new Date(lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : yearRange?.maxYear;
   const updated = updatedDate ? `${ES.updatedPrefix} ${updatedDate}` : ES.publicProfileBadge;
+
+  // The header is fixed chrome; content is inset BELOW its real height. Publish
+  // the actual rendered height to --chrome-bar-h-actual so .public-main's top
+  // offset tracks it (brand + search make the bar taller than the 60px token,
+  // and it can wrap responsively) — content stays inset, never tucked under.
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const publish = () =>
+      document.documentElement.style.setProperty('--chrome-bar-h-actual', `${el.offsetHeight}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    <header className="public-header">
+    <header className="public-header" ref={ref}>
       <div className="public-header-inner">
         <div className="public-brand">
           {tenant.logo_url

@@ -122,7 +122,9 @@
 .public-main {
   flex: 1; overflow-y: auto; min-height: 0;
   padding:
-    calc(2 * var(--chrome-inset) + var(--chrome-bar-h)) /* top: clear the fixed header */
+    /* top: clear the header's REAL height (measured → --chrome-bar-h-actual,
+       falling back to the token) + an inset above and below it. */
+    calc(2 * var(--chrome-inset) + var(--chrome-bar-h-actual, var(--chrome-bar-h)))
     var(--chrome-inset)                                  /* right */
     var(--chrome-inset)                                  /* bottom */
     calc(var(--sidebar-w) + 2 * var(--chrome-inset));    /* left: clear the fixed sidebar */
