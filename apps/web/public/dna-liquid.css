@@ -27,6 +27,21 @@
   --liquid-blur: 6px;
 }
 
+/* When liquid-dom is active (its WebGPU glass overlay governs), drop our SVG
+   refraction so the two don't double up — liquid-dom provides the glass; our
+   surfaces keep just their translucent fill beneath its layer. */
+:root[data-liquid-dom] .surface,
+:root[data-liquid-dom] .glass-surface,
+:root[data-liquid-dom] .public-header-seg,
+:root[data-liquid-dom] .sidebar,
+:root[data-liquid-dom] .card,
+:root[data-liquid-dom] .panel,
+:root[data-liquid-dom] .kpi,
+:root[data-liquid-dom] .tenant-rail {
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+}
+
 /* The SVG filter lives in an injected <svg> (see dna-liquid mount); this rule
    only switches the glass surfaces to USE it where backdrop-filter:url works. */
 @supports (backdrop-filter: url(#nexus-liquid)) or (-webkit-backdrop-filter: url(#nexus-liquid)) {

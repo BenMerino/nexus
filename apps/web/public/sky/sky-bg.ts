@@ -11,7 +11,8 @@ import { skyFor, twilightTint, type Sky } from "./sky-palette";
 import { initSkyGPU, type SkyGPU } from "./sky-gpu";
 import { applySunTokens } from "./sky-tokens";
 import { getSkyMode, forcedAltitude, getManualMinutes } from "./sky-mode";
-import "../dna-liquid";  // self-mounting: injects the liquid-glass SVG refraction filter
+import "../dna-liquid";       // self-mounting: injects the SVG liquid-glass filter
+import "../liquid-dom-gate";  // self-mounting: liquid-dom WebGPU glass where supported, else our glass
 
 type RGB = [number, number, number];
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
