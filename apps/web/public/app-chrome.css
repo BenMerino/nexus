@@ -27,27 +27,21 @@
 /* ═══ PUBLIC SHELL (tenant / author / any header-only page) ═══════════════════ */
 .public-app { --maxw: 1500px; display: flex; flex-direction: column; height: 100vh; }
 
-/* The FLOATING header: out of flow, pinned inset from top+sides, shrink-wrapped
-   to its content so the glass element is JUST the bar. Content scrolls under it. */
-/* Floating glass bar: a detached pill inset from top + sides, rounded corners,
-   translucent glass fill over the sky. Just the bar — content scrolls under it. */
+/* REAL floating sticky bar: the header lives INSIDE the scroll container
+   (.public-main, as its first child) and STICKS to the top as you scroll, so
+   content passes UNDER it and the glass blur frosts what's behind. The scroll
+   area's own side padding insets it → sky shows beside the bar (a detached glass
+   pill, not a full-width slab). No fixed-overlay, no padding-clearance hack. */
 .public-header {
-  position: fixed;
-  top: var(--chrome-inset); left: var(--chrome-inset); right: var(--chrome-inset);
+  position: sticky;
+  top: 0;
   min-height: var(--chrome-bar-h);
+  margin-bottom: var(--chrome-inset);
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   border-radius: var(--radius-card);
   z-index: 30;
-}
-/* Inside the .app grid the header is NOT fixed: it's the full-width top row,
-   with the sidebar + content beneath it (header-on-top layout). Static, spans
-   both grid columns, floating-glass card inset by --chrome-inset. */
-.app > .public-header {
-  position: static;
-  grid-column: 1 / -1;
-  margin: var(--chrome-inset) var(--chrome-inset) 0;
 }
 .public-header-inner {
   display: flex; align-items: center; gap: 24px; flex-wrap: nowrap;
@@ -116,20 +110,17 @@
 .theme-btn svg { width: 16px; height: 16px; }
 /* The icon is chosen in React per sky mode (live/day/night) — no CSS flip. */
 
-/* Scroll area: owns the full height (header is out of flow) and clears the
-   floating bar with top padding (inset + bar + inset). */
+/* Scroll area: the sticky header is its first child, so NO top-clearance hack —
+   uniform --chrome-inset padding all around gives the sky gap on every side, and
+   the sticky bar floats at top:0 within this padding box (so it sits inset from
+   the edges). Content flows after the header and scrolls under it. */
 .public-main {
   flex: 1; overflow-y: auto; min-height: 0;
-  /* Uniform --chrome-inset on the sides and bottom (matching the header's margin);
-     the top additionally clears the fixed floating bar (inset + bar + inset). */
-  padding: calc(2 * var(--chrome-inset) + var(--chrome-bar-h))
-           var(--chrome-inset) var(--chrome-inset);
+  padding: var(--chrome-inset);
 }
 .public-content { padding: 0; }
 
-/* Public shell inside the .app grid (header-on-top layout): the .public-app
-   fills its grid cell (the body row), and .public-main no longer reserves the
-   fixed-header clearance — the header is a real row above, not an overlay. */
+/* In the .app grid, the scroll area fills its body-row cell. */
 .app > .public-app { height: 100%; min-height: 0; }
 .app .public-main { padding: var(--chrome-inset); }
 

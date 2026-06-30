@@ -58,11 +58,12 @@ function App() {
   }
   return (
     <div className="public-app">
-      {chrome && (
-        <TenantPublicHeader tenant={chrome.tenant} items={[]} currentId="profile"
-          onNavigate={() => {}} yearRange={chrome.stats.yearRange} />
-      )}
       <main className="public-main">
+        {/* Sticky floating header inside the scroll area (content scrolls under). */}
+        {chrome && (
+          <TenantPublicHeader tenant={chrome.tenant} items={[]} currentId="profile"
+            onNavigate={() => {}} yearRange={chrome.stats.yearRange} />
+        )}
         <div className="public-content">
           {/* Back link paints immediately from the slug; the tenant name fills
               in when the chrome fetch lands. */}

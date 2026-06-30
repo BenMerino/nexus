@@ -59,16 +59,17 @@ function App() {
   const tenantName = statsPayload?.tenant.name ?? '';
   return (
     <div className="app">
-      {/* Row 1: full-width header on top. Row 2: floating sidebar + content. */}
-      {statsPayload && (
-        <TenantPublicHeader tenant={statsPayload.tenant} items={[]} currentId={view}
-          onNavigate={() => {}} yearRange={statsPayload.stats.yearRange}
-          lastUpdated={statsPayload.stats.lastUpdated}
-          search={<TenantSearch slug={slug} onSelectUnit={() => {}} />} />
-      )}
       <TenantSidebar tenantName={tenantName} view={view} navigate={navigate} hrefFor={hrefFor} />
       <div className="public-app">
         <main className="public-main">
+          {/* Sticky floating header lives INSIDE the scroll area, so content
+              scrolls UNDER it (the glass blur frosts what passes behind). */}
+          {statsPayload && (
+            <TenantPublicHeader tenant={statsPayload.tenant} items={[]} currentId={view}
+              onNavigate={() => {}} yearRange={statsPayload.stats.yearRange}
+              lastUpdated={statsPayload.stats.lastUpdated}
+              search={<TenantSearch slug={slug} onSelectUnit={() => {}} />} />
+          )}
           <div className="public-content">
             {!statsPayload
               ? (statsError
