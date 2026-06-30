@@ -96,6 +96,10 @@ is_excluded() {
     # fix (2403→2,403) that Zincro lacks. Excluded so --check is green; REMOVE
     # this line once the fix is merged upstream, then it syncs clean.
     ui/graph-engine/ChartChromeLayer.tsx)      return 0 ;;  # nexus-ahead: fmtTick thousands (flow up)
+    # nexus-ahead: hideFrame seed implies bare (no engine card border/bg/radius)
+    # so a host-card-wrapped chart doesn't draw a second border. Generic fix —
+    # flow UP to Zincro, then REMOVE this line so it syncs clean.
+    ui/graph-engine/GraphRender.tsx)           return 0 ;;  # nexus-ahead: hideFrame→bare (flow up)
     ui/graph-engine/__tests__/*)               return 0 ;;  # Zincro tests, not vendored
     *) return 1 ;;
   esac

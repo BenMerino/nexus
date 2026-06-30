@@ -89,6 +89,11 @@ export interface GraphRenderProps {
 }
 
 export function GraphRender({ chart, onToggle, isLoading = false, error, onBucketClick, onWindowChange, isLive, showLive = false, breadcrumbs, onDrillUp, bare = false }: GraphRenderProps) {
+    // A seed flagged hideFrame is, by definition, inside a host card that owns the
+    // surface — so render bare (no engine border/bg/radius) and let the host be
+    // the one surface. (nexus's card-wrapping hosts set hideFrame; this maps it to
+    // the existing bare path so there's no "card inside a card" double border.)
+    bare = bare || !!(chart as { hideFrame?: boolean }).hideFrame;
     const containerRef = useRef<HTMLDivElement>(null);
     // A choropleth is shape-locked to the world's 2:1 — size the container to
     // that aspect (no max-height cap) so the map fills it with no letterbox.
