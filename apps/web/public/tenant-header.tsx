@@ -14,7 +14,7 @@ function initial(name: string): string { return (name.trim()[0] || '·').toUpper
 // Three-state theme cycle: live (real sun drives it) → day (forced) → night
 // (forced) → live. One icon per mode; clicking advances the cycle and the sky
 // pipeline repaints instantly via the nexus:sky-mode event.
-const MODE_LABEL: Record<SkyMode, string> = {
+const MODE_LABEL: Partial<Record<SkyMode, string>> = {
   live: 'Live · follows the sun', day: 'Day', night: 'Night',
 };
 
@@ -81,15 +81,6 @@ export function TenantPublicHeader({
           </div>
         </div>
         {search ? <div className="public-header-search">{search}</div> : null}
-        <nav className="public-tabs" aria-label="Section navigation">
-          {items.map(it => (
-            <a key={it.id} href={`#${it.id}`}
-               className={`public-tab${currentId === it.id ? ' active' : ''}`}
-               onClick={e => { e.preventDefault(); onNavigate(it.id); }}>
-              {it.label}
-            </a>
-          ))}
-        </nav>
         <div className="public-header-aux">
           <span className="public-updated"><span className="sync-pulse" /> <span>{updated}</span></span>
           <a href="/login.html" className="public-signin">{ES.signIn}</a>
