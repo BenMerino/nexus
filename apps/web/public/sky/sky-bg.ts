@@ -10,7 +10,7 @@ import { sunPosition } from "./sky-sun";
 import { skyFor, twilightTint, type Sky } from "./sky-palette";
 import { initSkyGPU, type SkyGPU } from "./sky-gpu";
 import { applySunTokens } from "./sky-tokens";
-import { effectiveAltitude } from "./sky-mode";
+import { getSkyMode, forcedAltitude, getManualMinutes } from "./sky-mode";
 
 type RGB = [number, number, number];
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -26,10 +26,17 @@ canvas.id = "sky-bg";
 let gpu: SkyGPU | null = null;
 
 function paint() {
-  const now = new Date();
-  const real = sunPosition(now, coords.lat, coords.lon);
-  // Mode clamp: live = real sun; day/night pin the altitude (forces the look).
-  const altitude = effectiveAltitude(real.altitude);
+  const mode = getSkyMode();
+  // Time we evaluate the sun at: now for live/day/night, the pinned scrub time
+  // for manual (local-midnight + manual minutes, in the viewer's own offset).
+  let when = new Date();
+  if (mode === "manual") {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    when = new Date(+d + getManualMinutes() * 60000);
+  }
+  const real = sunPosition(when, coords.lat, coords.lon);
+  // day/night force a fixed altitude; live/manual use the computed sun.
+  const altitude = forcedAltitude(mode) ?? real.altitude;
   const azimuth = real.azimuth;
   const rising = azimuth < 180;
 
