@@ -103,5 +103,14 @@ export function sunColors(altitude: number, dayF: number): Record<string, string
 
   const J = ["--j-sapphire", "--j-amethyst", "--j-emerald", "--j-topaz", "--j-teal", "--j-garnet"];
   J.forEach((name, i) => { out[name] = out[`--chart-${i}`]; });
+
+  // Country/choropleth uses the --ramp-teal sequential scale (low→high value).
+  // Drive it from the companion hue so the map tracks the sky, but KEEP the
+  // low→high lightness ordering (1 dark = low, 5 light = high) so the data scale
+  // stays readable — only the hue shifts with the day, not the ordering.
+  const rampL = [34, 48, 62, 74, 84];   // dark→light, low→high value
+  for (let i = 0; i < 5; i++) {
+    out[`--ramp-teal-${i + 1}`] = hslStr(ch, sat, rampL[i]);
+  }
   return out;
 }
