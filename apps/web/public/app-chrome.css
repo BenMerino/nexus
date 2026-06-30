@@ -40,10 +40,13 @@
   border-radius: var(--radius-card);
   z-index: 30;
 }
-/* When the public shell sits beside a floating sidebar (.app grid), the fixed
-   header must start AFTER the sidebar column, not at the viewport edge. */
-.app .public-header {
-  left: calc(var(--sidebar-w) + 2 * var(--chrome-inset));
+/* Inside the .app grid the header is NOT fixed: it's the full-width top row,
+   with the sidebar + content beneath it (header-on-top layout). Static, spans
+   both grid columns, floating-glass card inset by --chrome-inset. */
+.app > .public-header {
+  position: static;
+  grid-column: 1 / -1;
+  margin: var(--chrome-inset) var(--chrome-inset) 0;
 }
 .public-header-inner {
   display: flex; align-items: center; gap: 24px; flex-wrap: nowrap;
@@ -123,6 +126,12 @@
 }
 .public-content { padding: 0; }
 
+/* Public shell inside the .app grid (header-on-top layout): the .public-app
+   fills its grid cell (the body row), and .public-main no longer reserves the
+   fixed-header clearance — the header is a real row above, not an overlay. */
+.app > .public-app { height: 100%; min-height: 0; }
+.app .public-main { padding: var(--chrome-inset); }
+
 /* The live "updated" pulse dot (public header) — emerald, distinct from the
    sidebar's --ok pulse below. */
 .public-updated .sync-pulse {
@@ -142,19 +151,25 @@
 .app {
   display: grid;
   grid-template-columns: calc(var(--sidebar-w) + 2 * var(--chrome-inset)) 1fr;
-  grid-template-rows: 100vh;
+  /* Row 1: optional full-width header (auto — collapses when absent, e.g. the
+     authed app has no top header → sidebar starts at the top). Row 2: the
+     sidebar + content body fills the rest. */
+  grid-template-rows: auto 1fr;
   height: 100vh;
 }
-.app.app-scroll { grid-template-rows: auto; height: auto; min-height: 100vh; align-items: start; }
+.app.app-scroll { grid-template-rows: auto auto; height: auto; min-height: 100vh; align-items: start; }
 
 #sidebar-mount { display: contents; }
 #sidebar-mount:empty { display: block; }
 
 .sidebar {
-  /* Floating glass card, detached on every side. */
+  /* Floating glass card, detached on every side. Fills its grid row (row 2,
+     below the header) rather than the whole viewport — min-height keeps it
+     full-height on header-less pages (the authed app). */
   margin: var(--chrome-inset);
   width: var(--sidebar-w);
-  height: calc(100vh - 2 * var(--chrome-inset));
+  height: calc(100% - 2 * var(--chrome-inset));
+  min-height: 0;
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);

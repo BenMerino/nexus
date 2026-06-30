@@ -55,14 +55,15 @@ function App() {
   const tenantName = statsPayload?.tenant.name ?? '';
   return (
     <div className="app">
+      {/* Row 1: full-width header on top. Row 2: floating sidebar + content. */}
+      {statsPayload && (
+        <TenantPublicHeader tenant={statsPayload.tenant} items={[]} currentId={view}
+          onNavigate={() => {}} yearRange={statsPayload.stats.yearRange}
+          lastUpdated={statsPayload.stats.lastUpdated}
+          search={<TenantSearch slug={slug} onSelectUnit={() => {}} />} />
+      )}
       <TenantSidebar tenantName={tenantName} view={view} navigate={navigate} hrefFor={hrefFor} />
       <div className="public-app">
-        {statsPayload && (
-          <TenantPublicHeader tenant={statsPayload.tenant} items={[]} currentId={view}
-            onNavigate={() => {}} yearRange={statsPayload.stats.yearRange}
-            lastUpdated={statsPayload.stats.lastUpdated}
-            search={<TenantSearch slug={slug} onSelectUnit={() => {}} />} />
-        )}
         <main className="public-main">
           <div className="public-content">
             {!statsPayload
