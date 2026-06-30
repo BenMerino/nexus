@@ -1,61 +1,88 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   dna-liquid.css — the LIQUID-GLASS DNA variant (opt-in via data-liquid on :root).
+   dna-liquid.css — the LIQUID-GLASS DNA variant (platform default; opt-out via
+   removing data-liquid on :root).
 
-   Ports the SVG-refraction technique (kube.io / ObaidQatan's liquid-glass lib) to
-   our own --glass-* surfaces: instead of a flat backdrop blur, the backdrop is
-   DISPLACED through an SVG feDisplacementMap — light bends at the pane edges
-   (refraction), the Apple "liquid glass" read. Framework-agnostic CSS + one inline
-   SVG filter; no React lib, no Tailwind/Framer deps.
+   Ports the SVG-refraction technique (kube.io / ObaidQatan's liquid-glass lib)
+   to our --glass-* surfaces: light bends at the pane edges (refraction), the
+   Apple "liquid glass" read. Framework-agnostic CSS + one inline SVG filter.
 
-   The displacement map is procedural: a radial gradient encoded into R (x-shift)
-   and G (y-shift) — strong at the rim, zero in the centre — so the backdrop
-   refracts only near the edges, like a real lens. (The reference precomputes 127
-   refraction rays; this radial approximation gives the same edge-bend read at a
-   fraction of the cost.)
+   WHY NOT backdrop-filter:url() — the reference (and our first attempt, reverted
+   in 7112ff9) refracts the BACKDROP via `backdrop-filter: url(#…)`, which only
+   works in Chrome/Edge behind an experimental flag — a no-op (plain blur) in
+   Safari/Firefox and unflagged Chrome. Useless for a platform-wide primitive.
 
-   CAVEAT: backdrop-filter:url(#…) is Chrome/Edge-only. The @supports guard scopes
-   the refraction there; Safari/Firefox keep our standard blur glass (the base
-   .surface recipe still applies — this only ADDS the filter where supported).
+   THE NO-FLAG APPROACH — refraction via `filter: url()` (universally supported)
+   on a NON-CONTENT overlay. Each glass surface gets a ::before painting only a
+   faint diagonal sheen; displacing THAT through the SVG map bends the sheen at
+   the rim (the lensed-edge read) without touching the element's real content —
+   text sits in a higher layer, never filtered, so it stays sharp. The base
+   .surface backdrop blur (dna-bridge.css) still does the frost; this ADDS the
+   bent-rim highlight. One path, identical in every browser, no feature-detection.
+
+   The displacement map is procedural (see dna-liquid.ts): a radial gradient
+   encoded into R (x-shift) and G (y-shift) — neutral at centre, ramped at the
+   rim — so displacement is 0 in the middle and max at the edge, like a lens.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root[data-liquid] {
-  /* Refraction strength + the displacement-map data-URI. --liquid-scale is the
-     one knob (feDisplacementMap scale = px of edge-bend). The map: a 2-stop
-     radial gradient, transparent-centre → R/G-encoded rim, so displacement is 0
-     at centre and max at the edge. */
+  /* The one knob: feDisplacementMap scale (px of edge-bend) on the overlay. */
   --liquid-scale: 60;
-  --liquid-blur: 6px;
 }
 
-/* The SVG filter lives in an injected <svg> (see dna-liquid mount); this rule
-   only switches the glass surfaces to USE it where backdrop-filter:url works. */
-@supports (backdrop-filter: url(#nexus-liquid)) or (-webkit-backdrop-filter: url(#nexus-liquid)) {
-  :root[data-liquid] .surface,
-  :root[data-liquid] .glass-surface,
-  :root[data-liquid] .public-header-seg,
-  :root[data-liquid] .sidebar,
-  :root[data-liquid] .card,
-  :root[data-liquid] .panel,
-  :root[data-liquid] .kpi,
-  :root[data-liquid] .tenant-rail {
-    /* refraction (displacement) + a lighter blur, instead of the heavy flat blur */
-    backdrop-filter: blur(var(--liquid-blur)) saturate(1.5) url(#nexus-liquid);
-    -webkit-backdrop-filter: blur(var(--liquid-blur)) saturate(1.5) url(#nexus-liquid);
-    /* a touch more translucent so the refracted backdrop reads through */
-    background-color: color-mix(in oklch, var(--tonal-1) 42%, transparent);
-  }
-  /* Bright specular rim — the lit edge of a glass lens (top-left light source). */
-  :root[data-liquid] .surface,
-  :root[data-liquid] .glass-surface,
-  :root[data-liquid] .public-header-seg,
-  :root[data-liquid] .sidebar,
-  :root[data-liquid] .card,
-  :root[data-liquid] .panel,
-  :root[data-liquid] .kpi,
-  :root[data-liquid] .tenant-rail {
-    box-shadow:
-      var(--shadow-sm),
-      inset 1px 1px 0 color-mix(in oklch, white 40%, transparent),
-      inset -1px -1px 0 color-mix(in oklch, white 12%, transparent);
-  }
+/* The glass surfaces that wear the refraction overlay. Outermost glass only —
+   nested .surface/.glass-surface drop their backdrop-filter (tonal stacking,
+   dna-bridge.css), so they read as flat tints and want no extra bent rim. */
+:root[data-liquid] .surface,
+:root[data-liquid] .glass-surface,
+:root[data-liquid] .card,
+:root[data-liquid] .panel,
+:root[data-liquid] .kpi,
+:root[data-liquid] .tenant-rail {
+  position: relative;
+  /* Bright specular rim — the lit edge of a glass lens (top-left light). */
+  box-shadow:
+    var(--shadow-sm),
+    inset 1px 1px 0 color-mix(in oklch, white 40%, transparent),
+    inset -1px -1px 0 color-mix(in oklch, white 12%, transparent);
 }
+
+/* The refraction overlay: paints a faint sheen, then displaces it. Because the
+   ::before's painted content is ONLY the gradient, the feDisplacementMap bends
+   the tint at the rim — refraction — and the element's text (a sibling in a
+   higher z layer) is untouched. */
+:root[data-liquid] .surface::before,
+:root[data-liquid] .glass-surface::before,
+:root[data-liquid] .card::before,
+:root[data-liquid] .panel::before,
+:root[data-liquid] .kpi::before,
+:root[data-liquid] .tenant-rail::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, white 22%, transparent),
+    transparent 38%,
+    transparent 62%,
+    color-mix(in oklch, white 10%, transparent)
+  );
+  filter: url(#nexus-liquid-edge);
+}
+
+/* Real content rides above the overlay (the ::before is z-index 0). */
+:root[data-liquid] .surface > *,
+:root[data-liquid] .glass-surface > *,
+:root[data-liquid] .card > *,
+:root[data-liquid] .panel > *,
+:root[data-liquid] .kpi > *,
+:root[data-liquid] .tenant-rail > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Nested glass drops the overlay too — only the outermost pane refracts. */
+:root[data-liquid] .surface .surface::before,
+:root[data-liquid] .glass-surface .glass-surface::before { content: none; }

@@ -1,18 +1,20 @@
 // Injects the liquid-glass SVG refraction filter once per page. The filter is
-// referenced by dna-liquid.css as `backdrop-filter: url(#nexus-liquid)`, so the
-// <filter> must exist in the DOM. feImage loads a procedural displacement map (a
-// radial gradient: neutral grey #808080 = no shift at centre, R/G ramp at the rim
-// = max edge-bend), then feDisplacementMap refracts the backdrop through it.
+// referenced by dna-liquid.css as `filter: url(#nexus-liquid-edge)` on each
+// glass surface's ::before overlay, so the <filter> must exist in the DOM.
+// feImage loads a procedural displacement map (a radial gradient: neutral grey
+// #808080 = no shift at centre, R/G ramp at the rim = max edge-bend),
+// feDisplacementMap bends the overlay sheen through it, then a small
+// feGaussianBlur softens the bent rim so it reads as a glass lens edge.
 //
-// Self-mounting + idempotent; only does work when data-liquid is (or becomes) set,
-// but cheap enough to always inject the inert <svg> (display:none). Chrome/Edge
-// only honour backdrop-filter:url — elsewhere it's a no-op (CSS @supports guards).
+// `filter: url()` is supported in EVERY browser (unlike backdrop-filter:url(),
+// which is Chrome/Edge-flag-only — see dna-liquid.css header). Self-mounting +
+// idempotent; cheap enough to always inject the inert <svg> (display:none).
 
-const FILTER_ID = "nexus-liquid";
+const FILTER_ID = "nexus-liquid-edge";
 
 // Displacement map: a radial gradient encoded so the centre is neutral (128,128
 // → zero displacement) and the rim ramps the R (x) and G (y) channels apart →
-// the backdrop bends outward at the edges, like a lens. Inline SVG data-URI.
+// the sheen bends outward at the edges, like a lens. Inline SVG data-URI.
 const DISPLACEMENT_MAP =
   "data:image/svg+xml," +
   encodeURIComponent(
@@ -62,9 +64,17 @@ function injectFilter(): void {
   feDisp.setAttribute("scale", scale || "60");
   feDisp.setAttribute("xChannelSelector", "R");
   feDisp.setAttribute("yChannelSelector", "G");
+  feDisp.setAttribute("result", "bent");
+
+  // Soften the bent rim so the overlay reads as a glass lens edge, not a hard
+  // displaced tint.
+  const feBlur = document.createElementNS(ns, "feGaussianBlur");
+  feBlur.setAttribute("in", "bent");
+  feBlur.setAttribute("stdDeviation", "1.5");
 
   filter.appendChild(feImage);
   filter.appendChild(feDisp);
+  filter.appendChild(feBlur);
   svg.appendChild(filter);
   document.body.appendChild(svg);
 }
