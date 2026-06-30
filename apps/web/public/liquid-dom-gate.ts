@@ -12,14 +12,17 @@ function supportsLiquidDom(): boolean {
   if (typeof window === "undefined") return false;
   // WebGPU present?
   if (!("gpu" in navigator)) return false;
-  // HTML-in-Canvas: the canvas must accept the `layoutsubtree` attribute AND the
-  // 2D/GPU context must expose element-drawing. Feature-detect the attribute path
-  // liquid-dom uses (setAttribute("layoutsubtree")) by probing for the API that
-  // backs it — `CanvasRenderingContext2D.prototype.drawElement` (HTML-in-Canvas).
-  const proto = (window as { CanvasRenderingContext2D?: { prototype?: object } })
-    .CanvasRenderingContext2D?.prototype;
-  const hasDrawElement = !!proto && "drawElement" in proto;
-  return hasDrawElement;
+  // HTML-in-Canvas: the drawElement SYMBOL exists in Chrome even with the flag
+  // OFF — so presence ≠ enabled. Actually INVOKE it on a throwaway canvas; flag
+  // off → it throws → caught → unsupported, so liquid-dom never loads and never
+  // shows its "enable the HTML-in-Canvas flag" takeover screen.
+  try {
+    const ctx = document.createElement("canvas").getContext("2d") as
+      (CanvasRenderingContext2D & { drawElement?: (el: Element, x: number, y: number) => void }) | null;
+    if (!ctx || typeof ctx.drawElement !== "function") return false;
+    ctx.drawElement(document.createElement("div"), 0, 0);
+    return true;
+  } catch { return false; }
 }
 
 export async function initLiquidDom(): Promise<void> {

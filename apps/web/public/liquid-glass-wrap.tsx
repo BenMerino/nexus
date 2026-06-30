@@ -8,11 +8,24 @@ import React, { useState, useEffect } from 'react';
  * Gated + lazy: the 1.2 MB liquid-dom core is only imported on a supporting
  * browser. Used on /dna.html to demo composed components through liquid-dom. */
 
+// The drawElement SYMBOL exists in Chrome even when the HTML-in-Canvas flag is
+// OFF — so presence ≠ enabled. Actually INVOKE it on a throwaway canvas; if the
+// flag is off it throws (or is a no-op that errors), and we treat it unsupported
+// so liquid-dom never loads + shows its "enable the flag" takeover screen.
+let _cached: boolean | null = null;
 function supported(): boolean {
+  if (_cached !== null) return _cached;
+  _cached = false;
   if (typeof window === 'undefined' || !('gpu' in navigator)) return false;
-  const proto = (window as { CanvasRenderingContext2D?: { prototype?: object } })
-    .CanvasRenderingContext2D?.prototype;
-  return !!proto && 'drawElement' in proto;
+  try {
+    const ctx = document.createElement('canvas').getContext('2d') as
+      (CanvasRenderingContext2D & { drawElement?: (el: Element, x: number, y: number) => void }) | null;
+    if (!ctx || typeof ctx.drawElement !== 'function') return false;
+    // Probe: a real call. Flag off → throws → caught → unsupported.
+    ctx.drawElement(document.createElement('div'), 0, 0);
+    _cached = true;
+  } catch { _cached = false; }
+  return _cached;
 }
 
 type LiquidParts = typeof import('@liquid-dom/react');
