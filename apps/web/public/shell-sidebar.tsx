@@ -6,14 +6,18 @@ import type { CurrentUser } from './shell-helpers';
 
 export interface NavLink { href: string; label: string; icon: keyof typeof Ico; section?: string; }
 
+// Entity-centric nav: one item per DGA domain entity, in dependency order
+// (the whole-tenant view, then org → people → outputs → venues). The graph
+// explorer + projects + submit stay as workspace tools below the entities.
 const DEFAULT_LINKS: NavLink[] = [
-  { href: '/dashboard.html',      label: 'Dashboard',      icon: 'home',   section: 'Workspace' },
-  { href: '/overview.html',       label: 'Graph explorer', icon: 'graph',  section: 'Workspace' },
-  { href: '/explore.html',        label: 'Explore',        icon: 'search', section: 'Workspace' },
-  { href: '/collaborators.html',  label: 'Collaborators',  icon: 'people', section: 'Workspace' },
-  { href: '/org-scheme.html',     label: 'Organization',   icon: 'graph',  section: 'Workspace' },
-  { href: '/proyectos.html',      label: 'Projects',       icon: 'paper',  section: 'Workspace' },
-  { href: '/submit.html',         label: 'Submit DOI',     icon: 'submit', section: 'Workspace' },
+  { href: '/dashboard.html',   label: 'Overview',   icon: 'home',   section: 'Entities' },
+  { href: '/faculties.html',   label: 'Faculties',  icon: 'graph',  section: 'Entities' },
+  { href: '/academics.html',   label: 'Academics',  icon: 'people', section: 'Entities' },
+  { href: '/papers.html',      label: 'Papers',     icon: 'paper',  section: 'Entities' },
+  { href: '/journals.html',    label: 'Journals',   icon: 'tag',    section: 'Entities' },
+  { href: '/overview.html',    label: 'Graph explorer', icon: 'search', section: 'Workspace' },
+  { href: '/proyectos.html',   label: 'Projects',   icon: 'paper',  section: 'Workspace' },
+  { href: '/submit.html',      label: 'Submit DOI', icon: 'submit', section: 'Workspace' },
 ];
 const SUPERADMIN_LINKS: NavLink[] = [
   { href: '/admin.html',         label: 'Admin',         icon: 'build',  section: 'Admin' },

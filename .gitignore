@@ -17,3 +17,8 @@ nexus.zip
 
 # Engine sync cache (Zincro mirror source)
 .engine-src/
+
+# session scratch (logs, experiments) — never commit
+scratchpad/
+.probe.mjs
+.nprobe.mjs

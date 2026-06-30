@@ -2,16 +2,16 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Collaborators — Nexus</title>
+  <title>Journals — Nexus</title>
   <link rel="stylesheet" href="/shared.css">
 </head>
-<body>
+<body class="shell-fixed">
   <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
-  <div class="app app-scroll">
-    <div id="sidebar-mount" data-path="/collaborators.html"></div>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/journals.html"></div>
     <main class="main">
-      <div id="collaborators-root"></div>
-      <script type="module" src="/collaborators.tsx"></script>
+      <div id="journals-root"></div>
+      <script type="module" src="/journals.tsx"></script>
     </main>
   </div>
   <script type="module" src="/shell-mount.tsx"></script>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Faculties — Nexus</title>
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    /* Page-specific org-tree styling (not chrome — N9 covers header/sidebar/shell
+       only). Faculty/department rows + metric pills. */
+    .org-tree { display: flex; flex-direction: column; gap: 2px; }
+    .org-node { display: flex; flex-direction: column; }
+    .org-row { display: flex; align-items: center; gap: 10px; padding: 9px 6px; position: relative; }
+    .org-row:hover { background: var(--bg-inset); }
+    .org-twist { font-size: 9px; color: var(--fg-dim); width: 12px; flex: none; }
+    .org-name { font-size: 14px; }
+    .org-name.fac { font-weight: 500; }
+    .org-name.dep { color: var(--fg-muted); font-size: 13px; }
+    .org-kind { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim); }
+    .org-metrics { margin-left: auto; display: flex; gap: 6px; flex: none; }
+    .org-pill { font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim); border: 1px solid var(--border-soft); padding: 2px 8px; border-radius: var(--radius-pill); white-space: nowrap; }
+    .org-children { display: flex; flex-direction: column; }
+  </style>
+</head>
+<body class="shell-fixed">
+  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
+  <div class="app">
+    <div id="sidebar-mount" data-path="/faculties.html"></div>
+    <main class="main">
+      <div id="faculties-root"></div>
+      <script type="module" src="/faculties.tsx"></script>
+    </main>
+  </div>
+  <script type="module" src="/shell-mount.tsx"></script>
+  <script type="module" src="/spa-router.js"></script>
+</body>
+</html>
