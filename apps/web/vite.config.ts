@@ -28,6 +28,11 @@ const spaRouteFallback = {
   configureServer(server: import("vite").ViteDevServer) {
     server.middlewares.use((req, _res, next) => {
       const url = (req.url || "").split("?")[0];
+      // Public tenant routes — mirror Caddy in dev so the /t/:slug[/<entity>]
+      // path form serves tenant.html (and /t/:slug/a/:orcid serves author.html),
+      // not the SPA index. Without this, dev only works via ?slug= query.
+      if (/^\/t\/[^/]+\/a\/[^/]+$/.test(url)) { req.url = "/author.html"; return next(); }
+      if (/^\/t\/[^/]+(\/(faculties|academics|papers|journals))?$/.test(url)) { req.url = "/tenant.html"; return next(); }
       // extensionless path (a route, not an asset/.html), e.g. /dashboard
       if (/^\/[^.]*$/.test(url) && url !== "/") {
         const stub = resolve(SRC, `${url.slice(1)}.html`);

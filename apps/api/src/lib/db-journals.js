@@ -4,7 +4,7 @@
 // admin scope sees the whole tenant. One row per venue with paper/citation
 // rollups + the four indexation flags (WoS/Scopus/DOAJ/SciELO).
 const { sql } = require("./sql");
-const { isPersonalScope } = require("./db");
+const { isPersonalScope } = require("./scope");
 
 async function listJournals(scope) {
   const { tenantId, orcid } = scope;
