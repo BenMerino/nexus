@@ -4,8 +4,6 @@ import { AuthorsTable } from './tenant-authors';
 import { TenantWorks } from './tenant-works';
 import { TenantJournals } from './tenant-journals';
 import { ScopedSummary } from './tenant-summary';
-import { TenantScopeRail } from './tenant-scope-rail';
-import { useUnitScope } from './use-unit-scope';
 import { TenantLoadingBody } from './tenant-loading';
 import { buildTenantCharts } from './tenant-builders';
 import type { useTenantData } from './tenant-data';
@@ -30,30 +28,15 @@ function chartsFor(payload: Payload) {
   return c;
 }
 
+// Overview = whole-tenant KPIs + charts. The unit picker lives on the Faculties
+// view now (FacultiesView), so Overview is single-column, always tenant-wide.
 export function OverviewView({ slug, payload }: { slug: string; payload: Payload }) {
-  const { initialUnitKey, unit, setUnit, unitReady, markUnitReady } = useUnitScope();
   return (
     <>
-      <ScopedSummary slug={slug} stats={payload.stats} tenantId={payload.tenant.id} unit={unit} />
-      <div className="tenant-layout">
-        <aside className="tenant-rail">
-          <div className="tenant-rail-head">
-            <h2 className="tenant-rail-title">{ES.scopeRail.title}</h2>
-            <p className="tenant-rail-note">{ES.scopeRail.note}</p>
-          </div>
-          <div className="tenant-rail-list">
-            <TenantScopeRail slug={slug} tenantName={payload.tenant.name} selected={unit} onSelect={setUnit}
-              initialKey={initialUnitKey} onInitialResolved={markUnitReady} />
-          </div>
-        </aside>
-        <div className="tenant-content">
-          {unitReady ? (
-            <Suspense fallback={<TenantLoadingBody />}>
-              <TenantBody slug={slug} stats={payload.stats} tenantId={payload.tenant.id} charts={chartsFor(payload)} unit={unit} />
-            </Suspense>
-          ) : <TenantLoadingBody />}
-        </div>
-      </div>
+      <ScopedSummary slug={slug} stats={payload.stats} tenantId={payload.tenant.id} unit={null} />
+      <Suspense fallback={<TenantLoadingBody />}>
+        <TenantBody slug={slug} stats={payload.stats} tenantId={payload.tenant.id} charts={chartsFor(payload)} unit={null} />
+      </Suspense>
     </>
   );
 }
@@ -121,7 +104,12 @@ export function FacultiesView({ slug }: { slug: string }) {
   }, [slug]);
   return (
     <section className="card">
-      <SectionHead eyebrow="Institution domain" title="Faculties & institutes" />
+      {/* The scope rail head moved here from the Overview — Faculties IS the
+          unit picker. The org tree below is the browsable unit structure. */}
+      <div className="tenant-rail-head">
+        <h2 className="tenant-rail-title">{ES.scopeRail.title}</h2>
+        <p className="tenant-rail-note">{ES.scopeRail.note}</p>
+      </div>
       {err && <div className="status error">Error: {err}</div>}
       <div className="org-tree">
         {faculties
