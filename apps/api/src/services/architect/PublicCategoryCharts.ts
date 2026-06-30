@@ -43,7 +43,8 @@ export async function composeTopJournals(tenantId: number, unitKey?: string | nu
   // dashboard-stats.getTopJournals honors org-unit scope via resolvePubFilter
   // (rows: {value: name, key: id, count}); the public-stats variant was
   // tenant-only. Same entity-model SQL, now unit-aware.
-  const rows: Array<{ value: string; count: string | number }> = await getTopJournals(publicScope(tenantId, unitKey));
+  const ror: string | null = await getTenantRor(tenantId);
+  const rows: Array<{ value: string; count: string | number }> = await getTopJournals(publicScope(tenantId, ror, unitKey));
   if (!rows.length) return null;
   return {
     type: "bar",
@@ -57,15 +58,18 @@ export async function composeTopJournals(tenantId: number, unitKey?: string | nu
 // A tenant-public scope: tenantId only, no orcid → scopedPubFilter narrows to
 // the whole tenant (the public page's read scope). An optional unitKey narrows
 // further to one org unit (resolvePubFilter applies it in the stats readers).
-const publicScope = (tenantId: number, unitKey?: string | null) =>
-  ({ tenantId, orcid: null, ror: null, role: "public", unitKey: unitKey ?? null });
+// `ror` = the tenant's home ROR. Public scope shows only ROR-attributable papers
+// (scopedPubFilter gates on the affiliated_with edge), so the caller resolves it
+// via getTenantRor. Was `ror: null` (tenant-wide) before the public-ROR gate.
+const publicScope = (tenantId: number, ror: string | null, unitKey?: string | null) =>
+  ({ tenantId, orcid: null, ror, role: "public", unitKey: unitKey ?? null });
 
 /** publications.collaborators — top collaborating institutions (ranked bar).
  *  Passes the tenant's home ROR so getCollaborations excludes the tenant from
  *  its own collaborators list (a tenant isn't its own collaborator). */
 export async function composeCollaborators(tenantId: number, unitKey?: string | null): Promise<CategoryDirective | null> {
   const ror: string | null = await getTenantRor(tenantId);
-  const rows: Array<{ value: string; count: string | number }> = await getCollaborations({ ...publicScope(tenantId, unitKey), ror });
+  const rows: Array<{ value: string; count: string | number }> = await getCollaborations(publicScope(tenantId, ror, unitKey));
   if (!rows.length) return null;
   return {
     type: "bar",
@@ -80,7 +84,8 @@ export async function composeCollaborators(tenantId: number, unitKey?: string | 
  *  bar). The institutional "what do we research" panel; counts distinct
  *  publications per concept, unit-scoped like the other categorical kinds. */
 export async function composeResearchAreas(tenantId: number, unitKey?: string | null): Promise<CategoryDirective | null> {
-  const rows: Array<{ name: string; count: number }> = await getResearchAreas(publicScope(tenantId, unitKey));
+  const ror: string | null = await getTenantRor(tenantId);
+  const rows: Array<{ name: string; count: number }> = await getResearchAreas(publicScope(tenantId, ror, unitKey));
   if (!rows.length) return null;
   return {
     type: "bar",
@@ -96,7 +101,8 @@ export async function composeResearchAreas(tenantId: number, unitKey?: string | 
  *  geo family shades by value); ships full distribution (no top-N slice) so the
  *  whole map can shade. */
 export async function composeCountriesMap(tenantId: number, unitKey?: string | null): Promise<ChoroplethDirective | null> {
-  const rows: Array<{ country: string; count: number }> = await getCountries(publicScope(tenantId, unitKey));
+  const ror: string | null = await getTenantRor(tenantId);
+  const rows: Array<{ country: string; count: number }> = await getCountries(publicScope(tenantId, ror, unitKey));
   if (!rows.length) return null;
   return {
     type: "choropleth",

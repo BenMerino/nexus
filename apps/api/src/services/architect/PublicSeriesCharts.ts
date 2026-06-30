@@ -1,5 +1,6 @@
 const { buildKpiSparks, citesByYear, withProjection } = require("../../lib/public-kpi-sparks");
 const { computeVelocity, buildVelocitySeries } = require("../../lib/portfolio-velocity");
+const { getTenantRor } = require("../../lib/db-users");
 
 /* ── PublicSeriesCharts (Composer) ──────────────────────────
  * Server-side composers for the public tenant page's PER-YEAR SERIES charts:
@@ -9,10 +10,12 @@ const { computeVelocity, buildVelocitySeries } = require("../../lib/portfolio-ve
  * resolvePubFilter, and registered as catalog kinds in AnalyticsCatalog.
  * ──────────────────────────────────────────────────────────── */
 
-// A tenant-public scope: tenantId only, no orcid → tenant-wide; a unitKey
-// narrows to one org unit (resolvePubFilter applies it in the data lib).
-const publicScope = (tenantId: number, unitKey?: string | null) =>
-  ({ tenantId, orcid: null, ror: null, role: "public", unitKey: unitKey ?? null });
+// A tenant-public scope: no orcid → tenant-wide; a unitKey narrows to one org
+// unit (resolvePubFilter applies it in the data lib). `ror` is the tenant's home
+// ROR — public scope shows only ROR-attributable papers (scopedPubFilter gates
+// on the affiliated_with edge), so the caller resolves it via getTenantRor.
+const publicScope = (tenantId: number, ror: string | null, unitKey?: string | null) =>
+  ({ tenantId, orcid: null, ror, role: "public", unitKey: unitKey ?? null });
 
 /** KPI-sparks directive — per-year series behind the public KPI cards. PLAIN
  *  data (no atoms/query/toggles) by construction, so the card renders it with a
@@ -29,7 +32,8 @@ export interface KpiSparksDirective {
  *  numbers. Returns plain series (no atoms/query/toggles) → the card draws a
  *  static micro-SVG, never the interactive engine. */
 export async function composeKpiSparks(tenantId: number, unitKey?: string | null): Promise<KpiSparksDirective | null> {
-  const series = await buildKpiSparks(publicScope(tenantId, unitKey));
+  const ror: string | null = await getTenantRor(tenantId);
+  const series = await buildKpiSparks(publicScope(tenantId, ror, unitKey));
   const any = series.publications.length || series.citations.length || series.authors.length || series.oa.length;
   if (!any) return null;
   return { type: "kpi-sparks", series };
@@ -54,7 +58,8 @@ const TREND_LABEL = { rising: "rising", flat: "flat", falling: "falling" } as co
  *  continuous (no false dip); observed solid, partial+projected dashed (the
  *  engine's status→style); 'area' fills a gradient underneath. */
 export async function composeVelocity(tenantId: number, unitKey?: string | null): Promise<VelocityDirective | null> {
-  return velocityFromScope(publicScope(tenantId, unitKey));
+  const ror: string | null = await getTenantRor(tenantId);
+  return velocityFromScope(publicScope(tenantId, ror, unitKey));
 }
 
 /** The scope-driven core, shared by the public kind (tenant/unit scope) and the

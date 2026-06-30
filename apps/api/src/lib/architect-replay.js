@@ -1,4 +1,6 @@
 const { sql } = require("./sql");
+const { getTenantRor } = require("./db-users");
+const { normRor } = require("./entity-normalize");
 
 // Atom-based replay backend for the newer graph-engine.
 //
@@ -52,11 +54,19 @@ const PUBLICATION_TIMELINE_KINDS = new Set([
 
 async function timelineSpan(tenantId, kind) {
   if (!KINDS[kind] && !PUBLICATION_TIMELINE_KINDS.has(kind)) throw unknownKind(kind);
+  // Public ROR gate: the timeline shows only papers attributable to the tenant's
+  // institution (an affiliated_with edge to its ROR) — consistent with the KPI
+  // cards (stats-scope.scopedPubFilter). `${ror} IS NULL OR …` keeps the gate a
+  // no-op when the tenant has no ROR (fall back to tenant-wide, never hide all).
+  const ror = normRor(await getTenantRor(tenantId));
   const { rows } = await sql`
     SELECT MIN(SUBSTRING(published FROM 1 FOR 10)) AS earliest
-    FROM doi_records
+    FROM doi_records d
     WHERE tenant_id = ${tenantId}
-      AND published ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'`;
+      AND published ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+      AND (${ror}::text IS NULL OR EXISTS (
+        SELECT 1 FROM affiliated_with aw JOIN institutions i ON i.id = aw.institution_id
+        WHERE aw.publication_id = d.id AND i.tenant_id = ${tenantId} AND i.ror = ${ror}))`;
   const today = todayIso();
   const earliest = rows[0]?.earliest || today;
   return { earliest, today, totalDays: daysBetween(earliest, today) + 1 };
@@ -66,7 +76,7 @@ async function timelineSpan(tenantId, kind) {
 // query window. One atom per day that has >=1 publication; key = epoch-day
 // index from `earliest`, iso = that day, value = count. The client folds these
 // into day/week/month/year buckets at render time via aggregator 'sum'.
-async function buildPublicationAtoms(tenantId, query, span) {
+async function buildPublicationAtoms(tenantId, query, span, ror = null) {
   const windowDays = query.windowDays ?? null;
   const asOf = query.asOf || span.today;
   // half-open [start, end+1d): end is asOf; start is asOf-windowDays, or genesis
@@ -74,13 +84,18 @@ async function buildPublicationAtoms(tenantId, query, span) {
     ? span.earliest
     : isoMinusDays(asOf, windowDays);
 
+  // Same public ROR gate as timelineSpan (null ror → tenant-wide no-op).
+  const gate = normRor(ror);
   const { rows } = await sql`
     SELECT SUBSTRING(published FROM 1 FOR 10) AS iso, COUNT(*)::int AS n
-    FROM doi_records
+    FROM doi_records d
     WHERE tenant_id = ${tenantId}
       AND published ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
       AND SUBSTRING(published FROM 1 FOR 10) >= ${start}
       AND SUBSTRING(published FROM 1 FOR 10) <= ${asOf}
+      AND (${gate}::text IS NULL OR EXISTS (
+        SELECT 1 FROM affiliated_with aw JOIN institutions i ON i.id = aw.institution_id
+        WHERE aw.publication_id = d.id AND i.tenant_id = ${tenantId} AND i.ror = ${gate}))
     GROUP BY 1 ORDER BY 1`;
 
   // key is HOURS-since-anchor (engine contract, fold-atoms.ts): daily atoms
@@ -109,7 +124,8 @@ async function recompose(query) {
   if (!KINDS[kind]) throw unknownKind(kind);
 
   const span = await timelineSpan(tenantId, kind);
-  const atoms = await buildPublicationAtoms(tenantId, query, span);
+  const ror = await getTenantRor(tenantId);
+  const atoms = await buildPublicationAtoms(tenantId, query, span, ror);
   return {
     type: "bar",
     title: "Publications by Year",

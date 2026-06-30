@@ -7,10 +7,9 @@
 // filter that recurred across the stats/list readers. Callers using sql.query
 // append their own params after f.params (offset by f.params.length).
 
-const { sql } = require("./sql");
 const { isPersonalScope } = require("./scope");
-const { normOrcid } = require("./entity-normalize");
-const { nameKey, parseUnitKey } = require("./org-units");
+const { normOrcid, normRor } = require("./entity-normalize");
+const { unitPubFilter, unitOrcids } = require("./stats-unit-scope");
 
 function scopedPubFilter(scope) {
   if (isPersonalScope(scope)) {
@@ -20,6 +19,23 @@ function scopedPubFilter(scope) {
         SELECT s.publication_id FROM authorship s JOIN authors a ON a.id = s.author_id
         WHERE a.orcid = $1 AND a.tenant_id = $2)`,
       params: [normOrcid(scope.orcid), scope.tenantId],
+    };
+  }
+  // Public scope (the tenant's PUBLIC URL) shows only data attributable to the
+  // tenant's institution: a publication counts iff it carries an affiliated_with
+  // edge to an institution whose ROR is the tenant's own. This excludes papers a
+  // researcher published while at a PRIOR institution (ingested by ORCID-roster
+  // but never UTalca-affiliated) — the DGA rule "the public URL gives only data
+  // attributable to the ROR". Admin scope (below) still sees the whole tenant
+  // corpus. The ROR must be present in scope (handler/composer resolves it); if
+  // it's absent we fall through to tenant-wide rather than hide everything.
+  const ror = scope && scope.role === "public" ? normRor(scope.ror) : null;
+  if (ror) {
+    return {
+      where: `p.tenant_id = $1 AND EXISTS (
+        SELECT 1 FROM affiliated_with aw JOIN institutions i ON i.id = aw.institution_id
+        WHERE aw.publication_id = p.id AND i.tenant_id = $1 AND i.ror = $2)`,
+      params: [scope.tenantId, ror],
     };
   }
   return { where: `p.tenant_id = $1`, params: [scope.tenantId] };
@@ -38,67 +54,6 @@ function personalPaperFilter(idCol, orcid, tenantId, startIdx) {
   };
 }
 
-// Resolve an org-unit `unitKey` to a publications WHERE fragment scoping to the
-// papers authored by academics in that faculty/department. Async because it
-// resolves the key against THIS tenant's own roster literals (accent-safe,
-// JS-side via nameKey) — so a key forged from another tenant matches nothing
-// (N1: never trust the raw key as SQL; it only ever selects from this tenant's
-// faculty/department strings). A faculty-level key rolls up all its departments
-// (matches on faculty only); a dept-level key matches faculty + department.
-// Returns null if the key is malformed or matches no unit (caller falls back to
-// the tenant-wide filter rather than silently returning everything).
-async function unitPubFilter(unitKey, tenantId) {
-  const parsed = parseUnitKey(unitKey);
-  if (!parsed) return null;
-
-  // Distinct faculty/department literals this tenant actually has, so we match
-  // on real strings (the unitKey carries normalized keys, the DB holds the
-  // original accented literals).
-  const { rows } = await sql`
-    SELECT DISTINCT faculty, department FROM users
-    WHERE tenant_id = ${tenantId} AND role = 'academic' AND profile_category IS NOT NULL`;
-
-  // Collect the literal (faculty, department) pairs whose normalized keys match.
-  const facLits = new Set();
-  const pairLits = []; // [faculty, department] for dept-level keys
-  for (const r of rows) {
-    const fk = nameKey(r.faculty);
-    if (parsed.level === "faculty" && fk === parsed.facultyKey) facLits.add(r.faculty);
-    else if (parsed.level === "dept" && fk === parsed.facultyKey && nameKey(r.department) === parsed.deptKey) {
-      pairLits.push([r.faculty, r.department]);
-    } else if (parsed.level === "other" && nameKey(r.department || r.faculty) === parsed.subKey) {
-      // "Otras unidades" children: the unit literal lives in department, or in
-      // faculty when the person is filed at the (non-academic) faculty level.
-      pairLits.push([r.faculty, r.department]);
-    }
-  }
-
-  // Build the user-side predicate from the matched literals.
-  let userWhere;
-  const params = [tenantId];
-  if (parsed.level === "faculty") {
-    if (facLits.size === 0) return null;
-    const ph = [...facLits].map((lit) => { params.push(lit); return `$${params.length}`; });
-    userWhere = `u.faculty IN (${ph.join(", ")})`;
-  } else {
-    if (pairLits.length === 0) return null;
-    const ph = pairLits.map(([f, d]) => {
-      params.push(f, d);
-      return `(u.faculty IS NOT DISTINCT FROM $${params.length - 1} AND u.department IS NOT DISTINCT FROM $${params.length})`;
-    });
-    userWhere = ph.join(" OR ");
-  }
-
-  return {
-    where: `p.id IN (
-      SELECT s.publication_id FROM authorship s
-      JOIN authors a ON a.id = s.author_id
-      JOIN users u ON u.orcid = a.orcid AND u.tenant_id = $1
-      WHERE ${userWhere})`,
-    params,
-  };
-}
-
 // Async filter resolver the stats readers use: when scope.unitKey is present
 // it narrows to that org unit (async — needs a roster lookup); otherwise it
 // returns the plain sync scopedPubFilter result. A unitKey that resolves to no
@@ -114,28 +69,6 @@ async function resolvePubFilter(scope) {
   return scopedPubFilter(scope);
 }
 
-// Resolve an org-unit `unitKey` to the SET of academic ORCIDs that belong to
-// that unit (the unit's members, not their papers). Used to filter the author
-// directory to a faculty/department. Same accent-safe, this-tenant-only roster
-// resolution as unitPubFilter (N1: matches only this tenant's literals). Returns
-// null for a malformed/unmatched key so callers fall back to the full directory.
-async function unitOrcids(unitKey, tenantId) {
-  const parsed = parseUnitKey(unitKey);
-  if (!parsed) return null;
-  const { rows } = await sql`
-    SELECT faculty, department, orcid FROM users
-    WHERE tenant_id = ${tenantId} AND role = 'academic' AND profile_category IS NOT NULL
-      AND orcid IS NOT NULL`;
-  const out = new Set();
-  for (const r of rows) {
-    const fk = nameKey(r.faculty);
-    const match =
-      parsed.level === "faculty" ? fk === parsed.facultyKey
-      : parsed.level === "dept" ? (fk === parsed.facultyKey && nameKey(r.department) === parsed.deptKey)
-      : nameKey(r.department || r.faculty) === parsed.subKey; // "other"
-    if (match) out.add(normOrcid(r.orcid));
-  }
-  return out.size ? out : null;
-}
-
+// unitPubFilter + unitOrcids now live in stats-unit-scope.js (N5); re-exported
+// here so existing `require("./stats-scope")` callers keep their import path.
 module.exports = { scopedPubFilter, personalPaperFilter, unitPubFilter, resolvePubFilter, unitOrcids };

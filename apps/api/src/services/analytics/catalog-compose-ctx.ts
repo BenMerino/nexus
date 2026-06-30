@@ -13,9 +13,21 @@ export const replay = require("../../lib/architect-replay") as {
   recompose: (query: CatalogQuery) => Promise<unknown>;
 };
 
-// A tenant-public ActorContext from a wire query: tenantId only, no orcid →
-// the composer's scope filter narrows to the whole tenant (not a person), or to
-// one org unit when the query carries a drill-down `unit` key. Single fan-out
-// point: every public metric flows through here, so all charts inherit unit scope.
-export const publicCtx = (q: CatalogQuery): ActorContext =>
-  ({ tenantId: parseInt(q.tenantId, 10), orcid: null, ror: null, role: "public", unitKey: q.unit ?? null } as unknown as ActorContext);
+// architect-replay's sibling lib resolves the tenant's home ROR — public scope
+// shows only ROR-attributable papers (scopedPubFilter gates on the
+// affiliated_with edge), so every public ctx must carry it, not null.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { getTenantRor } = require("../../lib/db-users") as {
+  getTenantRor: (id: number) => Promise<string | null>;
+};
+
+// A tenant-public ActorContext from a wire query: no orcid → the composer's
+// scope filter narrows to the whole tenant (not a person), gated to the tenant's
+// ROR for public reads, or to one org unit when the query carries a drill-down
+// `unit` key. Async because it resolves the home ROR. Single fan-out point:
+// every public metric flows through here, so all charts inherit ROR + unit scope.
+export const publicCtx = async (q: CatalogQuery): Promise<ActorContext> => {
+  const tenantId = parseInt(q.tenantId, 10);
+  const ror = await getTenantRor(tenantId);
+  return ({ tenantId, orcid: null, ror, role: "public", unitKey: q.unit ?? null } as unknown as ActorContext);
+};
