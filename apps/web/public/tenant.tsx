@@ -10,6 +10,7 @@ import { usePublicRoute, type PublicView } from './use-public-route';
 import { OverviewView, AcademicsView, PapersView, JournalsView, FacultiesView, UnitDetailView } from './tenant-views';
 import { ES } from './tenant-i18n';
 import { bootStreamBridge } from '../architect/websocket-connector';
+import './dna-liquid';  // self-mounting: injects the liquid-glass SVG refraction filter
 import { perfMark, perfAutoFlush } from './perf-marks';
 
 perfMark('boot'); // module evaluated — bundles parsed, app about to mount
@@ -95,6 +96,10 @@ function mount() {
   tenantRoot = createRoot(el);
   tenantRoot.render(<App />);
 }
+// Enable the liquid-glass DNA variant on the tenant page (SVG refraction on the
+// glass surfaces; @supports-guarded to Chrome/Edge, falls back to blur glass).
+document.documentElement.setAttribute('data-liquid', '');
+
 (window as any).__nexusMounts = (window as any).__nexusMounts || {};
 (window as any).__nexusMounts[new URL(import.meta.url).pathname] = mount;
 mount();
