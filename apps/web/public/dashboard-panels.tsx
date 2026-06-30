@@ -1,5 +1,5 @@
 import React from 'react';
-import { SectionHead, Ico, Skeleton } from './ui-kit';
+import { SectionHead, Ico, Skeleton, Tag } from './ui-kit';
 import type { DashboardData } from './dashboard-builders';
 import { TYPE_DISPLAY_LABELS } from './type-labels';
 
@@ -23,7 +23,7 @@ export function RecentlyIndexed({ data }: { data: DashboardData }) {
             {papers.map(p => (
               <tr key={p.doi}>
                 <td className="paper-title">{p.title || '(untitled)'}<div className="mono paper-doi">{p.doi}</div></td>
-                <td>{p.type ? <span className="tag type mono">{TYPE_DISPLAY_LABELS[p.type] || p.type}</span> : '—'}</td>
+                <td>{p.type ? <Tag tone="type" mono>{TYPE_DISPLAY_LABELS[p.type] || p.type}</Tag> : '—'}</td>
                 <td>{p.journal || '—'}</td>
                 <td>{p.published?.slice(0, 4) || '—'}</td>
                 <td>{p.citation_count ?? 0}</td>

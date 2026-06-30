@@ -29,17 +29,27 @@ export { SectionHead } from './SectionHead';
 // nexus icon dictionary (not a Zincro primitive).
 export { Ico } from '../shell-icons';
 
-/* Tag — legacy thin chip. Maps onto the vendored MetaChip. `tone` and `mono`
- * preserve the old call-site API: tone picks the text color, mono switches to a
- * monospace face (kept via the existing .mono class). */
+/* Tag — the thin metadata chip, on the vendored MetaChip primitive. `tone`
+ * picks the look: 'default'/'muted' for neutral chips, or a category tone
+ * (author/journal/type/venue/…) → the systematic per-hue tag recipe in
+ * shared.css via data-tone. `mono` switches to the monospace face. This is THE
+ * tag component — call sites use it instead of hand-rolled `<span class="tag …">`. */
+type TagTone =
+  | 'default' | 'muted'
+  | 'author' | 'journal' | 'publisher' | 'type' | 'venue' | 'institution' | 'year';
+const CATEGORY_TONES = new Set<TagTone>([
+  'author', 'journal', 'publisher', 'type', 'venue', 'institution', 'year',
+]);
 export function Tag({ children, tone = 'default', mono = false }: {
-  children: React.ReactNode; tone?: 'default' | 'muted'; mono?: boolean;
+  children: React.ReactNode; tone?: TagTone; mono?: boolean;
 }) {
+  const isCategory = CATEGORY_TONES.has(tone);
   return (
     <MetaChip
       variant="caption"
       color={tone === 'muted' ? 'muted' : 'body'}
-      className={`tag tag-${tone}${mono ? ' mono' : ''}`}
+      data-tone={isCategory ? tone : undefined}
+      className={`tag${isCategory ? ` ${tone}` : ` tag-${tone}`}${mono ? ' mono' : ''}`}
     >
       {children}
     </MetaChip>

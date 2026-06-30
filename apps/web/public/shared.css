@@ -308,14 +308,22 @@ em {
 }
 .tag.mono { font-family: var(--font-mono); font-size: var(--text-micro); }
 .tag-muted { color: var(--fg-dim); }
-/* Legacy category tags (kept for vanilla JS pages) */
-.tag.author      { background: oklch(0.28 0.05 20  / 0.5); color: oklch(0.82 0.10 20); }
-.tag.journal     { background: oklch(0.28 0.05 145 / 0.5); color: oklch(0.82 0.10 145); }
-.tag.publisher   { background: oklch(0.28 0.05 245 / 0.5); color: oklch(0.82 0.10 245); }
-.tag.type        { background: oklch(0.28 0.05 300 / 0.5); color: oklch(0.82 0.10 300); }
-.tag.venue       { background: oklch(0.28 0.05 50  / 0.5); color: oklch(0.82 0.10 50); }
-.tag.institution { background: oklch(0.28 0.05 80  / 0.5); color: oklch(0.82 0.10 80); }
-.tag.year        { background: oklch(0.28 0.05 180 / 0.5); color: oklch(0.82 0.10 180); }
+/* Category tags — ONE systematic recipe over a per-type hue (--tag-h), not 14
+   hand-tuned oklch literals. The chip is a translucent fill + legible text at the
+   same hue, derived in-place; a type just sets its hue. Consumed by the Tag/
+   MetaChip primitive (tone=…) and the legacy .tag.<type> classes alike. */
+.tag.author,.tag.journal,.tag.publisher,.tag.type,
+.tag.venue,.tag.institution,.tag.year,.tag[data-tone] {
+  background: oklch(0.28 0.05 var(--tag-h) / 0.5);
+  color: oklch(0.82 0.10 var(--tag-h));
+}
+.tag.author,      .tag[data-tone="author"]      { --tag-h: 20; }
+.tag.journal,     .tag[data-tone="journal"]     { --tag-h: 145; }
+.tag.publisher,   .tag[data-tone="publisher"]   { --tag-h: 245; }
+.tag.type,        .tag[data-tone="type"]        { --tag-h: 300; }
+.tag.venue,       .tag[data-tone="venue"]       { --tag-h: 50; }
+.tag.institution, .tag[data-tone="institution"] { --tag-h: 80; }
+.tag.year,        .tag[data-tone="year"]        { --tag-h: 180; }
 
 /* ═══ CARDS ═══ */
 .card {

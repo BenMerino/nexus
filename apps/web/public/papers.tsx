@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { SectionHead, Skeleton } from './ui-kit';
+import { SectionHead, Skeleton, Tag } from './ui-kit';
 import { TYPE_DISPLAY_LABELS } from './type-labels';
 
 /* Papers entity page (authed). The publication catalog from /api/records
@@ -16,7 +16,7 @@ function Row({ p }: { p: Paper }) {
   return (
     <tr>
       <td className="paper-title">{p.title || '(untitled)'}<div className="mono paper-doi">{p.doi}</div></td>
-      <td>{p.type ? <span className="tag type mono">{TYPE_DISPLAY_LABELS[p.type] || p.type}</span> : '—'}</td>
+      <td>{p.type ? <Tag tone="type" mono>{TYPE_DISPLAY_LABELS[p.type] || p.type}</Tag> : '—'}</td>
       <td>{p.journal || '—'}</td>
       <td>{p.published?.slice(0, 4) || '—'}</td>
       <td>{p.citation_count ?? 0}</td>
