@@ -12,6 +12,7 @@ import { ListItem } from '../ui/composed/ListItem';
 import { Disclosure } from '../ui/composed/Disclosure';
 import { FilterTrigger } from '../ui/composed/FilterTrigger';
 import { LiveBadge } from '../ui/composed/LiveBadge';
+import { LiquidGlass } from './liquid-glass-wrap';
 
 const SELECT_OPTS = [
   { value: 'crossref', label: 'CrossRef' },
@@ -34,16 +35,18 @@ export function ComposedSection() {
         <Button variant="ghost">Ghost</Button>
         <Button variant="outline">Outline</Button>
       </Row>
-      <Row title="SegmentedControl">
-        <SegmentedControl<'day' | 'week' | 'month'>
-          segments={[
-            { value: 'day', label: 'Day' },
-            { value: 'week', label: 'Week' },
-            { value: 'month', label: 'Month' },
-          ]}
-          value={seg}
-          onChange={setSeg}
-        />
+      <Row title="SegmentedControl — through liquid-dom glass (where supported)">
+        <LiquidGlass cornerRadius={9}>
+          <SegmentedControl<'day' | 'week' | 'month'>
+            segments={[
+              { value: 'day', label: 'Day' },
+              { value: 'week', label: 'Week' },
+              { value: 'month', label: 'Month' },
+            ]}
+            value={seg}
+            onChange={setSeg}
+          />
+        </LiquidGlass>
       </Row>
       <Row title="Popover (the composition engine)">
         <Popover
