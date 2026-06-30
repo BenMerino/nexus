@@ -35,7 +35,7 @@
       padding: 7px 13px; border: none; background: none; cursor: pointer;
       color: var(--fg); text-decoration: none; font-size: var(--text-detail); font-family: inherit;
     }
-    .omni-row:hover { background: var(--bg-inset); }
+    .omni-row:hover { background: var(--glass-2); }
     .omni-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .omni-sub { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); flex: none; }
     .omni-empty { padding: 12px 13px; font-family: var(--font-mono); font-size: var(--text-label); color: var(--fg-dim); }
@@ -107,8 +107,8 @@
       gap: 2px 10px; padding: 9px 11px; cursor: pointer;
       border: var(--border-w) solid transparent; position: relative; transition: background 0.12s;
     }
-    .scope-unit:hover { background: var(--bg-inset); }
-    .scope-unit.active { background: var(--bg-inset); border-color: var(--border-soft); }
+    .scope-unit:hover { background: var(--glass-2); }
+    .scope-unit.active { background: var(--glass-2); border-color: var(--border-soft); }
     .scope-unit.active::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--primary); }
     .scope-unit-name { grid-column: 1; grid-row: 1; font-size: var(--text-detail); color: var(--fg); line-height: 1.25; }
     .scope-unit.active .scope-unit-name { font-weight: var(--weight-label); }
@@ -148,7 +148,7 @@
     .admin-table th, .admin-table td { padding: 9px 12px; text-align: left; border-bottom: var(--border-w) solid var(--border-soft); }
     .admin-table th { position: sticky; top: 0; z-index: 1; background: var(--bg-inset); font-weight: var(--weight-label); text-transform: uppercase; font-size: var(--text-micro); letter-spacing: var(--tracking-label); color: var(--fg-dim); font-family: var(--font-mono); user-select: none; }
     .admin-table tbody tr:last-child td { border-bottom: none; }
-    .admin-table tbody tr:hover { background: var(--bg-inset); }
+    .admin-table tbody tr:hover { background: var(--glass-2); }
     .roster-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
     .tableScroll { max-height: 56vh; overflow: auto; }
     /* Org tree — file-explorer style with CSS-drawn connector lines.
@@ -157,12 +157,12 @@
     .org-tree { font-size: var(--text-detail); --tree-guide: var(--border); }
     .org-node { position: relative; }
     .org-node > .org-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; cursor: pointer; position: relative; }
-    .org-node > .org-row:hover { background: var(--bg-inset); }
+    .org-node > .org-row:hover { background: var(--glass-2); }
     .org-node > .org-row.leaf { cursor: default; }
     /* Selectable scope rows: clicking re-scopes the Overview. Active row gets a
        left accent + tint so the current scope is unmistakable. */
     .org-row.selectable { border-radius: var(--radius-control); }
-    .org-row.active { background: var(--bg-inset); box-shadow: inset 2px 0 0 var(--primary); }
+    .org-row.active { background: var(--glass-2); box-shadow: inset 2px 0 0 var(--primary); }
     .org-row.active .org-name { color: var(--primary); }
     .org-twist { width: 12px; color: var(--fg-dim); font-size: var(--text-micro); flex: none; transition: transform 0.12s; text-align: center; }
     .org-twist.open { transform: rotate(90deg); }
@@ -191,7 +191,7 @@
        so every bar aligns into a column; drillable rows highlight on hover. */
     .contrib-row { display: flex; align-items: center; gap: 12px; padding: 5px 6px; border-radius: var(--radius-control); }
     .contrib-row.drillable { cursor: pointer; }
-    .contrib-row.drillable:hover { background: var(--bg-inset); }
+    .contrib-row.drillable:hover { background: var(--glass-2); }
     .contrib-name { flex: 1; min-width: 0; font-size: var(--text-detail); color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .contrib-row .org-bar { width: 180px; }
 
