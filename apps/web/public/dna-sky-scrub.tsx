@@ -23,12 +23,25 @@ const fmt = (min: number) =>
 export function SkyScrub() {
   const [mode, setMode] = useState<SkyMode>(() => getSkyMode());
   const [min, setMin] = useState<number>(() => getManualMinutes());
+  const [borders, setBorders] = useState(true);
 
   useEffect(() => { setSkyMode(mode); repaint(); }, [mode]);
 
+  // Borderless preview: every border routes through --border-w (the single width
+  // token), so setting it to 0 removes them all. Inline on :root; clearing the
+  // override restores the dna.css default. Dev-only, never committed.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (borders) root.style.removeProperty('--border-w');
+    else root.style.setProperty('--border-w', '0px');
+  }, [borders]);
+
   // sky-mode is shared across ALL pages — don't leak a dev 'manual'/forced scrub
-  // to the real app. Restore 'live' when leaving /dna.html.
-  useEffect(() => () => { setSkyMode('live'); repaint(); }, []);
+  // (or the borderless override) to the real app. Restore on leaving /dna.html.
+  useEffect(() => () => {
+    setSkyMode('live'); repaint();
+    document.documentElement.style.removeProperty('--border-w');
+  }, []);
 
   const onScrub = (v: number) => {
     setMin(v);
@@ -67,6 +80,16 @@ export function SkyScrub() {
         opacity: mode === 'manual' ? 1 : 0.4, fontVariantNumeric: 'tabular-nums' }}>
         {fmt(min)}
       </span>
+      <button onClick={() => setBorders(b => !b)}
+        title="Toggle all surface borders (--border-w)"
+        style={{
+          flex: 'none', padding: '4px 10px', borderRadius: 'var(--radius-control)',
+          cursor: 'pointer', border: 'var(--border-w) solid var(--border)',
+          background: borders ? 'transparent' : 'var(--accent)',
+          color: borders ? 'var(--fg-muted)' : 'var(--on-primary, #fff)', font: 'inherit',
+        }}>
+        {borders ? 'Borders: on' : 'Borders: off'}
+      </button>
     </div>
   );
 }
