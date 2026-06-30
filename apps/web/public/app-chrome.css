@@ -29,16 +29,16 @@
 
 /* The FLOATING header: out of flow, pinned inset from top+sides, shrink-wrapped
    to its content so the glass element is JUST the bar. Content scrolls under it. */
-/* Pure floating element — NO surface of its own. The bar's content (brand,
-   search, tabs) floats directly over the sky; the header paints no glass fill,
-   no blur, no border. (The omnibox + theme button carry their own glass; the
-   bar itself is just a positioned flex row.) */
+/* Floating glass bar: a detached pill inset from top + sides, rounded corners,
+   translucent glass fill over the sky. Just the bar — content scrolls under it. */
 .public-header {
   position: fixed;
   top: var(--chrome-inset); left: var(--chrome-inset); right: var(--chrome-inset);
   min-height: var(--chrome-bar-h);
-  background: transparent;
-  border: 0;
+  background-color: var(--glass-1);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border-radius: var(--radius-card);
   z-index: 30;
 }
 /* Inside the .app grid the header is NOT fixed: it's the full-width top row,

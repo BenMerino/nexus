@@ -224,13 +224,12 @@ body > #dna-mount, body > main, body > div {
    steps to rung 2 and DROPS backdrop-filter, the same mechanism as .glass-surface
    nesting (re-blurring the frosted header is what muddied it to flat dark). Not
    hardcoded in the page's inline <style>; the rung lives here with the mechanism. */
-/* The header is now a pure floating element (no glass surface of its own), so the
-   omnibox is NOT nested in glass anymore — it's a standalone glass field that
-   blurs the sky directly: rung 1 + its own backdrop-filter. */
+/* The omnibox is nested inside the glass header (rung 1), so it steps to rung 2
+   and DROPS backdrop-filter — the tonal-stacking mechanism (re-blurring the
+   frosted header muddies it to flat dark). */
 :root .public-header .omni-input {
-  background-color: var(--glass-1);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  background-color: var(--glass-2);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
 }
 
 /* nexus's hand-written card surfaces adopt the glass recipe + ladder. They were
