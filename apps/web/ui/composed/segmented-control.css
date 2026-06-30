@@ -20,8 +20,10 @@
 }
 
 .seg-wrap-pill {
-  background: var(--bg-elevated);
-  outline: 1px solid var(--border-main);
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  outline: var(--border-w) solid var(--border-glass);
   outline-offset: -1px;
 }
 
@@ -29,8 +31,10 @@
  * a raised control), a brand-FILL indicator (--primary-fill, set inline) and
  * uppercase --text-inverse labels. Same control shape as every variant. */
 .seg-wrap-solid {
-  background: var(--bg-card);
-  outline: 1px solid var(--border-main);
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  outline: var(--border-w) solid var(--border-glass);
   outline-offset: -1px;
   box-shadow: var(--shadow-sm);
 }
@@ -78,7 +82,7 @@
 .seg-btn.base-action--ghost:hover { background: transparent; }
 
 .seg-indicator { position: absolute; }
-.seg-indicator-pill { inset: var(--space-0-5); background: var(--bg-card); border-radius: var(--seg-corner); box-shadow: var(--shadow-sm); }
+.seg-indicator-pill { inset: var(--space-0-5); background: var(--glass-3); border-radius: var(--seg-corner); box-shadow: var(--shadow-sm); }
 .seg-indicator-solid { inset: var(--space-0-5); border-radius: var(--seg-corner); box-shadow: var(--shadow-sm); }
 
 /* Label colour (selected = --text-main/-inverse, unselected = --text-muted) is

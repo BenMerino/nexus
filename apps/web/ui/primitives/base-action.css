@@ -118,11 +118,13 @@
 .base-action--primary:hover { opacity: 0.92; }
 
 .base-action--secondary {
-  background: var(--bg-card);
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   color: var(--text-main);
-  border: var(--_ctl-border) solid var(--border-main);
+  border: var(--_ctl-border) solid var(--border-glass);
 }
-.base-action--secondary:hover { background: var(--bg-elevated); }
+.base-action--secondary:hover { background: var(--glass-2); }
 
 .base-action--danger { background: var(--status-error); color: var(--text-inverse); border: none; box-shadow: 0 1px 2px color-mix(in srgb, var(--status-error) 20%, transparent); }
 .base-action--danger:hover { filter: brightness(0.9); }

@@ -171,6 +171,10 @@
   --glass-2: color-mix(in oklch, var(--tonal-2) 70%, transparent);
   --glass-3: color-mix(in oklch, var(--tonal-3) 72%, transparent);
   --glass-blur: 14px;
+  /* Glass borders: a translucent hairline (the edge a real glass pane catches),
+     not the opaque --border. Mostly the border colour at reduced alpha so it
+     reads as part of the pane, letting the sky show faintly through the rim. */
+  --border-glass: color-mix(in oklch, var(--border) 55%, transparent);
   /* Each surface tracks its own depth; a nested .surface reads the parent's and
      adds 1 (capped at 3). The shared shorthand for a glass fill at a given rung. */
   --surface-depth: 0;
@@ -194,7 +198,7 @@ body > #dna-mount, body > main, body > div {
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  border: var(--border-w) solid var(--border);
+  border: var(--border-w) solid var(--border-glass);
 }
 
 /* TONAL STACKING — a glass surface nested inside another steps to the next rung,
