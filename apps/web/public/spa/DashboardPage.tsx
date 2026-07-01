@@ -11,19 +11,17 @@
 // modules is a future, separate concern that doesn't need to happen now.
 
 import React, { useEffect } from "react";
+import { Button } from "../../ui/composed/Button";
 
-/* Page-specific bits only, all token-driven (no opaque bg, no raw px borders/
-   radius, no hardcoded hex). The import card itself uses the `.card` class so it
-   gets glass via the central roster — not its own surface. */
+/* Page-specific bits only, all token-driven (no opaque bg, no raw px, no hex).
+   The import card uses the `.card` class for glass; the button is the composed
+   Button (primary → sky-driven gradient, owns its own fg) — not hand-rolled. */
 const importStyles = `
   .import-card { margin-top: var(--space-6); }  /* surface + padding from .card */
-  .import-card h3 { font-family: var(--font-mono); font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); margin: 0 0 6px; font-weight: var(--weight-label); }
-  .import-card p { font-size: var(--text-detail); color: var(--fg-muted); margin: 0 0 12px; }
-  .import-btn { background: var(--accent); color: var(--on-primary, #fff); border: 0; padding: 10px 18px; border-radius: var(--radius-control); font-weight: var(--weight-label); cursor: pointer; font: inherit; }
-  .import-btn:hover { filter: brightness(1.08); }
-  .import-btn:disabled { opacity: 0.5; cursor: default; }
-  .import-progress { margin-top: 10px; font-size: var(--text-label); color: var(--fg-dim); font-family: var(--font-mono); }
-  .progress-bar { height: 4px; background: var(--bg-inset); border-radius: var(--radius-xs); margin-top: 8px; overflow: hidden; }
+  .import-card h3 { font-family: var(--font-mono); font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); margin: 0 0 var(--space-2); font-weight: var(--weight-label); }
+  .import-card p { font-size: var(--text-detail); color: var(--fg-muted); margin: 0 0 var(--space-3); }
+  .import-progress { margin-top: var(--space-3); font-size: var(--text-label); color: var(--fg-dim); font-family: var(--font-mono); }
+  .progress-bar { height: 4px; background: var(--bg-inset); border-radius: var(--radius-xs); margin-top: var(--space-2); overflow: hidden; }
   .progress-fill { height: 100%; background: var(--accent); border-radius: var(--radius-xs); transition: width 0.3s; }
 `;
 
@@ -55,11 +53,11 @@ export function DashboardPage() {
       <div className="card import-card" id="import-section" style={{ display: "none" }}>
         <h3>Bulk import · OpenAlex</h3>
         <p>Import all publications affiliated with your institution.</p>
-        <button
-          className="import-btn"
+        <Button
+          variant="primary"
           id="import-btn"
           onClick={() => (window as unknown as { startImport?: () => void }).startImport?.()}
-        >Import publications</button>
+        >Import publications</Button>
         <div className="import-progress" id="import-status" />
         <div className="progress-bar" id="progress-bar" style={{ display: "none" }}>
           <div className="progress-fill" id="progress-fill" />

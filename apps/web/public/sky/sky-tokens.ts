@@ -17,11 +17,15 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 // through twilight. Same ramp drives every surface token.
 export const dayFactor = (altitude: number) => clamp((altitude + 6) / 16, 0, 1);
 
-// Neutral-gray endpoints (oklch L, chroma 0, hue 0). NIGHT = the current dark
-// baseline; DAY = a light-mode neutral set. Day surfaces stop short of pure
-// white (card 0.96) so the dawn/dusk fg-flip keeps comfortable contrast.
+// Neutral-gray endpoints (oklch L, chroma 0, hue 0). VOLCANIC: the sky is a dark
+// ash pall at ALL hours, so the glass stays DARK-MODE all day too — DAY is a
+// slightly-elevated dark set (never crosses 0.5), a touch lighter than NIGHT so
+// day glass still reads brighter than deep night. Because every surface + the
+// text derivation + isLightSky read these endpoints, this one change keeps the
+// UI dark-mode the whole cycle: textOn auto-flips to LIGHT text (card < 0.5),
+// isLightSky stays false → data-theme="dark" all day, color-scheme: dark.
 const NIGHT = { bg: 0.16, elev: 0.20, card: 0.22, inset: 0.14, border: 0.32, borderSoft: 0.27 };
-const DAY   = { bg: 0.95, elev: 0.97, card: 0.96, inset: 0.92, border: 0.82, borderSoft: 0.88 };
+const DAY   = { bg: 0.26, elev: 0.30, card: 0.32, inset: 0.23, border: 0.40, borderSoft: 0.35 };
 
 const gray = (L: number) => `oklch(${L.toFixed(3)} 0 0)`;
 

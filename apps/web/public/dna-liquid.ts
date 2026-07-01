@@ -1,5 +1,6 @@
-// Liquid-glass entry point. The radial-gradient approximation that lived here
-// was replaced by the faithful per-element Snell's-law refraction in liquid/ —
-// this file now just self-mounts that host, preserving the existing
-// `import './dna-liquid'` call sites (sky-bg.ts, dna-sky-scrub.tsx).
-import "./liquid/liquid-glass";
+// Glass surfaces use plain blur (the .surface recipe in dna-bridge.css) by
+// default. This module sets the data-liquid flag and self-mounts the vendored
+// liquid-glass-component-library A/B toggle (lg-glass.ts) so window.__lgGlass()
+// works platform-wide. Preserves the `import './dna-liquid'` call site.
+import "./lg-glass";
+document.documentElement.setAttribute("data-liquid", "");

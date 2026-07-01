@@ -4,9 +4,14 @@
 
 .gantt-wrap {
   position: relative;
-  background: var(--bg-inset);
+  /* Glass: the well is a nested surface inside the projects .card, so it reads as
+     rung 2 — glass (fill from the nested-rung rule in dna-bridge.css / vendor
+     .chart-surface set), NOT the old opaque --bg-inset gray. */
   border: var(--border-w) solid var(--border-soft);
-  border-radius: var(--radius);
+  /* Concentric corner — the SAME canonical formula as .chart-surface: host radius
+     − 1px border − --row-inset (the small nest gap), NOT the card's content
+     padding (which exceeds the radius and collapses the corner to 0 = square). */
+  border-radius: max(0px, calc(var(--_nest-r, var(--radius-card)) - 1px - var(--row-inset)));
   padding: 0;
   overflow: hidden;
 }
@@ -84,7 +89,7 @@
   position: absolute;
   top: 6px;
   bottom: 6px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-control);
   display: flex;
   align-items: center;
   padding: 0 8px;
@@ -94,17 +99,20 @@
   border: var(--border-w) solid transparent;
 }
 .gantt-bar:hover { filter: brightness(1.15); transform: translateY(-1px); }
+/* Project role categories → the copper categorical palette (--chart-*), distinct
+   by lightness: IR = copper (dominant), CO = bronze, neutral = light bronze.
+   Replaces the old hardcoded oklch blues (no blue token exists; palette is copper). */
 .gantt-bar-ir {
-  background: oklch(0.55 0.16 70 / 0.85);
-  border-color: oklch(0.70 0.18 70 / 0.95);
+  background: color-mix(in oklch, var(--chart-0) 85%, transparent);
+  border-color: var(--chart-0);
 }
 .gantt-bar-co {
-  background: oklch(0.34 0.04 260 / 0.65);
-  border-color: oklch(0.48 0.06 260 / 0.75);
+  background: color-mix(in oklch, var(--chart-4) 65%, transparent);
+  border-color: color-mix(in oklch, var(--chart-4) 75%, transparent);
 }
 .gantt-bar-neutral {
-  background: oklch(0.40 0.06 245 / 0.7);
-  border-color: oklch(0.55 0.10 245 / 0.8);
+  background: color-mix(in oklch, var(--chart-7) 70%, transparent);
+  border-color: color-mix(in oklch, var(--chart-7) 80%, transparent);
 }
 .gantt-bar-label {
   font-family: var(--font-mono);
@@ -139,12 +147,12 @@
 .legend-dot {
   display: inline-block;
   width: 12px; height: 12px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-control);
   border: var(--border-w) solid currentColor;
 }
-.legend-dot.ir      { background: oklch(0.55 0.16 70 / 0.85); color: oklch(0.70 0.18 70 / 0.95); }
-.legend-dot.co      { background: oklch(0.34 0.04 260 / 0.65); color: oklch(0.48 0.06 260 / 0.75); }
-.legend-dot.neutral { background: oklch(0.40 0.06 245 / 0.7);  color: oklch(0.55 0.10 245 / 0.8); }
+.legend-dot.ir      { background: color-mix(in oklch, var(--chart-0) 85%, transparent); color: var(--chart-0); }
+.legend-dot.co      { background: color-mix(in oklch, var(--chart-4) 65%, transparent); color: var(--chart-4); }
+.legend-dot.neutral { background: color-mix(in oklch, var(--chart-7) 70%, transparent); color: var(--chart-7); }
 .legend-line {
   display: inline-block;
   width: 2px; height: 14px;

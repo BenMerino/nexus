@@ -76,7 +76,9 @@
    host). Matches the tonal ladder in vendor terms. No re-blur (host frosted it). */
 :root[data-lg] .card .chart-surface,
 :root[data-lg] .panel .chart-surface,
-:root[data-lg] .card .fac-card {
+:root[data-lg] .card .fac-card,
+:root[data-lg] .card .gantt-wrap,
+:root[data-lg] .profile-hero .profile-stat {
   background: linear-gradient(
     135deg,
     color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-1) * 1.4), transparent) 0%,

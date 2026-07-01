@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { TenantPublicHeader } from './tenant-header';
-import { TenantSidebar } from './tenant-sidebar';
-import { TenantSearch } from './tenant-search';
+import { PublicShell } from './public-shell';
 import { TenantFooter } from './tenant-footer';
 import { useTenantData, readSlugFromUrl } from './tenant-data';
 import { TenantLoading } from './tenant-loading';
@@ -54,36 +52,30 @@ function App() {
     return <div className="public-app"><main className="public-main" style={{ color: 'var(--danger, #c00)' }}>{fatalError}</main></div>;
   }
 
-  // App grid: floating glass nav sidebar (left) + main column (floating header
-  // + scrolling content). The entity nav lives on the sidebar, not the header.
-  const tenantName = statsPayload?.tenant.name ?? '';
+  // The shell builds the whole grid + header + sidebar + search identically for
+  // every public page (N9); this page supplies CLIENT-SIDE routing (in-place view
+  // swap via usePublicRoute) and its own content (loading / views / footer).
   return (
-    <div className="app">
-      {/* Row 1: full-width floating header spanning the top. Row 2: sidebar +
-          content BELOW it (sidebar starts under the header). */}
-      {statsPayload && (
-        <TenantPublicHeader tenant={statsPayload.tenant} items={[]} currentId={view}
-          onNavigate={() => {}} yearRange={statsPayload.stats.yearRange}
-          lastUpdated={statsPayload.stats.lastUpdated}
-          search={<TenantSearch slug={slug} onSelectUnit={() => {}} />} />
-      )}
-      <TenantSidebar tenantName={tenantName} view={view} navigate={navigate} hrefFor={hrefFor} />
-      <div className="public-app">
-        <main className="public-main">
-          <div className="public-content">
-            {!statsPayload
-              ? (statsError
-                  ? <div style={{ color: 'var(--danger, #c00)' }}>{`${ES.failedPrefix}: ${statsError}`}</div>
-                  : <TenantLoading />)
-              : (<>
-                  <ViewContent view={view} unitKey={unitKey} slug={slug} payload={statsPayload}
-                    navigateUnit={navigateUnit} navigate={navigate} />
-                  <TenantFooter yearRange={statsPayload.stats.yearRange} />
-                </>)}
-          </div>
-        </main>
-      </div>
-    </div>
+    <PublicShell
+      tenant={statsPayload?.tenant ?? null}
+      slug={slug}
+      view={view}
+      hrefFor={hrefFor}
+      navigate={navigate}
+      onSelectUnit={() => {}}
+      yearRange={statsPayload?.stats.yearRange}
+      lastUpdated={statsPayload?.stats.lastUpdated}
+    >
+      {!statsPayload
+        ? (statsError
+            ? <div style={{ color: 'var(--danger, #c00)' }}>{`${ES.failedPrefix}: ${statsError}`}</div>
+            : <TenantLoading />)
+        : (<>
+            <ViewContent view={view} unitKey={unitKey} slug={slug} payload={statsPayload}
+              navigateUnit={navigateUnit} navigate={navigate} />
+            <TenantFooter yearRange={statsPayload.stats.yearRange} />
+          </>)}
+    </PublicShell>
   );
 }
 

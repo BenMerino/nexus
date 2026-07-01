@@ -23,9 +23,11 @@ export function Button({
     leftIcon, rightIcon, children, className, disabled, style, ...props
 }: ButtonProps) {
     const isDisabled = disabled || loading;
-    const primaryStyle: React.CSSProperties = variant === 'primary'
-        ? { background: 'linear-gradient(135deg, var(--primary, #4f46e5), var(--secondary, #10b981))' }
-        : {};
+    // No inline primary background: `primary` is a single brand color whose
+    // gradient is supplied by the background (sky) engine via .base-action--primary
+    // (--sky-primary → --sky-companion). The old inline linear-gradient(--primary,
+    // --secondary) was a RIVAL "primary" with a gray/green second stop — removed so
+    // the real sky-driven primary wins.
 
     return (
         <BaseAction
@@ -33,7 +35,7 @@ export function Button({
             size={size}
             disabled={isDisabled}
             fullWidth={fullWidth}
-            style={{ ...primaryStyle, ...style }}
+            style={style}
             className={className}
             {...props}
         >

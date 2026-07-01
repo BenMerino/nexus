@@ -62,12 +62,9 @@
   --border-w:          0px;
   --border-w-emphasis: 2px;
 
-  /* ── Shadow scale ───────────────────────────────────────────
-     Replaces the ad-hoc rgba(0,0,0,...) shadows in shared.css
-     (dropdowns, tweaks panel, profile overlay, range thumbs). */
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+  /* ── Shadows moved ──────────────────────────────────────────
+     The --shadow-* scale now lives in the GLASS & DEPTH control block in
+     dna-bridge.css (one place for tint + glass + shadow). Edit shadows there. */
 
   /* ── Z-index scale ──────────────────────────────────────────
      Replaces the ad-hoc 2/4/50/100/1000 in shared.css. Named so

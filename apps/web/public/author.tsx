@@ -1,9 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { TenantPublicHeader } from './tenant-header';
+import { PublicShell } from './public-shell';
 import { ES } from './tenant-i18n';
 import { tenantHref } from './tenant-data';
 import { AuthorProfile, type AuthorProfileData } from './author-profile';
+import type { PublicView } from './use-public-route';
+
+// The author profile is not itself an entity view, so nav links must LEAVE this
+// page for the tenant page's entity views. Prod deep-links are /t/:slug/<entity>
+// (Caddy rewrite); the Vite dev server has no rewrite, so fall back to
+// tenant.html?slug=…&view=<entity> (read by tenant.tsx's usePublicRoute).
+function entityHref(slug: string, view: PublicView): string {
+  const base = tenantHref(slug); // /t/:slug OR /tenant.html?slug=…
+  if (view === 'overview') return base;
+  return base.includes('?') ? `${base}&view=${view}` : `${base}/${view}`;
+}
 
 // /t/:slug/a/:orcid (Caddy rewrites to author.html); dev fallback via
 // /author.html?slug=...&orcid=... (the Vite server has no path rewrite).
@@ -56,28 +67,31 @@ function App() {
   if (error) {
     return <div className="public-app"><main className="public-main" style={{ color: 'var(--danger, #c00)' }}>{error}</main></div>;
   }
+  if (!slug) return null; // readParams already set the missing-slug error above.
+
+  // The profile is not an entity view, so all chrome nav is FULL-NAV back to the
+  // tenant page: sidebar → that entity view, a unit hit → the tenant faculty view
+  // scoped to the unit. The shell builds the header/sidebar/search identically to
+  // the tenant page — this page only declares where those links go.
   return (
-    <div className="public-app">
-      <main className="public-main">
-        {/* Sticky floating header inside the scroll area (content scrolls under). */}
-        {chrome && (
-          <TenantPublicHeader tenant={chrome.tenant} items={[]} currentId="profile"
-            onNavigate={() => {}} yearRange={chrome.stats.yearRange} />
-        )}
-        <div className="public-content">
-          {/* Back link paints immediately from the slug; the tenant name fills
-              in when the chrome fetch lands. */}
-          {slug && (
-            <a className="profile-back" href={tenantHref(slug)}>
-              {chrome ? ES.profile.backTo(chrome.tenant.name) : ES.profile.back}
-            </a>
-          )}
-          {profile && slug
-            ? <AuthorProfile d={profile} slug={slug} />
-            : <AuthorProfile.Skeleton />}
-        </div>
-      </main>
-    </div>
+    <PublicShell
+      tenant={chrome?.tenant ?? null}
+      slug={slug}
+      view={'' as PublicView}
+      hrefFor={v => entityHref(slug, v)}
+      navigate={v => { window.location.href = entityHref(slug, v); }}
+      onSelectUnit={u => { window.location.href = tenantHref(slug, u.unitKey); }}
+      yearRange={chrome?.stats.yearRange}
+    >
+      {/* Back link paints immediately from the slug; the tenant name fills in
+          when the chrome fetch lands. */}
+      <a className="profile-back" href={tenantHref(slug)}>
+        {chrome ? ES.profile.backTo(chrome.tenant.name) : ES.profile.back}
+      </a>
+      {profile
+        ? <AuthorProfile d={profile} slug={slug} />
+        : <AuthorProfile.Skeleton />}
+    </PublicShell>
   );
 }
 

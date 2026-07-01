@@ -26,6 +26,11 @@ const canvas = document.createElement("canvas");
 canvas.id = "sky-bg";
 let gpu: SkyGPU | null = null;
 
+// Fine film grain over the sky: a fixed layer above the sky canvas, below all
+// chrome (styled in app-chrome.css, painting the shared --glass-grain token).
+const grain = document.createElement("div");
+grain.id = "sky-grain";
+
 function paint() {
   const mode = getSkyMode();
   // Time we evaluate the sun at: now for live/day/night, the pinned scrub time
@@ -66,6 +71,7 @@ async function start() {
     position: "fixed", inset: "0", zIndex: "0", display: "block", pointerEvents: "none",
   } as CSSStyleDeclaration);
   document.body.prepend(canvas);
+  document.body.insertBefore(grain, canvas.nextSibling);
 
   gpu = await initSkyGPU(canvas);
   paint();

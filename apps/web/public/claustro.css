@@ -96,8 +96,8 @@ textarea.form-input { font-family: inherit; resize: vertical; }
 
 .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .project-card {
-  background: var(--bg-card); border: var(--border-w) solid var(--border-soft);
-  border-radius: var(--radius); padding: 22px 24px;
+  border: var(--border-w) solid var(--border-soft);
+  border-radius: var(--radius-card); padding: 22px 24px;
   display: flex; flex-direction: column; gap: 14px;
   position: relative;
 }

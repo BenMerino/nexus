@@ -22,3 +22,4 @@ nexus.zip
 scratchpad/
 .probe.mjs
 .nprobe.mjs
+.env.bak*

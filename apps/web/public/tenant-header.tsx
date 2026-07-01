@@ -58,13 +58,6 @@ export function TenantPublicHeader({
   lastUpdated?: string | null;
   search?: React.ReactNode;
 }) {
-  // Prefer the real corpus-change date (last DOI submission) over the max
-  // publication year; yearRange may be absent if the analytics payload wins
-  // the load race — guard so the header never throws on .maxYear.
-  const updatedDate = lastUpdated
-    ? new Date(lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : yearRange?.maxYear;
-  const updated = updatedDate ? `${ES.updatedPrefix} ${updatedDate}` : ES.publicProfileBadge;
 
   // The header is fixed chrome; content is inset BELOW its real height. Publish
   // the actual rendered height to --chrome-bar-h-actual so .public-main's top
@@ -83,9 +76,8 @@ export function TenantPublicHeader({
   }, []);
 
   return (
-    /* The header is THREE separate floating glass bars on one top row — left
-       (brand), centre (search), right (aux) — each the bar height, gaps between.
-       .public-header is the fixed flex row; each .public-header-seg is a bar. */
+    /* ONE unified floating glass bar. .public-header carries the glass; the three
+       .public-header-seg groups (brand · search · aux) just lay out inside it. */
     <header className="public-header" ref={ref}>
       <div className="public-header-seg public-header-left">
         <div className="public-brand">
@@ -103,7 +95,6 @@ export function TenantPublicHeader({
       </div>
       {search ? <div className="public-header-seg public-header-center">{search}</div> : null}
       <div className="public-header-seg public-header-right">
-        <span className="public-updated"><span className="sync-pulse" /> <span>{updated}</span></span>
         <a href="/login.html" className="public-signin">{ES.signIn}</a>
         <ThemeButton />
       </div>

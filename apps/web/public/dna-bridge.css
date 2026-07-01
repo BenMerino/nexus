@@ -310,19 +310,26 @@ body > #dna-mount, body > main, body > div {
    only the captured backdrop copy, never the card's own box/text (those live on the
    element, above the z-0 overlay). Works in Chrome, Safari, Firefox.
    Same selector list as the base glass rule — the SINGLE source, no drift. */
-:root[data-lg-liquid] .card, :root[data-lg-liquid] .panel, :root[data-lg-liquid] .kpi,
-:root[data-lg-liquid] .tenant-rail, :root[data-lg-liquid] .stat,
-:root[data-lg-liquid] .gc-community, :root[data-lg-liquid] .omni-pop,
-:root[data-lg-liquid] .sidebar-search-results, :root[data-lg-liquid] .tweaks-panel,
-:root[data-lg-liquid] .surface, :root[data-lg-liquid] .glass-surface,
-:root[data-lg-liquid] .profile-hero, :root[data-lg-liquid] .profile-panel,
-:root[data-lg-liquid] .profile-stat, :root[data-lg-liquid] .paper-card,
-:root[data-lg-liquid] .hover-card, :root[data-lg-liquid] .node-detail-pane,
-:root[data-lg-liquid] .graph-filters, :root[data-lg-liquid] .graph-canvas,
-:root[data-lg-liquid] .detail-panel, :root[data-lg-liquid] #graph-container,
-:root[data-lg-liquid] .source, :root[data-lg-liquid] .normalized,
-:root[data-lg-liquid] .profile-card, :root[data-lg-liquid] .project-card,
-:root[data-lg-liquid] .tm-card {
+/* NOTE the [data-lg][data-lg-liquid] double-attr: the base glass rule in
+   lg-glass.css (:root[data-lg] .kpi{backdrop-filter:blur}) is (0,3,0) and loads
+   AFTER this file, so a plain :root[data-lg-liquid] .kpi (also 0,3,0) LOSES the tie
+   on source order — the host keeps its blur, the overlay then samples an already-
+   frosted flat layer, and refraction is invisible. Stacking both attrs → (0,4,0)
+   wins outright, so the host's backdrop-filter really goes to none and the overlay
+   can sample the RAW page behind the card. (Verified via browser probe.) */
+:root[data-lg][data-lg-liquid] .card, :root[data-lg][data-lg-liquid] .panel, :root[data-lg][data-lg-liquid] .kpi,
+:root[data-lg][data-lg-liquid] .tenant-rail, :root[data-lg][data-lg-liquid] .stat,
+:root[data-lg][data-lg-liquid] .gc-community, :root[data-lg][data-lg-liquid] .omni-pop,
+:root[data-lg][data-lg-liquid] .sidebar-search-results, :root[data-lg][data-lg-liquid] .tweaks-panel,
+:root[data-lg][data-lg-liquid] .surface, :root[data-lg][data-lg-liquid] .glass-surface,
+:root[data-lg][data-lg-liquid] .profile-hero, :root[data-lg][data-lg-liquid] .profile-panel,
+:root[data-lg][data-lg-liquid] .profile-stat, :root[data-lg][data-lg-liquid] .paper-card,
+:root[data-lg][data-lg-liquid] .hover-card, :root[data-lg][data-lg-liquid] .node-detail-pane,
+:root[data-lg][data-lg-liquid] .graph-filters, :root[data-lg][data-lg-liquid] .graph-canvas,
+:root[data-lg][data-lg-liquid] .detail-panel, :root[data-lg][data-lg-liquid] #graph-container,
+:root[data-lg][data-lg-liquid] .source, :root[data-lg][data-lg-liquid] .normalized,
+:root[data-lg][data-lg-liquid] .profile-card, :root[data-lg][data-lg-liquid] .project-card,
+:root[data-lg][data-lg-liquid] .tm-card {
   /* the element hosts the overlay + stacks its real content above it; the element
      itself no longer carries a backdrop-filter (the ::before owns the glass now). */
   position: relative;

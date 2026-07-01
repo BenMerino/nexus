@@ -27,6 +27,11 @@
    overrides the base glass recipe where supported. */
 @import "./dna-liquid.css";
 
+/* Vendored liquid-glass-component-library glass engine — A/B toggle via
+   data-lg on :root (lg-glass.ts). Inert until set; loaded LAST so [data-lg]
+   restyles surfaces over nexus's own glass. */
+@import "./lg-glass.css";
+
 :root {
   color-scheme: dark;
   /* Neutral grayscale surfaces/text/borders — chroma 0, no blue/beige cast. */
@@ -327,7 +332,6 @@ em {
 
 /* ═══ CARDS ═══ */
 .card {
-  background: var(--bg-card);
   border: var(--border-w) solid var(--border-soft);
   border-radius: var(--radius-card);
   padding: 22px 24px;
@@ -339,13 +343,15 @@ em {
 .card-span-4 { grid-column: 1 / -1; }
 
 /* ═══ STATS ═══ */
+/* The stat cells are translucent GLASS now — so the old hairline-grid trick
+   (gap:1px over a gray --border-soft fill showing through as dividers) can't be
+   used: the gray bled through the glass and made the KPIs read gray. Use a real
+   gap between separate glass cards instead, no gray fill behind them. */
 .stat-row {
   display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 1px; background: var(--border-soft);
-  border: var(--border-w) solid var(--border-soft);
-  border-radius: var(--radius-card); overflow: hidden; margin-bottom: 24px;
+  gap: var(--chrome-inset); margin-bottom: 24px;
 }
-.stat { background: var(--bg-card); padding: 22px 24px 20px; min-height: 122px; }
+.stat { padding: var(--space-5) var(--space-6); min-height: 122px; border-radius: var(--radius-card); }
 .stat-label { font-family: var(--font-mono); font-size: var(--text-label); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); margin-bottom: 18px; }
 .stat-value { font-family: var(--font-display); font-size: var(--text-display); font-weight: var(--weight-display); line-height: 1; letter-spacing: var(--tracking-display); color: var(--fg); margin-bottom: 8px; font-feature-settings: 'tnum'; }
 .stat-sub { font-size: var(--text-detail); color: var(--fg-dim); line-height: var(--leading-body); }
@@ -523,7 +529,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   .graph-overlay-right { width: 260px; }
 }
 .graph-filters {
-  background: var(--bg-card); border: var(--border-w) solid var(--border-soft);
+  border: var(--border-w) solid var(--border-soft);
   border-radius: var(--radius-card); padding: 18px;
   display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
 }
@@ -567,13 +573,13 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   -webkit-appearance: none; pointer-events: auto; cursor: pointer;
   width: 14px; height: 14px; border-radius: 50%;
   background: var(--accent); border: 2px solid var(--bg-card);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  box-shadow: var(--shadow-sm);
 }
 .year-range-input::-moz-range-thumb {
   pointer-events: auto; cursor: pointer;
   width: 14px; height: 14px; border-radius: 50%;
   background: var(--accent); border: 2px solid var(--bg-card);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  box-shadow: var(--shadow-sm);
 }
 .year-range-from { z-index: 2; }
 .year-range-to { z-index: 3; }
@@ -591,7 +597,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 
 .graph-canvas {
-  background: var(--bg-card); border: var(--border-w) solid var(--border-soft);
+  border: var(--border-w) solid var(--border-soft);
   border-radius: var(--radius-card); position: relative; overflow: hidden;
   background-image: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%);
 }
@@ -656,7 +662,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 
 /* ═══ DETAIL PANEL ═══ */
 .detail-panel {
-  background: var(--bg-card); border: var(--border-w) solid var(--border-soft);
+  border: var(--border-w) solid var(--border-soft);
   border-radius: var(--radius-card); overflow: hidden; padding: 0;
 }
 .node-detail-pane { padding: 24px; }
@@ -691,7 +697,6 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .node-detail-viewport.showing-detail .node-detail-track { transform: translate3d(-50%, 0, 0); }
 .node-detail-pane {
   flex: 0 0 50%; min-width: 0; overflow: auto;
-  background: var(--bg-card);
   transform: translateZ(0);
   contain: layout paint;
 }
@@ -909,7 +914,7 @@ button.secondary { background: transparent; }
 /* ═══ PAPERS GRID ═══ */
 .paper-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .paper-card {
-  background: var(--bg-card); border: var(--border-w) solid var(--border-soft);
+  border: var(--border-w) solid var(--border-soft);
   border-radius: var(--radius-card); padding: 20px 22px;
   display: flex; flex-direction: column; gap: 10px;
 }
@@ -928,9 +933,9 @@ button.secondary { background: transparent; }
 /* ═══ TWEAKS PANEL ═══ */
 .tweaks-panel {
   position: fixed; bottom: 20px; right: 20px; width: 280px;
-  background: var(--bg-card); border: var(--border-w) solid var(--border);
+  border: var(--border-w) solid var(--border);
   border-radius: var(--radius-card); padding: 16px 18px;
-  z-index: 100; box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+  z-index: 100; box-shadow: var(--shadow-lg);
 }
 .tweaks-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: var(--border-w) solid var(--border-soft); }
 .tweaks-title { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); }
@@ -956,20 +961,20 @@ button.secondary { background: transparent; }
 .page { max-width: 1200px; margin: 0 auto; padding: 24px; }
 
 /* Source blocks (submit.html, explore record details) */
-.source { border: var(--border-w) solid var(--border-soft); border-radius: var(--radius-card); padding: 12px; margin: 8px 0; background: var(--bg-card); }
+.source { border: var(--border-w) solid var(--border-soft); border-radius: var(--radius-card); padding: 12px; margin: 8px 0; }
 .source h3 { margin: 0 0 8px 0; font-size: var(--text-detail); font-family: var(--font-mono); color: var(--fg-dim); text-transform: uppercase; letter-spacing: var(--tracking-label); }
 .source .not-found { color: var(--fg-dim); }
 .source table { margin: 0; }
 .source td { padding: 3px 10px 3px 0; font-size: var(--text-detail); }
 .source td:first-child { font-weight: var(--weight-label); white-space: nowrap; color: var(--fg-muted); }
-.normalized { border: var(--border-w) solid var(--accent); border-radius: var(--radius-card); padding: 16px; margin: 12px 0; background: var(--bg-card); }
+.normalized { border: var(--border-w) solid var(--accent); border-radius: var(--radius-card); padding: 16px; margin: 12px 0; }
 .normalized h3 { margin: 0 0 8px 0; font-family: var(--font-display); font-weight: var(--weight-display); }
 .normalized td { padding: 4px 12px 4px 0; }
 .normalized td:first-child { font-weight: var(--weight-label); white-space: nowrap; color: var(--fg-muted); }
 
 /* Profile popup (legacy from nav.js — retained until shell fully replaces it) */
 .profile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.profile-card { background: var(--bg-card); border: var(--border-w) solid var(--border); border-radius: var(--radius-card); padding: 24px; min-width: 320px; max-width: 400px; color: var(--fg); }
+.profile-card { border: var(--border-w) solid var(--border); border-radius: var(--radius-card); padding: 24px; min-width: 320px; max-width: 400px; color: var(--fg); }
 .profile-header { text-align: center; margin-bottom: 16px; }
 .profile-logo { height: 48px; width: 48px; object-fit: contain; border-radius: var(--radius-control); margin-bottom: 8px; }
 .profile-name { font-size: var(--text-h3); font-family: var(--font-display); }
@@ -991,7 +996,7 @@ button.secondary { background: transparent; }
 .nav-list::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: var(--radius-sm); }
 
 /* Graph container (legacy) */
-#graph-container { width: 100%; border: var(--border-w) solid var(--border-soft); border-radius: var(--radius-card); background: var(--bg-card); }
+#graph-container { width: 100%; border: var(--border-w) solid var(--border-soft); border-radius: var(--radius-card); }
 
 /* ═══ ROUNDED + CONCENTRIC (2026-06-28) ═══
    The global square-corner override was REMOVED when nexus adopted Zincro's

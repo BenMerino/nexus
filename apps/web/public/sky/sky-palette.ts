@@ -1,22 +1,30 @@
 // Sky palette by solar altitude (sRGB 0..255). top = sky dome (overhead),
-// hor = horizon band. Through twilight + golden hour the TOP warms too
-// (violet→mauve→peach→amber) so the whole dome glows at sunrise/sunset — not
-// just a warm strip under a cold blue sky. Night + full day stay blue.
+// hor = horizon band. VOLCANIC scheme: night = grey-black dome + deep
+// purple/blue horizon; day = white-grey dome + light blue; and through
+// TWILIGHT + golden hour the horizon ERUPTS — magma red → ember orange → ash
+// glow — so dawn/dusk read like the volcano is glowing, against an otherwise
+// neutral (never saturated-blue) sky. The eruption is the horizon; the dome
+// only warms to smoke/ash near it.
 
 type RGB = [number, number, number];
 interface Stop { alt: number; top: RGB; hor: RGB; }
 export interface Sky { top: RGB; hor: RGB; }
 
+// MONOTONIC dome: brightest at noon, darkening every step as the sun drops to
+// night — the sky never brightens as it sets (no golden-hour bump). Twilight
+// drama comes from the dome WARMING (reddening) and the lava horizon intensifying,
+// NOT from the dome getting lighter. `top` avg brightness must strictly decrease
+// from alt +60 → −18; only hue shifts red through twilight.
 const STOPS: Stop[] = [
-  { alt: -18, top: [12, 14, 30],   hor: [20, 18, 42]   }, // deep night
-  { alt: -12, top: [22, 22, 52],   hor: [48, 34, 72]   }, // astronomical → violet
-  { alt: -6,  top: [52, 42, 86],   hor: [120, 72, 104] }, // nautical, violet horizon
-  { alt: -2,  top: [112, 92, 128], hor: [236, 128, 96] }, // civil: dome warms (mauve)
-  { alt: 0,   top: [176, 142, 150], hor: [255, 150, 90] }, // sunrise/sunset: peach dome
-  { alt: 4,   top: [214, 186, 176], hor: [255, 196, 118] }, // golden hour: amber dome
-  { alt: 12,  top: [150, 178, 222], hor: [230, 224, 224] }, // morning: back to blue
-  { alt: 30,  top: [86, 150, 224], hor: [190, 216, 240] }, // high sun
-  { alt: 60,  top: [58, 128, 222], hor: [170, 206, 240] }, // near-noon zenith blue
+  { alt: -18, top: [10, 9, 14],    hor: [40, 26, 66]   }, // deep night: obsidian dome + deep purple/blue (NO lava)
+  { alt: -12, top: [20, 16, 24],   hor: [60, 36, 84]   }, // astronomical: still pure deep violet/blue — no glow yet
+  { alt: -6,  top: [32, 24, 30],   hor: [128, 62, 96]  }, // nautical: FAINT ember-violet — the volcano glow just beginning
+  { alt: -2,  top: [36, 27, 27],   hor: [220, 78, 52]  }, // civil: dome smokes red, horizon MAGMA
+  { alt: 0,   top: [40, 30, 30],   hor: [255, 96, 44]  }, // sunset: red-smoke dome (darker than day), molten eruption
+  { alt: 4,   top: [44, 33, 32],   hor: [255, 130, 60] }, // golden hour: warm-red dome, ember horizon — still below noon
+  { alt: 12,  top: [48, 37, 34],   hor: [238, 108, 50] }, // morning: dark ash-smoke dome → ember-lava horizon
+  { alt: 30,  top: [52, 41, 37],   hor: [244, 100, 44] }, // high sun: heavy ash pall → molten-lava horizon (magma pops)
+  { alt: 60,  top: [56, 45, 41],   hor: [248, 94, 38]  }, // noon: darkest-ever ash dome (brightest of the cycle) → hot MAGMA horizon
 ];
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));

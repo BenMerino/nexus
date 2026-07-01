@@ -15,16 +15,18 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const mix = (A: RGB, B: RGB, t: number): RGB =>
   [lerp(A[0], B[0], t), lerp(A[1], B[1], t), lerp(A[2], B[2], t)];
 
-// Keyframes: [altitude, primaryRGB, companionRGB]. The "day = light blue +
-// sunshine" scheme. Between bands we lerp the RGB, so amber→blue fades through
-// neutral, not through green/pink.
+// Keyframes: [altitude, primaryRGB, companionRGB]. VOLCANIC scheme: night =
+// deep purple/blue pair; twilight ERUPTS to magma primary + ember companion;
+// day = light sky-blue accent with a warm-ash companion (keeps charts legible
+// and OUT of the 56–165° green wall the fan-out avoids). Between bands we lerp
+// the RGB, so magma→blue fades through neutral, never through green/pink.
 const KEYS: { alt: number; p: RGB; c: RGB }[] = [
-  { alt: -18, p: [70, 58, 120],  c: [78, 110, 150] }, // deep night: violet + steel blue
-  { alt: -6,  p: [92, 74, 150],  c: [86, 124, 168] }, // nautical
-  { alt: 0,   p: [224, 96, 92],  c: [236, 150, 110] },// sunrise: warm red + peach
-  { alt: 5,   p: [240, 150, 70], c: [240, 120, 96] }, // golden: amber + coral
-  { alt: 14,  p: [114, 172, 230], c: [248, 196, 96] },// morning: clearer light blue + sunshine
-  { alt: 60,  p: [120, 176, 232], c: [250, 200, 100] },// day: clear soft sky blue + sunshine
+  { alt: -18, p: [96, 66, 150],  c: [110, 70, 130] }, // deep night: deep purple + violet-blue
+  { alt: -6,  p: [140, 72, 132], c: [176, 78, 96]  }, // nautical: ember-violet warming
+  { alt: 0,   p: [232, 72, 48],  c: [244, 128, 72] }, // sunrise/sunset: MAGMA red + ember
+  { alt: 5,   p: [248, 122, 52], c: [244, 150, 80] }, // golden: molten orange + ember
+  { alt: 14,  p: [230, 108, 56],  c: [238, 158, 96]  },// morning: ember-lava accent + warm-ash companion (NO blue)
+  { alt: 60,  p: [236, 96, 44],   c: [242, 150, 84]  },// day: molten-lava accent + ember companion — volcanic, never blue
 ];
 
 function pairAt(altitude: number): [RGB, RGB] {
