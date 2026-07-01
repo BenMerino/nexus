@@ -39,34 +39,43 @@ function inject(): void {
   svg.setAttribute("aria-hidden", "true");
   Object.assign(svg.style, { position: "fixed", width: "0", height: "0", pointerEvents: "none" });
 
+  // USER-SPACE units, not objectBoundingBox. In bbox units the feImage stretches
+  // to a 1×1 unit square and the displacement map samples nearly flat → no visible
+  // bend (measured: 0.27% pixel change). userSpaceOnUse + a pixel-sized feImage +
+  // a pixel scale gives a real, size-independent-enough refraction. The region is
+  // oversized (-20%..120%) so the bezel gradient at the card edges isn't clipped.
   const filter = document.createElementNS(ns, "filter");
   filter.id = ID;
   filter.setAttribute("color-interpolation-filters", "sRGB");
   filter.setAttribute("filterUnits", "objectBoundingBox");
-  filter.setAttribute("primitiveUnits", "objectBoundingBox");
-  filter.setAttribute("x", "0");
-  filter.setAttribute("y", "0");
-  filter.setAttribute("width", "1");
-  filter.setAttribute("height", "1");
+  filter.setAttribute("primitiveUnits", "userSpaceOnUse");
+  filter.setAttribute("x", "-0.2");
+  filter.setAttribute("y", "-0.2");
+  filter.setAttribute("width", "1.4");
+  filter.setAttribute("height", "1.4");
 
+  // feImage sized in px to the texture resolution; preserveAspectRatio none lets
+  // the browser scale the RES×RES map across each surface it's applied to.
   const feImg = (href: string, result: string) => {
     const e = document.createElementNS(ns, "feImage");
     e.setAttribute("href", href);
     e.setAttribute("x", "0"); e.setAttribute("y", "0");
-    e.setAttribute("width", "1"); e.setAttribute("height", "1");
+    // 100% → the feImage fills the whole filter region regardless of card size, so
+    // the bezel gradient reaches every edge (a fixed px size only refracted a corner).
+    e.setAttribute("width", "100%"); e.setAttribute("height", "100%");
     e.setAttribute("preserveAspectRatio", "none");
     e.setAttribute("result", result);
     return e;
   };
   const blur = document.createElementNS(ns, "feGaussianBlur");
   blur.setAttribute("in", "SourceGraphic");
-  blur.setAttribute("stdDeviation", "0.008"); // ~ base blur in bounding-box units
+  blur.setAttribute("stdDeviation", "2"); // px, gentle pre-blur before displacement
   blur.setAttribute("result", "blurred");
 
   const dispMap = document.createElementNS(ns, "feDisplacementMap");
   dispMap.setAttribute("in", "blurred");
   dispMap.setAttribute("in2", "displacementMap");
-  dispMap.setAttribute("scale", String(90 / 1000)); // refraction 90, bbox-scaled
+  dispMap.setAttribute("scale", "80"); // px of max refraction (was 0.09 bbox ≈ 0)
   dispMap.setAttribute("xChannelSelector", "R");
   dispMap.setAttribute("yChannelSelector", "G");
   dispMap.setAttribute("result", "refracted");
