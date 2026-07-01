@@ -16,31 +16,17 @@ const mix = (A: RGB, B: RGB, t: number): RGB =>
   [lerp(A[0], B[0], t), lerp(A[1], B[1], t), lerp(A[2], B[2], t)];
 
 // Keyframes: [altitude, primaryRGB, companionRGB]. VOLCANIC scheme: night =
-// deep purple/blue pair; twilight ERUPTS to magma primary + ember companion;
-// day = light sky-blue accent with a warm-ash companion (keeps charts legible
-// and OUT of the 56–165° green wall the fan-out avoids). Between bands we lerp
-// the RGB, so magma→blue fades through neutral, never through green/pink.
+// deep red/ember pair (matches the maroon horizon — no purple); day = warm
+// molten-lava accent + ember companion. Only two altitudes are ever requested
+// (forced day/night — see sky-mode.ts), so this is a straight lookup.
 const KEYS: { alt: number; p: RGB; c: RGB }[] = [
-  { alt: -18, p: [96, 66, 150],  c: [110, 70, 130] }, // deep night: deep purple + violet-blue
-  { alt: -6,  p: [140, 72, 132], c: [176, 78, 96]  }, // nautical: ember-violet warming
-  { alt: 0,   p: [232, 72, 48],  c: [244, 128, 72] }, // sunrise/sunset: MAGMA red + ember
-  { alt: 5,   p: [248, 122, 52], c: [244, 150, 80] }, // golden: molten orange + ember
-  { alt: 14,  p: [230, 108, 56],  c: [238, 158, 96]  },// morning: ember-lava accent + warm-ash companion (NO blue)
-  { alt: 60,  p: [236, 96, 44],   c: [242, 150, 84]  },// day: molten-lava accent + ember companion — volcanic, never blue
+  { alt: -18, p: [150, 30, 40],  c: [130, 40, 50]  }, // deep night: deep red + ember, matches the maroon horizon
+  { alt: 60,  p: [236, 96, 44],  c: [242, 150, 84] }, // day: molten-lava accent + ember companion — volcanic, never blue
 ];
 
 function pairAt(altitude: number): [RGB, RGB] {
-  if (altitude <= KEYS[0].alt) return [KEYS[0].p, KEYS[0].c];
-  const last = KEYS[KEYS.length - 1];
-  if (altitude >= last.alt) return [last.p, last.c];
-  for (let i = 0; i < KEYS.length - 1; i++) {
-    const a = KEYS[i], b = KEYS[i + 1];
-    if (altitude >= a.alt && altitude <= b.alt) {
-      const t = (altitude - a.alt) / (b.alt - a.alt);
-      return [mix(a.p, b.p, t), mix(a.c, b.c, t)];
-    }
-  }
-  return [last.p, last.c];
+  const k = altitude >= 0 ? KEYS[1] : KEYS[0];
+  return [k.p, k.c];
 }
 
 const rgb = (c: RGB) => `rgb(${Math.round(c[0])} ${Math.round(c[1])} ${Math.round(c[2])})`;
