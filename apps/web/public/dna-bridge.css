@@ -216,6 +216,23 @@
 
 }
 
+/* ═══ LIQUID GLASS — frost to zero ═══════════════════════════════════════════
+   In liquid mode the surfaces must be CLEAR so the refracted backdrop reads
+   through — the frosted tint fill is what was drowning the refraction. Zero the
+   ONE-CONTROL-BLOCK knobs here: fill opacity → 0 (fully transparent glass), sky
+   tint → 0, frost blur → 0. Because --glass-0..3 and --tonal-base are DERIVED
+   from these knobs, zeroing the knobs cascades to every surface automatically —
+   no per-surface edit. Only the ::before refraction overlay remains as the glass.
+   Plain glass mode (data-lg without -liquid) keeps the full frost, untouched. */
+:root[data-lg-liquid] {
+  --glass-opacity-0: 0%;
+  --glass-opacity-1: 0%;
+  --glass-opacity-2: 0%;
+  --glass-opacity-3: 0%;
+  --glass-tint: 0%;
+  --glass-blur: 0px;
+}
+
 /* The page backdrop is the live sun-driven sky — a fixed WebGPU/CSS canvas
    (#sky-bg) prepended to <body> at z-index 0 by public/sky/sky-bg.ts (injected
    into every page via vite.config.ts). It replaces the old bronze mesh; the
