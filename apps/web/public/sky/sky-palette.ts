@@ -6,7 +6,7 @@
 type RGB = [number, number, number];
 export interface Sky { top: RGB; hor: RGB; }
 
-const NIGHT: Sky = { top: [10, 9, 14],   hor: [66, 26, 40]  }; // obsidian dome + deep red horizon (no lava)
+const NIGHT: Sky = { top: [10, 9, 14],   hor: [90, 18, 24]  }; // obsidian dome + deep red horizon (no lava)
 const DAY: Sky   = { top: [92, 80, 74],  hor: [248, 94, 38] }; // light ash-grey dome → hot magma horizon
 
 export function skyFor(alt: number): Sky {
