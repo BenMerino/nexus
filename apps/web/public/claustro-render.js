@@ -1,4 +1,11 @@
-(function () {
+// Project card / stats / list renderer for the Projects page. Was an IIFE in
+// proyectos.html; hoisted to a re-runnable mount() (legacy-mount.ts contract)
+// so spa/ProjectsPage.tsx can drive it on every React mount. The body only
+// (re)assigns window.claustroRender (consumed by claustro-app / projects-ui);
+// idempotent registration, so mount() returns no cleanup. The cards it emits
+// carry inline onclick="claustroEdit/claustroDelete" — those globals are set by
+// claustro-app.js's mount().
+export function mount() {
   var esc = function (s) { return window.claustroEsc(s); };
   var fmtCLP = function (n) { return window.fmtCLP(n); };
 
@@ -77,4 +84,4 @@
     projectForm: function (p) { return window.claustroForm.renderProjectForm(p); },
     collectForm: function () { return window.claustroForm.collectForm(); },
   };
-})();
+}

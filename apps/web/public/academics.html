@@ -3,18 +3,9 @@
 <head>
   <meta charset="utf-8">
   <title>Academics — Pliny</title>
-  <link rel="stylesheet" href="/shared.css">
+  <meta http-equiv="refresh" content="0;url=/academics">
 </head>
-<body class="shell-fixed">
-  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
-  <div class="app">
-    <div id="sidebar-mount" data-path="/academics.html"></div>
-    <main class="main">
-      <div id="academics-root"></div>
-      <script type="module" src="/academics.tsx"></script>
-    </main>
-  </div>
-  <script type="module" src="/shell-mount.tsx"></script>
-  <script type="module" src="/spa-router.js"></script>
+<body>
+  <script>window.location.replace("/academics");</script>
 </body>
 </html>

@@ -1,4 +1,9 @@
-(function () {
+// Project-form template (funding/faculty options, investigator rows, full form)
+// for the Projects page. Was an IIFE in proyectos.html; hoisted to a re-runnable
+// mount() (legacy-mount.ts contract) so spa/ProjectsPage.tsx can drive it on
+// every React mount. The body only (re)assigns window.claustroForm /
+// window.claustroFormTpl — idempotent registration, so mount() returns no cleanup.
+export function mount() {
   var esc = function (s) { return window.claustroEsc(s); };
   var fmtCLP = function (n) { return window.fmtCLP(n); };
 
@@ -114,4 +119,4 @@
     renderProjectForm: renderProjectForm,
     collectForm: function () { return window.claustroFormBind.collectForm(); },
   };
-})();
+}

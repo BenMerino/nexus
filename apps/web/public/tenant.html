@@ -13,33 +13,6 @@
     .page-title em { font-style: italic; color: var(--fg-muted); }
     .page-lede { color: var(--fg-muted); font-size: var(--text-body); max-width: 46ch; margin-top: 10px; line-height: 1.55; }
 
-    /* ── Omnibox: input + grouped results popover (page-head, left) ──── */
-    .omni { position: relative; flex: 1 1 280px; max-width: 520px; min-width: 0; }
-    /* Nested · rung 2 — the fill + drop-blur come from the tonal-stacking
-       mechanism (`:root .public-header .omni-input` in dna-bridge.css), not here.
-       This rule owns only layout + the glass rim. */
-    .omni-input {
-      width: 100%; padding: 10px 14px; font-size: var(--text-detail); color: var(--fg);
-      border: var(--border-w) solid var(--border-glass); box-shadow: var(--shadow-sm);
-    }
-    .omni-input::placeholder { color: var(--fg-dim); }
-    .omni-input:focus { outline: none; border-color: var(--accent); }
-    .omni-pop {
-      position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40;
-      border: var(--border-w) solid var(--border); box-shadow: var(--shadow-sm);
-      max-height: 420px; overflow-y: auto;
-    }
-    .omni-group { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); padding: 10px 13px 4px; }
-    .omni-row {
-      display: flex; align-items: baseline; gap: 10px; width: 100%; text-align: left;
-      padding: 7px 13px; border: none; background: none; cursor: pointer;
-      color: var(--fg); text-decoration: none; font-size: var(--text-detail); font-family: inherit;
-    }
-    .omni-row:hover { background: var(--glass-2); }
-    .omni-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .omni-sub { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); flex: none; }
-    .omni-empty { padding: 12px 13px; font-family: var(--font-mono); font-size: var(--text-label); color: var(--fg-dim); }
-
     /* ── KPI cards: accent rail + mono label + serif value + sparkline ── */
     .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--chrome-inset); margin-bottom: var(--chrome-inset); }
     @media (max-width: 980px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
@@ -55,10 +28,10 @@
     .kpi-label { font-family: var(--font-mono); font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); }
     .kpi-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--kpi-accent, var(--j-sapphire)); }
     .kpi-body { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-top: auto; }
-    /* The big number wears the card's OWN hand-picked accent (--kpi-accent, the
-       per-KPI --j-* jewel set in tenant-summary.tsx), not the primary gradient. */
-    .kpi-val { font-family: var(--font-display); font-size: var(--text-display); line-height: 0.92; letter-spacing: var(--tracking-h); font-weight: var(--weight-body); font-variant-numeric: tabular-nums; color: var(--kpi-accent, var(--accent)); }
-    .kpi-val .pct { font-size: var(--text-h2); color: var(--kpi-accent, var(--accent)); }
+    /* The big number wears the normal foreground token — the per-KPI --j-* jewel
+       accent stays on the dot/sparkline only, so the value doesn't compete. */
+    .kpi-val { font-family: var(--font-display); font-size: var(--text-display); line-height: 0.92; letter-spacing: var(--tracking-h); font-weight: var(--weight-body); font-variant-numeric: tabular-nums; color: var(--fg); }
+    .kpi-val .pct { font-size: var(--text-h2); color: var(--fg); }
     .kpi-spark { display: block; flex: none; }
     /* Series sparkline as a full-bleed bottom strip: negative margins cancel
        the card padding so the area gradient runs edge-to-edge; the SVG inside
@@ -145,14 +118,21 @@
       line-height: 1.8; letter-spacing: 0.04em;
     }
 
-    /* Roster-style table: bordered, full-width, sticky header, hover rows. */
-    .admin-table { width: 100%; border-collapse: collapse; font-size: var(--text-label); border: var(--border-w) solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    /* Roster-style table: bordered, full-width, sticky header, hover rows.
+       Header fill + concentric top corners come from the nested-glass
+       tonal-stacking rule (`:root .card .admin-table th` in dna-bridge.css) —
+       this rule owns only layout/typography, same split as .chart-surface. */
+    .admin-table { width: 100%; border-collapse: collapse; font-size: var(--text-label); border: var(--border-w) solid var(--border-glass); border-radius: var(--_nest-corner, var(--radius-card)); overflow: hidden; }
     .admin-table th, .admin-table td { padding: 9px 12px; text-align: left; border-bottom: var(--border-w) solid var(--border-soft); }
-    .admin-table th { position: sticky; top: 0; z-index: 1; background: var(--bg-inset); font-weight: var(--weight-label); text-transform: uppercase; font-size: var(--text-micro); letter-spacing: var(--tracking-label); color: var(--fg-dim); font-family: var(--font-mono); user-select: none; }
+    .admin-table th { position: sticky; top: 0; z-index: 1; font-weight: var(--weight-label); text-transform: uppercase; font-size: var(--text-micro); letter-spacing: var(--tracking-label); color: var(--fg-dim); font-family: var(--font-mono); user-select: none; }
     .admin-table tbody tr:last-child td { border-bottom: none; }
     .admin-table tbody tr:hover { background: var(--glass-2); }
     .roster-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-    .tableScroll { max-height: 56vh; overflow: auto; }
+    /* Search input: glass fill + concentric corner via `:root .card
+       .roster-search` in dna-bridge.css — this rule owns only layout/type. */
+    .roster-search { padding: 7px 10px; font-size: var(--text-label); color: var(--fg); font: inherit; }
+    .roster-search::placeholder { color: var(--fg-dim); }
+    .roster-search:focus { outline: none; border-color: var(--accent); }
     /* Org tree — file-explorer style with CSS-drawn connector lines.
        Each subtree carries a vertical guide on the left; each direct
        child grows a horizontal hook into its row's vertical center. */
@@ -228,9 +208,21 @@
 
     /* ── Faculties card grid (page-specific, not chrome — N9). Each unit a
           clickable card carrying its output-share insight; opens a unit page. */
+    .fac-sort-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    /* Glass fill comes from the shared nested-glass recipe (:root .card
+       .fac-sort-pill in dna-bridge.css, same rung-2 tint as .fac-card); this
+       rule owns layout, typography, and the pill's own hairline + radius. */
+    .fac-sort-pill {
+      font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: 0.04em;
+      padding: 4px 10px; border: var(--border-w) solid var(--border-soft); border-radius: var(--radius-pill);
+      color: var(--fg-dim); cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .fac-sort-pill:hover { color: var(--fg); }
+    .fac-sort-pill.active { color: var(--accent); border-color: var(--accent); }
     .fac-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: var(--chrome-inset); margin-top: 16px;
+      gap: var(--chrome-inset);
     }
     .fac-card {
       display: flex; flex-direction: column; gap: 4px; text-align: left;
@@ -240,17 +232,20 @@
       transition: border-color 0.15s, transform 0.12s;
     }
     .fac-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-    .fac-card-kind {
-      font-family: var(--font-mono); font-size: var(--text-micro);
-      letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim);
+    /* Clamped to a fixed 2-line box so short and long unit names reserve the
+       same height — otherwise a wrapped name pushes the bar/meta below it out
+       of alignment with the rest of the row. */
+    .fac-card-name {
+      font-family: var(--font-display); font-size: var(--text-h3); line-height: 1.1; margin-top: 2px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; min-height: calc(1.1em * 2);
     }
-    .fac-card-name { font-family: var(--font-display); font-size: var(--text-h3); line-height: 1.1; margin-top: 2px; }
     .fac-card-figure { font-size: var(--text-detail); color: var(--fg-muted); margin-top: 8px; }
     .fac-card-figure b { font-family: var(--font-mono); font-size: var(--text-h3); color: var(--fg); font-weight: var(--weight-label); }
     .fac-card-bar { height: 4px; background: var(--bg-inset); border-radius: var(--radius-pill); overflow: hidden; margin-top: 8px; }
     .fac-card-bar i { display: block; height: 100%; background: var(--accent); opacity: 0.8; }
     .fac-card-meta {
-      display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px;
+      display: flex; flex-direction: column; gap: 4px; margin-top: 10px;
       font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim);
     }
   </style>

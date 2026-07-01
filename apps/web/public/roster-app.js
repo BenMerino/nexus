@@ -1,7 +1,11 @@
 // Roster page: tenant-admin uploads a faculty roster CSV; each row becomes an
 // academic user under the tenant. Gated client-side on tenantAdmin (the API
 // re-enforces it). Surfaces generated temp credentials once, as a download.
-(function () {
+//
+// SPA contract (legacy-mount.ts): mount() is re-runnable — it re-fetches
+// identity, re-binds the toolbar/import/ingest controls, and drives the sibling
+// roster-overview / roster-ingest-indicator modules via their window hooks.
+export function mount() {
   var tenantId = null;
 
   fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
@@ -143,4 +147,4 @@
       }).join("\n");
     }
   }
-})();
+}

@@ -2,7 +2,11 @@
 // renders a progress banner while a background paper-ingest is running, then a
 // brief done/error state. Exposes window.rosterIngestIndicator.poll(tenantId);
 // roster-app calls it on load and after an import that kicks auto-ingest.
-(function () {
+//
+// SPA contract (legacy-mount.ts): mount() is re-runnable and returns a cleanup
+// that clears the chained poll timer, so leaving the /roster route stops
+// polling. The window hook is (re)published on every mount.
+export function mount() {
   var pollTimer = null;
 
   function poll(tenantId) {
@@ -47,4 +51,7 @@
   }
 
   window.rosterIngestIndicator = { poll: poll };
-})();
+
+  // Tear down the chained poll when React unmounts the page.
+  return function cleanup() { clearTimeout(pollTimer); };
+}

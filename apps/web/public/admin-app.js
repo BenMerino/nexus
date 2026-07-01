@@ -1,5 +1,8 @@
-// Admin page — tenant-first navigation for superadmin
-(function () {
+// Admin page — tenant-first navigation for superadmin.
+// Exported `mount()` is re-runnable (legacy-mount.ts contract): the SPA page
+// (spa/AdminPage.tsx) calls it on every React mount. window.* assignments stay
+// — the inline onclick handlers in the page markup depend on them.
+export function mount() {
   var role = null, tenants = [], activeTenant = null;
 
   fetch("/api/auth?action=me").then(r => r.json()).then(function (d) {
@@ -115,4 +118,4 @@
 
   function loadTenantUsers(tid) { adminUsers.loadTenantUsers(tid); }
   function renderUserForm(tid) { adminUsers.renderUserForm(tid, role); }
-})();
+}

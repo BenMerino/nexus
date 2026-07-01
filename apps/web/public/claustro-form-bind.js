@@ -1,4 +1,9 @@
-(function () {
+// Form event-binding + collection for the Projects page. Was an IIFE in
+// proyectos.html; hoisted to a re-runnable mount() (legacy-mount.ts contract)
+// so spa/ProjectsPage.tsx can drive it on every React mount. The body only
+// (re)assigns window.claustroFormBind (its bindEvents runs later, when the form
+// is opened) — idempotent registration, so mount() returns no cleanup.
+export function mount() {
   var fmtCLP = function (n) { return window.fmtCLP(n); };
 
   function bindEvents() {
@@ -105,4 +110,4 @@
   }
 
   window.claustroFormBind = { bindEvents: bindEvents, collectForm: collectForm };
-})();
+}

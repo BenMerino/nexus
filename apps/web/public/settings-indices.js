@@ -1,7 +1,9 @@
 // Settings — accepted citation indices for the claustro classification.
 // Visible to editors (secretary/director/admin/superadmin) and tenant_admins,
 // matching the requireEditor gate on PUT /api/claustro?action=indices.
-(function () {
+// Exported mount() is re-runnable (legacy-mount.ts contract): the SPA page
+// re-queries the DOM + re-binds on every React mount.
+export function mount() {
   var EDITOR = ["secretary", "director", "admin", "superadmin"];
   var ALL = ["WoS", "Scopus", "SciELO", "DOAJ"];
   var selected = [];
@@ -50,4 +52,4 @@
     document.getElementById("idx-save").addEventListener("click", save);
     loadIndices();
   });
-})();
+}

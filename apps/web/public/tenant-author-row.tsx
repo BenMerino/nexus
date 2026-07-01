@@ -26,6 +26,7 @@ export function AuthorTableRow({ a, slug }: { a: AuthorRowData; slug: string }) 
       <td style={num}>{a.paperCount.toLocaleString()}</td>
       <td style={num} title={hIndexTooltip(a.hIndexByType)}>{a.hIndex}</td>
       <td style={num}>{a.totalCitations.toLocaleString()}</td>
+      <td>{a.faculty || <span className="text-muted text-small">—</span>}</td>
       <td>{a.orcid
         ? <a href={`https://orcid.org/${a.orcid}`} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--mono)', fontSize: 'var(--text-micro)' }}>{a.orcid}</a>
         : <span className="text-muted text-small">{ES.authorsTable.none}</span>}</td>

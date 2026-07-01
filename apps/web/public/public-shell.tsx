@@ -48,14 +48,14 @@ export function PublicShell({
 }: PublicShellProps) {
   return (
     <div className="app">
-      {/* Row 1: full-width floating header. Row 2: sidebar + content below it. */}
+      {/* Header is now a breadcrumb only — no search slot. Sidebar carries the
+          omnibox as its top row, same placement as the authed SidebarSearch. */}
       {tenant && (
         <TenantPublicHeader tenant={tenant} items={[]} currentId={view}
-          onNavigate={() => {}} yearRange={yearRange} lastUpdated={lastUpdated}
-          search={<TenantSearch slug={slug} onSelectUnit={onSelectUnit} />} />
+          onNavigate={() => {}} yearRange={yearRange} lastUpdated={lastUpdated} />
       )}
-      <TenantSidebar tenantName={tenant?.name ?? ''} view={view}
-        navigate={navigate} hrefFor={hrefFor} />
+      <TenantSidebar view={view} navigate={navigate} hrefFor={hrefFor}
+        search={<TenantSearch slug={slug} onSelectUnit={onSelectUnit} />} />
       <div className="public-app">
         <main className="public-main">
           <div className="public-content">{children}</div>

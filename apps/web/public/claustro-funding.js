@@ -1,4 +1,9 @@
-(function () {
+// Funding-source catalog + CLP formatter for the Projects page. Was an IIFE in
+// proyectos.html; hoisted to a re-runnable mount() (legacy-mount.ts contract)
+// so spa/ProjectsPage.tsx can drive registration on every React mount. The body
+// only (re)assigns window.* globals (used by the other claustro modules), which
+// is idempotent — no per-mount DOM work, so mount() returns no cleanup.
+export function mount() {
   var FUNDING_SOURCES = [
     { id: "fondecyt-regular",    name: "Fondecyt Regular",        external: true,  concursable: true,  agency: "ANID" },
     { id: "fondecyt-iniciacion", name: "Fondecyt Iniciación",     external: true,  concursable: true,  agency: "ANID" },
@@ -41,4 +46,4 @@
   window.fundingById = byId;
   window.fundingByName = findByName;
   window.fmtCLP = fmtCLP;
-})();
+}

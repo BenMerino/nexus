@@ -11,7 +11,10 @@ module.exports = async function handler(req, res) {
   const scope = await requireScope(req, res);
   if (!scope) return;
   try {
-    res.json(await listJournals(scope));
+    // This authed page still wants the full unpaginated list (journals.tsx
+    // renders one flat table) — the public handler is the one that paginates.
+    const { rows } = await listJournals(scope, { pageSize: 20000 });
+    res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

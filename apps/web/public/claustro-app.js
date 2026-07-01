@@ -1,4 +1,12 @@
-(function () {
+// Orchestrator for the Projects page (fetch me → gate → load projects, wire the
+// header buttons). Was an IIFE in proyectos.html; hoisted to a re-runnable,
+// named mount() (legacy-mount.ts contract) so spa/ProjectsPage.tsx can drive it
+// on every React mount. mount() re-binds the toggle/save/cancel listeners on the
+// freshly-mounted DOM, re-registers the window.claustro* globals (the ported
+// card markup's inline onclick="claustroEdit/claustroDelete" resolves to them),
+// and re-fetches. React discards the DOM nodes on unmount, so listeners bound
+// here don't stack across remounts — no cleanup is returned.
+export function mount() {
   var state = {
     me: null, projects: [],
     editingId: null, formOpen: false, deptFilter: "all",
@@ -70,11 +78,10 @@
   };
   window.claustroEsc = esc;
   window.claustroState = state;
-  // This is a deferred ES module, so it runs only after the DOM is fully
-  // parsed — every element init() touches already exists. Don't gate on
-  // window.load: that waits for all sub-resources (fonts, preloaded chunks),
-  // which on a cold first visit delays the data fetch until the page looks
-  // broken and the user reloads. DOMContentLoaded / immediate is correct.
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
-})();
+  // useLegacyMounts invokes mount() from a useEffect, after React has committed
+  // the page body — every element init() touches already exists, so call it
+  // directly (no readyState gate). Registration modules (funding/render/form/…)
+  // are imported alongside in the same Promise.all and register their window.*
+  // globals before any mount() runs, so init()'s window.claustro* reads resolve.
+  init();
+}

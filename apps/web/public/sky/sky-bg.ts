@@ -38,18 +38,17 @@ function paint() {
   const glowHDR = 1.0 + goldenness * (headroom - 1.0);
 
   if (gpu) {
-    gpu.draw(sky.top, sky.mid, sky.hor, glowX, glowHDR);
+    gpu.draw(sky.top, sky.hor, glowX, glowHDR);
   } else {
     canvas.style.background =
-      `linear-gradient(to bottom, ${rgb(sky.top)} 0%, ${rgb(sky.top)} 10%, ${rgb(sky.mid)} 60%, ${rgb(sky.mid)} 95%, ${rgb(sky.hor)} 100%),` +
+      `linear-gradient(to bottom, ${rgb(sky.top)} 0%, ${rgb(sky.top)} 35%, ${rgb(sky.hor)} 100%),` +
       `radial-gradient(120% 80% at ${Math.round(glowX * 100)}% 100%, ${rgb(sky.hor)} 0%, transparent 60%)`;
   }
 }
 
 async function start() {
   Object.assign(canvas.style, {
-    position: "fixed", inset: "0", width: "100%", height: "100%",
-    zIndex: "0", display: "block", pointerEvents: "none",
+    position: "fixed", inset: "0", zIndex: "0", display: "block", pointerEvents: "none",
   } as CSSStyleDeclaration);
   document.body.prepend(canvas);
   document.body.insertBefore(grain, canvas.nextSibling);

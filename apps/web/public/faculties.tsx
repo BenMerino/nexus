@@ -93,13 +93,13 @@ function App() {
 }
 
 let root: Root | null = null;
-function mount() {
+// Exported for the SPA page (spa/FacultiesPage.tsx) to invoke on every React
+// mount — the legacy-mount.ts contract. Idempotent: unmounts the prior root
+// first, so re-navigating back to /faculties re-renders cleanly.
+export function mount() {
   const el = document.getElementById('faculties-root');
   if (!el) return;
   if (root) root.unmount();
   root = createRoot(el);
   root.render(<App />);
 }
-(window as any).__nexusMounts = (window as any).__nexusMounts || {};
-(window as any).__nexusMounts[new URL(import.meta.url).pathname] = mount;
-mount();

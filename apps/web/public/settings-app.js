@@ -1,5 +1,9 @@
-// Settings page: logo upload + color customization
-(function () {
+// Settings page: logo upload + color customization.
+// Exported mount() is re-runnable (legacy-mount.ts contract): the SPA page
+// (spa/SettingsPage.tsx) calls it on every React mount, and React gives us
+// fresh DOM nodes each time, so re-querying by id + re-binding is safe.
+// window.saveColors / window.pickColor stay set for the inline onclick handlers.
+export function mount() {
   var tenantId = null;
 
   fetch("/api/auth?action=me").then(function (r) { return r.json(); }).then(function (d) {
@@ -97,4 +101,4 @@
       setTimeout(function () { status.textContent = ""; }, 2000);
     }).catch(function (err) { status.textContent = err.message; });
   };
-})();
+}

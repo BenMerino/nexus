@@ -69,42 +69,64 @@
 }
 
 /* Segments are layout groups within the one bar — no glass of their own.
-   Left/right shrink to content; centre (search) flexes to fill. */
+   Both shrink to content; the breadcrumb sits left, sign-in/theme sits right. */
 .public-header-seg { display: flex; align-items: center; }
 .public-header-left  { flex: none; }
 .public-header-right { flex: none; gap: 14px; }
-.public-header-center { flex: 1 1 auto; min-width: 0; padding: 0 8px; }
-.public-header-center .omni { width: 100%; max-width: none; }
-/* The omnibox frame carries NO surface inside the unified header — the header
-   glass IS its backdrop. Strip the InputFrame's bg + border + shadow (and its
-   focus ring) so it's a bare field on the glass, not a control chip on a bar. */
-.public-header-center .omni-input,
-.public-header-center .omni-input:focus-within {
-  width: 100%; min-height: calc(var(--chrome-bar-h) - 16px);
-  background: transparent; border: 0; box-shadow: none; padding: 0 10px;
-}
 
-.public-brand { display: flex; align-items: center; gap: 13px; flex: none; }
-.public-logo { height: 36px; width: auto; max-width: 120px; object-fit: contain; }
-/* Gemstone crest: gradient sapphire→amethyst tile with the tenant initial. */
-.public-logo-fallback {
-  position: relative; display: grid; place-items: center;
-  height: 38px; width: 38px; flex: none; overflow: hidden;
-  border-radius: var(--radius-control);
-  border: var(--border-w) solid var(--border); background: var(--bg-card);
+/* ── Omnibox: input + grouped results popover — sidebar top row, same slot
+   the authed SidebarSearch fills (shell-sidebar.tsx). Shared across every
+   public page's sidebar (tenant, author — N9), so it lives here, not in a
+   page's own <style>. ──────────────────────────────────────────────────── */
+.sidebar .omni { position: relative; width: 100%; padding: 12px 14px 6px; }
+/* Nested · rung 2 — the fill + drop-blur come from the tonal-stacking
+   mechanism (`:root .sidebar .omni-input` in dna-bridge.css), not here.
+   This rule owns only layout + the glass rim. */
+.omni-input {
+  width: 100%; padding: 10px 14px; font-size: var(--text-detail); color: var(--fg);
+  border: var(--border-w) solid var(--border-glass); box-shadow: var(--shadow-sm);
 }
-.public-logo-fallback::before {
-  content: ""; position: absolute; inset: 0; opacity: 0.92;
-  background: linear-gradient(135deg, var(--j-sapphire) 0%, var(--j-amethyst) 100%);
+.omni-input::placeholder { color: var(--fg-dim); }
+.omni-input:focus { outline: none; border-color: var(--accent); }
+.omni-pop {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40;
+  border: var(--border-w) solid var(--border); box-shadow: var(--shadow-sm);
+  max-height: 420px; overflow-y: auto;
 }
-.public-logo-fallback::after {
-  content: attr(data-initial); position: relative;
-  font-family: var(--font-display); font-size: var(--text-h2); color: #fff; line-height: 1;
+.omni-group { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); padding: 10px 13px 4px; }
+.omni-row {
+  display: flex; align-items: baseline; gap: 10px; width: 100%; text-align: left;
+  padding: 7px 13px; border: none; background: none; cursor: pointer;
+  color: var(--fg); text-decoration: none; font-size: var(--text-detail); font-family: inherit;
 }
+.omni-row:hover { background: var(--glass-2); }
+.omni-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.omni-sub { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); flex: none; }
+.omni-empty { padding: 12px 13px; font-family: var(--font-mono); font-size: var(--text-label); color: var(--fg-dim); }
+
+/* Breadcrumb: plain tenant identity, no product brand (that moved to the
+   sidebar's tenant-chip — one brand, not a duplicate in both chrome pieces). */
+.public-breadcrumb { display: flex; align-items: baseline; gap: 10px; flex: none; }
 .public-tenant-name { font-family: var(--font-display); font-size: var(--text-h3); line-height: var(--leading-display); letter-spacing: 0.005em; }
-.public-tenant-sub { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); margin-top: 3px; }
+.public-tenant-sub { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); }
 .public-tenant-sub a { color: var(--fg-dim); }
 .public-tenant-sub a:hover { color: var(--accent); }
+
+/* Volcano glass crest — the product brand mark, now in the sidebar's
+   tenant-chip (.tenant-brand) instead of the header. Nested inside the
+   sidebar's own rung-1 glass card, so it steps to rung 2 (tint only, no
+   re-blur — same ladder as every other nested surface, dna-bridge.css). */
+.public-logo-mark {
+  height: 38px; width: 38px; flex: none; padding: 6px;
+  border-radius: var(--radius-control);
+  border: var(--border-w) solid var(--border-glass);
+  background-color: var(--glass-2);
+}
+/* 8 vertical bars forming the mountain profile — each bar a column of 8
+   flat cells, filled from the bottom up to its height. */
+.volcano-grid { display: flex; align-items: flex-end; width: 100%; height: 100%; gap: 1px; }
+.volcano-bar { flex: 1; display: flex; flex-direction: column; height: 100%; }
+.volcano-bar span { display: block; width: 100%; flex: 1; }
 /* (.public-header-search removed — search is now the detached .public-search-bar
    above, its own floating glass pill, not an in-row slot.) */
 .public-tabs {
@@ -161,8 +183,14 @@
 
 /* Public shell: header + sidebar are FIXED (out of flow), so the grid's column/
    row reservation isn't needed — .public-app just fills the viewport and
-   .public-main scrolls within it (offset by the fixed-chrome padding above). */
-.app:has(> .public-header) {
+   .public-main scrolls within it (offset by the fixed-chrome padding above).
+   Matched two ways: `:has(> .public-header)` on public pages, where the header
+   IS a true direct child (public-shell.tsx); `.app-headered` on the private
+   app (spa/AuthLayout.tsx), where header + sidebar mount together inside
+   #sidebar-mount — display:contents erases its BOX but not its DOM node, so
+   :has(> …) never matches there. The class is the reliable signal; :has stays
+   for pages that don't carry the class. */
+.app:has(> .public-header), .app-headered {
   display: block; height: 100vh;
 }
 .app > .public-app { height: 100%; min-height: 0; }
@@ -170,6 +198,16 @@
 /* (Removed the old `.app .public-main { padding: --chrome-inset }` grid-era
    override — it reset the fixed-chrome offset padding, dropping content BEHIND
    the header + sidebar. The base .public-main padding now governs.) */
+
+/* .main needs the identical clearance .public-main gets, it just isn't named
+   .public-main on the private route. */
+.app-headered > .main {
+  height: 100vh;
+  padding-top: calc(2 * var(--chrome-inset) + var(--chrome-bar-h-actual, var(--chrome-bar-h)));
+  padding-left: calc(var(--sidebar-w) + 2 * var(--chrome-inset));
+  padding-right: var(--chrome-inset);
+  padding-bottom: var(--chrome-inset);
+}
 
 @keyframes sync-pulse {
   0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--j-emerald) 60%, transparent); }
@@ -190,7 +228,6 @@
   grid-template-rows: auto 1fr;
   height: 100vh;
 }
-.app.app-scroll { grid-template-rows: auto auto; height: auto; min-height: 100vh; align-items: start; }
 
 #sidebar-mount { display: contents; }
 #sidebar-mount:empty { display: block; }
@@ -221,8 +258,6 @@
   --_nest-r: var(--radius-card); --_nest-pad: var(--space-2);
   --_nest-corner: max(0px, calc(var(--radius-card) - var(--space-2) - 1px));
 }
-.app.app-scroll .sidebar { position: sticky; top: var(--chrome-inset); }
-
 /* ── LIQUID GLASS — the chrome shells refract too ────────────────────────────
    Header + sidebar use the SAME cross-browser overlay recipe as the content
    surfaces (see dna-bridge.css): a ::before that captures the backdrop via
@@ -251,47 +286,33 @@
   filter: url(#lg-kube);
 }
 
-/* PUBLIC pages (tenant/author): both header AND sidebar are FIXED chrome, only
-   the content scrolls. Scoped via :has so the authed app's sidebar (no
-   .public-header) is untouched. This override changes ONLY positioning — it
-   takes the card out of flow (position: fixed) and pins it below the fixed
-   header. The SHAPE (width, margin/inset, corner, height formula) stays the
-   shared definition above: margin is untouched, and `top` matches the margin
-   inset PLUS the header the card must clear, using the SAME measured
-   --chrome-bar-h-actual that .public-main uses so content + sidebar align. */
-.app:has(> .public-header) .sidebar {
-  /* Take the card out of flow and pin it — SHAPE unchanged. The gap on every
-     edge is still exactly --chrome-inset (left explicit, top = inset below the
-     header band, bottom via the shared height formula), so the visual box is
-     identical to the authed grid card. Margin is neutralized here because the
-     inset is now expressed through explicit offsets under `fixed`. */
+/* ONE shell shape on every page, public and private (N9): the sidebar spans
+   the FULL viewport height top-to-bottom, and the header starts to the RIGHT
+   of the sidebar (not a full-width bar above it). Both are FIXED chrome; only
+   the content scrolls. Matched via :has(> .public-header) OR .app-headered —
+   see the comment on the block above for why both selectors exist. */
+.app:has(> .public-header) .sidebar, .app-headered .sidebar {
+  /* Take the card out of flow and pin it to the full-height left edge —
+     SHAPE unchanged, only position + height differ from the grid mode. */
   position: fixed;
   margin: 0;
   left: var(--chrome-inset);
-  /* Below the fixed header: one inset + the measured bar height (same value
-     .public-main uses) + one inset gap between the header and the card. */
-  top: calc(2 * var(--chrome-inset) + var(--chrome-bar-h-actual, var(--chrome-bar-h)));
-  /* Reserve the header band so the shared `height` formula (which reads this)
-     subtracts it too — keeps ONE height definition across both modes. */
-  --_sidebar-top-chrome: calc(var(--chrome-inset) + var(--chrome-bar-h-actual, var(--chrome-bar-h)));
+  top: var(--chrome-inset);
+  height: calc(100vh - 2 * var(--chrome-inset));
   z-index: 35;
+}
+/* The header no longer spans the full width above the sidebar — it starts
+   after the sidebar's own column + gutters, same left offset .main/.public-main
+   use to clear the fixed sidebar. */
+.app:has(> .public-header) .public-header, .app-headered .public-header {
+  left: calc(var(--sidebar-w) + 2 * var(--chrome-inset));
 }
 
 .tenant-chip { padding: 18px 20px 16px; border-bottom: var(--border-w) solid var(--border-soft); }
 .tenant-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.tenant-mark {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
-  position: relative; flex-shrink: 0; overflow: hidden;
-}
-.tenant-mark::after { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: var(--bg-inset); }
-.tenant-mark::before { content: ''; position: absolute; inset: 11px; border-radius: 50%; background: var(--accent); }
-.tenant-mark img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; z-index: 1; }
-.tenant-mark img + ::after, .tenant-mark img ~ ::before { display: none; }
 .brand-text { display: flex; flex-direction: column; }
 .brand-name { font-family: var(--font-display); font-size: var(--text-h3); letter-spacing: var(--tracking-h); line-height: 1; }
 .brand-tenant { font-size: var(--text-micro); color: var(--fg-dim); text-transform: uppercase; letter-spacing: var(--tracking-label); margin-top: 4px; font-family: var(--font-mono); }
-.tenant-chip-meta { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .role-switcher { padding: 14px 14px 10px; border-bottom: var(--border-w) solid var(--border-soft); }
 .role-label { font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); font-family: var(--font-mono); margin-bottom: 8px; padding: 0 6px; }

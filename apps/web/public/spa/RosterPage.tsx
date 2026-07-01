@@ -1,0 +1,133 @@
+// Roster page (/roster). The body that lived in roster.html, ported to React
+// Router. Tenant-admin uploads a faculty roster CSV, ingests publications for
+// ORCID-linked academics, and browses a paginated overview table. The three
+// legacy .js entry modules own all behavior (they bind listeners by id and
+// publish window hooks); this page provides the exact markup + page-specific
+// styles and drives their (re)mount on every route entry via legacy-mount.
+//
+// Load order matters: roster-overview + roster-ingest-indicator publish the
+// window.rosterOverview / window.rosterIngestIndicator hooks that roster-app
+// calls at mount, so they must mount before roster-app. useLegacyMounts runs
+// the loaders in array order.
+//
+// No inline onclick in this markup — every control is wired in JS by id — so
+// dangerouslySetInnerHTML is only for fidelity of the large static body. The
+// styles (roster-drop/admin-table/roster-toolbar/tool-panel) are page-specific
+// (not chrome — N9), token-driven, and travel with the page as they did in the
+// old roster.html <style> block.
+
+import React from 'react';
+import { useLegacyMounts } from './legacy-mount';
+
+const styles = `
+  .roster-drop { border: 1px dashed var(--border); border-radius: var(--radius); padding: 18px; background: var(--bg-inset); }
+  .roster-drop textarea { width: 100%; min-height: 160px; font-family: var(--font-mono); font-size: var(--text-micro); background: transparent; color: var(--fg); border: var(--border-w) solid var(--border); border-radius: var(--radius-card); padding: 10px; resize: vertical; }
+  .roster-stat { display: inline-block; margin-right: 24px; }
+  .roster-stat b { font-size: var(--text-h2); font-family: var(--font-display); font-weight: var(--weight-body); }
+  .roster-stat span { display: block; font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); }
+  .roster-err { color: var(--danger, #d66); font-size: var(--text-micro); font-family: var(--font-mono); }
+  /* Roster table — bordered, full-width, sticky header, hover rows. */
+  .admin-table { width: 100%; border-collapse: collapse; font-size: var(--text-label); border: var(--border-w) solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .admin-table th, .admin-table td { padding: 9px 12px; text-align: left; border-bottom: var(--border-w) solid var(--border-soft); }
+  .admin-table th { position: sticky; top: 0; z-index: 1; background: var(--bg-inset); font-weight: var(--weight-label); text-transform: uppercase; font-size: var(--text-micro); letter-spacing: var(--tracking-label); color: var(--fg-dim); font-family: var(--font-mono); user-select: none; }
+  .admin-table tbody tr:last-child td { border-bottom: none; }
+  .admin-table tbody tr:hover { background: var(--bg-inset); }
+  .roster-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .roster-toolbar .tool-btn { background: var(--bg-inset); border: var(--border-w) solid var(--border); color: var(--fg); padding: 6px 14px; border-radius: var(--radius-control); cursor: pointer; font-size: var(--text-label); }
+  .roster-toolbar .tool-btn.active { border-color: var(--accent); color: var(--accent); }
+  .tool-panel { border: var(--border-w) solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; background: var(--bg-inset); }
+  .tableScroll { max-height: 56vh; overflow: auto; }
+`;
+
+const BODY = `
+      <div class="view">
+        <header class="view-head">
+          <div>
+            <h1 class="view-title">Roster</h1>
+          </div>
+        </header>
+
+        <div class="card" id="overview-card" style="display:none;">
+          <div class="roster-toolbar">
+            <button class="tool-btn" id="tool-import">Import roster</button>
+            <button class="tool-btn" id="tool-ingest">Ingest publications</button>
+            <input type="text" id="ov-filter" placeholder="search name / faculty / department" style="margin-left:auto; font-size:var(--text-label); padding:6px 10px; width:280px; border:var(--border-w) solid var(--border); border-radius:var(--radius-control); background:var(--bg-inset); color:var(--fg);">
+          </div>
+
+          <!-- Live ingest indicator: shown only while a background paper-ingest
+               is running (or just finished), polled from roster-ingest-status. -->
+          <div id="ingest-banner" style="display:none; align-items:center; gap:10px; padding:10px 14px; margin-bottom:14px; border:var(--border-w) solid var(--border); border-radius:var(--radius); background:var(--bg-inset); font-size:var(--text-label);">
+            <span class="sync-pulse" id="ingest-banner-pulse"></span>
+            <span id="ingest-banner-text">Ingesting publications…</span>
+            <div style="flex:1; height:6px; background:var(--border-soft); border-radius:var(--radius-sm); overflow:hidden; min-width:80px;">
+              <div id="ingest-banner-bar" style="height:100%; width:0%; background:var(--accent); transition:width 0.4s;"></div>
+            </div>
+            <span id="ingest-banner-pct" class="text-small text-muted" style="font-family:var(--mono);"></span>
+          </div>
+
+          <!-- Import panel -->
+          <div class="tool-panel" id="panel-import" style="display:none;">
+            <div class="view-sub" style="margin-bottom:12px;">Import academics from a semicolon-delimited roster export (Nombre; Categoría; Departamento; Facultad; ORCID). Re-importing updates org fields without duplicating.</div>
+            <input type="file" id="roster-file" accept=".csv,text/csv,text/plain" class="mb-8">
+            <textarea id="roster-text" placeholder="…or paste the CSV contents here" style="width:100%; min-height:140px; font-family:var(--font-mono); font-size:var(--text-micro); background:transparent; color:var(--fg); border:var(--border-w) solid var(--border); border-radius:var(--radius-card); padding:10px; resize:vertical;"></textarea>
+            <div style="margin-top:12px;">
+              <button class="primary-btn" id="roster-import-btn">Import roster</button>
+              <span id="roster-status" class="text-small" style="margin-left:10px;"></span>
+            </div>
+            <div id="roster-result" style="display:none; margin-top:20px;">
+              <div class="roster-stat"><b id="stat-parsed">0</b><span>parsed</span></div>
+              <div class="roster-stat"><b id="stat-created">0</b><span>created</span></div>
+              <div class="roster-stat"><b id="stat-updated">0</b><span>updated</span></div>
+              <div class="roster-stat"><b id="stat-errors">0</b><span>errors</span></div>
+              <div id="roster-creds" style="margin-top:16px;"></div>
+              <div id="roster-errlist" class="roster-err" style="margin-top:12px;"></div>
+            </div>
+          </div>
+
+          <!-- Ingest panel -->
+          <div class="tool-panel" id="panel-ingest" style="display:none;">
+            <div class="view-sub" style="margin-bottom:12px;">For every academic that has an ORCID, pull their publications from OpenAlex into the corpus. Academics without an ORCID are skipped.</div>
+            <button class="primary-btn" id="ingest-btn">Ingest papers for ORCID-linked academics</button>
+            <span id="ingest-status" class="text-small" style="margin-left:10px;"></span>
+            <div id="ingest-result" style="display:none; margin-top:16px;">
+              <div class="roster-stat"><b id="ing-users">0</b><span>linked academics</span></div>
+              <div class="roster-stat"><b id="ing-imported">0</b><span>papers imported</span></div>
+              <div class="roster-stat"><b id="ing-skipped">0</b><span>already in db</span></div>
+              <div class="roster-stat"><b id="ing-errors">0</b><span>errors</span></div>
+            </div>
+          </div>
+
+          <div class="tableScroll">
+            <table class="admin-table" id="overview-table">
+              <thead id="overview-thead"></thead>
+              <tbody id="overview-tbody"></tbody>
+            </table>
+          </div>
+          <div id="overview-empty" class="text-muted text-small" style="display:none; padding:14px;">No academics yet — use Import roster to populate.</div>
+          <div style="display:flex; align-items:center; gap:12px; margin-top:12px;">
+            <span id="ov-foot" class="text-small text-muted"></span>
+            <span style="margin-left:auto;"></span>
+            <button class="primary-btn" id="ov-prev" style="padding:4px 12px;">‹</button>
+            <button class="primary-btn" id="ov-next" style="padding:4px 12px;">›</button>
+          </div>
+        </div>
+
+        <div class="card" id="roster-noaccess" style="display:none;">
+          <p>Tenant admin access required.</p>
+        </div>
+      </div>
+`;
+
+export function RosterPage() {
+  useLegacyMounts([
+    () => import('../roster-overview'),
+    () => import('../roster-ingest-indicator'),
+    () => import('../roster-app'),
+  ]);
+  return (
+    <>
+      <style>{styles}</style>
+      <div dangerouslySetInnerHTML={{ __html: BODY }} />
+    </>
+  );
+}

@@ -6,6 +6,7 @@ import { BaseAction } from '../ui/primitives';
 export interface AuthorRow {
   name: string;
   orcid: string | null;
+  faculty: string | null;
   paperCount: number;
   totalCitations: number;
   hIndex: number;
@@ -93,10 +94,11 @@ export function AuthorsTable({ slug, unit }: { slug: string; unit?: string | nul
       <div className="roster-toolbar">
         <input
           type="text"
+          className="roster-search"
           placeholder={ES.authorsTable.searchPlaceholder}
           defaultValue={q}
           onChange={e => onFilterChange(e.target.value)}
-          style={{ marginLeft: 'auto', fontSize: 'var(--text-label)', padding: '6px 10px', width: 280, border: '1px solid var(--border)', borderRadius: 4, background: 'var(--bg-inset)', color: 'var(--fg)' }}
+          style={{ marginLeft: 'auto', width: 280 }}
         />
       </div>
       <div className="tableScroll">
@@ -110,6 +112,7 @@ export function AuthorsTable({ slug, unit }: { slug: string; unit?: string | nul
                   {c.label}{arrow(c.id)}
                 </th>
               ))}
+              <th>{ES.authorsTable.faculty}</th>
               <th>{ES.authorsTable.orcid}</th>
               <th aria-label={ES.profile.viewProfileTitle} />
             </tr>

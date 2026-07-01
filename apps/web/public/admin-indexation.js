@@ -1,4 +1,8 @@
-(function () {
+// Journal indexation admin panel.
+// Exported `mount()` is re-runnable (legacy-mount.ts contract): the SPA page
+// (spa/AdminPage.tsx) calls it on every React mount. window.* assignments stay
+// — the inline onclick handlers in the page markup depend on them.
+export function mount() {
   var statusEl = function () { return document.getElementById("idx-status"); };
 
   function fmtDate(iso) {
@@ -93,9 +97,7 @@
       }).catch(function (err) { s.textContent = "Error: " + err.message; });
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", refresh);
-  } else {
-    refresh();
-  }
-})();
+  // mount() runs after React commits the page body, so the table host exists;
+  // seed the panel immediately (no DOMContentLoaded gate needed under the SPA).
+  refresh();
+}

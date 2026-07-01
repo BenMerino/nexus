@@ -1,5 +1,11 @@
-(() => {
-document.getElementById("author-search").addEventListener("keydown", e => {
+// Author-import page entry. Exported `mount()` is re-runnable (legacy-mount.ts
+// contract): the SPA page (spa/AuthorImportPage.tsx) calls it on every React
+// mount. window.* assignments stay — the inline onclick handlers in the page
+// markup depend on them.
+export function mount() {
+const searchInput = document.getElementById("author-search");
+if (!searchInput) return;
+searchInput.addEventListener("keydown", e => {
   if (e.key === "Enter") searchAuthor();
 });
 
@@ -124,4 +130,4 @@ window.pickSuggestion = pickSuggestion;
 window.searchAuthor = searchAuthor;
 window.selectAuthor = selectAuthor;
 window.importDois = importDois;
-})();
+}

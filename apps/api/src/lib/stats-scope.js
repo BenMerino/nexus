@@ -9,7 +9,7 @@
 
 const { isPersonalScope } = require("./scope");
 const { normOrcid, normRor } = require("./entity-normalize");
-const { unitPubFilter, unitOrcids } = require("./stats-unit-scope");
+const { unitPubFilter, unitOrcids, rosterFacultyByOrcid } = require("./stats-unit-scope");
 
 function scopedPubFilter(scope) {
   if (isPersonalScope(scope)) {
@@ -69,6 +69,7 @@ async function resolvePubFilter(scope) {
   return scopedPubFilter(scope);
 }
 
-// unitPubFilter + unitOrcids now live in stats-unit-scope.js (N5); re-exported
-// here so existing `require("./stats-scope")` callers keep their import path.
-module.exports = { scopedPubFilter, personalPaperFilter, unitPubFilter, resolvePubFilter, unitOrcids };
+// unitPubFilter + unitOrcids + rosterFacultyByOrcid now live in
+// stats-unit-scope.js (N5); re-exported here so existing
+// `require("./stats-scope")` callers keep their import path.
+module.exports = { scopedPubFilter, personalPaperFilter, unitPubFilter, resolvePubFilter, unitOrcids, rosterFacultyByOrcid };

@@ -1,78 +1,74 @@
 import React, { useEffect, useState } from 'react';
-import { SectionHead, Tag, Skeleton } from './ui-kit';
+import { SectionHead, Skeleton } from './ui-kit';
+import { AreaDetail } from './tenant-journal-area';
+import type { Area, JournalsResponse } from './tenant-journals-shared';
 
-/* Public Journals view (slug-scoped, no auth). Venue domain from
- * /api/public/:slug/journals: one row per venue + indexation flags. Reused as
- * the `journals` entity in the public tenant shell. Type via tokens (N3-type),
- * loading via the Skeleton primitive. */
+/* Public Journals view (slug-scoped, no auth). Venue domain, grouped by AREA
+ * (the venue's dominant OpenAlex top-level concept — Physics/Medicine/etc.,
+ * see db-journals.js). Two layers, same shape as Faculties' card-grid →
+ * unit-detail drill-in:
+ *   1. AreaGrid  — one card per area (from /journals?page=0's `areas` summary),
+ *      ranked by journal count. Click drills in.
+ *   2. AreaDetail (tenant-journal-area.tsx) — that area's journals as a
+ *      table, SERVER-PAGED (?area=&page=&pageSize=).
+ * Local component state, not URL routing — an area is a filter, not a
+ * distinct entity like a faculty unit (contrast UnitDetailView's unitKey). */
 
-type Journal = {
-  id: number; issn: string | null; name: string; type: string;
-  paperCount: number; citationCount: number;
-  indexation: { wos: boolean; scopus: boolean; doaj: boolean; scielo: boolean };
-};
-
-const FLAGS: { key: keyof Journal['indexation']; label: string }[] = [
-  { key: 'wos', label: 'WoS' }, { key: 'scopus', label: 'Scopus' },
-  { key: 'doaj', label: 'DOAJ' }, { key: 'scielo', label: 'SciELO' },
-];
-
-function Indexation({ ix }: { ix: Journal['indexation'] }) {
-  const on = FLAGS.filter(f => ix[f.key]);
-  if (on.length === 0) return <span className="muted">—</span>;
-  return <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>{on.map(f => <Tag key={f.key} mono>{f.label}</Tag>)}</span>;
-}
-
-function Row({ j }: { j: Journal }) {
+function AreaCard({ a, max, onOpen }: { a: Area; max: number; onOpen: () => void }) {
+  const share = max > 0 ? Math.max(2, Math.round((a.count / max) * 100)) : 0;
   return (
-    <tr>
-      <td className="paper-title">{j.name}{j.issn && <div className="mono paper-doi">{j.issn}</div>}</td>
-      <td><Indexation ix={j.indexation} /></td>
-      <td>{j.paperCount.toLocaleString()}</td>
-      <td>{j.citationCount.toLocaleString()}</td>
-    </tr>
+    <button className="fac-card" onClick={onOpen} aria-label={`Open ${a.name}`}>
+      <div className="fac-card-name">{a.name}</div>
+      <div className="fac-card-figure"><b>{a.count.toLocaleString()}</b> journals</div>
+      <div className="fac-card-bar"><i style={{ width: `${share}%` }} /></div>
+    </button>
   );
 }
 
-function RowSkeleton() {
+function CardSkeleton() {
   return (
-    <tr>
-      <td className="paper-title">
-        <Skeleton as="span">Revista Médica de Chile</Skeleton>
-        <div className="mono paper-doi"><Skeleton as="span">0000-0000</Skeleton></div>
-      </td>
-      <td><Skeleton as="span">Scopus · WoS</Skeleton></td>
-      <td><Skeleton as="span">00</Skeleton></td>
-      <td><Skeleton as="span">000</Skeleton></td>
-    </tr>
+    <div className="fac-card" aria-hidden="true">
+      <Skeleton block width="80%" height={18} />
+      <Skeleton block width={90} height={22} style={{ marginTop: 14 }} />
+      <Skeleton block width="100%" height={4} style={{ marginTop: 10 }} />
+    </div>
   );
 }
 
 export function TenantJournals({ slug }: { slug: string }) {
-  const [data, setData] = useState<Journal[] | null>(null);
+  const [areas, setAreas] = useState<Area[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [openArea, setOpenArea] = useState<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/public/${encodeURIComponent(slug)}/journals`)
+    fetch(`/api/public/${encodeURIComponent(slug)}/journals?page=0&pageSize=1`)
       .then(r => (r.ok ? r.json() : Promise.reject(r.statusText)))
-      .then((d: { journals: Journal[] }) => { if (!cancelled) setData(d.journals); })
+      .then((d: JournalsResponse) => { if (!cancelled) setAreas(d.areas || []); })
       .catch(e => { if (!cancelled) setErr(String(e)); });
     return () => { cancelled = true; };
   }, [slug]);
 
+  if (openArea) {
+    return (
+      <section className="card">
+        <AreaDetail slug={slug} area={openArea} back={() => setOpenArea(null)} />
+      </section>
+    );
+  }
+
+  const max = areas && areas.length ? Math.max(...areas.map(a => a.count)) : 0;
+
   return (
     <section className="card">
-      <SectionHead eyebrow="Venue domain" title="Journals & indexation" />
+      <SectionHead eyebrow="Venue domain" title="Journals by area" />
       {err && <div className="status error">Error: {err}</div>}
-      <table className="paper-table">
-        <thead><tr><th>Journal</th><th>Indexation</th><th>Papers</th><th>Cites</th></tr></thead>
-        <tbody>
-          {data
-            ? data.map(j => <Row key={j.id} j={j} />)
-            : Array.from({ length: 8 }).map((_, i) => <RowSkeleton key={i} />)}
-        </tbody>
-      </table>
-      {data && data.length === 0 && <div className="muted">No journals yet.</div>}
+      <div className="fac-grid">
+        {areas
+          ? areas.map(a => <AreaCard key={a.name} a={a} max={max} onOpen={() => setOpenArea(a.name)} />)
+          : Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+      </div>
+      {areas && areas.length === 0 && <div className="muted">No journals yet.</div>}
     </section>
   );
 }

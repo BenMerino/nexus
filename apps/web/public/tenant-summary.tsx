@@ -35,7 +35,7 @@ export function ScopedSummary({ slug, stats, tenantId, unit }: { slug: string; s
 // the headline is the all-time average, the strip shows where it's heading.
 interface KpiDef { key: keyof typeof ES.summary; series: 'publications' | 'citations' | 'authors' | 'oa'; label: string; accent: string; spark: 'area' | 'bars'; foot: string; }
 const KPIS: KpiDef[] = [
-  { key: 'publications', series: 'publications', label: ES.summary.publications, accent: 'var(--j-sapphire)', spark: 'area', foot: 'Indexed & de-duplicated' },
+  { key: 'publications', series: 'publications', label: ES.summary.publications, accent: 'var(--j-sapphire)', spark: 'area', foot: 'Across all sources & venues' },
   { key: 'citations',    series: 'citations',    label: ES.summary.citations,    accent: 'var(--j-amethyst)', spark: 'area', foot: 'Cumulative, all sources' },
   { key: 'openAccess',   series: 'oa',           label: ES.summary.openAccess,   accent: 'var(--j-emerald)',  spark: 'area', foot: 'Of corpus freely available' },
   { key: 'authors',      series: 'authors',      label: ES.summary.authors,      accent: 'var(--j-topaz)',    spark: 'bars', foot: 'ORCID-linked researchers' },

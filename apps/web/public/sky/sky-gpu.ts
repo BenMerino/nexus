@@ -10,7 +10,6 @@ type RGB = [number, number, number];
 const SHADER = /* wgsl */`
 struct U {
   topc : vec4f,    // sky-top color (rgb), a unused
-  midc : vec4f,    // mid-gradient color (rgb), a unused
   horc : vec4f,    // horizon color (rgb), a = glow intensity (HDR, >1 on core)
   res  : vec2f,    // canvas px (vec2f → 8-byte aligned on a 16B boundary)
   glowX: f32,      // horizon-glow center, 0..1 across the width
@@ -27,10 +26,8 @@ fn vs(@builtin(vertex_index) i : u32) -> @builtin(position) vec4f {
 @fragment
 fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
   let uv = frag.xy / u.res;                 // 0..1, y down
-  // Matches the CSS fallback's stops: flat top to 10%, top→mid 10%→60%,
-  // flat mid to 95%, mid→hor (red) only in the last 5%.
-  var col = mix(u.topc.rgb, u.midc.rgb, clamp((uv.y - 0.10) / 0.50, 0., 1.));
-  col = mix(col, u.horc.rgb, clamp((uv.y - 0.95) / 0.05, 0., 1.));
+  let v = clamp((uv.y - 0.35) / 0.65, 0., 1.);
+  var col = mix(u.topc.rgb, u.horc.rgb, v);
 
   let d = vec2f((uv.x - u.glowX) / 0.6, (uv.y - 1.0) / 0.42);
   let g = clamp(1.0 - length(d), 0., 1.);
@@ -56,7 +53,7 @@ const displayHeadroom = () =>
 export interface SkyGPU {
   hdr: boolean;
   resize(): void;
-  draw(top: RGB, mid: RGB, hor: RGB, glowX: number, glowHDR: number): void;
+  draw(top: RGB, hor: RGB, glowX: number, glowHDR: number): void;
 }
 
 export async function initSkyGPU(canvas: HTMLCanvasElement): Promise<SkyGPU | null> {
@@ -90,7 +87,7 @@ export async function initSkyGPU(canvas: HTMLCanvasElement): Promise<SkyGPU | nu
     fragment: { module: mod, entryPoint: "fs", targets: [{ format }] },
     primitive: { topology: "triangle-list" },
   });
-  const ubuf = device.createBuffer({ size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+  const ubuf = device.createBuffer({ size: 48, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
   const bind = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [{ binding: 0, resource: { buffer: ubuf } }],
@@ -104,11 +101,10 @@ export async function initSkyGPU(canvas: HTMLCanvasElement): Promise<SkyGPU | nu
   resize();
 
   const enc = (c: RGB) => c.map(v => v / 255);
-  const draw = (top: RGB, mid: RGB, hor: RGB, glowX: number, glowHDR: number) => {
-    const lt = enc(top), lm = enc(mid), lh = enc(hor);
+  const draw = (top: RGB, hor: RGB, glowX: number, glowHDR: number) => {
+    const lt = enc(top), lh = enc(hor);
     device.queue.writeBuffer(ubuf, 0, new Float32Array([
       lt[0], lt[1], lt[2], 0,
-      lm[0], lm[1], lm[2], 0,
       lh[0], lh[1], lh[2], glowHDR,
       canvas.width, canvas.height, glowX, ceil,
     ]));

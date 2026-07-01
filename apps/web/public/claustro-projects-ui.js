@@ -1,4 +1,9 @@
-(function () {
+// Filters / list / form open-close for the Projects page. Was an IIFE in
+// proyectos.html; hoisted to a re-runnable mount() (legacy-mount.ts contract)
+// so spa/ProjectsPage.tsx can drive it on every React mount. The body only
+// (re)assigns window.claustroProjectsUI (consumed by claustro-app.js), which is
+// idempotent — no per-mount DOM work here, so mount() returns no cleanup.
+export function mount() {
   function esc(s) { return window.claustroEsc(s); }
 
   function renderFilters(state) {
@@ -70,4 +75,4 @@
     openEditForm: openEditForm,
     closeForm: closeForm,
   };
-})();
+}

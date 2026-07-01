@@ -1,33 +1,35 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Ico } from './shell-icons';
-import { Tag } from './ui-kit';
 import { SidebarSearch } from './shell-search';
 import type { CurrentUser } from './shell-helpers';
+import { VolcanoMark } from './brand-mark';
 
 export interface NavLink { href: string; label: string; icon: keyof typeof Ico; section?: string; }
 
 // Entity-centric nav: one item per DGA domain entity, in dependency order
 // (the whole-tenant view, then org → people → outputs → venues). The graph
 // explorer + projects + submit stay as workspace tools below the entities.
+// Hrefs are extensionless React-Router routes (all pages are SPA routes now).
 const DEFAULT_LINKS: NavLink[] = [
-  { href: '/dashboard.html',   label: 'Overview',   icon: 'home',   section: 'Entities' },
-  { href: '/faculties.html',   label: 'Faculties',  icon: 'graph',  section: 'Entities' },
-  { href: '/academics.html',   label: 'Academics',  icon: 'people', section: 'Entities' },
-  { href: '/papers.html',      label: 'Papers',     icon: 'paper',  section: 'Entities' },
-  { href: '/journals.html',    label: 'Journals',   icon: 'tag',    section: 'Entities' },
-  { href: '/overview.html',    label: 'Graph explorer', icon: 'search', section: 'Workspace' },
-  { href: '/proyectos.html',   label: 'Projects',   icon: 'paper',  section: 'Workspace' },
-  { href: '/submit.html',      label: 'Submit DOI', icon: 'submit', section: 'Workspace' },
+  { href: '/dashboard',   label: 'Overview',   icon: 'home',   section: 'Entities' },
+  { href: '/faculties',   label: 'Faculties',  icon: 'graph',  section: 'Entities' },
+  { href: '/academics',   label: 'Academics',  icon: 'people', section: 'Entities' },
+  { href: '/papers',      label: 'Papers',     icon: 'paper',  section: 'Entities' },
+  { href: '/journals',    label: 'Journals',   icon: 'tag',    section: 'Entities' },
+  { href: '/overview',    label: 'Graph explorer', icon: 'search', section: 'Workspace' },
+  { href: '/proyectos',   label: 'Projects',   icon: 'paper',  section: 'Workspace' },
+  { href: '/submit',      label: 'Submit DOI', icon: 'submit', section: 'Workspace' },
 ];
 const SUPERADMIN_LINKS: NavLink[] = [
-  { href: '/admin.html',         label: 'Admin',         icon: 'build',  section: 'Admin' },
-  { href: '/author-import.html', label: 'Author import', icon: 'people', section: 'Admin' },
-  { href: '/theme',              label: 'Theme palette', icon: 'gear',   section: 'Admin' },
+  { href: '/admin',         label: 'Admin',         icon: 'build',  section: 'Admin' },
+  { href: '/author-import', label: 'Author import', icon: 'people', section: 'Admin' },
+  { href: '/theme',         label: 'Theme palette', icon: 'gear',   section: 'Admin' },
 ];
 const TENANT_LINKS: NavLink[] = [
-  { href: '/settings.html', label: 'Settings', icon: 'gear', section: 'Tenant' },
+  { href: '/settings', label: 'Settings', icon: 'gear', section: 'Tenant' },
 ];
-const ROSTER_LINK: NavLink = { href: '/roster.html', label: 'Roster', icon: 'people', section: 'Tenant' };
+const ROSTER_LINK: NavLink = { href: '/roster', label: 'Roster', icon: 'people', section: 'Tenant' };
 
 function linksFor(me: CurrentUser | null): NavLink[] {
   const role = me?.role ?? '';
@@ -51,28 +53,22 @@ interface SidebarProps {
 }
 
 export function Sidebar({ me, currentPath, roleSwitcher }: SidebarProps) {
-  const role = me?.role ?? '';
   const links = linksFor(me);
   const sections = Array.from(new Set(links.map(l => l.section || '')));
-  const tenantName = me?.tenant || (role === 'superadmin' ? 'Superadmin' : 'Pliny');
 
   return (
     <aside className="sidebar">
+      {/* Product brand only — no tenant name, no ROR. Tenant identity lives
+          in the header breadcrumb (TenantPublicHeader, rendered alongside this
+          sidebar in AuthLayout), same split as the public shell. */}
       <div className="tenant-chip">
         <div className="tenant-brand">
-          <div className="tenant-mark">
-            {me?.logo && <img src={me.logo} alt="" />}
-          </div>
+          <VolcanoMark />
           <div className="brand-text">
             <div className="brand-name">Pliny</div>
-            <div className="brand-tenant">{tenantName} · CRIS</div>
+            <div className="brand-tenant">Research Intelligence</div>
           </div>
         </div>
-        {me?.profile?.ror && (
-          <div className="tenant-chip-meta">
-            <Tag mono>ROR {me.profile.ror}</Tag>
-          </div>
-        )}
       </div>
 
       {roleSwitcher}
@@ -84,11 +80,11 @@ export function Sidebar({ me, currentPath, roleSwitcher }: SidebarProps) {
           <React.Fragment key={section}>
             {section && <div className="nav-section-label">{section}</div>}
             {links.filter(l => (l.section || '') === section).map(l => {
-              const active = currentPath === l.href || (l.href === '/dashboard.html' && currentPath === '/');
+              const active = currentPath === l.href || (l.href === '/dashboard' && currentPath === '/');
               return (
-                <a key={l.href} href={l.href} className={`nav-item ${active ? 'active' : ''}`}>
+                <Link key={l.href} to={l.href} className={`nav-item ${active ? 'active' : ''}`}>
                   {Ico[l.icon]} {l.label}
-                </a>
+                </Link>
               );
             })}
           </React.Fragment>

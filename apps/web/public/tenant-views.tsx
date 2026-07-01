@@ -1,5 +1,4 @@
 import React, { Suspense, useEffect, useState } from 'react';
-import { SectionHead } from './ui-kit';
 import { AuthorsTable } from './tenant-authors';
 import { TenantWorks } from './tenant-works';
 import { TenantJournals } from './tenant-journals';
@@ -44,7 +43,6 @@ export function OverviewView({ slug, payload }: { slug: string; payload: Payload
 export function AcademicsView({ slug }: { slug: string }) {
   return (
     <section className="card">
-      <SectionHead eyebrow="Author domain" title="Academics" />
       <AuthorsTable slug={slug} />
     </section>
   );

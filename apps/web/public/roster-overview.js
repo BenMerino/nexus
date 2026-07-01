@@ -2,7 +2,11 @@
 // behavior (sortable headers with ▲/▼, search, footer count + pager) over
 // Nexus's roster-list endpoint, which speaks the TableQuery/PaginatedResult
 // contract. window.rosterOverview.load() refreshes after an import.
-(function () {
+//
+// SPA contract (legacy-mount.ts): mount() is re-runnable — it re-queries the
+// toolbar controls and re-binds their listeners on every route entry, and
+// returns a cleanup that clears the pending search-debounce timer.
+export function mount() {
   var PAGE_SIZE = 25;
   var state = { page: 0, sort: "name", dir: "asc", q: "" };
   var searchTimer = null;
@@ -91,4 +95,7 @@
   if (next) next.addEventListener("click", function () { state.page++; fetchPage(); });
 
   window.rosterOverview = { load: load };
-})();
+
+  // Clear the pending debounce so no stray fetch fires after unmount.
+  return function cleanup() { clearTimeout(searchTimer); };
+}

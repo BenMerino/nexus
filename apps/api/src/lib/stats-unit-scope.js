@@ -7,7 +7,7 @@
 
 const { sql } = require("./sql");
 const { normOrcid } = require("./entity-normalize");
-const { nameKey, parseUnitKey } = require("./org-units");
+const { nameKey, parseUnitKey, classifyUnit } = require("./org-units");
 
 // Resolve an org-unit `unitKey` to a publications WHERE fragment scoping to the
 // papers authored by academics in that faculty/department. A faculty-level key
@@ -90,4 +90,21 @@ async function unitOrcids(unitKey, tenantId) {
   return out.size ? out : null;
 }
 
-module.exports = { unitPubFilter, unitOrcids };
+// ORCID → faculty display name, from the roster (classifyUnit-normalized —
+// the same grouping org-tree.js/public-author.js use, so a directory's
+// Faculty column always agrees with the Faculties view). Used by
+// public-authors.js's aggregateAuthors to add a faculty column without a
+// per-row roster lookup.
+async function rosterFacultyByOrcid(tenantId) {
+  const { rows } = await sql`
+    SELECT orcid, faculty FROM users
+    WHERE tenant_id = ${tenantId} AND role = 'academic' AND orcid IS NOT NULL`;
+  const out = new Map();
+  for (const r of rows) {
+    const orcid = normOrcid(r.orcid);
+    if (orcid) out.set(orcid, classifyUnit(r.faculty).group);
+  }
+  return out;
+}
+
+module.exports = { unitPubFilter, unitOrcids, rosterFacultyByOrcid };

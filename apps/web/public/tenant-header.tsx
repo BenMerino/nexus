@@ -9,34 +9,6 @@ export interface PublicNavItem { id: string; label: string; }
 const ROR_HOST = 'https://ror.org/';
 function rorHref(raw: string): string { return raw.startsWith('http') ? raw : `${ROR_HOST}${raw}`; }
 function rorId(raw: string): string { const m = raw.match(/([^/]+)$/); return m ? m[1] : raw; }
-// Talca sits at the foot of Volcán Descabezado Grande — the brand mark is a
-// glass volcano tile (no per-tenant logo upload wired up yet), same footprint
-// as the old initial-letter crest. 8 vertical bars, one per column, heights
-// forming a mountain profile (short at the edges, tall at center); the two
-// peak bars stop one cell short of the top — the crater notch.
-const BAR_HEIGHTS = [2, 4, 6, 7, 7, 6, 4, 2] as const;
-const GRID_ROWS = 8;
-
-function VolcanoMark() {
-  return (
-    <div className="public-logo-mark" aria-hidden="true">
-      <div className="volcano-grid">
-        {BAR_HEIGHTS.map((h, x) => (
-          <div className="volcano-bar" key={x}>
-            {Array.from({ length: GRID_ROWS }, (_, i) => GRID_ROWS - 1 - i).map(rowFromBottom => {
-              const filled = rowFromBottom < h;
-              const opacity = 0.35 + (0.65 * (GRID_ROWS - rowFromBottom)) / GRID_ROWS;
-              return (
-                <span key={rowFromBottom}
-                  style={filled ? { opacity, background: 'var(--fg)' } : undefined} />
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // Two-state theme toggle: day (forced) ↔ night (forced). One icon per mode;
 // clicking flips it and the sky pipeline repaints instantly via nexus:sky-mode.
@@ -66,7 +38,7 @@ function ThemeButton() {
 }
 
 export function TenantPublicHeader({
-  tenant, items, currentId, onNavigate, yearRange, lastUpdated, search,
+  tenant, items, currentId, onNavigate, yearRange, lastUpdated, signedIn,
 }: {
   tenant: TenantLike;
   items: PublicNavItem[];
@@ -74,13 +46,15 @@ export function TenantPublicHeader({
   onNavigate: (id: string) => void;
   yearRange?: { minYear: string | null; maxYear: string | null };
   lastUpdated?: string | null;
-  search?: React.ReactNode;
+  /** True on the authed app shell (AuthLayout) — hides "sign in", the user is
+   *  already in. Defaults to false (public pages always show it). */
+  signedIn?: boolean;
 }) {
 
   // The header is fixed chrome; content is inset BELOW its real height. Publish
   // the actual rendered height to --chrome-bar-h-actual so .public-main's top
-  // offset tracks it (brand + search make the bar taller than the 60px token,
-  // and it can wrap responsively) — content stays inset, never tucked under.
+  // offset tracks it (it can still wrap responsively at narrow widths) —
+  // content stays inset, never tucked under.
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -94,24 +68,24 @@ export function TenantPublicHeader({
   }, []);
 
   return (
-    /* ONE unified floating glass bar. .public-header carries the glass; the three
-       .public-header-seg groups (brand · search · aux) just lay out inside it. */
+    /* ONE unified floating glass bar. .public-header carries the glass; the two
+       .public-header-seg groups (breadcrumb · aux) just lay out inside it. */
     <header className="public-header" ref={ref}>
+      {/* The header is now a breadcrumb, not the brand — product identity
+          (mark + "Research Intelligence") lives in the sidebar's tenant-chip.
+          Starts from the tenant itself; ROR trails as plain metadata. */}
       <div className="public-header-seg public-header-left">
-        <div className="public-brand">
-          <VolcanoMark />
-          <div>
-            <div className="public-tenant-name">{tenant.name}</div>
-            <div className="public-tenant-sub">
-              <span>{ES.researchIntelligence}</span>
-              {tenant.ror_id ? <> · <a href={rorHref(tenant.ror_id)} target="_blank" rel="noopener noreferrer">ROR {rorId(tenant.ror_id)}</a></> : null}
-            </div>
-          </div>
+        <div className="public-breadcrumb">
+          <span className="public-tenant-name">{tenant.name}</span>
+          {tenant.ror_id ? (
+            <span className="public-tenant-sub">
+              ROR <a href={rorHref(tenant.ror_id)} target="_blank" rel="noopener noreferrer">{rorId(tenant.ror_id)}</a>
+            </span>
+          ) : null}
         </div>
       </div>
-      {search ? <div className="public-header-seg public-header-center">{search}</div> : null}
       <div className="public-header-seg public-header-right">
-        <a href="/login.html" className="public-signin">{ES.signIn}</a>
+        {!signedIn && <a href="/login.html" className="public-signin">{ES.signIn}</a>}
         <ThemeButton />
       </div>
     </header>

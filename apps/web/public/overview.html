@@ -3,18 +3,9 @@
 <head>
   <meta charset="utf-8">
   <title>Graph explorer — Pliny</title>
-  <link rel="stylesheet" href="/shared.css">
+  <meta http-equiv="refresh" content="0;url=/overview">
 </head>
-<body class="shell-fixed">
-  <script>if (!document.cookie.includes("nexus_logged_in=1")) window.location.href = "/login.html";</script>
-  <div class="app">
-    <div id="sidebar-mount" data-path="/overview.html"></div>
-    <main class="main main-fullbleed">
-      <div id="relationships-root"></div>
-      <script type="module" src="/relationships.tsx"></script>
-    </main>
-  </div>
-  <script type="module" src="/shell-mount.tsx"></script>
-  <script type="module" src="/spa-router.js"></script>
+<body>
+  <script>window.location.replace("/overview");</script>
 </body>
 </html>

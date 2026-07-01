@@ -62,11 +62,11 @@ export function TenantContributors({ slug }: { slug: string }) {
           <span style={{ marginRight: 'auto', fontFamily: 'var(--mono)', fontSize: 'var(--text-label)', color: 'var(--fg-muted)' }}>{ES.contributors.titleIn(drill.name)}</span>
         ) : null}
         {METRICS.map(m => (
-          <BaseAction key={m.id} size="sm" variant={metric === m.id ? 'primary' : 'outline'}
-            onClick={() => setMetric(m.id)}
-            style={{ fontFamily: 'var(--mono)', fontSize: 'var(--text-micro)' }}>
+          <button key={m.id} type="button"
+            className={`fac-sort-pill${metric === m.id ? ' active' : ''}`}
+            onClick={() => setMetric(m.id)}>
             {m.label}
-          </BaseAction>
+          </button>
         ))}
       </div>
       {drill ? (

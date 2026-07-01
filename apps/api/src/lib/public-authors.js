@@ -2,7 +2,7 @@ const { sql } = require("./sql");
 const { calculateHIndex } = require("./h-index");
 const { canonicalize } = require("./normalize-tags");
 const { normRor, normOrcid } = require("./entity-normalize");
-const { unitOrcids } = require("./stats-scope");
+const { unitOrcids, rosterFacultyByOrcid } = require("./stats-scope");
 
 // Aggregate every tenant author into the directory shape. Pure compute —
 // no pagination, no search. Returned in paperCount-desc order.
@@ -14,17 +14,21 @@ const { unitOrcids } = require("./stats-scope");
 // fall back to all the tenant's authorship papers.
 async function aggregateAuthors(tenantId, tenantRor) {
   const ror = tenantRor ? normRor(tenantRor) : null;
-  const rows = ror
-    ? (await sql`
-        SELECT a.orcid, a.name, d.citation_count, d.type
-        FROM affiliation af
-        JOIN institutions i ON i.id = af.institution_id AND i.tenant_id = ${tenantId} AND i.ror = ${ror}
-        JOIN authors a ON a.id = af.author_id
-        JOIN doi_records d ON d.id = af.publication_id`).rows
-    : (await sql`
-        SELECT a.orcid, a.name, d.citation_count, d.type
-        FROM authorship s JOIN authors a ON a.id = s.author_id AND a.tenant_id = ${tenantId}
-        JOIN doi_records d ON d.id = s.publication_id`).rows;
+  const [rows, facultyByOrcid] = await Promise.all([
+    (ror
+      ? sql`
+          SELECT a.orcid, a.name, d.citation_count, d.type
+          FROM affiliation af
+          JOIN institutions i ON i.id = af.institution_id AND i.tenant_id = ${tenantId} AND i.ror = ${ror}
+          JOIN authors a ON a.id = af.author_id
+          JOIN doi_records d ON d.id = af.publication_id`
+      : sql`
+          SELECT a.orcid, a.name, d.citation_count, d.type
+          FROM authorship s JOIN authors a ON a.id = s.author_id AND a.tenant_id = ${tenantId}
+          JOIN doi_records d ON d.id = s.publication_id`
+    ).then(r => r.rows),
+    rosterFacultyByOrcid(tenantId),
+  ]);
 
   const byAuthor = new Map();
   for (const t of rows) {
@@ -46,6 +50,7 @@ async function aggregateAuthors(tenantId, tenantRor) {
     out.push({
       name: v.name,
       orcid: v.orcid,
+      faculty: (v.orcid && facultyByOrcid.get(normOrcid(v.orcid))) || null,
       paperCount: v.citations.length,
       totalCitations: v.citations.reduce((s, c) => s + c, 0),
       hIndex: calculateHIndex(v.citations),

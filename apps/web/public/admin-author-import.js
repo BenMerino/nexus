@@ -1,5 +1,8 @@
-// Institution-level OpenAlex import for admin tenant detail
-(function () {
+// Institution-level OpenAlex import for admin tenant detail.
+// Exported `mount()` is re-runnable (legacy-mount.ts contract): the SPA page
+// (spa/AdminPage.tsx) calls it on every React mount. window.* assignments stay
+// — the inline onclick handlers in the page markup depend on them.
+export function mount() {
   var statusEl, resultsEl, allAuthors = [], tenantRor = null;
 
   function init() {
@@ -107,4 +110,4 @@
     }
     next();
   }
-})();
+}

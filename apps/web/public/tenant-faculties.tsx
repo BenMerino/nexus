@@ -15,14 +15,39 @@ import { ES } from './tenant-i18n';
 type Payload = NonNullable<ReturnType<typeof useTenantData>['statsPayload']>;
 type Unit = { name: string; unitKey: string | null; kind?: string; headcount: number; withOrcid: number; papers: number; citations: number };
 
-const KIND_LABEL: Record<string, string> = { faculty: 'Faculty', institute: 'Institute', other: 'Other' };
+// Sort bar: each option reads a field already shown on the card, so the order
+// is never a surprise. Clicking the active option flips its direction.
+type SortKey = 'papers' | 'headcount' | 'orcid' | 'citations';
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: 'papers', label: 'Papers' },
+  { key: 'headcount', label: 'People' },
+  { key: 'orcid', label: 'ORCID' },
+  { key: 'citations', label: 'Citations' },
+];
+const sortValue = (u: Unit, key: SortKey): number => {
+  if (key === 'orcid') return u.headcount > 0 ? u.withOrcid / u.headcount : 0;
+  return u[key];
+};
+
+function SortBar({ sort, dir, onChange }: { sort: SortKey; dir: 1 | -1; onChange: (key: SortKey) => void }) {
+  return (
+    <div className="fac-sort-bar">
+      {SORTS.map(s => (
+        <button key={s.key} type="button"
+          className={`fac-sort-pill${s.key === sort ? ' active' : ''}`}
+          onClick={() => onChange(s.key)}>
+          {s.label}{s.key === sort ? (dir === -1 ? ' ↓' : ' ↑') : ''}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function FacultyCard({ u, max, onOpen }: { u: Unit; max: number; onOpen: () => void }) {
   const share = max > 0 ? Math.max(2, Math.round((u.papers / max) * 100)) : 0;
   const orcidPct = u.headcount > 0 ? Math.round((u.withOrcid / u.headcount) * 100) : 0;
   return (
     <button className="fac-card" onClick={onOpen} aria-label={`Open ${u.name}`}>
-      <div className="fac-card-kind">{KIND_LABEL[u.kind || 'other']}</div>
       <div className="fac-card-name">{u.name}</div>
       <div className="fac-card-figure"><b>{u.papers.toLocaleString()}</b> {ES.orgTree.paperMany}</div>
       <div className="fac-card-bar"><i style={{ width: `${share}%` }} /></div>
@@ -50,6 +75,8 @@ function CardSkeleton() {
 export function FacultiesView({ slug, navigateUnit }: { slug: string; navigateUnit: (k: string) => void }) {
   const [units, setUnits] = useState<Unit[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortKey>('papers');
+  const [dir, setDir] = useState<1 | -1>(-1);
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/public/${encodeURIComponent(slug)}/org-tree?summary=1`)
@@ -59,16 +86,18 @@ export function FacultiesView({ slug, navigateUnit }: { slug: string; navigateUn
     return () => { cancelled = true; };
   }, [slug]);
 
-  const ranked = units ? [...units].sort((a, b) => b.papers - a.papers) : null;
-  const max = ranked && ranked.length ? ranked[0].papers : 0;
+  const onSortChange = (key: SortKey) => {
+    if (key === sort) { setDir(d => (d === -1 ? 1 : -1)); return; }
+    setSort(key); setDir(-1);
+  };
+
+  const ranked = units ? [...units].sort((a, b) => dir * (sortValue(a, sort) - sortValue(b, sort))) : null;
+  const max = units && units.length ? Math.max(...units.map(u => u.papers)) : 0;
 
   return (
     <section className="card">
-      <div className="tenant-rail-head">
-        <h2 className="tenant-rail-title">{ES.scopeRail.title}</h2>
-        <p className="tenant-rail-note">{ES.scopeRail.note}</p>
-      </div>
       {err && <div className="status error">Error: {err}</div>}
+      {ranked && ranked.length > 0 && <SortBar sort={sort} dir={dir} onChange={onSortChange} />}
       <div className="fac-grid">
         {ranked
           ? (ranked.length === 0

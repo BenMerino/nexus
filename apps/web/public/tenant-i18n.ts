@@ -12,6 +12,7 @@ export const ES = {
   /* Page chrome / tabs */
   research: 'Research',
   publicProfile: 'Public research profile',
+  pliny: 'Pliny',
   researchIntelligence: 'Research Intelligence · Public',
   signIn: 'sign in',
   publicProfileBadge: 'Public profile',
@@ -68,6 +69,7 @@ export const ES = {
   authorsTable: {
     searchPlaceholder: 'search by name',
     name: 'Name',
+    faculty: 'Faculty',
     papers: 'Papers',
     hIndex: 'h-index',
     citations: 'Citations',
