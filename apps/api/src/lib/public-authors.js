@@ -111,9 +111,27 @@ async function getAuthorsPage(tenantId, tenantRor, opts) {
 
 // Cheap summary count of distinct authors at the tenant (post-ROR filter).
 // Used by stats.summary.authorCount so /stats stays self-contained.
+//
+// Direct COUNT — NOT cachedAggregate().length. aggregateAuthors keys a JS Map
+// by a.orcid, so its .length is COUNT(DISTINCT orcid) with all NULL-orcid rows
+// collapsed into ONE bucket. This mirrors that exactly (distinct non-null +1
+// when any NULL-orcid author exists) over the SAME affiliation/authorship join,
+// without materializing the whole directory + per-author h-index just to read a
+// length — the build that spiked the shell's p95 on a cold cache (perf_beacon).
 async function getAuthorCount(tenantId, tenantRor) {
-  const all = await cachedAggregate(tenantId, tenantRor);
-  return all.length;
+  const ror = tenantRor ? normRor(tenantRor) : null;
+  const r = ror
+    ? await sql`
+        SELECT COUNT(DISTINCT a.orcid)
+             + (CASE WHEN COUNT(*) FILTER (WHERE a.orcid IS NULL) > 0 THEN 1 ELSE 0 END) AS count
+        FROM affiliation af
+        JOIN institutions i ON i.id = af.institution_id AND i.tenant_id = ${tenantId} AND i.ror = ${ror}
+        JOIN authors a ON a.id = af.author_id`
+    : await sql`
+        SELECT COUNT(DISTINCT a.orcid)
+             + (CASE WHEN COUNT(*) FILTER (WHERE a.orcid IS NULL) > 0 THEN 1 ELSE 0 END) AS count
+        FROM authorship s JOIN authors a ON a.id = s.author_id AND a.tenant_id = ${tenantId}`;
+  return parseInt(r.rows[0].count);
 }
 
 module.exports = { getAuthorsPage, getAuthorCount };
