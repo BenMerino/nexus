@@ -3,14 +3,22 @@
 // @ main (cloned 2026-07-01). Two modes on :root:
 //   data-lg        → library GLASS mode (blur + transparency), all browsers.
 //   data-lg-liquid → library LIQUID GLASS mode (kube refraction filter), + defaults.
-// Default: LIQUID GLASS on (as requested). An explicit toggle call persists
-// per-origin in localStorage; a plain page load never writes (see below).
+// Default: GLASS (frosted blur, no refraction). Liquid was the default until
+// 2026-07: its zero-frost kube refraction displaces the RAW sky gradient,
+// which Chrome dithers smoothly but Safari renders with visible banding — and
+// the frosted 'glass' look was the one actually wanted platform-wide. An
+// explicit toggle call persists per-origin in localStorage; a plain page load
+// never writes (see below). Keep in sync with THEME_BOOT (vite.config.ts).
 //
 // Toggle: window.__lgGlass('liquid'|'glass'|'off'), or window.__lgGlass() to cycle.
 
 import "./lg/kube-filter"; // self-injects the #lg-kube SVG filter
 
-const KEY = "nexus.lg-glass";
+// v2: the old "nexus.lg-glass" key is abandoned, NOT migrated — the pre-fix
+// code wrote the then-default 'liquid' on every page load for every visitor,
+// so every existing value is bug-written noise, not a user choice (the toggle
+// is console-only). A fresh key gives everyone the new 'glass' default.
+const KEY = "nexus.lg-glass.v2";
 type Mode = "off" | "glass" | "liquid";
 
 // Sets the DOM attributes only — no storage write. Page load and the explicit
@@ -21,21 +29,19 @@ function applyAttrs(mode: Mode): void {
   root.toggleAttribute("data-lg-liquid", mode === "liquid");
 }
 
-// DEFAULT 'liquid' (kube refraction). The filter now applies to a ::before overlay
-// inside each surface (lg-glass.css), not the element itself, so it no longer blanks
-// page content. Respect a persisted mode; default to liquid when unset.
+// Respect a persisted mode; default to 'glass' when unset.
 //
 // Every page load used to WRITE the resolved mode back to localStorage — even
 // when nothing was explicitly toggled — so this dev-only A/B switch (no UI,
 // console-only: window.__lgGlass()) silently diverged between origins/sessions
 // the instant anyone called it once anywhere. A page load now only READS;
 // only an explicit __lgGlass(mode) call persists.
-const saved = (localStorage.getItem(KEY) as Mode | null) ?? "liquid";
+const saved = (localStorage.getItem(KEY) as Mode | null) ?? "glass";
 applyAttrs(saved);
 
 // Global switch for the dev toggle / console: pass a mode, or cycle off→glass→liquid.
 (window as unknown as { __lgGlass: (m?: Mode) => Mode }).__lgGlass = (m?: Mode) => {
-  const cur = (localStorage.getItem(KEY) as Mode | null) ?? "liquid";
+  const cur = (localStorage.getItem(KEY) as Mode | null) ?? "glass";
   const next: Mode = m ?? (cur === "off" ? "glass" : cur === "glass" ? "liquid" : "off");
   applyAttrs(next);
   try {
