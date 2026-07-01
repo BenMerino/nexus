@@ -91,35 +91,15 @@
     inset 0 -1px 0 var(--lg-highlight-bottom);
 }
 
-/* ── LIQUID GLASS mode ──────────────────────────────────────────────────────
-   The library's TRUE refractive mode: the kube SVG filter (lg/kube-filter.ts)
-   bends the ACTUAL backdrop (the page behind the card) via backdrop-filter, not a
-   sheen overlay. Its LIQUID defaults — transparency 20, blur 10, sat 100
-   (refraction/bezel/thickness/light/specular baked into the filter). Gated on
-   data-lg-liquid (implies data-lg).
-
-   Why backdrop-filter (not filter): backdrop-filter processes only what's BEHIND
-   the element, so feDisplacementMap refracts the page and leaves the card's own
-   box + text perfectly sharp — solving the warping the old ::before overlay was
-   built to dodge, while actually refracting the backdrop (its real purpose).
-   Browser support: Chromium honors backdrop-filter: url(#…); Safari/Firefox honor
-   backdrop-filter: blur() but ignore the url() ref — there the base glass blur+sat
-   below still read, refraction just no-ops. Progressive enhancement, no breakage. */
+/* ── LIQUID GLASS mode — token retune only ───────────────────────────────────
+   The library's TRUE refractive mode bends the ACTUAL backdrop via the kube filter
+   (backdrop-filter: url(#lg-kube)). The surface SELECTOR LIST that applies it lives
+   in dna-bridge.css — the SINGLE source of truth for which elements are glass — so
+   liquid rides the exact same set as plain glass and can't drift. Here we only
+   retune the shared --lg-* knobs for liquid (transparency 20, blur 10, sat 100;
+   refraction/bezel/thickness/light/specular are baked into the filter itself). */
 :root[data-lg-liquid] {
   --lg-transparency: 20;
   --lg-blur: 10;
   --lg-saturation: 100;
-}
-:root[data-lg-liquid] .surface,
-:root[data-lg-liquid] .glass-surface,
-:root[data-lg-liquid] .card,
-:root[data-lg-liquid] .panel,
-:root[data-lg-liquid] .kpi,
-:root[data-lg-liquid] .tenant-rail,
-:root[data-lg-liquid] .public-header,
-:root[data-lg-liquid] .sidebar {
-  /* Refract the backdrop, then blur+saturate it (kube first so it bends the raw
-     page; the base data-lg rule's blur/sat still apply as the fallback layer). */
-  backdrop-filter: url(#lg-kube) blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
-  -webkit-backdrop-filter: url(#lg-kube) blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
 }

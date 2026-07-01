@@ -121,6 +121,8 @@
                 --_nest-corner: max(0px, calc(var(--radius-card) - var(--space-2) - 1px)); }
 .kpi, .card   { --_nest-r: var(--radius-card); --_nest-pad: var(--space-4);
                 --_nest-corner: max(0px, calc(var(--radius-card) - var(--space-4) - 1px)); }
+.stat         { --_nest-r: var(--radius-card); --_nest-pad: var(--space-5);
+                --_nest-corner: max(0px, calc(var(--radius-card) - var(--space-5) - 1px)); }
 /* Inner rows curve parallel to their host surface's corner. --_nest-corner
    inherits from the nearest publishing ancestor (.panel/.tenant-rail/.kpi), so
    these read it regardless of intermediate wrapper divs. */
@@ -138,15 +140,44 @@
    Glass-in-glass compounds blur and goes muddy, so the TONAL step is the primary
    stacking signal (always legible) and the blur is modest + capped at depth 3. */
 :root {
-  /* Real glass is rarely colourless — it carries a faint tint of what's behind
-     it. Our glass floats over the live sky, so we whisper the current sky colour
-     (--sky-primary, set by the sun pipeline) into the neutral base: panels read
-     subtly blue by day, warm at golden hour, violet at night. --glass-tint is the
-     one knob; it falls back to transparent so without the pipeline the glass
-     stays neutral grey. (8% → invisible; 18% → still washed out, esp. in light
-     mode where mixing colour into near-white desaturates fast; 30% gives the
-     glass a real, readable colour cast on both modes while staying legible.) */
+  /* ══════════════════════════════════════════════════════════════════════════
+     GLASS & DEPTH — THE ONE CONTROL BLOCK
+     Every knob for how surfaces look: TINT (sky color cast), TRANSPARENCY (fill
+     opacity per depth rung), BLUR (frost), and SHADOW (cast depth). Edit here and
+     it cascades to every .surface/.card/.panel/.kpi/header/sidebar. Nothing about
+     glass or shadow is hardcoded elsewhere — the tonal ladder + .surface recipe
+     below just consume these. (Legacy exception: --glass-bg in shared.css is a
+     separate chat-bubble token used only by GlassTag/GraphRender.)
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* TINT — how much of the live sky color washes into the glass (0% = neutral
+     grey, 30% = readable color cast both modes). Falls back to transparent with
+     no sky pipeline. 8% invisible · 18% washed out · 30% real cast + legible. */
   --glass-tint: 30%;
+
+  /* TRANSPARENCY — fill opacity per depth rung (% of tonal color over
+     transparent). Lower = more see-through glass. Deeper rungs a touch more
+     opaque so stacked panes stay visually distinct. */
+  --glass-opacity-0: 32%;
+  --glass-opacity-1: 38%;
+  --glass-opacity-2: 42%;
+  --glass-opacity-3: 46%;
+
+  /* BLUR — frost strength on the outermost pane. */
+  --glass-blur: 14px;
+
+  /* SHADOW — cast depth. Currently OFF (none). To bring shadows back, set a value
+     (e.g. --shadow-sm: 0 1px 4px rgba(0,0,0,0.4)). Every box-shadow: var(--shadow-*)
+     across the app resolves here. --shadow-halo (dna-defaults.css) is the focus/
+     active RING, NOT a cast shadow — left ON on purpose. */
+  --shadow-sm: none;   /* cards / buttons / inputs        (was 0 1px 4px  /.4) */
+  --shadow-md: none;   /* dropdowns / menus               (was 0 8px 24px /.4) */
+  --shadow-lg: none;   /* overlays / popovers             (was 0 16px 48px/.4) */
+  --shadow-xl: none;   /* modals                          (was 0 25px 50px/.15)*/
+  --shadow-2xl: none;  /* BaseBox shadow="2xl"                                 */
+
+  /* ── Derived below: tonal ladder + glass fills consume the knobs above ─── */
+  --tonal-base: color-mix(in oklch, var(--sky-primary, transparent) var(--glass-tint), var(--bg));
   --tonal-base: color-mix(in oklch, var(--sky-primary, transparent) var(--glass-tint), var(--bg));
 
   /* Tonal ladder — opaque shades, deepest → highest. WIDE steps (~9% --fg per
@@ -169,14 +200,12 @@
      instead of "light card / near-solid dark card". Earlier this ramped alpha to
      0.92 to force separation; that slammed deeper rungs near-solid and killed the
      translucency — the even-tint model gives the separation without that. */
-  /* Opacity per rung — lowered (was 62/70/70/72%) so more sky shows through and
-     the panes read as real glass, not near-solid cards. Deeper rungs stay a touch
-     more opaque to preserve the stacking separation. */
-  --glass-0: color-mix(in oklch, var(--tonal-0) 48%, transparent);
-  --glass-1: color-mix(in oklch, var(--tonal-1) 55%, transparent);
-  --glass-2: color-mix(in oklch, var(--tonal-2) 58%, transparent);
-  --glass-3: color-mix(in oklch, var(--tonal-3) 62%, transparent);
-  --glass-blur: 14px;
+  /* Glass fill = a tonal rung at the opacity knob from the control block above.
+     Change the LOOK there (--glass-opacity-*), not here. */
+  --glass-0: color-mix(in oklch, var(--tonal-0) var(--glass-opacity-0), transparent);
+  --glass-1: color-mix(in oklch, var(--tonal-1) var(--glass-opacity-1), transparent);
+  --glass-2: color-mix(in oklch, var(--tonal-2) var(--glass-opacity-2), transparent);
+  --glass-3: color-mix(in oklch, var(--tonal-3) var(--glass-opacity-3), transparent);
   /* Glass borders: a translucent hairline (the edge a real glass pane catches),
      not the opaque --border. Mostly the border colour at reduced alpha so it
      reads as part of the pane, letting the sky show faintly through the rim. */
@@ -225,16 +254,12 @@ body > #dna-mount, body > main, body > div {
 .surface .surface .surface .surface,
 .glass-surface .glass-surface .glass-surface .glass-surface { background-color: var(--glass-3); }
 
-/* Chrome that hand-rolls the glass recipe (the floating .public-header is rung 1)
-   joins the stacking system: a glass field nested in it — the omnibox input —
-   steps to rung 2 and DROPS backdrop-filter, the same mechanism as .glass-surface
-   nesting (re-blurring the frosted header is what muddied it to flat dark). Not
-   hardcoded in the page's inline <style>; the rung lives here with the mechanism. */
-/* The omnibox is nested inside the glass header (rung 1), so it steps to rung 2
-   and DROPS backdrop-filter — the tonal-stacking mechanism (re-blurring the
-   frosted header muddies it to flat dark). */
+/* The header is ONE unified glass bar (app-chrome.css) and its inner controls
+   carry NO surface of their own — the header glass is their backdrop. The omnibox
+   input is therefore fully transparent (no nested rung-2 fill, no own blur); it
+   reads as a bare field on the header glass. (:root prefix to win the cascade.) */
 :root .public-header .omni-input {
-  background-color: var(--glass-2);
+  background-color: transparent;
   backdrop-filter: none; -webkit-backdrop-filter: none;
 }
 
@@ -243,27 +268,68 @@ body > #dna-mount, body > main, body > div {
    step up. The :root prefix raises specificity to (0,2,0) so these win over the
    page-embedded `.panel { background: var(--bg-card) }` rules (0,1,0) that load
    after shared.css in each HTML <style> — without resorting to !important. */
+/* ═══ THE ONE GLASS — every surface, one recipe (the vendored library glass) ═══
+   This is the SINGLE source of truth for what a glass surface looks like. Every
+   surface class across the app is listed here and gets the same vendor glass
+   (--lg-* system, lg-glass.css). No competing --glass-1 recipe; the header/
+   sidebar chrome (app-chrome.css) join this list too. One definition, everywhere. */
 :root .card, :root .panel, :root .kpi, :root .tenant-rail, :root .stat,
 :root .gc-community, :root .omni-pop, :root .sidebar-search-results,
-:root .tweaks-panel,
+:root .tweaks-panel, :root .surface, :root .glass-surface,
 /* author page (author.html) surfaces */
 :root .profile-hero, :root .profile-panel, :root .profile-stat,
 /* paper / hover / detail cards */
 :root .paper-card, :root .hover-card, :root .node-detail-pane,
 /* graph-explorer + detail/source surfaces (were opaque --bg-card holdouts) */
 :root .graph-filters, :root .graph-canvas, :root .detail-panel,
-:root #graph-container, :root .source, :root .normalized, :root .profile-card {
+:root #graph-container, :root .source, :root .normalized, :root .profile-card,
+/* claustro project card + admin tenant-manager card (were opaque holdouts) */
+:root .project-card, :root .tm-card {
   position: relative;
-  background-color: var(--glass-1);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  /* Vendor glass fill (--lg-* strong stops) + blur + rim — the ONE glass. */
+  background: linear-gradient(135deg,
+    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-1)), transparent) 0%,
+    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-2)), transparent) 50%,
+    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-3)), transparent) 100%);
+  backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
+  -webkit-backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
+  border: var(--border-w) solid var(--lg-border);
+  border-radius: var(--radius-card);
+  box-shadow: inset 0 1px 0 var(--lg-highlight-top), inset 0 -1px 0 var(--lg-highlight-bottom);
+}
+/* ═══ LIQUID GLASS — same ONE-GLASS surface set, refracting the real backdrop ═══
+   When data-lg-liquid is on, every glass surface listed above swaps its plain blur
+   for the kube refraction (backdrop-filter: url(#lg-kube), lg/kube-filter.ts) that
+   bends the actual page behind it — the library's true liquid mode. backdrop-filter
+   never touches the element's own content, so box + text stay sharp. Chromium
+   refracts; Safari/FF ignore the url() ref and keep the base blur (progressive
+   enhancement). Same selector list as the base rule — the SINGLE source, no drift.
+   The [data-lg-liquid] attr raises specificity to (0,3,0), winning over the base
+   (0,2,0) plain-blur rule. --lg-blur/transparency retuned for liquid in lg-glass.css. */
+:root[data-lg-liquid] .card, :root[data-lg-liquid] .panel, :root[data-lg-liquid] .kpi,
+:root[data-lg-liquid] .tenant-rail, :root[data-lg-liquid] .stat,
+:root[data-lg-liquid] .gc-community, :root[data-lg-liquid] .omni-pop,
+:root[data-lg-liquid] .sidebar-search-results, :root[data-lg-liquid] .tweaks-panel,
+:root[data-lg-liquid] .surface, :root[data-lg-liquid] .glass-surface,
+:root[data-lg-liquid] .profile-hero, :root[data-lg-liquid] .profile-panel,
+:root[data-lg-liquid] .profile-stat, :root[data-lg-liquid] .paper-card,
+:root[data-lg-liquid] .hover-card, :root[data-lg-liquid] .node-detail-pane,
+:root[data-lg-liquid] .graph-filters, :root[data-lg-liquid] .graph-canvas,
+:root[data-lg-liquid] .detail-panel, :root[data-lg-liquid] #graph-container,
+:root[data-lg-liquid] .source, :root[data-lg-liquid] .normalized,
+:root[data-lg-liquid] .profile-card, :root[data-lg-liquid] .project-card,
+:root[data-lg-liquid] .tm-card {
+  backdrop-filter: url(#lg-kube) blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
+  -webkit-backdrop-filter: url(#lg-kube) blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
 }
 /* A surface nested inside a nexus card steps to rung 2 (and drops the re-blur).
-   .chart-surface joins this set: a chart is a glass surface sitting inside its
-   rung-1 host card, so by the SAME mechanism it's rung 2 — not a hardcoded layer. */
+   .chart-surface joins this set: the chart's PLOT AREA is a rung-2 glass panel
+   inside its rung-1 host card (title + description). Gets the CANONICAL glass
+   border (--border-glass) like every other element — not tonal-step-only. */
 :root .panel .panel, :root .card .card, :root .kpi .stat,
 :root .panel .stat, :root .panel .card, :root .card .stat,
-:root .card .chart-surface, :root .panel .chart-surface {
+:root .card .chart-surface, :root .panel .chart-surface,
+:root .card .fac-card, :root .card .gantt-wrap {
   background-color: var(--glass-2);
   backdrop-filter: none; -webkit-backdrop-filter: none;
 }
@@ -299,5 +365,15 @@ body > #dna-mount, body > main, body > div {
 @supports (corner-shape: superellipse(1.5)) {
   *, *::before, *::after {
     corner-shape: superellipse(var(--corner-smooth, 1));
+  }
+  /* Foundational clip fix: a rounded surface that CLIPS full-bleed content must
+     clip to the SQUIRCLE, not the circular corner — else full-bleed children
+     (the KPI spark strip's negative margins, chart canvases) poke past the smooth
+     border, now visible since surfaces are translucent glass. `overflow: clip`
+     respects corner-shape where `hidden` may not. Scoped to the surfaces that
+     actually full-bleed content (KPI + chart cards); other cards/panels keep
+     their own overflow so dropdowns/tooltips can still escape. */
+  .kpi, .card-chart {
+    overflow: clip;
   }
 }
