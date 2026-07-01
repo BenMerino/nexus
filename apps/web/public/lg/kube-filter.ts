@@ -46,7 +46,14 @@ function inject(): void {
   // oversized (-20%..120%) so the bezel gradient at the card edges isn't clipped.
   const filter = document.createElementNS(ns, "filter");
   filter.id = ID;
-  filter.setAttribute("color-interpolation-filters", "sRGB");
+  // linearRGB (the SVG spec default) — NOT sRGB. sRGB forces the filter chain's
+  // internal blur/displacement/blend math into the same coarse, non-perceptual
+  // 8-bit-per-channel space that banded the CSS sheen gradient (fixed separately
+  // in lg-glass.css). Safari's SVG filter engine is still largely software-
+  // rasterized and visibly more sensitive to that precision loss than Chrome's
+  // GPU-accelerated one — this is the actual remaining Safari-only banding
+  // source (downstream of the gradient, inside the refraction filter itself).
+  filter.setAttribute("color-interpolation-filters", "linearRGB");
   filter.setAttribute("filterUnits", "objectBoundingBox");
   filter.setAttribute("primitiveUnits", "userSpaceOnUse");
   filter.setAttribute("x", "-0.2");
