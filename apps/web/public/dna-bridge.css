@@ -304,11 +304,12 @@ body > #dna-mount, body > main, body > div {
 /* claustro project card + admin tenant-manager card (were opaque holdouts) */
 :root .project-card, :root .tm-card {
   position: relative;
-  /* Vendor glass fill (--lg-* strong stops) + blur + rim — the ONE glass. */
-  background: linear-gradient(135deg,
-    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-1)), transparent) 0%,
-    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-2)), transparent) 50%,
-    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-3)), transparent) 100%);
+  /* Vendor glass fill + blur + rim — the ONE glass. --lg-sheen (lg-glass.css)
+     is the single source for the gradient — every glass surface consumes the
+     SAME token instead of re-deriving the stops, so a fix (e.g. the oklab
+     interpolation that stopped Safari banding the sheen) lands everywhere at
+     once instead of drifting between call sites. */
+  background: var(--lg-sheen);
   backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
   -webkit-backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
   border: var(--border-w) solid var(--lg-border);

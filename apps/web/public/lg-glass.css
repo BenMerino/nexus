@@ -29,6 +29,34 @@
   --lg-surface-stop-1: 0.36%;  /* their "-strong" stops for card-sized surfaces */
   --lg-surface-stop-2: 0.20%;
   --lg-surface-stop-3: 0.08%;
+
+  /* ── THE sheen — one gradient, every glass surface consumes it verbatim ──
+     Every rung-1 surface (.card/.panel/.kpi/header/sidebar…) wants this exact
+     diagonal sheen; it used to be hand-copied at each consumer (lg-glass.css's
+     own rule below AND dna-bridge.css's ONE-glass rule), so a fix to one could
+     silently drift from the other. Defined once here; consumers just write
+     `background: var(--lg-sheen)`.
+     `in oklab` fixed the interpolation-space banding (sRGB's 8-bit channel
+     steps are too coarse for a ~3%-alpha range and Safari doesn't dither the
+     gap; Chrome happens to). A FAINTER residual band can still show in Safari
+     because backdrop-filter: blur() composites through a lower-precision
+     buffer than the page itself — so even a correctly-interpolated gradient
+     re-quantizes slightly on the way out. Two extra waypoints (25%/75%,
+     linearly co-located with the original two-segment ramp — same visual
+     shape, not a new curve) shrink the color delta PER SEGMENT so no single
+     step is wide enough to clear that buffer's quantization threshold. */
+  --lg-sheen: linear-gradient(135deg in oklab,
+    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-1)), transparent) 0%,
+    color-mix(in srgb, white calc(var(--lg-transparency) * 0.28%), transparent) 25%,
+    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-2)), transparent) 50%,
+    color-mix(in srgb, white calc(var(--lg-transparency) * 0.14%), transparent) 75%,
+    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-3)), transparent) 100%);
+  /* Rung-2 (nested, e.g. .chart-surface/.fac-card): 2-stop, 1.4× denser — same
+     oklab treatment, same one-source rule. */
+  --lg-sheen-rung2: linear-gradient(135deg in oklab,
+    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-1) * 1.4), transparent) 0%,
+    color-mix(in srgb, white calc(var(--lg-transparency) * 0.392%), transparent) 50%,
+    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-2) * 1.4), transparent) 100%);
 }
 
 /* When ON, restyle every glass surface with the library recipe. The :root[data-lg]
@@ -45,13 +73,8 @@
 :root[data-lg] .tenant-rail,
 :root[data-lg] .public-header,
 :root[data-lg] .sidebar {
-  /* .glass-surface-strong — theme-aware gradient driven by --lg-transparency */
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-1)), transparent) 0%,
-    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-2)), transparent) 50%,
-    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-3)), transparent) 100%
-  );
+  /* .glass-surface-strong — the ONE sheen token (defined above). */
+  background: var(--lg-sheen);
   /* .glass-blur-lg — backdrop blur + saturation from the sliders */
   backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
   -webkit-backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
@@ -79,11 +102,7 @@
 :root[data-lg] .card .fac-card,
 :root[data-lg] .card .gantt-wrap,
 :root[data-lg] .profile-hero .profile-stat {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-1) * 1.4), transparent) 0%,
-    color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-2) * 1.4), transparent) 100%
-  );
+  background: var(--lg-sheen-rung2);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   /* The glass rim — SAME inset highlights as every other vendor surface. This is
