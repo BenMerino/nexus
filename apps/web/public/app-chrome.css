@@ -24,6 +24,21 @@
   --sidebar-w: 248px;          /* floating sidebar width (incl. its own box) */
 }
 
+/* Film grain over the sky: fixed full-viewport layer, above #sky-bg (z:0) and
+   below every chrome element (header z:40, sidebar z:35). Its OWN denser
+   fractal-noise (alpha 0.22) — not the shared low-alpha --glass-grain, which is
+   tuned faint for glass cards and would be invisible here. Fine grain
+   (baseFrequency 0.9, ~140px tile). overlay blend so it rides the gradient
+   tonally; pointer-events:none — decorative, never intercepts clicks. Mounted by
+   sky-bg.ts on every page (self-mounting, next to the canvas). */
+#sky-grain {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'160'%20height%3D'160'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'4'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20values%3D'1%200%200%200%200%200%201%200%200%200%200%200%201%200%200%200%200%200%200.22%200'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20filter%3D'url(%23n)'%2F%3E%3C%2Fsvg%3E");
+  background-repeat: repeat;
+  opacity: 0.9;
+  mix-blend-mode: overlay;
+}
+
 /* ═══ PUBLIC SHELL (tenant / author / any header-only page) ═══════════════════ */
 .public-app { --maxw: 1500px; display: flex; flex-direction: column; height: 100vh; }
 
@@ -34,33 +49,37 @@
    pill, not a full-width slab). No fixed-overlay, no padding-clearance hack. */
 /* The header is a fixed, TRANSPARENT flex row spanning the top inset zone — it
    carries no surface; its three segments are the floating glass bars. */
+/* ONE unified floating glass bar (not three separate segments). The glass recipe
+   + lift lives on the header itself; the segments below are plain flex groups
+   (left brand · centre search · right aux) laid out inside the single bar. */
 .public-header {
   position: fixed;
   top: var(--chrome-inset);
   left: var(--chrome-inset);
   right: var(--chrome-inset);
   min-height: var(--chrome-bar-h);
-  display: flex; align-items: stretch; gap: var(--chrome-inset);
-  z-index: 40;
-}
-
-/* Each segment is its own floating glass bar — full bar height, same glass recipe
-   + lift as the cards. Left/right shrink to content; centre (search) flexes. */
-.public-header-seg {
-  display: flex; align-items: center;
-  min-height: var(--chrome-bar-h);
+  display: flex; align-items: center; gap: 12px;
   padding: 0 18px;
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-sm);
+  z-index: 40;
 }
+
+/* Segments are layout groups within the one bar — no glass of their own.
+   Left/right shrink to content; centre (search) flexes to fill. */
+.public-header-seg { display: flex; align-items: center; }
 .public-header-left  { flex: none; }
 .public-header-right { flex: none; gap: 14px; }
 .public-header-center { flex: 1 1 auto; min-width: 0; padding: 0 8px; }
 .public-header-center .omni { width: 100%; max-width: none; }
-.public-header-center .omni-input {
+/* The omnibox frame carries NO surface inside the unified header — the header
+   glass IS its backdrop. Strip the InputFrame's bg + border + shadow (and its
+   focus ring) so it's a bare field on the glass, not a control chip on a bar. */
+.public-header-center .omni-input,
+.public-header-center .omni-input:focus-within {
   width: 100%; min-height: calc(var(--chrome-bar-h) - 16px);
   background: transparent; border: 0; box-shadow: none; padding: 0 10px;
 }
@@ -103,23 +122,24 @@
 }
 .public-tab:hover { color: var(--fg); }
 .public-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
-/* Right segment's content typography (font/colour for the updated + sign-in). */
+/* Right segment's content typography (font/colour for the sign-in). */
 .public-header-right {
   font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim);
 }
-.public-updated { display: flex; align-items: center; gap: 7px; letter-spacing: 0.04em; }
 .public-signin { color: var(--fg-dim); }
 .public-signin:hover { color: var(--accent); }
 
-/* Theme toggle button (sun in dark mode → go light; moon in light → go dark). */
+/* Theme toggle — a bare ghost icon: the unified header glass is its surface, so
+   no own border/background (that would double-stack a chip on the glass). A faint
+   wash appears only on hover. */
 .theme-btn {
   width: 34px; height: 34px; flex: none; cursor: pointer;
   display: grid; place-items: center;
   border-radius: var(--radius-control);
-  border: var(--border-w) solid var(--border); background: var(--bg-card); color: var(--fg-muted);
-  transition: color 0.15s, border-color 0.15s;
+  border: 0; background: transparent; color: var(--fg-muted);
+  transition: color 0.15s, background-color 0.15s;
 }
-.theme-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
+.theme-btn:hover { color: var(--fg); background: color-mix(in oklch, var(--fg) 10%, transparent); }
 .theme-btn svg { width: 16px; height: 16px; }
 /* The icon is chosen in React per sky mode (live/day/night) — no CSS flip. */
 
@@ -151,12 +171,6 @@
    override — it reset the fixed-chrome offset padding, dropping content BEHIND
    the header + sidebar. The base .public-main padding now governs.) */
 
-/* The live "updated" pulse dot (public header) — emerald, distinct from the
-   sidebar's --ok pulse below. */
-.public-updated .sync-pulse {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--j-emerald);
-  animation: sync-pulse 2.4s ease infinite; flex: none;
-}
 @keyframes sync-pulse {
   0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--j-emerald) 60%, transparent); }
   70%  { box-shadow: 0 0 0 6px transparent; }
@@ -182,12 +196,19 @@
 #sidebar-mount:empty { display: block; }
 
 .sidebar {
-  /* Floating glass card, detached on every side. Fills its grid row (row 2,
-     below the header) rather than the whole viewport — min-height keeps it
-     full-height on header-less pages (the authed app). */
+  /* ── ONE floating-glass card SHAPE, identical on every page ──────────────
+     Box geometry (width, the --chrome-inset gap, corner, glass, shadow, nest)
+     is defined ONCE here and is the same whether or not a .public-header is
+     present. Only POSITIONING (static-grid vs sticky vs fixed) differs per
+     mode below — never the shape/size. The inset is always expressed as
+     `margin` so both modes produce the exact same visual box. */
   margin: var(--chrome-inset);
   width: var(--sidebar-w);
-  height: calc(100% - 2 * var(--chrome-inset));
+  /* Fill the space below whatever chrome sits above (0 on the authed app,
+     the measured header height on public pages) minus the top+bottom inset.
+     --_sidebar-top-chrome is 0 by default and set to the header height only
+     in the public override — so this single height formula serves both. */
+  height: calc(100% - 2 * var(--chrome-inset) - var(--_sidebar-top-chrome, 0px));
   min-height: 0;
   background-color: var(--glass-1);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
@@ -202,16 +223,43 @@
 }
 .app.app-scroll .sidebar { position: sticky; top: var(--chrome-inset); }
 
+/* ── LIQUID GLASS — the chrome shells refract too ────────────────────────────
+   When data-lg-liquid is on, the floating header + sidebar swap their plain blur
+   for the kube refraction (backdrop-filter: url(#lg-kube)) that bends the page
+   behind them — same liquid mode every content surface uses, so NO glass element
+   is left out. Chrome glass is N9-owned (defined here, not the vendor/bridge file),
+   so its liquid override lives here too. backdrop-filter never touches the shell's
+   own content — nav + header items stay sharp. Chromium refracts; Safari/FF keep
+   the base blur (progressive enhancement). */
+:root[data-lg-liquid] .public-header,
+:root[data-lg-liquid] .sidebar {
+  backdrop-filter: url(#lg-kube) blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: url(#lg-kube) blur(var(--glass-blur)) saturate(1.4);
+}
+
 /* PUBLIC pages (tenant/author): both header AND sidebar are FIXED chrome, only
-   the content scrolls. The sidebar is pinned at the left, starting BELOW the
-   fixed header (top = inset + bar + inset). Scoped via :has so the authed app's
-   sidebar (no .public-header) is untouched. */
+   the content scrolls. Scoped via :has so the authed app's sidebar (no
+   .public-header) is untouched. This override changes ONLY positioning — it
+   takes the card out of flow (position: fixed) and pins it below the fixed
+   header. The SHAPE (width, margin/inset, corner, height formula) stays the
+   shared definition above: margin is untouched, and `top` matches the margin
+   inset PLUS the header the card must clear, using the SAME measured
+   --chrome-bar-h-actual that .public-main uses so content + sidebar align. */
 .app:has(> .public-header) .sidebar {
+  /* Take the card out of flow and pin it — SHAPE unchanged. The gap on every
+     edge is still exactly --chrome-inset (left explicit, top = inset below the
+     header band, bottom via the shared height formula), so the visual box is
+     identical to the authed grid card. Margin is neutralized here because the
+     inset is now expressed through explicit offsets under `fixed`. */
   position: fixed;
-  left: var(--chrome-inset);
-  top: calc(2 * var(--chrome-inset) + var(--chrome-bar-h));
-  height: calc(100vh - 3 * var(--chrome-inset) - var(--chrome-bar-h));
   margin: 0;
+  left: var(--chrome-inset);
+  /* Below the fixed header: one inset + the measured bar height (same value
+     .public-main uses) + one inset gap between the header and the card. */
+  top: calc(2 * var(--chrome-inset) + var(--chrome-bar-h-actual, var(--chrome-bar-h)));
+  /* Reserve the header band so the shared `height` formula (which reads this)
+     subtracts it too — keeps ONE height definition across both modes. */
+  --_sidebar-top-chrome: calc(var(--chrome-inset) + var(--chrome-bar-h-actual, var(--chrome-bar-h)));
   z-index: 35;
 }
 
@@ -266,7 +314,7 @@
   background: var(--bg-inset); border: var(--border-w) solid var(--border-soft);
   border-radius: var(--radius-card); z-index: 50;
   max-height: 320px; overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  box-shadow: var(--shadow-md);
 }
 .sidebar-search-empty { padding: 10px 12px; font-size: var(--text-label); color: var(--fg-dim); font-family: var(--font-mono); }
 .sidebar-search-hit {
