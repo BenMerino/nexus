@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Research — Nexus</title>
+  <title>Research — Pliny</title>
   <link rel="stylesheet" href="/shared.css">
   <style>
     /* Chrome (floating glass header + shell) is the SHARED app-chrome.css
@@ -54,8 +54,10 @@
     .kpi-label { font-family: var(--font-mono); font-size: var(--text-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--fg-dim); }
     .kpi-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--kpi-accent, var(--j-sapphire)); }
     .kpi-body { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-top: auto; }
-    .kpi-val { font-family: var(--font-display); font-size: var(--text-display); line-height: 0.92; letter-spacing: var(--tracking-h); font-weight: var(--weight-body); font-variant-numeric: tabular-nums; }
-    .kpi-val .pct { font-size: var(--text-h2); color: var(--fg-muted); }
+    /* The big number wears the card's OWN hand-picked accent (--kpi-accent, the
+       per-KPI --j-* jewel set in tenant-summary.tsx), not the primary gradient. */
+    .kpi-val { font-family: var(--font-display); font-size: var(--text-display); line-height: 0.92; letter-spacing: var(--tracking-h); font-weight: var(--weight-body); font-variant-numeric: tabular-nums; color: var(--kpi-accent, var(--accent)); }
+    .kpi-val .pct { font-size: var(--text-h2); color: var(--kpi-accent, var(--accent)); }
     .kpi-spark { display: block; flex: none; }
     /* Series sparkline as a full-bleed bottom strip: negative margins cancel
        the card padding so the area gradient runs edge-to-edge; the SVG inside

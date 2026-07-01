@@ -54,7 +54,7 @@ export function Sidebar({ me, currentPath, roleSwitcher }: SidebarProps) {
   const role = me?.role ?? '';
   const links = linksFor(me);
   const sections = Array.from(new Set(links.map(l => l.section || '')));
-  const tenantName = me?.tenant || (role === 'superadmin' ? 'Superadmin' : 'Nexus');
+  const tenantName = me?.tenant || (role === 'superadmin' ? 'Superadmin' : 'Pliny');
 
   return (
     <aside className="sidebar">
@@ -64,7 +64,7 @@ export function Sidebar({ me, currentPath, roleSwitcher }: SidebarProps) {
             {me?.logo && <img src={me.logo} alt="" />}
           </div>
           <div className="brand-text">
-            <div className="brand-name">Nexus</div>
+            <div className="brand-name">Pliny</div>
             <div className="brand-tenant">{tenantName} · CRIS</div>
           </div>
         </div>

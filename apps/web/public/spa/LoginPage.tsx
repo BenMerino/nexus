@@ -1,20 +1,23 @@
-// Login page, ported from public/login.html. Same DOM structure, same
-// shared.css classes. Behavior diffs from the original:
-//   - The "already logged in → /" check runs once on mount instead of
-//     inline at parse time. End-state identical.
-//   - On success, navigates to / via window.location so the browser
-//     reloads the cookie-gated dashboard.html. Once dashboard migrates
-//     to React Router, switch to react-router useNavigate().
-//   - The action URL stays /api/auth?action=login for now; it'll move
-//     to the REST alias /api/auth/login in a follow-up frontend pass.
+// Login — the platform's public auth page (Pliny). No shared chrome: a single
+// glass card centered over the global #sky-bg, composed entirely from the design
+// system (BaseBox/BaseText primitives + Button/InputFrame composed). Page-only
+// layout (viewport centering, wordmark) lives in login.css.
+//
+// Behavior (unchanged from the port): POSTs to /api/auth?action=login; on the
+// existing-cookie check or a successful login it navigates to / via
+// window.location so the browser reloads the cookie-gated dashboard.
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { BaseBox, BaseText } from "../../ui/primitives";
+import { Button } from "../../ui/composed/Button";
+import { LoginField } from "./LoginField";
+import "./login.css";
 
 export function LoginPage() {
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const passRef = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (document.cookie.includes("nexus_logged_in=1")) {
@@ -24,10 +27,11 @@ export function LoginPage() {
 
   async function doLogin() {
     if (!user.trim() || !pass) {
-      alert("Enter both username and password");
+      setError("Enter both username and password.");
       return;
     }
     setError(null);
+    setBusy(true);
     try {
       const resp = await fetch("/api/auth?action=login", {
         method: "POST",
@@ -35,56 +39,63 @@ export function LoginPage() {
         body: JSON.stringify({ user: user.trim(), pass }),
       });
       const data = await resp.json();
-      if (data.error) { setError(data.error); return; }
+      if (data.error) { setError(data.error); setBusy(false); return; }
       window.location.href = "/";
     } catch (err) {
-      setError("Error: " + (err as Error).message);
+      setError((err as Error).message);
+      setBusy(false);
     }
   }
 
   return (
-    <>
-      <nav><span className="logo">Nexus</span></nav>
-      <div className="page">
-        <h1>Login</h1>
-        <div className="card">
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 360 }}>
-            <div>
-              <label style={labelStyle}>Username</label>
-              <input
-                type="text"
-                placeholder="Username"
-                style={{ width: "100%" }}
-                value={user}
-                onChange={(e) => setUser(e.target.value)}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Password</label>
-              <input
-                ref={passRef}
-                type="password"
-                placeholder="Password"
-                style={{ width: "100%" }}
-                value={pass}
-                onChange={(e) => setPass(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") doLogin(); }}
-              />
-            </div>
-            <div><button onClick={doLogin}>Login</button></div>
-          </div>
-        </div>
-        {error && <div className="status error">{error}</div>}
-      </div>
-    </>
+    <BaseBox as="main" className="login-screen">
+      <BaseBox
+        as="form"
+        direction="col"
+        gap="6"
+        width="100%"
+        style={{ maxWidth: 340 }}
+        onSubmit={(e: React.FormEvent) => { e.preventDefault(); doLogin(); }}
+      >
+        <BaseBox direction="col" align="center" gap="1">
+          <BaseText as="span" variant="display" className="login-wordmark">Pliny</BaseText>
+          <BaseText as="span" variant="caption" color="muted">Sign in to continue</BaseText>
+        </BaseBox>
+
+        <BaseBox
+          direction="col"
+          gap="4"
+          p="6"
+          bg="var(--bg-card)"
+          border="var(--_ctl-border) solid var(--border-main)"
+          radius="card"
+          shadow="lg"
+        >
+          <LoginField
+            label="Username"
+            type="text"
+            autoComplete="username"
+            autoFocus
+            value={user}
+            onChange={setUser}
+          />
+          <LoginField
+            label="Password"
+            type="password"
+            autoComplete="current-password"
+            value={pass}
+            onChange={setPass}
+          />
+
+          {error && (
+            <BaseText as="span" variant="detail" color="error" role="alert">{error}</BaseText>
+          )}
+
+          <Button type="submit" variant="primary" fullWidth loading={busy}>
+            Sign in
+          </Button>
+        </BaseBox>
+      </BaseBox>
+    </BaseBox>
   );
 }
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: 12,
-  textTransform: "uppercase",
-  letterSpacing: "0.5px",
-  marginBottom: 4,
-  fontWeight: "bold",
-};
