@@ -4,7 +4,7 @@
 // — border, focus ring, radius, disabled — rather than redrawing chrome here.
 
 import React from "react";
-import { BaseBox, BaseText } from "../../ui/primitives";
+import { BaseBox, BaseText } from "../ui-kit";
 import { InputFrame } from "../../ui/composed/InputFrame";
 
 export interface LoginFieldProps {
@@ -18,7 +18,7 @@ export interface LoginFieldProps {
 
 export function LoginField({ label, type, value, onChange, autoComplete, autoFocus }: LoginFieldProps) {
   return (
-    <BaseBox as="label" direction="col" gap="1-5">
+    <BaseBox as="label" display="flex" direction="col" gap="1-5">
       <BaseText as="span" variant="label" color="muted">{label}</BaseText>
       <InputFrame>
         <BaseBox

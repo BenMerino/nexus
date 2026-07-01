@@ -1,14 +1,16 @@
 // Login — the platform's public auth page (Pliny). No shared chrome: a single
-// glass card centered over the global #sky-bg, composed entirely from the design
-// system (BaseBox/BaseText primitives + Button/InputFrame composed). Page-only
-// layout (viewport centering, wordmark) lives in login.css.
+// liquid-glass card centered over the global #sky-bg, composed from the design
+// system (BaseBox/BaseText primitives + Button/InputFrame composed). The card
+// wears the canonical `.glass-surface` recipe (dna-bridge.css) and publishes a
+// `controlSize` so the hosted InputFrames inherit their height. Page-only layout
+// (viewport centering) lives in login.css.
 //
 // Behavior (unchanged from the port): POSTs to /api/auth?action=login; on the
 // existing-cookie check or a successful login it navigates to / via
 // window.location so the browser reloads the cookie-gated dashboard.
 
 import React, { useEffect, useState } from "react";
-import { BaseBox, BaseText } from "../../ui/primitives";
+import { BaseBox, BaseText } from "../ui-kit";
 import { Button } from "../../ui/composed/Button";
 import { LoginField } from "./LoginField";
 import "./login.css";
@@ -51,26 +53,21 @@ export function LoginPage() {
     <BaseBox as="main" className="login-screen">
       <BaseBox
         as="form"
+        display="flex"
         direction="col"
         gap="6"
-        width="100%"
-        style={{ maxWidth: 340 }}
+        p="8"
+        controlSize="md"
+        radius="card"
+        className="glass-surface login-card"
         onSubmit={(e: React.FormEvent) => { e.preventDefault(); doLogin(); }}
       >
-        <BaseBox direction="col" align="center" gap="1">
+        <BaseBox display="flex" direction="col" gap="1">
           <BaseText as="span" variant="display" className="login-wordmark">Pliny</BaseText>
           <BaseText as="span" variant="caption" color="muted">Sign in to continue</BaseText>
         </BaseBox>
 
-        <BaseBox
-          direction="col"
-          gap="4"
-          p="6"
-          bg="var(--bg-card)"
-          border="var(--_ctl-border) solid var(--border-main)"
-          radius="card"
-          shadow="lg"
-        >
+        <BaseBox display="flex" direction="col" gap="4">
           <LoginField
             label="Username"
             type="text"

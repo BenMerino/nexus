@@ -1,7 +1,9 @@
 /* Login — page-specific layout only. The auth page has NO shared chrome
- * (no floating header/sidebar): it's a single card centered over the global
- * #sky-bg. Everything visual comes from tokens + primitives; this file owns
- * only the full-viewport centering and the wordmark, which have no primitive. */
+ * (no floating header/sidebar): it's a single glass card centered over the
+ * global #sky-bg. The glass recipe comes from `.glass-surface` (dna-bridge.css)
+ * and the corner + control sizing from BaseBox props; this file owns only the
+ * full-viewport centering, the card width, and the wordmark tracking — none of
+ * which have a primitive. */
 
 .login-screen {
   position: relative;
@@ -13,7 +15,13 @@
   box-sizing: border-box;
 }
 
-/* The wordmark above the card — the brand, set in the display type role. */
+.login-card {
+  width: 100%;
+  max-width: 22rem;
+  box-shadow: var(--shadow-lg);
+}
+
+/* The wordmark — the brand, set in the display type role with tight tracking. */
 .login-wordmark {
-  letter-spacing: var(--tracking-h, -0.01em);
+  letter-spacing: var(--tracking-h);
 }
