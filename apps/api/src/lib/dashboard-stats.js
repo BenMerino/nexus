@@ -2,7 +2,9 @@ const { sql } = require("./sql");
 const { isPersonalScope } = require("./scope");
 const { resolvePubFilter } = require("./stats-scope");
 const { getAuthorCount } = require("./public-authors");
-const { normRor } = require("./entity-normalize");
+// Categorical top-N readers (institutions/countries/journals) live in their own
+// file (N5); re-exported below so callers keep importing from dashboard-stats.
+const { getCollaborations, getCountries, getTopJournals } = require("./dashboard-stats-categorical");
 
 // Dashboard stats — entity-backed (tags → entities migration). Personal scope
 // narrows to the user's own publications via authorship; admin scope is the
@@ -59,68 +61,6 @@ async function getByYearAndSource(scope) {
     `SELECT SUBSTRING(p.published FROM 1 FOR 4) AS year, 'All' AS source, COUNT(*) AS count
      FROM publications p WHERE p.published IS NOT NULL AND ${f.where}
      GROUP BY SUBSTRING(p.published FROM 1 FOR 4) ORDER BY year`, f.params);
-  return r.rows;
-}
-
-// Top collaborating institutions — direct pub↔institution edges (affiliated_with,
-// the superset the graph/collab counts use). group_key = institution id.
-//
-// Excludes the tenant's OWN institution: a tenant is not its own collaborator,
-// and since it's on ~every one of its papers it would otherwise rank #1 and
-// dominate the chart. scope.ror is the home ROR (normalized to bare-id to match
-// how institutions.ror is stored at ingest). When scope.ror is absent the
-// filter is a no-op — callers that want the exclusion must pass it.
-async function getCollaborations(scope) {
-  if (!scope) throw new Error("getCollaborations requires scope");
-  const f = await resolvePubFilter(scope);
-  const homeRor = normRor(scope.ror);
-  const params = [...f.params, scope.tenantId];
-  let homeFilter = "";
-  if (homeRor) {
-    params.push(homeRor);
-    homeFilter = ` AND i.ror IS DISTINCT FROM $${params.length}`;
-  }
-  const r = await sql.query(
-    `SELECT i.name value, i.id::text group_key, COUNT(DISTINCT p.id) count
-     FROM affiliated_with aw JOIN institutions i ON i.id = aw.institution_id
-     JOIN publications p ON p.id = aw.publication_id
-     WHERE i.tenant_id = $${f.params.length + 1} AND ${f.where}${homeFilter}
-     GROUP BY i.id, i.name ORDER BY count DESC LIMIT 20`, params);
-  return r.rows;
-}
-
-async function getCountries(scope) {
-  if (!scope) throw new Error("getCountries requires scope");
-  // Country counts via the NORMALIZED entity model: publications → affiliated_with
-  // → institutions.country, a plain indexed join + GROUP BY. Replaces the old
-  // path that shredded the 57MB denormalized `affiliations` JSON on every read
-  // (~1s). Country is now persisted on `institutions` at ingest by the
-  // InstitutionGovernor, so reading it is the same cheap join as collaborators.
-  const f = await resolvePubFilter(scope);
-  const r = await sql.query(
-    `SELECT i.country AS country, COUNT(DISTINCT p.id) AS count
-       FROM publications p
-       JOIN affiliated_with aw ON aw.publication_id = p.id
-       JOIN institutions i ON i.id = aw.institution_id
-      WHERE i.country IS NOT NULL AND i.country <> ''
-        AND ${f.where}
-      GROUP BY i.country
-      ORDER BY count DESC
-      LIMIT 20`, f.params);
-  return r.rows.map((row) => ({ country: row.country, count: parseInt(row.count) }));
-}
-
-// Top journals — venues + published_in, journals only (ISSN siblings already
-// collapsed into one venue by name_key). key = venue id.
-async function getTopJournals(scope) {
-  if (!scope) throw new Error("getTopJournals requires scope");
-  const f = await resolvePubFilter(scope);
-  const r = await sql.query(
-    `SELECT v.name value, v.id::text key, COUNT(DISTINCT p.id) count
-     FROM venues v JOIN published_in pi ON pi.venue_id = v.id
-     JOIN publications p ON p.id = pi.publication_id
-     WHERE v.tenant_id = $${f.params.length + 1} AND v.venue_type = 'journal' AND ${f.where}
-     GROUP BY v.id, v.name ORDER BY count DESC LIMIT 10`, [...f.params, scope.tenantId]);
   return r.rows;
 }
 

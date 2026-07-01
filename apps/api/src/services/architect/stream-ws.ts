@@ -16,6 +16,7 @@ import type { Server as HttpServer } from "http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { streamRegistry } from "./StreamRegistry";
 import { streamInvalidationListener } from "./StreamInvalidationListener";
+import { warmDirectiveCache } from "./warm-cache";
 import { eventBus } from "../EventBus";
 
 /** Governor events that change publication-derived charts. Each carries a
@@ -53,6 +54,10 @@ export function attachStreamWs(server: HttpServer): void {
   // Real cross-process path: ingestion runs in the worker, so listen on the
   // outbox NOTIFY backbone for events the worker emits. Best-effort observer.
   void streamInvalidationListener.start();
+
+  // Prime the DirectiveCache for every public chart so the first post-deploy
+  // visitor doesn't pay the cold compute. Fire-and-forget; never blocks boot.
+  void warmDirectiveCache();
 
   console.log("[boot] Stream WS attached at /api/stream");
 }
