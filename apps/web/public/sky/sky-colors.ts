@@ -20,7 +20,7 @@ const mix = (A: RGB, B: RGB, t: number): RGB =>
 // molten-lava accent + ember companion. Only two altitudes are ever requested
 // (forced day/night — see sky-mode.ts), so this is a straight lookup.
 const KEYS: { alt: number; p: RGB; c: RGB }[] = [
-  { alt: -18, p: [150, 30, 40],  c: [130, 40, 50]  }, // deep night: deep red + ember, matches the maroon horizon
+  { alt: -18, p: [175, 32, 44],  c: [150, 42, 54]  }, // deep night: deep magma-red + ember, matches the horizon
   { alt: 60,  p: [236, 96, 44],  c: [242, 150, 84] }, // day: molten-lava accent + ember companion — volcanic, never blue
 ];
 
