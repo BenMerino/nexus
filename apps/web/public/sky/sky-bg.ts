@@ -48,7 +48,8 @@ function paint() {
 
 async function start() {
   Object.assign(canvas.style, {
-    position: "fixed", inset: "0", zIndex: "0", display: "block", pointerEvents: "none",
+    position: "fixed", inset: "0", width: "100%", height: "100%",
+    zIndex: "0", display: "block", pointerEvents: "none",
   } as CSSStyleDeclaration);
   document.body.prepend(canvas);
   document.body.insertBefore(grain, canvas.nextSibling);
