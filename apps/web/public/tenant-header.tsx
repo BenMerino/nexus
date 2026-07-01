@@ -9,14 +9,38 @@ export interface PublicNavItem { id: string; label: string; }
 const ROR_HOST = 'https://ror.org/';
 function rorHref(raw: string): string { return raw.startsWith('http') ? raw : `${ROR_HOST}${raw}`; }
 function rorId(raw: string): string { const m = raw.match(/([^/]+)$/); return m ? m[1] : raw; }
-function initial(name: string): string { return (name.trim()[0] || '·').toUpperCase(); }
+// Talca sits at the foot of Volcán Descabezado Grande — the brand mark is a
+// glass volcano tile (no per-tenant logo upload wired up yet), same footprint
+// as the old initial-letter crest. 8 vertical bars, one per column, heights
+// forming a mountain profile (short at the edges, tall at center); the two
+// peak bars stop one cell short of the top — the crater notch.
+const BAR_HEIGHTS = [2, 4, 6, 7, 7, 6, 4, 2] as const;
+const GRID_ROWS = 8;
 
-// Three-state theme cycle: live (real sun drives it) → day (forced) → night
-// (forced) → live. One icon per mode; clicking advances the cycle and the sky
-// pipeline repaints instantly via the nexus:sky-mode event.
-const MODE_LABEL: Partial<Record<SkyMode, string>> = {
-  live: 'Live · follows the sun', day: 'Day', night: 'Night',
-};
+function VolcanoMark() {
+  return (
+    <div className="public-logo-mark" aria-hidden="true">
+      <div className="volcano-grid">
+        {BAR_HEIGHTS.map((h, x) => (
+          <div className="volcano-bar" key={x}>
+            {Array.from({ length: GRID_ROWS }, (_, i) => GRID_ROWS - 1 - i).map(rowFromBottom => {
+              const filled = rowFromBottom < h;
+              const opacity = 0.35 + (0.65 * (GRID_ROWS - rowFromBottom)) / GRID_ROWS;
+              return (
+                <span key={rowFromBottom}
+                  style={filled ? { opacity, background: 'var(--fg)' } : undefined} />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Two-state theme toggle: day (forced) ↔ night (forced). One icon per mode;
+// clicking flips it and the sky pipeline repaints instantly via nexus:sky-mode.
+const MODE_LABEL: Record<SkyMode, string> = { day: 'Day', night: 'Night' };
 
 function ModeIcon({ mode }: { mode: SkyMode }) {
   const c = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6 } as const;
@@ -24,14 +48,8 @@ function ModeIcon({ mode }: { mode: SkyMode }) {
     <svg {...c}><circle cx="12" cy="12" r="4.2" />
       <path d="M12 2.5v2.6M12 18.9v2.6M21.5 12h-2.6M5.1 12H2.5M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4 5.6 5.6" strokeLinecap="round" /></svg>
   );
-  if (mode === 'night') return (
-    <svg {...c}><path d="M20 14.5A8 8 0 1 1 9.5 4a6.3 6.3 0 0 0 10.5 10.5z" strokeLinejoin="round" /></svg>
-  );
-  // live: a sun half-eclipsed by a moon arc — "auto / follows the sky".
   return (
-    <svg {...c}><circle cx="12" cy="12" r="4.2" />
-      <path d="M12 3v2M12 19v2M21 12h-2M5 12H3M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4M17.7 17.7l-1.4-1.4M7.7 7.7 6.3 6.3" strokeLinecap="round" opacity="0.55" />
-      <path d="M14.5 9.2A4.2 4.2 0 0 0 12 16.2a4.2 4.2 0 0 0 2.5-7z" fill="currentColor" stroke="none" opacity="0.9" /></svg>
+    <svg {...c}><path d="M20 14.5A8 8 0 1 1 9.5 4a6.3 6.3 0 0 0 10.5 10.5z" strokeLinejoin="round" /></svg>
   );
 }
 
@@ -81,9 +99,7 @@ export function TenantPublicHeader({
     <header className="public-header" ref={ref}>
       <div className="public-header-seg public-header-left">
         <div className="public-brand">
-          {tenant.logo_url
-            ? <img className="public-logo" src={tenant.logo_url} alt="" />
-            : <span className="public-logo-fallback" data-initial={initial(tenant.name)} />}
+          <VolcanoMark />
           <div>
             <div className="public-tenant-name">{tenant.name}</div>
             <div className="public-tenant-sub">

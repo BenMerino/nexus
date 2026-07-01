@@ -56,9 +56,9 @@ htmlEntries["sky-bg"] = resolve(SRC, "sky/sky-bg.ts");
 // Before the first style computation, set data-theme so the page doesn't paint
 // the wrong baseline. The sky pipeline (sky-bg.ts) owns the surface tokens, but
 // it loads async — so here we set data-theme from the sticky sky mode
-// (nexus.sky-mode): 'day' → light, 'night' → dark, 'live'/absent → a coarse OS
-// guess (the module corrects to the real sun within a frame). Synchronous, first
-// thing in <head>. Keep the key name in sync with SKY_MODE_KEY (sky/sky-mode.ts).
+// (nexus.sky-mode): 'day' → light, 'night' → dark, absent → OS preference.
+// Synchronous, first thing in <head>. Keep the key name in sync with
+// SKY_MODE_KEY (sky/sky-mode.ts).
 // Also set data-lg (+ data-lg-liquid) pre-paint so the (default-on) vendored
 // library glass applies before first paint — no flash of nexus's own glass, and
 // no flash of plain glass before liquid. Default mode is 'liquid' when unset; only

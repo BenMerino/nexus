@@ -1,29 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import {
-  getSkyMode, setSkyMode, getManualMinutes, setManualMinutes, type SkyMode,
-} from './sky/sky-mode';
+import { getSkyMode, setSkyMode, type SkyMode } from './sky/sky-mode';
 import './dna-liquid';  // self-mounting: injects the liquid-glass SVG filter
 
-/* DEV/PREVIEW sky scrub — a 4th 'manual' mode that pins an exact time of day so
- * you can drag through dawn→noon→dusk→night and watch every sun-driven token
- * (surfaces, charts, aurora, glass tint) update live. Lives only on /dna.html,
- * NOT the production header (which keeps live/day/night). Persists via sky-mode;
- * dispatches nexus:sky-mode so sky-bg repaints instantly. */
+/* DEV/PREVIEW sky toggle — day/night only (matches the production header).
+ * Lives only on /dna.html. Persists via sky-mode; dispatches nexus:sky-mode
+ * so sky-bg repaints instantly. */
 
 const MODES: { id: SkyMode; label: string }[] = [
-  { id: 'live', label: 'Live' },
   { id: 'day', label: 'Day' },
   { id: 'night', label: 'Night' },
-  { id: 'manual', label: 'Manual' },
 ];
 
 const repaint = () => window.dispatchEvent(new CustomEvent('nexus:sky-mode'));
-const fmt = (min: number) =>
-  `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 
 export function SkyScrub() {
   const [mode, setMode] = useState<SkyMode>(() => getSkyMode());
-  const [min, setMin] = useState<number>(() => getManualMinutes());
   // Default OFF — borderless is now the platform default (--border-w: 0). The
   // toggle here lets you preview borders BACK on for comparison.
   const [borders, setBorders] = useState(false);
@@ -48,20 +39,12 @@ export function SkyScrub() {
     else root.style.removeProperty('--border-w');
   }, [borders]);
 
-  // sky-mode is shared across ALL pages — don't leak a dev 'manual'/forced scrub
-  // (or the borderless override) to the real app. Restore on leaving /dna.html.
+  // sky-mode is shared across ALL pages — don't leak the borderless override
+  // to the real app. Restore on leaving /dna.html.
   useEffect(() => () => {
-    setSkyMode('live'); repaint();
     document.documentElement.style.removeProperty('--border-w');
     document.documentElement.setAttribute('data-liquid', '');  // restore the platform default
   }, []);
-
-  const onScrub = (v: number) => {
-    setMin(v);
-    setManualMinutes(v);
-    if (mode !== 'manual') { setMode('manual'); }   // dragging enters manual
-    else { setSkyMode('manual'); repaint(); }
-  };
 
   return (
     <div style={{
@@ -85,14 +68,6 @@ export function SkyScrub() {
             }}>{m.label}</button>
         ))}
       </div>
-      <input type="range" min={0} max={1439} step={1} value={min}
-        disabled={mode !== 'manual'}
-        onChange={e => onScrub(Number(e.target.value))}
-        style={{ flex: 1, accentColor: 'var(--accent)', opacity: mode === 'manual' ? 1 : 0.4 }} />
-      <span style={{ flex: 'none', minWidth: 44, textAlign: 'right',
-        opacity: mode === 'manual' ? 1 : 0.4, fontVariantNumeric: 'tabular-nums' }}>
-        {fmt(min)}
-      </span>
       <button onClick={() => setBorders(b => !b)}
         title="Toggle all surface borders (--border-w)"
         style={{
