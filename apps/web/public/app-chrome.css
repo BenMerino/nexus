@@ -224,17 +224,31 @@
 .app.app-scroll .sidebar { position: sticky; top: var(--chrome-inset); }
 
 /* ── LIQUID GLASS — the chrome shells refract too ────────────────────────────
-   When data-lg-liquid is on, the floating header + sidebar swap their plain blur
-   for the kube refraction (backdrop-filter: url(#lg-kube)) that bends the page
-   behind them — same liquid mode every content surface uses, so NO glass element
-   is left out. Chrome glass is N9-owned (defined here, not the vendor/bridge file),
-   so its liquid override lives here too. backdrop-filter never touches the shell's
-   own content — nav + header items stay sharp. Chromium refracts; Safari/FF keep
-   the base blur (progressive enhancement). */
+   Header + sidebar use the SAME cross-browser overlay recipe as the content
+   surfaces (see dna-bridge.css): a ::before that captures the backdrop via
+   backdrop-filter, then refracts it with filter: url(#lg-kube). NOT
+   backdrop-filter: url() (Chromium-only, flaky — WebKit 245510). So NO glass
+   element is left out, and it works in Chrome/Safari/Firefox. Chrome glass is
+   N9-owned (defined here), so its liquid override lives here too. The overlay sits
+   at z-index -1 (isolation:isolate traps it in the shell) so nav + header items
+   stay sharp above it. */
 :root[data-lg-liquid] .public-header,
 :root[data-lg-liquid] .sidebar {
-  backdrop-filter: url(#lg-kube) blur(var(--glass-blur)) saturate(1.4);
-  -webkit-backdrop-filter: url(#lg-kube) blur(var(--glass-blur)) saturate(1.4);
+  isolation: isolate;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+:root[data-lg-liquid] .public-header::before,
+:root[data-lg-liquid] .sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  filter: url(#lg-kube);
 }
 
 /* PUBLIC pages (tenant/author): both header AND sidebar are FIXED chrome, only
