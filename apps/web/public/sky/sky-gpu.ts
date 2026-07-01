@@ -26,7 +26,7 @@ fn vs(@builtin(vertex_index) i : u32) -> @builtin(position) vec4f {
 @fragment
 fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
   let uv = frag.xy / u.res;                 // 0..1, y down
-  let v = clamp((uv.y - 0.35) / 0.65, 0., 1.);
+  let v = clamp((uv.y - 0.10) / 0.90, 0., 1.);
   var col = mix(u.topc.rgb, u.horc.rgb, v);
 
   let d = vec2f((uv.x - u.glowX) / 0.6, (uv.y - 1.0) / 0.42);
