@@ -36,26 +36,23 @@
      own rule below AND dna-bridge.css's ONE-glass rule), so a fix to one could
      silently drift from the other. Defined once here; consumers just write
      `background: var(--lg-sheen)`.
-     `in oklab` fixed the interpolation-space banding (sRGB's 8-bit channel
-     steps are too coarse for a ~3%-alpha range and Safari doesn't dither the
-     gap; Chrome happens to). A FAINTER residual band can still show in Safari
-     because backdrop-filter: blur() composites through a lower-precision
-     buffer than the page itself — so even a correctly-interpolated gradient
-     re-quantizes slightly on the way out. Two extra waypoints (25%/75%,
-     linearly co-located with the original two-segment ramp — same visual
-     shape, not a new curve) shrink the color delta PER SEGMENT so no single
-     step is wide enough to clear that buffer's quantization threshold. */
-  --lg-sheen: linear-gradient(135deg in oklab,
+     The value is the library's VERBATIM recipe — plain sRGB interpolation,
+     three stops. A 2026-07 detour added `in oklab` (+ extra waypoints) chasing
+     Safari banding; probes then showed computed background-image:none in BOTH
+     Chrome and Safari — the gradient was invalid at computed-value time, which
+     for a var()-substituted shorthand silently resets the property (no
+     cascade fallback), killing the sheen everywhere. And the banding was never
+     the sheen: it was liquid mode's zero-frost kube refraction (fixed by
+     defaulting to glass mode, lg-glass.ts). Don't re-add interpolation-method
+     syntax here without verifying the computed style actually resolves. */
+  --lg-sheen: linear-gradient(135deg,
     color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-1)), transparent) 0%,
-    color-mix(in srgb, white calc(var(--lg-transparency) * 0.28%), transparent) 25%,
     color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-2)), transparent) 50%,
-    color-mix(in srgb, white calc(var(--lg-transparency) * 0.14%), transparent) 75%,
     color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-3)), transparent) 100%);
   /* Rung-2 (nested, e.g. .chart-surface/.fac-card): 2-stop, 1.4× denser — same
-     oklab treatment, same one-source rule. */
-  --lg-sheen-rung2: linear-gradient(135deg in oklab,
+     one-source rule. */
+  --lg-sheen-rung2: linear-gradient(135deg,
     color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-1) * 1.4), transparent) 0%,
-    color-mix(in srgb, white calc(var(--lg-transparency) * 0.392%), transparent) 50%,
     color-mix(in srgb, white calc(var(--lg-transparency) * var(--lg-surface-stop-2) * 1.4), transparent) 100%);
 }
 
