@@ -8,7 +8,6 @@ import { ComposedSection } from './dna-composed';
 import { ConcentricSection, GlassSection } from './dna-sections-corners';
 import { TypographySection } from './dna-typography';
 import { SkyScrub } from './dna-sky-scrub';
-import { GradientBuilder } from './dna-gradient-builder';
 
 /* /dna — the live DNA catalog. Renders the vendored Zincro primitives + composed
  * components against nexus's token contract (dna-defaults.css + dna-bridge.css),
@@ -55,7 +54,6 @@ if (el) {
   createRoot(el).render(
     <GraphProviders tenantId="utalca">
       <Gallery />
-      <GradientBuilder />
       <SkyScrub />
     </GraphProviders>,
   );
