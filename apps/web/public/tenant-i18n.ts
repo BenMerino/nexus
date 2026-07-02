@@ -13,7 +13,7 @@ export const ES = {
   research: 'Research',
   publicProfile: 'Public research profile',
   pliny: 'Pliny',
-  researchIntelligence: 'Research Intelligence · Public',
+  researchIntelligence: 'Research Intelligence',
   signIn: 'sign in',
   publicProfileBadge: 'Public profile',
   updatedPrefix: 'Updated',
