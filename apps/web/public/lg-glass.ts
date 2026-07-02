@@ -31,19 +31,19 @@ function applyAttrs(mode: Mode): void {
   root.toggleAttribute("data-lg-liquid", mode === "liquid");
 }
 
-// Respect a persisted mode; default to 'liquid' when unset.
+// Respect a persisted mode; default to 'glass' (frosted) when unset.
 //
 // Every page load used to WRITE the resolved mode back to localStorage — even
 // when nothing was explicitly toggled — so this dev-only A/B switch (no UI,
 // console-only: window.__lgGlass()) silently diverged between origins/sessions
 // the instant anyone called it once anywhere. A page load now only READS;
 // only an explicit __lgGlass(mode) call persists.
-const saved = (localStorage.getItem(KEY) as Mode | null) ?? "liquid";
+const saved = (localStorage.getItem(KEY) as Mode | null) ?? "glass";
 applyAttrs(saved);
 
 // Global switch for the dev toggle / console: pass a mode, or cycle off→glass→liquid.
 (window as unknown as { __lgGlass: (m?: Mode) => Mode }).__lgGlass = (m?: Mode) => {
-  const cur = (localStorage.getItem(KEY) as Mode | null) ?? "liquid";
+  const cur = (localStorage.getItem(KEY) as Mode | null) ?? "glass";
   const next: Mode = m ?? (cur === "off" ? "glass" : cur === "glass" ? "liquid" : "off");
   applyAttrs(next);
   try {

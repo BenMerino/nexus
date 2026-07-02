@@ -23,10 +23,10 @@ htmlEntries["sky-bg"] = resolve(SRC, "sky/sky-bg.ts");
 // SKY_MODE_KEY (sky/sky-mode.ts).
 // Also set data-lg (+ data-lg-liquid) pre-paint so the (default-on) vendored
 // library glass applies before first paint — no flash of nexus's own glass.
-// Default mode is 'liquid' when unset — refraction is per-element size-matched
-// and scoped to card-scale surfaces (lg/kube-filter.ts); only an explicit
-// 'off' clears it. Keep default + attrs in sync with lg-glass.ts.
-const THEME_BOOT = `<script>try{var sm=localStorage.getItem('nexus.sky-mode');var m=sm==='day'?'light':sm==='night'?'dark':(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',m);var lg=localStorage.getItem('nexus.lg-glass.v2')||'liquid';if(lg!=='off'){document.documentElement.setAttribute('data-lg','');if(lg==='liquid'){document.documentElement.setAttribute('data-lg-liquid','')}}}catch(e){}</script>`;
+// Default mode is 'glass' (frosted) when unset — liquid (kube refraction) is
+// opt-in via window.__lgGlass('liquid'). Only an explicit 'off' clears data-lg.
+// Keep default + attrs in sync with lg-glass.ts.
+const THEME_BOOT = `<script>try{var sm=localStorage.getItem('nexus.sky-mode');var m=sm==='day'?'light':sm==='night'?'dark':(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',m);var lg=localStorage.getItem('nexus.lg-glass.v2')||'glass';if(lg!=='off'){document.documentElement.setAttribute('data-lg','');if(lg==='liquid'){document.documentElement.setAttribute('data-lg-liquid','')}}}catch(e){}</script>`;
 
 // Live sun-driven sky background, injected into EVERY page (self-mounting module
 // that prepends a fixed canvas behind all content). Source-path tag; Vite serves
