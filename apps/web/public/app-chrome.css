@@ -457,16 +457,24 @@
    engine skips keeps its normal look, so nothing ever renders unfilled.
    !important: the liquid rules this silences are double-attr (0,4,0)
    selectors spread across dna-bridge/lg-glass/app-chrome. */
+/* border-color stays (var(--border-soft)/(--border-glass)) — it is the
+   sole visual separator between adjacent cards/panels that carry no gap or
+   margin of their own; dropping it fused neighboring cards into one shape.
+   The GPU rim (Fresnel bright edge) reads as glass; the hairline border
+   still reads as "this is a distinct surface". */
 [data-glass="gpu"] [data-gpu-glass] {
   background: transparent !important;
-  border-color: transparent !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   isolation: isolate;   /* trap the z:-1 layer under this host's content */
 }
 [data-glass="gpu"] [data-gpu-glass]::before { display: none; }
+/* width/height 100% is REQUIRED: inset alone doesn't stretch a replaced
+   element — a <canvas> keeps its intrinsic backing-store size (300×150, or
+   whatever gpu-glass-element.ts last set in device px) and the UA scales
+   THAT bitmap to fill the box, which reads as blurry/pixelated corners. */
 .gpu-glass-layer {
-  position: absolute; inset: 0; z-index: -1;
+  position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1;
   border-radius: inherit; pointer-events: none; display: block;
 }
