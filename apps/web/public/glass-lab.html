@@ -2,20 +2,21 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Glass Lab</title>
-  <link rel="stylesheet" href="/shared.css">
+  <title>Glass Lab — vendor reference</title>
   <style>
-    /* Glass Lab — an UNBIASED reproduction page for the liquid-glass pipeline:
-       one default glass element over a deterministic grid, no sky gradient, no
-       theme surfaces, no app layout. The platform pipeline still self-mounts
-       (THEME_BOOT sets data-lg/liquid; the injected sky-bg module boots
-       lg-glass + the kube engine), so what renders here is EXACTLY the
-       production glass — only the backdrop is controlled.
-       Page-specific styles only (N9): the grid + centering. */
+    /* Glass Lab — PURE VENDOR REFERENCE. No shared.css, no platform classes,
+       no theme tokens, no nexus glass pipeline (our kube engine only targets
+       platform selectors, none of which exist here). The specimen below is
+       built from ObaidQatan/liquid-glass-component-library's own recipe and
+       defaults, verbatim — the ONLY nexus code involved is the vendored
+       (unmodified) texture generators it imports. What renders here is what
+       the vendor proposes, per browser, nothing else.
+       arch-audit-ignore: N3 — vendor-verbatim values are the point: tokenizing
+       them would bias the reference against upstream. */
+    html, body { margin: 0; height: 100%; font-family: -apple-system, system-ui, sans-serif; }
 
-    /* Deterministic backdrop: sits ABOVE the global sky canvas (z:0) and the
-       film grain (z:1) so neither biases the pixels behind the glass. Crisp
-       24px checker + hairline grid — bends, shifts, and smears are obvious. */
+    /* Deterministic backdrop: crisp checker + hairline grid, fixed above
+       anything the global boot may mount behind it. */
     .lab-grid {
       position: fixed; inset: 0; z-index: 2;
       background:
@@ -24,31 +25,92 @@
         repeating-conic-gradient(#3a3f4a 0% 25%, #b8bece 0% 50%);
       background-size: 24px 24px, 24px 24px, 48px 48px;
     }
+    .lab-stage { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; }
 
-    .lab-stage {
-      position: fixed; inset: 0; z-index: 3;
-      display: grid; place-items: center;
+    /* ── The vendor glass, verbatim defaults ─────────────────────────────────
+       transparency 20 · blur 10 · saturation 100 · borderRadius 24, from the
+       library's glass-surface-strong / glass-blur-lg utilities:
+         gradient stops  = transparency × {0.36%, 0.20%, 0.08%} = 7.2/4/1.6%
+         border          = transparency × 0.24% = 4.8% white
+         backdrop        = blur(10×0.8px) saturate(100×2%)
+         highlights      = inset ±1px white/black · shadow 0 4px 24px rgba(0,0,0,.2)
+       LIQUID = the vendor's true mode: the kube filter INSIDE backdrop-filter
+       (backdrop-filter: url() — Chromium-only per the library docs; engines
+       that can't take it fall back per their own backdrop-filter parsing).
+       The filter is injected by the module script below at this element's
+       exact size with vendor defaults (bezel 9%, thickness 120, light −150,
+       specular 10, refraction 90). */
+    .vendor-glass {
+      width: 480px; height: 320px; box-sizing: border-box; padding: 24px;
+      border-radius: 24px;
+      background: linear-gradient(135deg,
+        rgba(255,255,255,0.072) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.016) 100%);
+      border: 1px solid rgba(255,255,255,0.048);
+      backdrop-filter: blur(8px) saturate(200%) url(#lab-kube);
+      -webkit-backdrop-filter: blur(8px) saturate(200%) url(#lab-kube);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.18),
+        inset 0 -1px 0 rgba(0,0,0,0.12),
+        0 4px 24px rgba(0,0,0,0.2);
+      color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.4);
     }
-    /* The subject: a stock platform glass surface (.card — same class, same
-       cascade as production) at a fixed, card-scale size so the kube engine
-       assigns it a filter. Nothing else styles it here. */
-    .lab-stage .card { width: 480px; height: 320px; }
     .lab-note {
       position: fixed; left: 16px; bottom: 12px; z-index: 3;
-      font-family: var(--font-mono); font-size: var(--text-micro); color: #555;
+      font-family: ui-monospace, monospace; font-size: 11px; color: #555;
     }
   </style>
 </head>
 <body>
   <div class="lab-grid"></div>
   <div class="lab-stage">
-    <section class="card">
-      <h4>Glass specimen</h4>
-      <p class="muted">Default platform glass over a neutral grid. Toggle modes with
-        <code>__lgGlass('liquid'|'glass'|'off')</code>; inspect with
-        <code>__kubeDebug</code> (list / outline / mode / showMap / snap).</p>
-    </section>
+    <div class="vendor-glass">
+      <h3 style="margin:0 0 8px">Vendor glass specimen</h3>
+      <p style="margin:0;font-size:14px;opacity:.85">
+        liquid-glass-component-library defaults, verbatim. backdrop-filter:
+        blur + saturate + url(#lab-kube). No nexus theme, cascade, or engine.
+      </p>
+    </div>
   </div>
-  <div class="lab-note">glass-lab — unbiased liquid-glass reproduction page</div>
+  <div class="lab-note">glass-lab — pure vendor reference (no platform pipeline)</div>
+
+  <script type="module">
+    // Vendor kube filter at THIS element's exact size, vendor defaults. The two
+    // generators are the library's own files, vendored unmodified.
+    import { generateDisplacementTexture } from "/lg/kube/displacementTexture";
+    import { generateSpecularTexture } from "/lg/kube/specularTexture";
+
+    const W = 480, H = 320, RADIUS = 24;
+    const BEZEL = 0.09 * Math.min(W, H);       // bezel 9 (% of dimension)
+    const opts = { width: W, height: H, bezel: BEZEL, profile: "convex-circle", borderRadius: RADIUS };
+    const disp = generateDisplacementTexture({ ...opts, thickness: 120, samples: 128 });
+    const spec = generateSpecularTexture({ ...opts, lightAngle: -150, shininess: 40 });
+
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("width", "0"); svg.setAttribute("height", "0");
+    const f = document.createElementNS(ns, "filter");
+    f.id = "lab-kube";
+    f.setAttribute("primitiveUnits", "userSpaceOnUse");
+    const img = (href, result) => {
+      const e = document.createElementNS(ns, "feImage");
+      e.setAttribute("href", href);
+      e.setAttribute("x", "0"); e.setAttribute("y", "0");
+      e.setAttribute("width", W); e.setAttribute("height", H);
+      e.setAttribute("preserveAspectRatio", "none");
+      e.setAttribute("result", result);
+      return e;
+    };
+    const dm = document.createElementNS(ns, "feDisplacementMap");
+    dm.setAttribute("in", "SourceGraphic"); dm.setAttribute("in2", "disp");
+    dm.setAttribute("scale", "90");          // refraction 90
+    dm.setAttribute("xChannelSelector", "R"); dm.setAttribute("yChannelSelector", "G");
+    dm.setAttribute("result", "refracted");
+    const blend = document.createElementNS(ns, "feBlend");
+    blend.setAttribute("in", "spec"); blend.setAttribute("in2", "refracted");
+    blend.setAttribute("mode", "screen");
+    f.append(img(disp.url, "disp"), img(spec, "spec"), dm, blend);
+    svg.appendChild(f);
+    document.body.appendChild(svg);
+  </script>
 </body>
 </html>
