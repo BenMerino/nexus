@@ -74,10 +74,14 @@ export async function mountGpuGlass(
     const [tr, tg, tb] = c(sky.top), [hr, hg, hb] = c(sky.hor);
     const k = absorption(P.tint, P.tintStrength);        // CSS-px⁻¹ → /dpr below
     const lim = Math.min(P.w, P.h) / 2;                  // keep SDF radii valid
+    const bez = Math.min(P.bezel, lim);
+    // corner ≥ bezel: the rim roll can't wrap a tighter corner without a
+    // curvature crease (real slabs obey this too) — the corner grows to fit.
+    const rad = Math.min(Math.max(P.radius, bez), lim);
     device.queue.writeBuffer(ubuf, 0, new Float32Array([
       canvas.width, canvas.height, P.gap * dpr, P.ior,
       cx * dpr, cy * dpr, (P.w / 2) * dpr, (P.h / 2) * dpr,
-      Math.min(P.radius, lim) * dpr, Math.min(P.bezel, lim) * dpr, P.thick * dpr, 0.5,
+      rad * dpr, bez * dpr, P.thick * dpr, 0.5,
       tr, tg, tb, ceil,                                  // top.a = HDR ceiling
       hr, hg, hb, glowHDR,                               // hor.a = glow intensity
       24 * dpr, 0.22, 0.5 * dpr, P.dome * dpr,           // grid …, d.w = dome

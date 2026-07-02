@@ -1,7 +1,8 @@
 // WGSL for the physically-based glass element (gpu-glass.ts). One fullscreen
 // pass: the background is our sky gradient (same palette as sky-gpu); the
-// element is a real 3D form — a glass slab whose edge is a quarter-circle
-// bezel — and every pixel inside it is RAY-TRACED:
+// element is a real 3D form — a glass slab with a curvature-continuous
+// (C²) cubic-eased bezel and squircle corners — and every pixel inside it
+// is RAY-TRACED:
 //   entry refraction (Snell, air→glass at the surface normal derived from the
 //   form's height field) → march the internal ray to the flat back face →
 //   exit refraction (Snell, glass→air; total internal reflection falls back
@@ -46,37 +47,52 @@ fn bg(p: vec2f) -> vec3f {
   return mix(sky(p), vec3f(1.0), gridA(p));
 }
 
-// Signed distance to the element's rounded-rect footprint (device px).
+// Signed-distance-like field to the element's footprint (device px). The
+// corner quadrant uses a 4-norm instead of the euclidean 2-norm: the straight
+// edge then meets the corner with C³ continuity (no curvature seam → no
+// refraction crease) and the corner is the design system's superellipse
+// (squircle), not a circle.
 fn sdRR(p: vec2f) -> f32 {
   let q = abs(p - u.b.xy) - u.b.zw + vec2f(u.c.x);
-  return length(max(q, vec2f(0.0))) + min(max(q.x, q.y), 0.0) - u.c.x;
+  let m = max(q, vec2f(0.0));
+  let m2 = m * m;
+  return pow(dot(m2, m2), 0.25) + min(max(q.x, q.y), 0.0) - u.c.x;
 }
 
-// The element's physical form: a slab whose rim is a quarter-circle of
-// radius = bezel, plus an optional dome — a gentle parabolic rise toward the
-// center (u.d.w px) that turns the flat top into a weak lens, so the interior
-// refracts too. h is height ABOVE the flat back face's top.
+// The element's physical form, C² everywhere — refraction differentiates the
+// surface, so any curvature break prints a hard line. The rim rises over the
+// bezel band with a cubic ease (zero slope AND zero curvature where it meets
+// the flat top); the optional dome is a superellipse cap in normalized
+// coordinates (NOT in SDF distance, whose interior iso-lines crease at the
+// diagonals and medial axis), fading to zero before the rim. h is height
+// ABOVE the flat back face's top.
 fn height(p: vec2f) -> f32 {
   let e = -sdRR(p);                       // distance in from the edge
   if (e <= 0.0) { return 0.0; }
   let x = min(e / u.c.y, 1.0);
-  let rim = u.c.y * sqrt(max(0.0, 1.0 - (1.0 - x) * (1.0 - x)));
-  let d = min(e / min(u.b.z, u.b.w), 1.0);
-  return rim + u.d.w * (1.0 - (1.0 - d) * (1.0 - d));
+  let rim = u.c.y * (1.0 - pow(1.0 - x, 3.0));
+  let s = (p - u.b.xy) / u.b.zw;          // -1..1 across the footprint
+  let s2 = s * s;
+  let cap = pow(max(1.0 - dot(s2, s2), 0.0), 3.0);
+  return rim + u.d.w * cap;
 }
 
-// Frosted sampling: roughness scatters the exit ray in a cone, so average the
-// background over a vogel disk of radius u.e.w, rotated per-pixel so
-// undersampling reads as noise rather than ghost images.
+// Frosted sampling: roughness scatters the ray in a cone — gather the
+// background over a Gaussian-weighted golden spiral of radius u.e.w, rotated
+// per-pixel by interleaved-gradient noise so residual undersampling reads as
+// fine grain rather than ghost images or banding.
 fn frosted(q: vec2f, seed: vec2f) -> vec3f {
-  let rot = fract(sin(dot(seed, vec2f(12.9898, 78.233))) * 43758.5453) * 6.2832;
+  let rot = fract(52.9829189 * fract(dot(seed, vec2f(0.06711056, 0.00583715)))) * 6.2832;
   var acc = vec3f(0.0);
-  for (var i = 0u; i < 8u; i++) {
+  var wsum = 0.0;
+  for (var i = 0u; i < 32u; i++) {
+    let t = (f32(i) + 0.5) / 32.0;
     let a = 2.3999632 * f32(i) + rot;
-    let r = u.e.w * sqrt((f32(i) + 0.5) / 8.0);
-    acc += bg(q + vec2f(cos(a), sin(a)) * r);
+    let w = exp(-3.0 * t);
+    acc += bg(q + vec2f(cos(a), sin(a)) * (u.e.w * sqrt(t))) * w;
+    wsum += w;
   }
-  return acc / 8.0;
+  return acc / wsum;
 }
 
 @vertex
@@ -123,7 +139,9 @@ fn fs(@builtin(position) frag: vec4f) -> @location(0) vec4f {
   let f0 = pow((ior - 1.0) / (ior + 1.0), 2.0);
   let f = f0 + (1.0 - f0) * pow(1.0 - max(dot(-I, n), 0.0), 5.0);
   let r = reflect(I, n);
-  col = mix(col, bg(p + r.xy * 200.0), f);
+  var refl = bg(p + r.xy * 200.0);
+  if (u.e.w > 0.25) { refl = frosted(p + r.xy * 200.0, p + vec2f(17.0, 9.0)); }
+  col = mix(col, refl, f);
   return vec4f(col, 1.0);
 }
 `;
