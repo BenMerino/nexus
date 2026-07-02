@@ -40,10 +40,15 @@ function outline(on = true): void {
 }
 
 function mode(m: "full" | "frost" | "bend" | "spec"): string {
-  // Restore 'full' first, then subtract the requested stage.
+  // Restore 'full' first (from SAVED attribute values — spec width / bend
+  // scale are exact px since the padded-capture refactor, never hardcode),
+  // then subtract the requested stage.
+  const stash = ((mode as unknown as { s?: Map<Element, string> }).s ??= new Map());
   filters().forEach((f) => {
-    f.querySelector('feImage[result="spec"]')?.setAttribute("width", "100%");
-    f.querySelector("feDisplacementMap")?.setAttribute("scale", "32");
+    for (const [el, v] of stash) if (f.contains(el)) {
+      el.setAttribute(el.tagName === "feImage" ? "width" : "scale", v);
+      stash.delete(el);
+    }
   });
   hosts().forEach((h) => {
     const saved = h.dataset.kubeSaved;
@@ -53,10 +58,14 @@ function mode(m: "full" | "frost" | "bend" | "spec"): string {
     h.dataset.kubeSaved = h.style.getPropertyValue("--_kube");
     h.style.setProperty("--_kube", "none");
   });
-  if (m === "bend") filters().forEach((f) =>
-    f.querySelector('feImage[result="spec"]')?.setAttribute("width", "0"));
-  if (m === "spec") filters().forEach((f) =>
-    f.querySelector("feDisplacementMap")?.setAttribute("scale", "0"));
+  if (m === "bend") filters().forEach((f) => {
+    const s = f.querySelector('feImage[result="spec"]');
+    if (s) { stash.set(s, s.getAttribute("width") ?? ""); s.setAttribute("width", "0"); }
+  });
+  if (m === "spec") filters().forEach((f) => {
+    const d = f.querySelector("feDisplacementMap");
+    if (d) { stash.set(d, d.getAttribute("scale") ?? ""); d.setAttribute("scale", "0"); }
+  });
   return m;
 }
 
@@ -64,9 +73,11 @@ function showMap(el?: HTMLElement): void {
   const h = el ?? hosts()[0];
   if (!h) { console.warn("no refracting hosts"); return; }
   const id = /url\("?#([^")]+)"?\)/.exec(h.style.getPropertyValue("--_kube"))?.[1];
+  // The displacement feImage is result="dispImg" (result="disp" is the
+  // neutral-composited output, not an image).
   const href = id && document.getElementById(id)
-    ?.querySelector('feImage[result="disp"]')?.getAttribute("href");
-  if (!href) { console.warn("no displacement texture for", h); return; }
+    ?.querySelector('feImage[result="dispImg"]')?.getAttribute("href");
+  if (!href) { console.warn("no displacement texture for", h, id); return; }
   h.style.setProperty("--_kube", "none");
   Object.assign(h.style, { backgroundImage: `url(${href})`, backgroundSize: "100% 100%" });
 }
