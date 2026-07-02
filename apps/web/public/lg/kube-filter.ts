@@ -28,7 +28,11 @@ const LIQUID_HOSTS = [
 
 const MIN_W = 120, MIN_H = 56;   // size gate — below this: frost only
 const MAX_TEX = 384;             // cap texture render resolution (px, long side)
-const BUCKET = 48;               // geometry bucket (px) — nearby sizes share a filter
+// Geometry bucket (px). 8 keeps texture stretch ≤4px/axis (a 48 bucket offset
+// the bezel/specular rim up to 24px from the real edge — visible ghosting);
+// repeated components (grid cards, kpis) share exact sizes so the filter
+// cache still collapses them to one entry each.
+const BUCKET = 8;
 const BEZEL = 18;                // lens rim width in element px
 const ns = "http://www.w3.org/2000/svg";
 

@@ -310,6 +310,10 @@
   /* Per-element size-matched filter, assigned by lg/kube-filter.ts — a shared
      normalized texture can't align to a 20:1 bar (ghost edges at the ends). */
   filter: var(--_kube, none);
+  /* Re-clip the filter output to the rounded shape — border-radius clips the
+     capture but NOT filter results, which otherwise ghost into the square
+     corner zones (see the matching rule in dna-bridge.css). */
+  clip-path: inset(0 round var(--radius-card));
 }
 
 /* ONE shell shape on every page, public and private (N9): the sidebar spans

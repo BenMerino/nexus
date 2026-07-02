@@ -374,6 +374,12 @@ body > #dna-mount, body > main, body > div {
      backdrop-filter) works in every browser and only warps this overlay layer,
      never the card's content. */
   filter: var(--_kube, none);
+  /* border-radius clips the CAPTURE but NOT the filter output — displaced/
+     blurred/specular pixels spill back into the square corner zones as ghost
+     edges (confirmed: artifacts survive both bend-only and spec-only debug
+     modes, die with the filter off). clip-path runs AFTER filters in the
+     paint pipeline, so it re-clips the refracted result to the rounded shape. */
+  clip-path: inset(0 round var(--radius-card));
 }
 /* A surface nested inside a nexus card steps to rung 2 (and drops the re-blur).
    .chart-surface joins this set: the chart's PLOT AREA is a rung-2 glass panel
