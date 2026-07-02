@@ -366,19 +366,11 @@
 .role-btn-who { font-size: var(--text-micro); color: var(--fg-dim); font-family: var(--font-mono); letter-spacing: 0.04em; }
 .role-btn.active .role-btn-who { color: var(--accent); }
 
+/* Positional wrapper only. The input itself is the composed SearchField /
+ * InputFrame (ui/composed) — it owns background, border, radius, padding and
+ * focus ring. No call-site skin here (was a redundant second glass layer that
+ * double-padded and stretched the field). */
 .sidebar-search { position: relative; padding: 12px 14px 6px; }
-.sidebar-search-input {
-  width: 100%; box-sizing: border-box;
-  background: var(--glass-2);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  border: var(--border-w) solid var(--border-glass);
-  color: var(--fg); font: inherit; font-size: var(--text-detail);
-  padding: 7px 10px; border-radius: var(--radius-control);
-  transition: border-color 0.15s;
-}
-.sidebar-search-input::placeholder { color: var(--fg-dim); }
-.sidebar-search-input:focus { outline: none; border-color: var(--accent); }
 .sidebar-search-results {
   position: absolute; left: 14px; right: 14px; top: calc(100% - 2px);
   background: var(--bg-inset); border: var(--border-w) solid var(--border-soft);

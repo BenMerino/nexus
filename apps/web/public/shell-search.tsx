@@ -51,7 +51,7 @@ export function SidebarSearch() {
         <div className="sidebar-search" ref={ref as React.Ref<HTMLDivElement>}
           onFocusCapture={() => setOpen(true)}>
           <SearchField value={q} onChange={(v) => { setQ(v); setOpen(true); }}
-            placeholder="Search academics..." className="sidebar-search-input" />
+            placeholder="Search academics..." />
         </div>
       )}
     >
