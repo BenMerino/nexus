@@ -19,11 +19,9 @@ import { ProjectsGanttPanel } from './projects-gantt';
 function DashboardContent({ data }: { data: DashboardData }) {
   const { me } = useCurrentUser();
   const viewed = data.viewedUser || null;
-  const tenantName = me?.tenant || 'Institution';
   const subject = viewed
     ? { profile: viewed.profile, user: viewed.user, hIndex: viewed.hIndex, hIndexByType: viewed.hIndexByType }
     : { profile: me?.profile, user: me?.user, hIndex: me?.hIndex ?? null, hIndexByType: me?.hIndexByType ?? null };
-  const displayName = subject.profile?.researcherName || subject.profile?.name || subject.user || '';
   const isPersonal = !!subject.profile?.orcid;
   const subjectOrcid = subject.profile?.orcid || null;
   const isOwnDashboard = !viewed;
@@ -45,18 +43,8 @@ function DashboardContent({ data }: { data: DashboardData }) {
     { label: 'Authors indexed', value: data.authorCount.toLocaleString(), sub: 'ORCID-verified' },
   ];
 
-  const title = isPersonal && displayName
-    ? <><em>{displayName}</em></>
-    : <><em>{tenantName}</em></>;
-
   return (
     <div className="view dashboard">
-      <header className="view-head">
-        <div>
-          <h1 className="view-title">{title}</h1>
-        </div>
-      </header>
-
       <div className="stat-row">
         {heroStats.map((s, i) => <Stat key={i} {...s} />)}
       </div>

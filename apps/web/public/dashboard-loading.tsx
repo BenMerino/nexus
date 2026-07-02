@@ -26,25 +26,12 @@ export function DashboardLoading() {
   const { me } = useCurrentUser();
   const viewingOther = typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).has('orcid');
-  const tenantName = me?.tenant || 'Institution';
-  const displayName = viewingOther ? '' : (me?.profile?.researcherName || me?.profile?.name || me?.user || '');
   const isPersonal = viewingOther || !!me?.profile?.orcid;
 
   const stats = isPersonal ? PERSONAL_STATS : INSTITUTIONAL_STATS;
 
-  const title = isPersonal && displayName
-    ? <><em>{displayName}</em></>
-    : isPersonal
-      ? <><em>Loading…</em></>
-      : <><em>{tenantName}</em></>;
   return (
     <div className="view dashboard" aria-busy="true" aria-live="polite">
-      <header className="view-head">
-        <div>
-          <h1 className="view-title">{title}</h1>
-        </div>
-      </header>
-
       {/* reveal-group: the shared load choreography (same as the public tenant
           page) — skeleton cards stagger + focus in after the chrome. When data
           lands, the real grid swaps in with identical geometry and no re-entry. */}
