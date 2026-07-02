@@ -184,6 +184,9 @@
    padding clears the fixed sidebar. Sides/bottom get the --chrome-inset sky gap. */
 .public-main {
   flex: 1; overflow-y: auto; min-height: 0;
+  /* Scrollbar never renders (same as .main): zero layout width, so content
+     reaches the header edge and nothing reflows when the scrollbar would appear. */
+  scrollbar-width: none;
   padding:
     /* top: clear the header's REAL height (measured → --chrome-bar-h-actual,
        falling back to the token) + an inset above and below it. */
@@ -192,6 +195,7 @@
     var(--chrome-inset)                                  /* bottom */
     calc(var(--sidebar-w) + 2 * var(--chrome-inset));    /* left: clear the fixed sidebar */
 }
+.public-main::-webkit-scrollbar { display: none; }
 .public-content { padding: 0; }
 
 /* Public shell: header + sidebar are FIXED (out of flow), so the grid's column/
@@ -280,10 +284,15 @@
    a −24px-padded backdrop (overlapping the content beside the sidebar) —
    transform-animating the shell displaces that capture and cuts the
    neighboring pixels. Fade is the whole entrance; never transform glass. */
+/* opacity:0 base — hide from first paint so Safari never flashes the chrome
+   visible-then-hidden (same cross-browser rule as .reveal-group in shared.css).
+   The reduced-motion block there resets these to opacity:1. */
 .sidebar {
+  opacity: 0;
   animation: reveal-in var(--motion-reveal) var(--ease-out) both;
 }
 .public-header {
+  opacity: 0;
   animation: reveal-in var(--motion-reveal) var(--ease-out) both;
   animation-delay: var(--motion-stagger);
 }
