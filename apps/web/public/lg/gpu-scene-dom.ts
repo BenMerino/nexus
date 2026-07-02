@@ -7,6 +7,7 @@
 import { cornerRadius } from "./gpu-glass-surfaces";
 import type { Scene, SceneNode, TextNode } from "./gpu-scene-model";
 import { harvestText } from "./gpu-scene-text-dom";
+import type { DepthMap } from "./gpu-scene-depth";
 
 const CONTENT_HOSTS = ".card, .panel, .kpi, .stat, .surface, .glass-surface, .profile-hero, .profile-panel";
 
@@ -25,19 +26,20 @@ export function captureAuthorColor(el: HTMLElement): void {
   el.dataset.gpuColor = c ? c.join(",") : "1,1,1,0.06";
 }
 
-export function buildSceneFromDOM(scrollY: number): Scene {
+export function buildSceneFromDOM(scrollY: number, depths: DepthMap): Scene {
   const nodes: SceneNode[] = [];
   let contentHeight = 0;
   for (const el of document.querySelectorAll<HTMLElement>(CONTENT_HOSTS)) {
     if (el.parentElement?.closest(CONTENT_HOSTS)) continue;   // top-level surface
     const b = el.getBoundingClientRect();
     if (b.width < 8 || b.height < 8) continue;
+    const depth = depths.depthOf(el);
     const cached = el.dataset.gpuColor?.split(",").map(Number);
     const color = (cached && cached.length === 4 ? cached
       : parseColor(getComputedStyle(el).backgroundColor)) as [number, number, number, number]
       ?? [1, 1, 1, 0.06];
     nodes.push({ kind: "rect", x: b.left, y: b.top + scrollY, w: b.width, h: b.height,
-      r: cornerRadius(el), color });
+      r: cornerRadius(el), color, depth });
     // Chart canvases: blit the already-GPU-rendered pixels into the scene so
     // they refract too (not our own glass layer canvases).
     for (const cv of el.querySelectorAll<HTMLCanvasElement>("canvas")) {
@@ -45,10 +47,10 @@ export function buildSceneFromDOM(scrollY: number): Scene {
       const cb = cv.getBoundingClientRect();
       if (cb.width < 4 || cb.height < 4) continue;
       nodes.push({ kind: "image", source: cv,
-        x: cb.left, y: cb.top + scrollY, w: cb.width, h: cb.height });
+        x: cb.left, y: cb.top + scrollY, w: cb.width, h: cb.height, depth });
     }
     // Harvest this surface's text runs into text nodes (page coords).
-    for (const t of harvestText(el, scrollY)) nodes.push(t);
+    for (const t of harvestText(el, scrollY, depth)) nodes.push(t);
     contentHeight = Math.max(contentHeight, b.bottom + scrollY);
   }
   return { nodes, contentHeight };

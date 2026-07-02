@@ -28,12 +28,18 @@ export type Surface = {
   boundTex: GPUTexture | null;   // which scene texture the current bind holds
 };
 
+// Per-frame globals include a lookup from a surface's depth to the scene
+// texture containing only nodes BEHIND that depth — so glass never refracts
+// its own content.
+
 // Per-frame globals, computed once by the orchestrator (gpu-glass-page.ts).
 export type Frame = {
   dpr: number; vw: number; vh: number;      // viewport, device px
   top: number[]; hor: number[];             // sky colors 0..1
   ceil: number; glow: number;               // HDR ceiling + glow intensity
-  sceneTex: GPUTexture | null;              // GPU scene the glass refracts
+  // The scene texture a surface at `depth` refracts (only nodes behind it).
+  sceneFor: (depth: number) => GPUTexture | null;
+  depthOf: (el: HTMLElement) => number;
 };
 
 // A surface's bind group references its uniform buffer AND the current
@@ -85,8 +91,10 @@ export function drawSurface(sh: Shared, s: Surface, enc: GPUCommandEncoder, f: F
   // Corner ≥ bezel: a rim roll can't wrap a tighter corner without a crease.
   const r = Math.min(Math.max(cornerRadius(s.el), MAT.bezel), b.width / 2, b.height / 2);
   const k = absorption(MAT.tint, MAT.tintStrength);
-  const hasScene = f.sceneTex ? 1 : 0;
-  bindFor(sh, s, f.sceneTex ?? sh.fallbackTex);
+  // Sample the scene BEHIND this surface's depth, so it never refracts itself.
+  const sceneTex = f.sceneFor(f.depthOf(s.el));
+  const hasScene = sceneTex ? 1 : 0;
+  bindFor(sh, s, sceneTex ?? sh.fallbackTex);
   sh.device.queue.writeBuffer(s.ubuf, 0, new Float32Array([
     w, h, b.left * f.dpr, b.top * f.dpr,
     f.vw, f.vh, MAT.gap * f.dpr, MAT.ior,

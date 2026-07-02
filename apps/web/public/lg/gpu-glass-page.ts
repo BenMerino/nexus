@@ -15,6 +15,7 @@ import type { Surface, Frame } from "./gpu-glass-element";
 import { createSceneRenderer } from "./gpu-scene-render";
 import { buildSceneFromDOM, captureAuthorColor } from "./gpu-scene-dom";
 import { captureTextStyles } from "./gpu-scene-text-dom";
+import { computeDepths } from "./gpu-scene-depth";
 import { bootGlassDevice } from "./gpu-glass-device";
 
 const dprNow = () => Math.min(window.devicePixelRatio || 1, 2);
@@ -68,15 +69,23 @@ export async function mountGpuGlassPage(): Promise<(() => void) | false> {
       ceil, glow: 1.0 + gold * (ceil - 1.0),
     };
 
-    // Render the GPU scene (sky + card content) at the current scroll, then let
-    // the glass sample it. This is the whole "everything is GPU" pass.
+    // Depth-layered scene: each glass surface refracts only the nodes BEHIND
+    // its depth, so it never refracts its own body/text. Render one snapshot
+    // per distinct depth a live surface needs (chrome → Infinity = full scene).
+    const depths = computeDepths();
+    const sceneModel = buildSceneFromDOM(scrollY(), depths);
     scene.resize(Math.round(innerWidth * dpr), Math.round(innerHeight * dpr));
-    scene.render(buildSceneFromDOM(scrollY()), scrollY() * dpr, skyFrame, dpr);
+    const wanted = new Set<number>();
+    for (const s of surfaces.values()) wanted.add(depths.depthOf(s.el));
+    const texByDepth = new Map<number, GPUTexture>();
+    for (const d of wanted)
+      texByDepth.set(d, scene.renderLayer(sceneModel, scrollY() * dpr, skyFrame, dpr, d));
 
     const f: Frame = {
       dpr, vw: innerWidth * dpr, vh: innerHeight * dpr,
       top: skyFrame.top, hor: skyFrame.hor, ceil, glow: skyFrame.glow,
-      sceneTex: scene.texture,
+      sceneFor: (d) => texByDepth.get(d) ?? null,
+      depthOf: (el) => depths.depthOf(el),
     };
     const enc = device.createCommandEncoder();
     let any = false;

@@ -34,7 +34,7 @@ export function captureTextStyles(host: HTMLElement): void {
   }
 }
 
-export function harvestText(host: HTMLElement, scrollY: number): TextNode[] {
+export function harvestText(host: HTMLElement, scrollY: number, depth: number): TextNode[] {
   const out: TextNode[] = [];
   const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
   let node: Node | null;
@@ -60,7 +60,7 @@ export function harvestText(host: HTMLElement, scrollY: number): TextNode[] {
     const first = rects[0];
     if (!first || first.width < 1) continue;
     out.push({ kind: "text", text: text.trim(), x: first.left, y: first.top + scrollY,
-      size, family, color });
+      size, family, color, depth });
   }
   return out;
 }

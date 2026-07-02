@@ -5,11 +5,15 @@
 // coordinates (CSS px, pre-scroll). The scene renderer (gpu-scene-render.ts)
 // rasterizes these into the scene texture each frame at the current scroll;
 // the glass shader samples that texture.
+// depth: the stacking rank of the glass host this node belongs to (0 =
+// furthest back). A glass surface at depth D refracts only nodes with a
+// SMALLER depth (strictly behind it), so it never refracts its own body/text.
 export type RectNode = {
   kind: "rect";
   x: number; y: number; w: number; h: number;   // page px (pre-scroll)
   r: number;                                     // corner radius (px)
   color: [number, number, number, number];       // 0..1 rgba (fill)
+  depth: number;
 };
 
 // A run of text on one baseline. Laid out to glyph quads by gpu-scene-text.ts.
@@ -20,6 +24,7 @@ export type TextNode = {
   size: number;                  // font px
   family: "sans" | "mono";
   color: [number, number, number, number];
+  depth: number;
 };
 
 export type ChartNode = {
@@ -37,6 +42,7 @@ export type ImageNode = {
   kind: "image";
   source: CanvasImageSource;     // the element to copyExternalImageToTexture
   x: number; y: number; w: number; h: number;   // page px
+  depth: number;
 };
 
 export type SceneNode = RectNode | TextNode | ChartNode | ImageNode;
@@ -51,8 +57,10 @@ export type Scene = {
 // packed rgba8 into one float slot's bits via a Uint32 view alias.
 export const RECT_STRIDE = 8;   // floats per instance
 
-export function packRects(scene: Scene, dpr: number): Float32Array {
-  const rects = scene.nodes.filter((n): n is RectNode => n.kind === "rect");
+// maxDepth (optional): keep only nodes strictly BEHIND it (node.depth <
+// maxDepth). Used so a glass surface refracts a scene without its own layer.
+export function packRects(scene: Scene, dpr: number, maxDepth = Infinity): Float32Array {
+  const rects = scene.nodes.filter((n): n is RectNode => n.kind === "rect" && n.depth < maxDepth);
   const f = new Float32Array(rects.length * RECT_STRIDE);
   const u = new Uint32Array(f.buffer);
   for (let i = 0; i < rects.length; i++) {
@@ -68,10 +76,16 @@ export function packRects(scene: Scene, dpr: number): Float32Array {
   return f;
 }
 
-export function rectCount(scene: Scene): number {
+export function rectCount(scene: Scene, maxDepth = Infinity): number {
   let n = 0;
-  for (const node of scene.nodes) if (node.kind === "rect") n++;
+  for (const node of scene.nodes) if (node.kind === "rect" && node.depth < maxDepth) n++;
   return n;
+}
+
+// Sorted distinct depths that a glass surface might refract against, PLUS the
+// full-scene sentinel (Infinity) so chrome sampling gets everything.
+export function distinctDepths(depthsUsed: number[]): number[] {
+  return [...new Set(depthsUsed)].sort((a, b) => a - b);
 }
 
 function packColor(c: [number, number, number, number]): number {

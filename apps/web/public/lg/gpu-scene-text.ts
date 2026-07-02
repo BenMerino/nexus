@@ -9,8 +9,10 @@ import type { TextNode, Scene } from "./gpu-scene-model";
 export const GLYPH_STRIDE = 12;   // floats per glyph instance
 
 // 12 floats: dest(x,y,w,h) page px · atlasUV(u0,v0,u1,v1) 0..1 · color rgba.
-export function layoutText(scene: Scene, atlas: Atlas, dpr: number): Float32Array {
-  const texts = scene.nodes.filter((n): n is TextNode => n.kind === "text");
+// maxDepth keeps only text strictly behind it (so a glass surface refracting
+// this scene never sees its own text).
+export function layoutText(scene: Scene, atlas: Atlas, dpr: number, maxDepth = Infinity): Float32Array {
+  const texts = scene.nodes.filter((n): n is TextNode => n.kind === "text" && n.depth < maxDepth);
   const out: number[] = [];
   const aw = atlas.canvas.width, ah = atlas.canvas.height;
   for (const t of texts) {
