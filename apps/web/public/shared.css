@@ -456,14 +456,15 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
    SummaryCards.Skeleton): shells stagger in before data; when data lands
    the loaded grid swaps in with identical geometry and NO animation, so
    cards never re-enter with their data. */
-/* Glass materialize: opacity + a small blur that resolves to sharp — the
-   surface reads as coming INTO FOCUS, like glass settling. blur() is a filter,
-   NOT a transform, so it neither displaces the ::before backdrop capture nor
-   skews a chart's getBoundingClientRect (the two hazards that ban transforms
-   here). Keep it filter/opacity-only. */
+/* OPACITY-ONLY materialize — the one safe property. A `filter` (even blur(0))
+   or a `transform` on a glass surface makes it CLIP its own overflowing
+   liquid-glass ::before capture (inset: -24px, extending past the element and,
+   for the sidebar, past the viewport's left edge) — cutting the rim mid-load.
+   That's the same hazard the chrome-entrance comment (app-chrome.css) bans
+   transforms for; blur is NOT exempt. The frost/tint ramping in with opacity
+   IS the materialize. Never add filter/transform here. */
 @keyframes reveal-in {
-  from { opacity: 0; filter: blur(6px); }
-  to   { opacity: 1; filter: blur(0); }
+  from { opacity: 0; }
 }
 .reveal-group > * {
   animation: reveal-in var(--motion-reveal) var(--ease-out) both;
