@@ -9,29 +9,46 @@ import React, { useEffect, useRef, useState } from 'react';
 export function AutoHeight({ children, className }: { children: React.ReactNode; className?: string }) {
   const inner = useRef<HTMLDivElement>(null);
   const [h, setH] = useState<number | undefined>(undefined);
-  const first = useRef(true);
+  const animate = useRef(false);
 
   useEffect(() => {
     const el = inner.current;
     if (!el) return;
-    const measure = () => setH(el.offsetHeight);
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
-  // Skip the transition on the very first sizing (mount) so the initial layout
-  // appears instantly; animate every change AFTER that (the data swap).
-  useEffect(() => { first.current = false; }, []);
+    // The content grows in BURSTS as lazy charts mount, so the natural height
+    // keeps moving for a moment. Animating to a moving target restarts the
+    // transition on every burst → visible stutter. Instead: coalesce the
+    // bursts (settle window), then set the height ONCE to the final value and
+    // let a single transition glide there. Not a hack — it's the correct way
+    // to animate to a size that arrives incrementally: wait for it to stop.
+    let settle = 0;
+    const commit = () => {
+      const next = el.offsetHeight;
+      setH((prev) => {
+        // First real size: adopt it instantly (no animation) so the initial
+        // layout paints at its true height. Later changes animate.
+        if (prev === undefined) return next;
+        if (next !== prev) animate.current = true;
+        return next;
+      });
+    };
+    const ro = new ResizeObserver(() => {
+      clearTimeout(settle);
+      // 120ms of quiet = the content burst has finished; commit the final size.
+      settle = window.setTimeout(commit, 120);
+    });
+    commit();          // initial size, synchronously, no delay
+    ro.observe(el);
+    return () => { ro.disconnect(); clearTimeout(settle); };
+  }, []);
 
   return (
     <div
       className={className}
       style={{
         height: h,
-        transition: first.current ? undefined : 'height 0.45s cubic-bezier(0.2, 0.8, 0.2, 1)',
-        overflow: 'clip',   // clip (not hidden) — no scroll, just bounds while resizing
+        transition: animate.current ? 'height 0.5s cubic-bezier(0.22, 1, 0.36, 1)' : undefined,
+        overflow: 'clip',   // bounds the content to the animating height, no scroll
       }}
     >
       <div ref={inner}>{children}</div>
