@@ -447,28 +447,26 @@
 }
 
 /* ═══ GPU GLASS MODE (route-scoped, e.g. /dashboard-gpu) ═════════════════════
-   [data-glass="gpu"] on <html> means lg/gpu-glass-page.ts is rendering the
-   chrome surfaces as physically ray-traced slabs (Snell/TIR/dispersion/
-   Beer–Lambert/Fresnel) on two WebGPU canvases that bracket the content:
-   content glass at z:0 (above #sky-bg), header/sidebar glass at z:30 (above
-   scrolled content, below the chrome text at z:35/40). The DOM keeps its
-   geometry, text and hit-testing; the CSS glass — fills, borders, backdrop
-   blur and the kube liquid ::before overlays — turns off so the GPU layer is
-   the one glass. !important: the liquid rules this silences are double-attr
-   (0,4,0) selectors spread across dna-bridge/lg-glass/app-chrome. */
-[data-glass="gpu"] .public-header, [data-glass="gpu"] .sidebar,
-[data-glass="gpu"] .card, [data-glass="gpu"] .panel,
-[data-glass="gpu"] .kpi, [data-glass="gpu"] .stat,
-[data-glass="gpu"] .surface, [data-glass="gpu"] .glass-surface {
+   [data-glass="gpu"] on <html> = lg/gpu-glass-page.ts is active. Every glass
+   host OWNS a .gpu-glass-layer canvas child (absolute, z:-1 — the same layer
+   slot the liquid ::before uses) that ray-traces its slab (Snell/TIR/
+   dispersion/Beer–Lambert/Fresnel) against the live sky. The element
+   contains its glass and its content; the DOM keeps geometry, text,
+   stacking and scrolling. ONLY hosts that actually received a canvas (the
+   engine marks them data-gpu-glass) drop their CSS glass — anything the
+   engine skips keeps its normal look, so nothing ever renders unfilled.
+   !important: the liquid rules this silences are double-attr (0,4,0)
+   selectors spread across dna-bridge/lg-glass/app-chrome. */
+[data-glass="gpu"] [data-gpu-glass] {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  isolation: isolate;   /* trap the z:-1 layer under this host's content */
 }
-[data-glass="gpu"] .public-header::before, [data-glass="gpu"] .sidebar::before,
-[data-glass="gpu"] .card::before, [data-glass="gpu"] .panel::before,
-[data-glass="gpu"] .kpi::before, [data-glass="gpu"] .stat::before,
-[data-glass="gpu"] .surface::before, [data-glass="gpu"] .glass-surface::before {
-  display: none;
+[data-glass="gpu"] [data-gpu-glass]::before { display: none; }
+.gpu-glass-layer {
+  position: absolute; inset: 0; z-index: -1;
+  border-radius: inherit; pointer-events: none; display: block;
 }
