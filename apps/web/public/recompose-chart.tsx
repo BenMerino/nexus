@@ -23,7 +23,11 @@ function ComposedView({ directive, failed, pending, minHeight, hideTitle }: { di
   // glass (tint, concentric corner, kube filter geometry) is already correct
   // BEFORE the directive lands, and the chart mounts into the same element —
   // no node swap, so no tint pop and no filter re-bucket at data arrival.
-  return <div className="chart-surface" style={{ minHeight }}>{seed ? <DirectiveChart seed={seed} /> : null}</div>;
+  // FIXED height (not min): the box is its reserved size from first paint and
+  // the chart fills it — it never grows the card when the directive lands, so
+  // there is no load-time reflow (the source of the resize jerk). Charts are
+  // container-responsive, so a fixed height is the correct reservation.
+  return <div className="chart-surface" style={{ height: minHeight }}>{seed ? <DirectiveChart seed={seed} /> : null}</div>;
 }
 
 function useComposed(doFetch: () => Promise<Response>, deps: unknown[]) {
@@ -69,7 +73,7 @@ export function RecomposeChart({ kind, tenantId, unit, minHeight = 360 }: { kind
  *  rendered together — no per-chart stagger. Replaces N <RecomposeChart>s whose
  *  parallel fetches filled in one-by-one. Composition stays per-kind on the
  *  server; only the transport collapses. */
-export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400, bare = false, wrap }: { kinds: string[]; tenantId: number; unit?: string | null; minHeight?: number; bare?: boolean; wrap?: (kind: string, body: React.ReactNode) => React.ReactNode }) {
+export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400, heightFor, bare = false, wrap }: { kinds: string[]; tenantId: number; unit?: string | null; minHeight?: number; heightFor?: (kind: string) => number; bare?: boolean; wrap?: (kind: string, body: React.ReactNode) => React.ReactNode }) {
   const [map, setMap] = useState<Record<string, GraphDirective | null> | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -97,9 +101,14 @@ export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400, bare = f
         // engine letterboxes to nothing); don't impose the generic minHeight
         // floor or its card would leave whitespace below the map.
         const isMap = kind === 'publications.countriesMap';
+        // Per-kind RESERVED height (tenant-card-sizes) so the chart body is its
+        // final size from first paint — content renders into a pre-sized box and
+        // never grows it (no load-time reflow → nothing to animate). Falls back
+        // to the batch minHeight when no per-kind height is given.
+        const kh = heightFor ? heightFor(kind) : minHeight;
         // Every BatchedCharts chart is card-wrapped (wrap=ChartPanel or .card),
         // which renders its own heading → suppress the engine's in-chart title.
-        const body = <ComposedView directive={ok ? d : null} failed={failed} pending={!map && !failed} minHeight={isMap ? 0 : minHeight} hideTitle />;
+        const body = <ComposedView directive={ok ? d : null} failed={failed} pending={!map && !failed} minHeight={isMap ? 0 : kh} hideTitle />;
         // `wrap` lets the caller frame each kind (e.g. a .panel) while keeping
         // the single batch fetch; `bare` skips the default .card; else .card.
         if (wrap) return <React.Fragment key={kind}>{wrap(kind, body)}</React.Fragment>;

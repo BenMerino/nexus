@@ -2,6 +2,7 @@ import React from 'react';
 import { ScopedSummary } from './tenant-summary';
 import { Skeleton } from '../ui/primitives';
 import { ES } from './tenant-i18n';
+import { CARD_BODY } from './tenant-card-sizes';
 
 /* The tenant page's loading state, built from the co-located component
  * skeletons (no parallel hand-built shimmer). Mirrors tenant.tsx's content
@@ -36,22 +37,25 @@ export function TenantLoadingBody() {
   //   then: works · authors
   return (
     <>
+      {/* Body heights use the SAME reserved sizes (tenant-card-sizes) the real
+          cards lock to, so the skeleton is pixel-identical to the loaded grid —
+          no resize when data lands. */}
       <div className="chart-grid">
-        <PanelSkel span="tall" body={360} />
-        <PanelSkel body={200} />
-        <PanelSkel body={200} />
-        <PanelSkel span="full" body={300} />
+        <PanelSkel span="tall" body={CARD_BODY.contributors} />
+        <PanelSkel body={CARD_BODY.velocity} />
+        <PanelSkel body={CARD_BODY.researchAreas} />
+        <PanelSkel span="full" body={CARD_BODY.yearPanel} />
       </div>
       <div className="chart-grid" style={{ marginTop: 24 }}>
-        <PanelSkel body={300} />
-        <PanelSkel body={300} />
-        <PanelSkel span="full" body={300} />
+        <PanelSkel body={CARD_BODY.journals} />
+        <PanelSkel body={CARD_BODY.collaborators} />
+        <PanelSkel span="full" body={CARD_BODY.countriesMap} />
       </div>
       {/* Works: most-cited + recent publications — a third chart-grid (2 cards),
           matching TenantWorks so the card count is 9, same as loaded. */}
       <div className="chart-grid" style={{ marginTop: 24 }}>
-        <PanelSkel body={340} />
-        <PanelSkel body={340} />
+        <PanelSkel body={CARD_BODY.works} />
+        <PanelSkel body={CARD_BODY.works} />
       </div>
       <section style={{ marginTop: 24 }}>
         <h3 className="panel-title" style={{ marginBottom: 12 }}>{ES.nav.authors}</h3>

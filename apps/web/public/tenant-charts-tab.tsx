@@ -5,6 +5,7 @@ import type { PublicStats } from './tenant-builders';
 import { ChartPanel } from './tenant-panel';
 import { TenantYearPanel } from './tenant-year-panel';
 import { ES } from './tenant-i18n';
+import { KIND_BODY, CARD_BODY } from './tenant-card-sizes';
 
 /* The chart grid: contributors hero tall-left, velocity + research-areas
  * stacked right, then ONE full-width "Publications per year" panel (the old
@@ -38,12 +39,18 @@ export function TenantChartsTab({ stats, tenantId, charts, unit, contributors }:
             comparison; hidden when a single unit is the scope). */}
         {contributors ? (
           <ChartPanel className="tall" title={ES.contributors.title} sub={ES.contributors.volume} tag="by unit">
-            {contributors}
+            {/* Reserve the contributors body height so the card is its final
+                size from first paint (list length varies; reserve the common
+                height, a short list leaves slack — zero reflow). overflow auto
+                so an unusually long roster scrolls instead of growing. */}
+            <div style={{ height: CARD_BODY.contributors, overflow: 'auto' }}>
+              {contributors}
+            </div>
           </ChartPanel>
         ) : null}
         {/* Velocity + research areas in ONE batch round-trip, each in its own
             panel — they fill the right column beside the contributors hero. */}
-        <BatchedCharts kinds={HERO_KINDS} tenantId={tenantId} unit={unit} minHeight={240}
+        <BatchedCharts kinds={HERO_KINDS} tenantId={tenantId} unit={unit} heightFor={(k) => KIND_BODY[k]}
           wrap={(kind, body) => (
             <ChartPanel title={heroChrome[kind].title} sub={heroChrome[kind].sub}>
               {body}
@@ -54,7 +61,7 @@ export function TenantChartsTab({ stats, tenantId, charts, unit, contributors }:
       {/* Categorical kinds in ONE batch round-trip, each framed in its own
           panel via `wrap` (journals/collaborators half-width, the map full). */}
       <div className="chart-grid" style={{ marginTop: 24 }}>
-        <BatchedCharts kinds={CAT_KINDS} tenantId={tenantId} unit={unit}
+        <BatchedCharts kinds={CAT_KINDS} tenantId={tenantId} unit={unit} heightFor={(k) => KIND_BODY[k]}
           wrap={(kind, body) => (
             <ChartPanel className={kind === 'publications.countriesMap' ? 'full' : ''} title={catTitles[kind]}>
               {body}

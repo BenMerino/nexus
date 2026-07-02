@@ -4,7 +4,6 @@ import { TenantWorks } from './tenant-works';
 import { TenantJournals } from './tenant-journals';
 import { ScopedSummary } from './tenant-summary';
 import { TenantLoadingBody } from './tenant-loading';
-import { AutoHeight } from './auto-height';
 import { buildTenantCharts } from './tenant-builders';
 import type { useTenantData } from './tenant-data';
 import { ES } from './tenant-i18n';
@@ -34,15 +33,9 @@ export function OverviewView({ slug, payload }: { slug: string; payload: Payload
   return (
     <>
       <ScopedSummary slug={slug} stats={payload.stats} tenantId={payload.tenant.id} unit={null} />
-      {/* AutoHeight persists across the Suspense swap: the skeleton body and the
-          real chart body render into the SAME wrapper, whose height transitions
-          to fit — so the grid reshapes organically to its final size when data
-          lands, real layout, no snap. */}
-      <AutoHeight>
-        <Suspense fallback={<TenantLoadingBody />}>
-          <TenantBody slug={slug} stats={payload.stats} tenantId={payload.tenant.id} charts={chartsFor(payload)} unit={null} />
-        </Suspense>
-      </AutoHeight>
+      <Suspense fallback={<TenantLoadingBody />}>
+        <TenantBody slug={slug} stats={payload.stats} tenantId={payload.tenant.id} charts={chartsFor(payload)} unit={null} />
+      </Suspense>
     </>
   );
 }
