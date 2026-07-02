@@ -9,7 +9,6 @@ const ns = "http://www.w3.org/2000/svg";
 
 export function buildKubeFilter(
   id: string, w: number, h: number, pad: number, dispUrl: string, specUrl: string,
-  scale = 32,
 ): SVGElement {
   const f = document.createElementNS(ns, "filter");
   f.id = id;
@@ -50,10 +49,7 @@ export function buildKubeFilter(
   blur.setAttribute("result", "blurred");
   const dm = document.createElementNS(ns, "feDisplacementMap");
   dm.setAttribute("in", "blurred"); dm.setAttribute("in2", "disp");
-  // px of full-range bend — the map encodes offset/(scale/2) around neutral
-  // 128, so this reproduces TRUE px from the physics (gpu-glass-map.ts); the
-  // padded capture has real pixels for up to scale/2 px of pull.
-  dm.setAttribute("scale", String(scale));
+  dm.setAttribute("scale", "32"); // px of max bend — the padded capture has real pixels for it
   dm.setAttribute("xChannelSelector", "R"); dm.setAttribute("yChannelSelector", "G");
   dm.setAttribute("result", "refracted");
   const blend = document.createElementNS(ns, "feBlend");

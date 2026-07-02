@@ -17,10 +17,8 @@
 //  · SIZE GATE: nothing smaller than a real card refracts (chips/pills stay
 //    frosted) — small geometry is where lens artifacts live.
 
-// Textures come from OUR ray-traced physics (gpu-glass-map.ts — the model the
-// GPU lab proved), not the vendored kube/ heuristics; kube keeps only the
-// delivery mechanism (per-element size-matched filters over backdrop-filter).
-import { generateGlassMaps, DISP_SCALE } from "./gpu-glass-map";
+import { generateDisplacementTexture } from "./kube/displacementTexture";
+import { generateSpecularTexture } from "./kube/specularTexture";
 import { buildKubeFilter } from "./kube-build";
 import "./kube-debug"; // console harness: window.__kubeDebug (list/outline/mode/showMap)
 
@@ -71,14 +69,15 @@ function ensureFilter(w: number, h: number, r: number): string | null {
   if (hit) return hit;
 
   const s = Math.min(1, MAX_TEX / Math.max(w, h));
-  const maps = generateGlassMaps({
-    w, h, texW: Math.max(1, Math.round(w * s)), texH: Math.max(1, Math.round(h * s)),
-    radius: r, bezel: Math.min(BEZEL, w * 0.25, h * 0.25),
-  });
-  if (!maps) return null;
+  const bez = Math.min(BEZEL, w * 0.25, h * 0.25) * s;
+  const opt = { width: w * s, height: h * s, bezel: bez, profile: "convex-circle" as const,
+    borderRadius: r * s };
+  const disp = generateDisplacementTexture({ ...opt, thickness: 120, samples: 128 });
+  const spec = generateSpecularTexture({ ...opt, lightAngle: -150, shininess: 40, opacity: 0.6 });
+  if (!disp || !spec) return null;
 
   const id = `lgk-${filterCache.size}-${w}x${h}`;
-  defsRoot().appendChild(buildKubeFilter(id, w, h, PAD, maps.dispUrl, maps.specUrl, DISP_SCALE));
+  defsRoot().appendChild(buildKubeFilter(id, w, h, PAD, disp.url, spec));
   filterCache.set(key, id);
   return id;
 }
