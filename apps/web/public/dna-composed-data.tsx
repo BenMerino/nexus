@@ -11,6 +11,7 @@ import { DateRangePicker, type DateRangeValue } from '../ui/composed/DateRangePi
 import { ActionMenu } from '../ui/composed/ActionMenu';
 import { QuickCalendar } from '../ui/composed/QuickCalendar';
 import { ColorSwatchItem } from '../ui/composed/ColorSwatchItem';
+import { MetricBadge } from '../ui/composed/MetricBadge';
 
 /* Third composed section — the data / list / calendar composites: PanelSurface
  * (the floating list shell), DateRangePicker, ActionMenu, QuickCalendar,
@@ -48,6 +49,11 @@ export function ComposedDataSection() {
       <Row title="TableSelectionToggle">
         <TableSelectionToggle pageSelected={25} totalCount={193} allAcrossPages={false}
           onSelectAll={() => {}} onClear={() => {}} itemLabel="record" />
+      </Row>
+      <Row title="MetricBadge">
+        <MetricBadge value="+12.4%" direction="up" sentiment="positive" />
+        <MetricBadge value="-3.1%" direction="down" sentiment="negative" />
+        <MetricBadge value="0%" direction="flat" sentiment="neutral" />
       </Row>
       <Row title="ActionMenu (inline)">
         <BaseBox style={{ width: 200, position: 'relative' }}>

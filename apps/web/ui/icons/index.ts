@@ -35,6 +35,9 @@ export {
   AlertTriangle,
   CloudOff,
   SlidersHorizontal,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from 'lucide-react';
 
 // Type surface mirroring Zincro's icon-factory. lucide components are
