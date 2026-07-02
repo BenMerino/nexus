@@ -16,6 +16,12 @@
 //   __kubeDebug.showMap(el?) paint the raw displacement texture over a host
 //                           (first host if omitted) — check geometry alignment
 //                           of the bezel against the element's real corners.
+//   __kubeDebug.snap()      TELEMETRY (dev): render every live filter against a
+//                           checkerboard probe and POST the PNGs to the local
+//                           sink (apps/web/.lg-telemetry/) for offline review.
+//   __kubeDebug.report()    TELEMETRY (dev): POST env + host/filter diagnostics.
+
+import { snap, report } from "./kube-snap";
 
 const hosts = () =>
   [...document.querySelectorAll<HTMLElement>("*")].filter(
@@ -23,16 +29,18 @@ const hosts = () =>
   );
 const filters = () => [...document.querySelectorAll<SVGElement>('[id^="lgk-"]')];
 
+const hostRows = () => hosts().map((h) => {
+  const r = h.getBoundingClientRect();
+  return {
+    el: h.className.split(" ")[0] || h.tagName,
+    size: `${Math.round(r.width)}×${Math.round(r.height)}`,
+    radius: getComputedStyle(h).borderTopLeftRadius,
+    filter: h.style.getPropertyValue("--_kube"),
+  };
+});
+
 function list(): void {
-  console.table(hosts().map((h) => {
-    const r = h.getBoundingClientRect();
-    return {
-      el: h.className.split(" ")[0] || h.tagName,
-      size: `${Math.round(r.width)}×${Math.round(r.height)}`,
-      radius: getComputedStyle(h).borderTopLeftRadius,
-      filter: h.style.getPropertyValue("--_kube"),
-    };
-  }));
+  console.table(hostRows());
 }
 
 function outline(on = true): void {
@@ -82,5 +90,7 @@ function showMap(el?: HTMLElement): void {
   Object.assign(h.style, { backgroundImage: `url(${href})`, backgroundSize: "100% 100%" });
 }
 
-(window as unknown as { __kubeDebug: object }).__kubeDebug = { list, outline, mode, showMap };
+(window as unknown as { __kubeDebug: object }).__kubeDebug = {
+  list, outline, mode, showMap, snap, report: () => report(hostRows()),
+};
 export {};
