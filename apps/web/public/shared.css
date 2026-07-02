@@ -281,8 +281,11 @@ em {
 .main::-webkit-scrollbar-track { background: transparent; }
 .main::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: var(--radius-sm); }
 
-.view { padding: 32px 40px 64px; max-width: 1480px; margin: 0 auto; }
-@media (max-width: 1100px) { .view { padding: 24px 24px 48px; } }
+/* No top padding: the shell (.main / .public-main) already insets content below
+   the floating header. A page top-pad here would double it. Sides + bottom stay
+   so content doesn't hug the floating sidebar/edges and has scroll room. */
+.view { padding: 0 40px 64px; max-width: 1480px; margin: 0 auto; }
+@media (max-width: 1100px) { .view { padding: 0 24px 48px; } }
 
 .view-head {
   display: flex; justify-content: space-between; align-items: flex-end;
@@ -1005,7 +1008,7 @@ button.secondary { background: transparent; }
 .text-small { font-size: var(--text-label); }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
-.page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.page { max-width: 1200px; margin: 0 auto; padding: 0 24px 24px; }
 
 /* Source blocks (submit.html, explore record details) */
 .source { border: var(--border-w) solid var(--border-soft); border-radius: var(--radius-card); padding: 12px; margin: 8px 0; }
