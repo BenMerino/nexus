@@ -33,7 +33,7 @@ export function TenantChartsTab({ stats, tenantId, charts, unit, contributors }:
 
   return (
     <>
-      <div className="chart-grid">
+      <div className="chart-grid reveal-group">
         {/* Contributors hero — spans two rows on the left (whole-university
             comparison; hidden when a single unit is the scope). */}
         {contributors ? (
@@ -53,7 +53,7 @@ export function TenantChartsTab({ stats, tenantId, charts, unit, contributors }:
       </div>
       {/* Categorical kinds in ONE batch round-trip, each framed in its own
           panel via `wrap` (journals/collaborators half-width, the map full). */}
-      <div className="chart-grid" style={{ marginTop: 24 }}>
+      <div className="chart-grid reveal-group" style={{ marginTop: 24 }}>
         <BatchedCharts kinds={CAT_KINDS} tenantId={tenantId} unit={unit}
           wrap={(kind, body) => (
             <ChartPanel className={kind === 'publications.countriesMap' ? 'full' : ''} title={catTitles[kind]}>

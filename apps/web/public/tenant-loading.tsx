@@ -26,7 +26,7 @@ function PanelSkel({ tall }: { tall?: boolean }) {
 export function TenantLoadingBody() {
   return (
     <>
-      <div className="chart-grid">
+      <div className="chart-grid reveal-group">
         <PanelSkel tall />
         <PanelSkel />
         <PanelSkel />

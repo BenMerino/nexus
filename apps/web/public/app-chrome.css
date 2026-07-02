@@ -258,6 +258,24 @@
   --_nest-r: var(--radius-card); --_nest-pad: var(--space-2);
   --_nest-corner: max(0px, calc(var(--radius-card) - var(--space-2) - 1px));
 }
+/* ── CHROME ENTRANCE — phase 1 of the load choreography ──────────────────────
+   One-shot materialize on mount (keyframe reveal-in + tokens: shared.css /
+   dna.css). Chrome mounts once per real page load and persists across SPA and
+   view swaps, so navigation never replays this. Sidebar leads, header follows
+   one stagger beat; content shells enter after --motion-reveal-base
+   (.reveal-group). Opacity + transform only — never animate the glass blur. */
+.sidebar {
+  --reveal-from: translateX(calc(-1 * var(--space-2))) scale(0.98);
+  transform-origin: left center;
+  animation: reveal-in var(--motion-reveal) var(--ease-out) both;
+}
+.public-header {
+  --reveal-from: translateY(calc(-1 * var(--space-2))) scale(0.98);
+  transform-origin: top center;
+  animation: reveal-in var(--motion-reveal) var(--ease-out) both;
+  animation-delay: var(--motion-stagger);
+}
+
 /* ── LIQUID GLASS — the chrome shells refract too ────────────────────────────
    Header + sidebar use the SAME cross-browser overlay recipe as the content
    surfaces (see dna-bridge.css): a ::before that captures the backdrop via

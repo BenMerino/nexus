@@ -58,7 +58,7 @@ export function SummaryCards({ summary, sparks }: { summary: PublicStats['summar
     return `${per} per publication · ${citedPct}% of output cited`;
   };
   return (
-    <div className="kpi-grid">
+    <div className="kpi-grid reveal-group">
       {KPIS.map(k => (
         <div key={k.key} className="kpi" style={{ ['--kpi-accent' as string]: k.accent }}>
           <div className="kpi-top">
@@ -82,7 +82,7 @@ export function SummaryCards({ summary, sparks }: { summary: PublicStats['summar
  *  value + foot + spark ghosted by the Skeleton primitive. */
 SummaryCards.Skeleton = function SummaryCardsSkeleton() {
   return (
-    <div className="kpi-grid">
+    <div className="kpi-grid reveal-group">
       {KPIS.map(k => (
         <div key={k.key} className="kpi" style={{ ['--kpi-accent' as string]: k.accent }}>
           <div className="kpi-top">

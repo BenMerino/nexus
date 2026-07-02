@@ -82,6 +82,14 @@
   --motion-slow:   0.3s;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 
+  /* ── Entrance reveal (load choreography) ────────────────────
+     Phase timing for the one-shot materialize on mount: chrome
+     first (app-chrome.css), content shells after --motion-reveal-base,
+     staggered per sibling (.reveal-group, shared.css). */
+  --motion-reveal:      0.45s;  /* materialize duration */
+  --motion-stagger:     45ms;   /* per-sibling offset */
+  --motion-reveal-base: 120ms;  /* content phase offset after chrome */
+
   /* ── Typography scale — the canonical type contract ─────────
      ONE home for the full role system: family + size + weight +
      leading + tracking, per role. dna.css imports AFTER the

@@ -436,8 +436,41 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .skel * { color: transparent !important; visibility: hidden; }
 .skel-fill { position: absolute; inset: 0; border-radius: var(--radius-card); }
+/* ═══ ENTRANCE REVEAL ═══
+   Phased load choreography (glass materialize). Phase 1 is the chrome
+   (app-chrome.css: sidebar + header slide/scale in once per real page load —
+   they persist across SPA/view swaps, so navigation never replays them).
+   Phase 2 is the content shells: a container opts in with .reveal-group and
+   each direct child fades + scales in, staggered by DOM order.
+
+   Content deliberately NEVER translates: the grids REMOUNT when real data
+   replaces their skeletons (and on client-side view swaps), so this animation
+   replays then — a scale+fade replay reads as the surface materializing; a
+   translate replay would be a positional jump. Directional movement belongs
+   to chrome only. Animate only opacity/transform — never backdrop-filter
+   (re-blurring the glass every frame janks). */
+@keyframes reveal-in {
+  from { opacity: 0; transform: var(--reveal-from, scale(0.985)); }
+}
+.reveal-group > * {
+  animation: reveal-in var(--motion-reveal) var(--ease-out) both;
+  /* Phase offset + per-sibling stagger; children past the 8th share the
+     last slot via the --reveal-i fallback. */
+  animation-delay: calc(var(--reveal-base, var(--motion-reveal-base)) + var(--reveal-i, 8) * var(--motion-stagger));
+}
+.reveal-group > :nth-child(1) { --reveal-i: 0; }
+.reveal-group > :nth-child(2) { --reveal-i: 1; }
+.reveal-group > :nth-child(3) { --reveal-i: 2; }
+.reveal-group > :nth-child(4) { --reveal-i: 3; }
+.reveal-group > :nth-child(5) { --reveal-i: 4; }
+.reveal-group > :nth-child(6) { --reveal-i: 5; }
+.reveal-group > :nth-child(7) { --reveal-i: 6; }
+.reveal-group > :nth-child(8) { --reveal-i: 7; }
+
 @media (prefers-reduced-motion: reduce) {
   .skel { animation-duration: 3.2s; }
+  /* Reveals collapse entirely: everything appears in place, no motion. */
+  .reveal-group > *, .public-header, .sidebar { animation: none; }
 }
 
 /* ═══ GRAPH EXPLORER ═══ */
