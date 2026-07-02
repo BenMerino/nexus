@@ -315,6 +315,22 @@ body > #dna-mount, body > main, body > div {
   border-radius: var(--radius-card);
   box-shadow: inset 0 1px 0 var(--lg-highlight-top), inset 0 -1px 0 var(--lg-highlight-bottom);
 }
+
+/* ═══ OVERLAY TOKENS → the ONE glass ════════════════════════════════════════════
+   Portaled panels (Popover.tsx's `overlaySurface`) set bg/blur/border/shadow as
+   INLINE styles reading the `--overlay-*` tokens — so their class can't be
+   captured by the ONE-GLASS rule above (inline wins). Remap the tokens
+   THEMSELVES onto the --lg-* glass so every portal overlay (sidebar-search
+   results, pickers, menus) renders the same sky-tinted vendor glass as cards —
+   same tint, same rim, same liquid-mode clearing — instead of Zincro's flat
+   grey --overlay-* defaults from dna-defaults.css. One remap, every overlay. */
+:root {
+  --overlay-bg: var(--lg-sheen);
+  --overlay-blur: calc(var(--lg-blur) * 0.8px);
+  --overlay-border: var(--border-w) solid var(--lg-border);
+  --overlay-shadow: inset 0 1px 0 var(--lg-highlight-top), inset 0 -1px 0 var(--lg-highlight-bottom);
+}
+
 /* ═══ LIQUID GLASS — SCOPED surface set, refracting the real backdrop ═══════════
    When data-lg-liquid is on, the MAJOR glass surfaces get the kube refraction
    that bends the actual page behind them. Deliberately NOT the full ONE-GLASS
