@@ -52,24 +52,9 @@ fn bg(p: vec2f) -> vec3f {
 
 ${FORM_WGSL}
 
-// One channel's trace: Snell entry at the form's normal → march to the flat
-// back face → Snell exit (TIR → genuine internal reflection) → landing point
-// on the background plane. Returns (q.x, q.y, internal path length).
-fn landing(p: vec2f, n: vec3f, ior: f32) -> vec3f {
-  let I = vec3f(0.0, 0.0, -1.0);          // orthographic view ray
-  let t1 = refract(I, n, 1.0 / ior);
-  let path = (u.c.z + height(p)) / max(-t1.z, 1e-4);
-  var q = p + t1.xy * path;
-  var t2 = refract(t1, vec3f(0.0, 0.0, 1.0), ior);
-  if (all(t2 == vec3f(0.0))) { t2 = reflect(t1, vec3f(0.0, 0.0, 1.0)); }
-  q += t2.xy * (u.a.z / max(abs(t2.z), 1e-4));
-  return vec3f(q, path);
-}
-
-// What the ray sees where it lands: the background, scattered if frosted.
-fn shade(q: vec2f, seed: vec2f) -> vec3f {
-  if (u.e.w > 0.25) { return frosted(q, seed); }
-  return bg(q);
+// This slab's geometry, from the uniforms (the material fns take it as args).
+fn height(p: vec2f) -> f32 {
+  return formHeight(p, u.b.xy, u.b.zw, u.c.x, u.c.y, u.d.w);
 }
 
 @vertex
@@ -83,7 +68,7 @@ fn fs(@builtin(position) frag: vec4f) -> @location(0) vec4f {
   let p = frag.xy;
   // Outside the slab: only the reference grid, premultiplied over transparency
   // — the LIVE background engine behind this canvas stays the one background.
-  if (sdRR(p) >= 0.0) {
+  if (sdRR(p, u.b.xy, u.b.zw, u.c.x) >= 0.0) {
     let ga = gridA(p);
     return vec4f(vec3f(ga), ga);
   }
@@ -96,15 +81,16 @@ fn fs(@builtin(position) frag: vec4f) -> @location(0) vec4f {
 
   let I = vec3f(0.0, 0.0, -1.0);          // orthographic view ray
   let ior = u.a.w;
+  let h0 = height(p);
 
-  let l = landing(p, n, ior);
-  var col = shade(l.xy, p);
+  let l = landing(p, n, ior, h0, u.c.z, u.a.z);
+  var col = shade(l.xy, p, u.e.w);
   // Chromatic dispersion: IOR is wavelength-dependent (u.f.x = nBlue − nRed
   // spread), so red and blue trace their own paths and land elsewhere — the
   // rim fringes into color exactly where the bending is strongest.
   if (u.f.x > 0.0004) {
-    col.r = shade(landing(p, n, ior - u.f.x * 0.5).xy, p).r;
-    col.b = shade(landing(p, n, ior + u.f.x * 0.5).xy, p).b;
+    col.r = shade(landing(p, n, ior - u.f.x * 0.5, h0, u.c.z, u.a.z).xy, p, u.e.w).r;
+    col.b = shade(landing(p, n, ior + u.f.x * 0.5, h0, u.c.z, u.a.z).xy, p, u.e.w).b;
   }
   // Beer–Lambert absorption over the internal path (tint = uniform k).
   col *= exp(-u.e.rgb * l.z);
@@ -112,9 +98,7 @@ fn fs(@builtin(position) frag: vec4f) -> @location(0) vec4f {
   let f0 = pow((ior - 1.0) / (ior + 1.0), 2.0);
   let f = f0 + (1.0 - f0) * pow(1.0 - max(dot(-I, n), 0.0), 5.0);
   let r = reflect(I, n);
-  var refl = bg(p + r.xy * 200.0);
-  if (u.e.w > 0.25) { refl = frosted(p + r.xy * 200.0, p + vec2f(17.0, 9.0)); }
-  col = mix(col, refl, f);
+  col = mix(col, shade(p + r.xy * 200.0, p + vec2f(17.0, 9.0), u.e.w), f);
   return vec4f(col, 1.0);
 }
 `;
