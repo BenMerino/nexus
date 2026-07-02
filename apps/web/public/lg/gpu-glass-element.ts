@@ -15,6 +15,8 @@ export type Shared = {
   device: GPUDevice;
   pipeline: GPURenderPipeline;
   configure: (ctx: GPUCanvasContext) => void;
+  sampler: GPUSampler;
+  fallbackTex: GPUTexture;   // 1×1, used before the scene texture exists
 };
 
 export type Surface = {
@@ -23,6 +25,7 @@ export type Surface = {
   ctx: GPUCanvasContext;
   ubuf: GPUBuffer;
   bind: GPUBindGroup;
+  boundTex: GPUTexture | null;   // which scene texture the current bind holds
 };
 
 // Per-frame globals, computed once by the orchestrator (gpu-glass-page.ts).
@@ -30,7 +33,24 @@ export type Frame = {
   dpr: number; vw: number; vh: number;      // viewport, device px
   top: number[]; hor: number[];             // sky colors 0..1
   ceil: number; glow: number;               // HDR ceiling + glow intensity
+  sceneTex: GPUTexture | null;              // GPU scene the glass refracts
 };
+
+// A surface's bind group references its uniform buffer AND the current
+// backdrop texture; since the texture object swaps when a new capture uploads
+// at a new size, rebuild the bind group only when that object identity changes.
+function bindFor(sh: Shared, s: Surface, tex: GPUTexture): void {
+  if (s.bind && s.boundTex === tex) return;
+  s.bind = sh.device.createBindGroup({
+    layout: sh.pipeline.getBindGroupLayout(0),
+    entries: [
+      { binding: 0, resource: { buffer: s.ubuf } },
+      { binding: 1, resource: tex.createView() },
+      { binding: 2, resource: sh.sampler },
+    ],
+  });
+  s.boundTex = tex;
+}
 
 export function attachSurface(sh: Shared, el: HTMLElement): Surface | null {
   const canvas = document.createElement("canvas");
@@ -40,12 +60,8 @@ export function attachSurface(sh: Shared, el: HTMLElement): Surface | null {
   try { sh.configure(ctx); } catch { return null; }
   el.prepend(canvas);
   const ubuf = sh.device.createBuffer({
-    size: 96, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-  const bind = sh.device.createBindGroup({
-    layout: sh.pipeline.getBindGroupLayout(0),
-    entries: [{ binding: 0, resource: { buffer: ubuf } }],
-  });
-  return { el, canvas, ctx, ubuf, bind };
+    size: 112, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+  return { el, canvas, ctx, ubuf, bind: null as unknown as GPUBindGroup, boundTex: null };
 }
 
 export function detachSurface(s: Surface): void {
@@ -69,6 +85,8 @@ export function drawSurface(sh: Shared, s: Surface, enc: GPUCommandEncoder, f: F
   // Corner ≥ bezel: a rim roll can't wrap a tighter corner without a crease.
   const r = Math.min(Math.max(cornerRadius(s.el), MAT.bezel), b.width / 2, b.height / 2);
   const k = absorption(MAT.tint, MAT.tintStrength);
+  const hasScene = f.sceneTex ? 1 : 0;
+  bindFor(sh, s, f.sceneTex ?? sh.fallbackTex);
   sh.device.queue.writeBuffer(s.ubuf, 0, new Float32Array([
     w, h, b.left * f.dpr, b.top * f.dpr,
     f.vw, f.vh, MAT.gap * f.dpr, MAT.ior,
@@ -76,6 +94,7 @@ export function drawSurface(sh: Shared, s: Surface, enc: GPUCommandEncoder, f: F
     f.top[0], f.top[1], f.top[2], f.ceil,
     f.hor[0], f.hor[1], f.hor[2], f.glow,
     k[0] / f.dpr, k[1] / f.dpr, k[2] / f.dpr, MAT.frost * 32 * f.dpr,
+    0, 0, hasScene, 0,
   ]));
   const pass = enc.beginRenderPass({
     colorAttachments: [{

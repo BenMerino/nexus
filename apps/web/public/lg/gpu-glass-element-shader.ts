@@ -16,13 +16,25 @@ struct U {
   top: vec4f, // sky top color (rgb 0..1), a = HDR ceiling
   hor: vec4f, // sky horizon color (rgb 0..1), a = glow intensity
   e: vec4f,   // Beer–Lambert absorption k (rgb, device-px⁻¹), frost radius (px)
+  g: vec4f,   // backdrop tex w, h (device px), hasBackdrop (0/1), pageScrollY(px)
 };
 @group(0) @binding(0) var<uniform> u: U;
+@group(0) @binding(1) var sceneTex: texture_2d<f32>;
+@group(0) @binding(2) var sceneSamp: sampler;
 ${SKY_WGSL}
 
-// p is element-local; the sky is sampled where this pixel sits on the page.
+// p is element-local (device px). Its position on the viewport = p + element
+// offset. bg() samples the GPU SCENE texture (sky + all card content, already
+// scroll-composited by the scene renderer) at that viewport position — so the
+// glass refracts EVERYTHING under it (cards, and later text/charts), live, at
+// 60fps with no DOM capture. u.g.z = hasScene; else fall back to the sky.
 fn bg(p: vec2f) -> vec3f {
-  return skyColor((p + u.a.zw) / u.b.xy, u.top.rgb, u.hor, 0.5, u.top.w);
+  let viewPx = p + u.a.zw;
+  if (u.g.z < 0.5) {
+    return skyColor(viewPx / u.b.xy, u.top.rgb, u.hor, 0.5, u.top.w);
+  }
+  let uv = clamp(viewPx / u.b.xy, vec2f(0.0), vec2f(1.0));
+  return textureSampleLevel(sceneTex, sceneSamp, uv, 0.0).rgb;
 }
 
 ${FORM_WGSL}

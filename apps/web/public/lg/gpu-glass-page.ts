@@ -9,49 +9,30 @@
 import { skyFor } from "../sky/sky-palette";
 import { getSkyMode, forcedAltitude } from "../sky/sky-mode";
 import { displayHeadroom } from "../sky/sky-gpu";
-import { ELEMENT_GLASS_SHADER } from "./gpu-glass-element-shader";
 import { GLASS_HOSTS } from "./gpu-glass-surfaces";
 import { attachSurface, detachSurface, drawSurface } from "./gpu-glass-element";
-import type { Shared, Surface, Frame } from "./gpu-glass-element";
+import type { Surface, Frame } from "./gpu-glass-element";
+import { createSceneRenderer } from "./gpu-scene-render";
+import { buildSceneFromDOM, captureAuthorColor } from "./gpu-scene-dom";
+import { bootGlassDevice } from "./gpu-glass-device";
+
+const dprNow = () => Math.min(window.devicePixelRatio || 1, 2);
 
 export async function mountGpuGlassPage(): Promise<(() => void) | false> {
-  if (!navigator.gpu) return false;
-  let device: GPUDevice;
-  try {
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) return false;
-    device = await adapter.requestDevice();
-  } catch { return false; }
+  const boot = await bootGlassDevice();
+  if (!boot) return false;
+  const { device, sh, hdr } = boot;
 
-  // Decide the canvas format ONCE on a probe context (the pipeline's target
-  // format must match every canvas): float16/P3/extended when available.
-  let format: GPUTextureFormat = "rgba16float";
-  let extended = true;
-  const probe = document.createElement("canvas").getContext("webgpu");
-  if (!probe) return false;
-  const configure = (ctx: GPUCanvasContext) => {
-    if (extended) {
-      ctx.configure({ device, format, colorSpace: "display-p3", alphaMode: "premultiplied",
-        toneMapping: { mode: "extended" } } as GPUCanvasConfiguration);
-    } else {
-      ctx.configure({ device, format, alphaMode: "premultiplied" });
-    }
+  // The GPU SCENE: sky + card content drawn into an offscreen texture the
+  // glass refracts — "everything is GPU", 60fps, no DOM capture. The scene is
+  // built each frame from the live DOM rects (slice 1: colored card bodies;
+  // later slices add text/chart geometry). Content scrolls inside .main.
+  const scene = createSceneRenderer(device, Math.round(innerWidth * dprNow()),
+    Math.round(innerHeight * dprNow()));
+  const scrollY = () => {
+    const m = document.querySelector<HTMLElement>(".main, .public-content");
+    return m ? m.scrollTop : window.scrollY;
   };
-  try { configure(probe); } catch {
-    extended = false;
-    format = navigator.gpu.getPreferredCanvasFormat();
-    try { configure(probe); } catch { return false; }
-  }
-  const hdr = extended && displayHeadroom() > 1;
-
-  const mod = device.createShaderModule({ code: ELEMENT_GLASS_SHADER });
-  const pipeline = device.createRenderPipeline({
-    layout: "auto",
-    vertex: { module: mod, entryPoint: "vs" },
-    fragment: { module: mod, entryPoint: "fs", targets: [{ format }] },
-    primitive: { topology: "triangle-list" },
-  });
-  const sh: Shared = { device, pipeline, configure };
 
   const surfaces = new Map<HTMLElement, Surface>();
   const ro = new ResizeObserver(() => schedule());
@@ -59,6 +40,7 @@ export async function mountGpuGlassPage(): Promise<(() => void) | false> {
   const scan = () => {
     for (const el of document.querySelectorAll<HTMLElement>(GLASS_HOSTS)) {
       if (surfaces.has(el)) continue;
+      captureAuthorColor(el);      // read the fill BEFORE the CSS zeroes it
       const s = attachSurface(sh, el);
       if (!s) continue;
       surfaces.set(el, s);
@@ -79,10 +61,20 @@ export async function mountGpuGlassPage(): Promise<(() => void) | false> {
     const sky = skyFor(alt);
     const gold = Math.max(0, Math.min(1, 1 - Math.abs(alt) / 8));
     const ceil = hdr ? displayHeadroom() : 1.0;
-    const f: Frame = {
-      dpr, vw: innerWidth * dpr, vh: innerHeight * dpr,
+    const skyFrame = {
       top: sky.top.map((v: number) => v / 255), hor: sky.hor.map((v: number) => v / 255),
       ceil, glow: 1.0 + gold * (ceil - 1.0),
+    };
+
+    // Render the GPU scene (sky + card content) at the current scroll, then let
+    // the glass sample it. This is the whole "everything is GPU" pass.
+    scene.resize(Math.round(innerWidth * dpr), Math.round(innerHeight * dpr));
+    scene.render(buildSceneFromDOM(scrollY()), scrollY() * dpr, skyFrame, dpr);
+
+    const f: Frame = {
+      dpr, vw: innerWidth * dpr, vh: innerHeight * dpr,
+      top: skyFrame.top, hor: skyFrame.hor, ceil, glow: skyFrame.glow,
+      sceneTex: scene.texture,
     };
     const enc = device.createCommandEncoder();
     let any = false;
@@ -120,6 +112,8 @@ export async function mountGpuGlassPage(): Promise<(() => void) | false> {
       detachSurface(s);
     }
     surfaces.clear();
+    scene.destroy();
+    fallbackTex.destroy();
     device.destroy();
   };
 }
