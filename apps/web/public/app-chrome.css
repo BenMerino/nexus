@@ -117,6 +117,10 @@
    — the row's align-items:center does it, so no align-self override here. */
 .public-crumb-sep { font-family: var(--font-display); font-size: var(--text-h3); line-height: var(--leading-display); color: var(--fg-dim); flex: none; }
 .public-tenant-name { font-family: var(--font-display); font-size: var(--text-h3); line-height: var(--leading-display); letter-spacing: 0.005em; white-space: nowrap; }
+/* Multiple sub-lines (ORCID + faculty) share one row under the name, separated
+   by a hairline dot; a single sub (tenant ROR) just sits inline. */
+.public-crumb-subs { display: flex; align-items: baseline; gap: 8px; }
+.public-crumb-subs .public-tenant-sub + .public-tenant-sub::before { content: "·"; margin-right: 8px; color: var(--fg-dim); }
 .public-tenant-sub { display: block; font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); white-space: nowrap; }
 .public-tenant-sub a { color: var(--fg-dim); }
 .public-tenant-sub a:hover { color: var(--accent); }

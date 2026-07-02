@@ -104,14 +104,18 @@ export function TenantPublicHeader({
               <span className="public-crumb-sep" aria-hidden="true">›</span>
               <span className="public-crumb">
                 <span className="public-tenant-name">{c.name}</span>
-                {(c.subs ?? []).map((s, j) => (
-                  <span className="public-tenant-sub" key={j}>
-                    {s.label ? `${s.label} ` : null}
-                    {s.href
-                      ? <a href={s.href} target="_blank" rel="noopener noreferrer">{s.text}</a>
-                      : s.text}
+                {(c.subs ?? []).length ? (
+                  <span className="public-crumb-subs">
+                    {c.subs!.map((s, j) => (
+                      <span className="public-tenant-sub" key={j}>
+                        {s.label ? `${s.label} ` : null}
+                        {s.href
+                          ? <a href={s.href} target="_blank" rel="noopener noreferrer">{s.text}</a>
+                          : s.text}
+                      </span>
+                    ))}
                   </span>
-                ))}
+                ) : null}
               </span>
             </React.Fragment>
           ))}
