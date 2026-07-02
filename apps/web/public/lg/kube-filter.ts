@@ -19,6 +19,7 @@
 
 import { generateDisplacementTexture } from "./kube/displacementTexture";
 import { generateSpecularTexture } from "./kube/specularTexture";
+import "./kube-debug"; // console harness: window.__kubeDebug (list/outline/mode/showMap)
 
 const LIQUID_HOSTS = [
   ".public-header", ".sidebar", ".card", ".panel", ".kpi", ".stat",
