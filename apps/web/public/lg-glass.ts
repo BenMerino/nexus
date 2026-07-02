@@ -3,10 +3,11 @@
 // @ main (cloned 2026-07-01). Two modes on :root:
 //   data-lg        → library GLASS mode (blur + transparency), all browsers.
 //   data-lg-liquid → library LIQUID GLASS mode (kube refraction filter), + defaults.
-// Default: GLASS (frosted blur, no refraction). Liquid was the default until
-// 2026-07: its zero-frost kube refraction displaces the RAW sky gradient,
-// which Chrome dithers smoothly but Safari renders with visible banding — and
-// the frosted 'glass' look was the one actually wanted platform-wide. An
+// Default: LIQUID (kube refraction). Briefly defaulted to 'glass' (2026-07)
+// while liquid banded in Safari — root cause was the header/sidebar liquid
+// overlays frosting with the zeroed --glass-blur knob and refracting a RAW
+// sky gradient (Chrome dithers, Safari doesn't). Fixed in app-chrome.css:
+// every overlay now frosts with the --lg-* formula before displacement. An
 // explicit toggle call persists per-origin in localStorage; a plain page load
 // never writes (see below). Keep in sync with THEME_BOOT (vite.config.ts).
 //
@@ -29,19 +30,19 @@ function applyAttrs(mode: Mode): void {
   root.toggleAttribute("data-lg-liquid", mode === "liquid");
 }
 
-// Respect a persisted mode; default to 'glass' when unset.
+// Respect a persisted mode; default to 'liquid' when unset.
 //
 // Every page load used to WRITE the resolved mode back to localStorage — even
 // when nothing was explicitly toggled — so this dev-only A/B switch (no UI,
 // console-only: window.__lgGlass()) silently diverged between origins/sessions
 // the instant anyone called it once anywhere. A page load now only READS;
 // only an explicit __lgGlass(mode) call persists.
-const saved = (localStorage.getItem(KEY) as Mode | null) ?? "glass";
+const saved = (localStorage.getItem(KEY) as Mode | null) ?? "liquid";
 applyAttrs(saved);
 
 // Global switch for the dev toggle / console: pass a mode, or cycle off→glass→liquid.
 (window as unknown as { __lgGlass: (m?: Mode) => Mode }).__lgGlass = (m?: Mode) => {
-  const cur = (localStorage.getItem(KEY) as Mode | null) ?? "glass";
+  const cur = (localStorage.getItem(KEY) as Mode | null) ?? "liquid";
   const next: Mode = m ?? (cur === "off" ? "glass" : cur === "glass" ? "liquid" : "off");
   applyAttrs(next);
   try {

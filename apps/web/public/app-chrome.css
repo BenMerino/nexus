@@ -281,8 +281,14 @@
   z-index: -1;
   border-radius: inherit;
   pointer-events: none;
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  /* Frost via the --lg-* knobs — the SAME formula as the card overlays in
+     dna-bridge.css, NOT blur(var(--glass-blur)): liquid mode zeroes
+     --glass-blur (the host-fill knob), which left these two overlays
+     refracting a raw UNBLURRED sky — Safari doesn't dither gradients, so the
+     chrome banded while the (8px-frosted) cards didn't. The displacement must
+     always sample a frosted capture. */
+  backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
+  -webkit-backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
   filter: url(#lg-kube);
 }
 
