@@ -263,10 +263,10 @@ em {
 /* ═══ MAIN AREA ═══ */
 .main {
   overflow-y: auto; overflow-x: hidden;
-  /* Always reserve the scrollbar gutter so the centered .view (margin: 0 auto)
-   * doesn't shift sideways when the vertical scrollbar appears after data
-   * loads. Without this the whole content area jitters on first render. */
-  scrollbar-gutter: stable;
+  /* No reserved scrollbar gutter: content is now full-width (left-anchored, no
+     centered .view), so a stable gutter only pushed the right edge inward and
+     made it stop short of the full-width header. The scrollbar overlays the
+     far-right --chrome-inset instead. */
   /* transparent so the body's silver gradient mesh shows through behind the
      glass content surfaces (was var(--bg), which hid the mesh). */
   background: transparent;
