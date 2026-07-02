@@ -9,28 +9,49 @@ import { ES } from './tenant-i18n';
  * author-directory area below the scope rail. Rendered both on cold load and
  * as the chart-body Suspense fallback. */
 
-function PanelSkel({ tall }: { tall?: boolean }) {
+/* One panel skeleton. `span` = the grid modifier ('tall' | 'full'); `body` =
+   the reserved body height, matched to each real card's chart minHeight so the
+   skeleton reserves the SAME space the loaded card fills (no reflow on swap). */
+function PanelSkel({ span, body = 240 }: { span?: 'tall' | 'full'; body?: number }) {
   return (
-    <section className={`panel${tall ? ' tall' : ''}`}>
+    <section className={`panel${span ? ' ' + span : ''}`}>
       <div className="panel-head">
         <div>
           <Skeleton block width={180} height={20} />
           <Skeleton block width={120} height={10} style={{ marginTop: 8 }} />
         </div>
       </div>
-      <Skeleton block height={tall ? 360 : 200} width="100%" radius="card" />
+      <Skeleton block height={body} width="100%" radius="card" />
     </section>
   );
 }
 
 export function TenantLoadingBody() {
+  // Mirror the REAL TenantOverview card structure card-for-card so the skeleton
+  // reserves the same layout the loaded grid fills (matched counts, spans and
+  // per-card body heights) — otherwise data lands into a different-shaped grid
+  // and the whole thing reflows. Structure (tenant-charts-tab + tenant-overview):
+  //   grid 1: contributors(tall) · velocity · researchAreas · year-panel(full)
+  //   grid 2: topJournals · collaborators · countriesMap(full)
+  //   then: works · authors
   return (
     <>
-      <div className="chart-grid reveal-group">
-        <PanelSkel tall />
-        <PanelSkel />
-        <PanelSkel />
-        <PanelSkel />
+      <div className="chart-grid">
+        <PanelSkel span="tall" body={360} />
+        <PanelSkel body={200} />
+        <PanelSkel body={200} />
+        <PanelSkel span="full" body={300} />
+      </div>
+      <div className="chart-grid" style={{ marginTop: 24 }}>
+        <PanelSkel body={300} />
+        <PanelSkel body={300} />
+        <PanelSkel span="full" body={300} />
+      </div>
+      {/* Works: most-cited + recent publications — a third chart-grid (2 cards),
+          matching TenantWorks so the card count is 9, same as loaded. */}
+      <div className="chart-grid" style={{ marginTop: 24 }}>
+        <PanelSkel body={340} />
+        <PanelSkel body={340} />
       </div>
       <section style={{ marginTop: 24 }}>
         <h3 className="panel-title" style={{ marginBottom: 12 }}>{ES.nav.authors}</h3>
