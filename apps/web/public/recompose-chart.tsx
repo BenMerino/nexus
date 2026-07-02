@@ -10,21 +10,28 @@ import { perfMark } from './perf-marks';
  *   - ScopedChart:    authenticated GET /api/architect/charts?kind= (orcid-scoped)
  * Both render an atom directive via DirectiveChart (uniform-drop toggle). */
 
-function ComposedView({ directive, failed, minHeight, hideTitle }: { directive: GraphDirective | null; failed: boolean; minHeight: number; hideTitle?: boolean }) {
+function ComposedView({ directive, failed, pending, minHeight, hideTitle }: { directive: GraphDirective | null; failed: boolean; pending?: boolean; minHeight: number; hideTitle?: boolean }) {
   // hideTitle: the chart sits inside a host card that renders its own heading +
   // border, so suppress the engine's in-chart title AND its redundant plot frame
   // (keep the directive's title for the host/key). Engine honors both flags
   // (synced from Zincro).
   const seed = useMemo(() => (directive && hideTitle ? { ...directive, hideTitle: true, hideFrame: true } : directive), [directive, hideTitle]);
-  if (failed || seed === null) {
+  if (failed || (!seed && !pending)) {
     return <div style={{ minHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-dim)', fontFamily: 'var(--mono)', fontSize: 13 }}>—</div>;
   }
-  return <div className="chart-surface" style={{ minHeight }}><DirectiveChart seed={seed} /></div>;
+  // Pending and loaded states share this ONE .chart-surface node: the rung-2
+  // glass (tint, concentric corner, kube filter geometry) is already correct
+  // BEFORE the directive lands, and the chart mounts into the same element —
+  // no node swap, so no tint pop and no filter re-bucket at data arrival.
+  return <div className="chart-surface" style={{ minHeight }}>{seed ? <DirectiveChart seed={seed} /> : null}</div>;
 }
 
 function useComposed(doFetch: () => Promise<Response>, deps: unknown[]) {
   const [directive, setDirective] = useState<GraphDirective | null>(null);
   const [failed, setFailed] = useState(false);
+  // pending distinguishes "fetch in flight" (tinted empty surface) from
+  // "resolved empty" (the — placeholder) in ComposedView.
+  const [pending, setPending] = useState(true);
   useEffect(() => {
     let cancelled = false;
     doFetch()
@@ -32,17 +39,18 @@ function useComposed(doFetch: () => Promise<Response>, deps: unknown[]) {
       // Accept time-series (atoms) AND categorical (data) directives — both are
       // valid server-composed kinds; only an empty/null payload is dropped.
       .then((d: GraphDirective | null) => { if (!cancelled) setDirective(d && ((d as any).atoms || (d as any).data) ? d : null); })
-      .catch(() => { if (!cancelled) setFailed(true); });
+      .catch(() => { if (!cancelled) setFailed(true); })
+      .finally(() => { if (!cancelled) setPending(false); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
-  return { directive, failed };
+  return { directive, failed, pending };
 }
 
 /** Tenant-public composed chart (anonymous). No orcid honored here. An optional
  *  `unit` (org-tree node unitKey) narrows the chart to one faculty/department. */
 export function RecomposeChart({ kind, tenantId, unit, minHeight = 360 }: { kind: string; tenantId: number; unit?: string | null; minHeight?: number }) {
-  const { directive, failed } = useComposed(
+  const { directive, failed, pending } = useComposed(
     () => fetch('/api/architect/recompose', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ kind, tenantId: String(tenantId), ...(unit ? { unit } : {}) }),
@@ -54,7 +62,7 @@ export function RecomposeChart({ kind, tenantId, unit, minHeight = 360 }: { kind
   useEffect(() => { if (directive || failed) perfMark(`chart:${kind}`); }, [directive, failed, kind]);
   // Card-wrapped like the rest (CadencePanel etc. sit in a .panel with its own
   // heading + border) → suppress the engine's title + plot frame.
-  return <ComposedView directive={directive} failed={failed} minHeight={minHeight} hideTitle />;
+  return <ComposedView directive={directive} failed={failed} pending={pending} minHeight={minHeight} hideTitle />;
 }
 
 /** Several public charts composed in ONE round-trip (POST /recompose-batch) and
@@ -91,7 +99,7 @@ export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400, bare = f
         const isMap = kind === 'publications.countriesMap';
         // Every BatchedCharts chart is card-wrapped (wrap=ChartPanel or .card),
         // which renders its own heading → suppress the engine's in-chart title.
-        const body = <ComposedView directive={ok ? d : null} failed={failed} minHeight={isMap ? 0 : minHeight} hideTitle />;
+        const body = <ComposedView directive={ok ? d : null} failed={failed} pending={!map && !failed} minHeight={isMap ? 0 : minHeight} hideTitle />;
         // `wrap` lets the caller frame each kind (e.g. a .panel) while keeping
         // the single batch fetch; `bare` skips the default .card; else .card.
         if (wrap) return <React.Fragment key={kind}>{wrap(kind, body)}</React.Fragment>;
@@ -113,8 +121,8 @@ export function ScopedChart({ kind, orcid, minHeight = 360 }: { kind: string; or
   const url = orcid
     ? `/api/architect/charts?kind=${encodeURIComponent(kind)}&orcid=${encodeURIComponent(orcid)}`
     : `/api/architect/charts?kind=${encodeURIComponent(kind)}`;
-  const { directive, failed } = useComposed(() => fetch(url, { credentials: 'include' }), [url]);
+  const { directive, failed, pending } = useComposed(() => fetch(url, { credentials: 'include' }), [url]);
   // Dashboard ScopedCharts sit in a card with its own SectionHead → hide the
   // engine's in-chart title.
-  return <ComposedView directive={directive} failed={failed} minHeight={minHeight} hideTitle />;
+  return <ComposedView directive={directive} failed={failed} pending={pending} minHeight={minHeight} hideTitle />;
 }
