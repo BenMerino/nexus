@@ -263,15 +263,14 @@
    dna.css). Chrome mounts once per real page load and persists across SPA and
    view swaps, so navigation never replays this. Sidebar leads, header follows
    one stagger beat; content shells enter after --motion-reveal-base
-   (.reveal-group). Opacity + transform only — never animate the glass blur. */
+   (.reveal-group). OPACITY-ONLY: the chrome's liquid-glass ::before captures
+   a −24px-padded backdrop (overlapping the content beside the sidebar) —
+   transform-animating the shell displaces that capture and cuts the
+   neighboring pixels. Fade is the whole entrance; never transform glass. */
 .sidebar {
-  --reveal-from: translateX(calc(-1 * var(--space-2))) scale(0.98);
-  transform-origin: left center;
   animation: reveal-in var(--motion-reveal) var(--ease-out) both;
 }
 .public-header {
-  --reveal-from: translateY(calc(-1 * var(--space-2))) scale(0.98);
-  transform-origin: top center;
   animation: reveal-in var(--motion-reveal) var(--ease-out) both;
   animation-delay: var(--motion-stagger);
 }

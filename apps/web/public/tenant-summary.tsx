@@ -58,7 +58,10 @@ export function SummaryCards({ summary, sparks }: { summary: PublicStats['summar
     return `${per} per publication · ${citedPct}% of output cited`;
   };
   return (
-    <div className="kpi-grid reveal-group">
+    // No reveal-group here: only the co-located Skeleton grid animates in.
+    // This grid replaces it with identical geometry, so an instant swap reads
+    // as the cards persisting while their data arrives (no re-entrance).
+    <div className="kpi-grid">
       {KPIS.map(k => (
         <div key={k.key} className="kpi" style={{ ['--kpi-accent' as string]: k.accent }}>
           <div className="kpi-top">

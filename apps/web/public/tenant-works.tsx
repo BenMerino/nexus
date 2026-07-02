@@ -49,7 +49,7 @@ export function TenantWorks({ slug, unit }: { slug: string; unit?: string | null
   }, [slug, unit]);
 
   return (
-    <div className="chart-grid reveal-group" style={{ marginTop: 24 }}>
+    <div className="chart-grid" style={{ marginTop: 24 }}>
       <ChartPanel title={ES.works.mostCited} sub={ES.works.mostCitedSub}>
         {data ? <WorkList works={data.topCited} showCites /> : <div style={{ minHeight: 200 }} />}
       </ChartPanel>

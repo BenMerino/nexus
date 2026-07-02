@@ -443,14 +443,21 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
    Phase 2 is the content shells: a container opts in with .reveal-group and
    each direct child fades + scales in, staggered by DOM order.
 
-   Content deliberately NEVER translates: the grids REMOUNT when real data
-   replaces their skeletons (and on client-side view swaps), so this animation
-   replays then — a scale+fade replay reads as the surface materializing; a
-   translate replay would be a positional jump. Directional movement belongs
-   to chrome only. Animate only opacity/transform — never backdrop-filter
-   (re-blurring the glass every frame janks). */
+   OPACITY-ONLY, no transforms — two hard reasons, both observed:
+   (1) the glass surfaces capture + refract their backdrop (kube/liquid
+   ::before with a −24px padded capture, dna-bridge/app-chrome) — transform-
+   animating a capture-bearing element displaces its capture + clip mid-
+   refraction, visibly cutting the content beside it; (2) charts measure
+   their container at mount (getBoundingClientRect) — a scale in flight
+   skews the measurement. The frost + tint ramping in with opacity IS the
+   materialize. Never animate backdrop-filter itself (re-blur janks).
+
+   .reveal-group belongs on SKELETON grids only (tenant-loading,
+   SummaryCards.Skeleton): shells stagger in before data; when data lands
+   the loaded grid swaps in with identical geometry and NO animation, so
+   cards never re-enter with their data. */
 @keyframes reveal-in {
-  from { opacity: 0; transform: var(--reveal-from, scale(0.985)); }
+  from { opacity: 0; }
 }
 .reveal-group > * {
   animation: reveal-in var(--motion-reveal) var(--ease-out) both;
