@@ -20,6 +20,7 @@ import { MetaChip } from '../../ui/primitives';
 export {
   BaseBox, BaseText, BaseAction, BaseTile, BaseCheckbox, BaseIcon,
   Divider, MetaChip, StatusPill, TweenedNumber, Skeleton,
+  BaseNested, Nestable,
 } from '../../ui/primitives';
 
 // nexus app molecules, rebuilt on the vendored primitives.
