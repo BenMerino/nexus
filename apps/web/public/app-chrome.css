@@ -371,12 +371,11 @@
  * focus ring. No call-site skin here (was a redundant second glass layer that
  * double-padded and stretched the field). */
 .sidebar-search { position: relative; padding: 12px 14px 6px; }
+/* Popover portals + positions this panel (fixed, anchored to the trigger) and
+ * overlaySurface owns its glass (bg, border, radius, shadow). Only the scroll
+ * cap is ours; width is set inline to the measured trigger width. */
 .sidebar-search-results {
-  position: absolute; left: 14px; right: 14px; top: calc(100% - 2px);
-  background: var(--bg-inset); border: var(--border-w) solid var(--border-soft);
-  border-radius: var(--radius-card); z-index: 50;
   max-height: 320px; overflow-y: auto;
-  box-shadow: var(--shadow-md);
 }
 .sidebar-search-empty { padding: 10px 12px; font-size: var(--text-label); color: var(--fg-dim); font-family: var(--font-mono); }
 .sidebar-search-hit {

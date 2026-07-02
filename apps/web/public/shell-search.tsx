@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SearchField } from '../ui/composed/SearchField';
 import { Popover } from '../ui/composed/Popover';
 
@@ -21,6 +21,8 @@ export function SidebarSearch() {
   const [hits, setHits] = useState<AcademicHit[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [width, setWidth] = useState<number>();
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const term = q.trim();
@@ -41,14 +43,22 @@ export function SidebarSearch() {
   }
 
   const showResults = open && q.trim().length >= 2;
+  // The panel portals to <body> and is positioned `fixed`, so a CSS `width:100%`
+  // would resolve against the viewport, not the sidebar. Match the trigger's
+  // measured width so the dropdown sits flush under the input.
+  useEffect(() => {
+    if (showResults && wrapRef.current) setWidth(wrapRef.current.offsetWidth);
+  }, [showResults]);
+
   return (
     <Popover
       open={showResults}
       onOpenChange={setOpen}
       panelClassName="sidebar-search-results"
-      panelStyle={{ width: '100%' }}
+      panelStyle={{ width }}
       trigger={({ ref }) => (
-        <div className="sidebar-search" ref={ref as React.Ref<HTMLDivElement>}
+        <div className="sidebar-search"
+          ref={(el) => { (ref as React.MutableRefObject<HTMLDivElement | null>).current = el; wrapRef.current = el; }}
           onFocusCapture={() => setOpen(true)}>
           <SearchField value={q} onChange={(v) => { setQ(v); setOpen(true); }}
             placeholder="Search academics..." />
