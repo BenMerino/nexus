@@ -41,23 +41,16 @@ export function TenantLoadingBody() {
 }
 
 export function TenantLoading() {
+  // Mirror the LOADED OverviewView structure exactly: KPI row + the full-width
+  // chart-grid body, NO scope rail. The old .tenant-layout + .tenant-rail here
+  // reserved a 264px column the Overview never renders, so content jumped
+  // 924→1204px (and every card resized) when data swapped in. Matching the
+  // real layout means the skeleton cards are the same size/form as the loaded
+  // cards — zero reflow on data arrival.
   return (
     <>
       <ScopedSummary.Skeleton />
-      <div className="tenant-layout">
-        <aside className="tenant-rail">
-          <div className="tenant-rail-head">
-            <h2 className="tenant-rail-title">{ES.scopeRail.title}</h2>
-            <p className="tenant-rail-note">{ES.scopeRail.note}</p>
-          </div>
-          <div className="tenant-rail-list" style={{ padding: 8 }}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} block height={34} width="100%" style={{ marginBottom: 6 }} />
-            ))}
-          </div>
-        </aside>
-        <div className="tenant-content"><TenantLoadingBody /></div>
-      </div>
+      <TenantLoadingBody />
     </>
   );
 }
