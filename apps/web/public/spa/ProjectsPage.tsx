@@ -20,13 +20,6 @@ import { useLegacyMounts } from './legacy-mount';
 import '../claustro.css';
 
 const BODY = `
-  <header class="view-head">
-    <div class="view-meta">
-      <span class="tag mono" id="tag-count">0 PROJECTS</span>
-      <span class="tag mono tag-muted" id="tag-amount">$0</span>
-    </div>
-  </header>
-
   <div id="proyectos-no-access" class="card" style="display:none;">
     <p>Only tenant administrative roles can manage projects.</p>
   </div>

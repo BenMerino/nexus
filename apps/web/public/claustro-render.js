@@ -74,8 +74,12 @@ export function mount() {
     document.getElementById("stat-conc-val").textContent = conc;
     document.getElementById("stat-conc-sub").textContent = "of " + total + " projects";
     document.getElementById("stat-ext-val").textContent = ext;
-    document.getElementById("tag-count").textContent = total + " PROJECTS";
-    document.getElementById("tag-amount").textContent = window.fmtCLP(amount);
+    // The header count/amount tags were removed (redundant with the stat cards
+    // above); guard so the render survives their absence.
+    const tagCount = document.getElementById("tag-count");
+    if (tagCount) tagCount.textContent = total + " PROJECTS";
+    const tagAmount = document.getElementById("tag-amount");
+    if (tagAmount) tagAmount.textContent = window.fmtCLP(amount);
   }
 
   window.claustroRender = {
