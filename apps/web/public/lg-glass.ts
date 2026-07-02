@@ -3,11 +3,14 @@
 // @ main (cloned 2026-07-01). Two modes on :root:
 //   data-lg        → library GLASS mode (blur + transparency), all browsers.
 //   data-lg-liquid → library LIQUID GLASS mode (kube refraction filter), + defaults.
-// Default: LIQUID (kube refraction). Briefly defaulted to 'glass' (2026-07)
-// while liquid banded in Safari — root cause was the header/sidebar liquid
-// overlays frosting with the zeroed --glass-blur knob and refracting a RAW
-// sky gradient (Chrome dithers, Safari doesn't). Fixed in app-chrome.css:
-// every overlay now frosts with the --lg-* formula before displacement. An
+// Default: GLASS (frosted blur + sheen). Liquid (kube refraction) stays
+// available via the toggle but is NOT the default: platform-wide it runs a
+// backdrop capture + 6-primitive SVG filter on every glass element, which
+// Safari rasterizes largely on the CPU (severe perf cost), and the ONE
+// normalized shared texture can't geometrically align to every element's
+// aspect/radius (edge artifacts on bars/chips — the upstream library avoids
+// this only by generating a per-component, size-matched filter). A real
+// liquid default needs that per-element approach. An
 // explicit toggle call persists per-origin in localStorage; a plain page load
 // never writes (see below). Keep in sync with THEME_BOOT (vite.config.ts).
 //
@@ -30,19 +33,19 @@ function applyAttrs(mode: Mode): void {
   root.toggleAttribute("data-lg-liquid", mode === "liquid");
 }
 
-// Respect a persisted mode; default to 'liquid' when unset.
+// Respect a persisted mode; default to 'glass' when unset.
 //
 // Every page load used to WRITE the resolved mode back to localStorage — even
 // when nothing was explicitly toggled — so this dev-only A/B switch (no UI,
 // console-only: window.__lgGlass()) silently diverged between origins/sessions
 // the instant anyone called it once anywhere. A page load now only READS;
 // only an explicit __lgGlass(mode) call persists.
-const saved = (localStorage.getItem(KEY) as Mode | null) ?? "liquid";
+const saved = (localStorage.getItem(KEY) as Mode | null) ?? "glass";
 applyAttrs(saved);
 
 // Global switch for the dev toggle / console: pass a mode, or cycle off→glass→liquid.
 (window as unknown as { __lgGlass: (m?: Mode) => Mode }).__lgGlass = (m?: Mode) => {
-  const cur = (localStorage.getItem(KEY) as Mode | null) ?? "liquid";
+  const cur = (localStorage.getItem(KEY) as Mode | null) ?? "glass";
   const next: Mode = m ?? (cur === "off" ? "glass" : cur === "glass" ? "liquid" : "off");
   applyAttrs(next);
   try {
