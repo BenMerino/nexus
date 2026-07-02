@@ -283,9 +283,14 @@
    backdrop-filter: url() (Chromium-only, flaky — WebKit 245510). Chrome glass is
    N9-owned (defined here), so its liquid override lives here too. The overlay sits
    at z-index -1 (isolation:isolate traps it in the shell) so nav + header items
-   stay sharp above it. */
-:root[data-lg-liquid] .public-header,
-:root[data-lg-liquid] .sidebar {
+   stay sharp above it.
+   [data-lg][data-lg-liquid] double-attr (0,4,0) — same tie-break as the card rule
+   in dna-bridge.css: lg-glass.css's :root[data-lg] .sidebar (0,3,0) loads LATER
+   (shared.css import order), so a single-attr none here lost the tie and the host
+   kept its own blur+saturate(200%) — the backdrop got frosted TWICE (double
+   saturation), tinting the chrome visibly differently from the cards. */
+:root[data-lg][data-lg-liquid] .public-header,
+:root[data-lg][data-lg-liquid] .sidebar {
   isolation: isolate;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
