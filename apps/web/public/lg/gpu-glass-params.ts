@@ -8,7 +8,8 @@ export type GlassParams = {
   thick: number;          // slab thickness (CSS px)
   dome: number;           // extra center curvature (CSS px) — 0 = flat top
   gap: number;            // slab → background distance (CSS px)
-  ior: number;            // refractive index
+  ior: number;            // refractive index (at green)
+  dispersion: number;     // nBlue − nRed spread; crown glass ≈ 0.008
   frost: number;          // 0..1 surface roughness (scatter blur)
   tint: string;           // glass color (#rrggbb); white = clear
   tintStrength: number;   // 0..1 Beer–Lambert weight
@@ -21,7 +22,7 @@ export type GlassControl = {
 
 export function defaultGlassParams(radius: number): GlassParams {
   return { w: 480, h: 320, radius, bezel: 20, thick: 24, dome: 0, gap: 48,
-    ior: 1.5, frost: 0, tint: "#e1e7f0", tintStrength: 1 };
+    ior: 1.5, dispersion: 0.008, frost: 0, tint: "#e1e7f0", tintStrength: 1 };
 }
 
 // Beer–Lambert absorption per channel (CSS-px⁻¹): the glass absorbs the

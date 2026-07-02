@@ -46,7 +46,7 @@ export async function mountGpuGlass(
     fragment: { module: mod, entryPoint: "fs", targets: [{ format }] },
     primitive: { topology: "triangle-list" },
   });
-  const ubuf = device.createBuffer({ size: 112, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+  const ubuf = device.createBuffer({ size: 128, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
   const bind = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [{ binding: 0, resource: { buffer: ubuf } }],
@@ -86,6 +86,7 @@ export async function mountGpuGlass(
       hr, hg, hb, glowHDR,                               // hor.a = glow intensity
       24 * dpr, 0.22, 0.5 * dpr, P.dome * dpr,           // grid …, d.w = dome
       k[0] / dpr, k[1] / dpr, k[2] / dpr, P.frost * 32 * dpr,
+      P.dispersion, 0, 0, 0,
     ]));
     const cmd = device.createCommandEncoder();
     const pass = cmd.beginRenderPass({

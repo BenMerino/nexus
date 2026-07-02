@@ -18,13 +18,15 @@ const SECTIONS: Array<{ title: string; sliders: Slider[] }> = [
   ] },
   { title: "optics", sliders: [
     { key: "ior", label: "ior", min: 1, max: 2.4, step: 0.01 },
+    { key: "dispersion", label: "dispersion", min: 0, max: 0.04, step: 0.001 },
     { key: "gap", label: "bg distance", min: 0, max: 200, step: 2 },
     { key: "frost", label: "frost", min: 0, max: 1, step: 0.01 },
     { key: "tintStrength", label: "tint", min: 0, max: 1, step: 0.01 },
   ] },
 ];
 
-const fmt = (v: number, step: number) => (step < 1 ? v.toFixed(2) : String(Math.round(v)));
+const fmt = (v: number, step: number) =>
+  step >= 1 ? String(Math.round(v)) : v.toFixed(step >= 0.01 ? 2 : 3);
 
 function el(tag: string, cls: string, text?: string): HTMLElement {
   const n = document.createElement(tag);
