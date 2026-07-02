@@ -15,6 +15,7 @@ import { Sidebar } from "../shell-sidebar";
 import { RoleSwitcher } from "../shell-tweaks";
 import { TenantPublicHeader } from "../tenant-header";
 import { useCurrentUser } from "../shell-helpers";
+import { pageTitleFor } from "../shell-nav-links";
 import { userCrumbs } from "./auth-crumbs";
 import { loadThemeTokens } from "./load-theme-tokens";
 
@@ -47,13 +48,20 @@ export function AuthLayout() {
   // Graph explorer wants an edge-to-edge canvas (was <main class="main-fullbleed">).
   const fullbleed = location.pathname === "/overview";
 
+  // Breadcrumb trail: tenant (crumb 0) → academic → the current page's title.
+  // The page crumb is the sidebar label for this route (one source of truth).
+  const pageTitle = pageTitleFor(location.pathname);
+  const crumbs = me
+    ? [...userCrumbs(me), ...(pageTitle ? [{ name: pageTitle }] : [])]
+    : [];
+
   return (
     <div className="app app-headered">
       {me && (
         <TenantPublicHeader
           tenant={{ name: me.tenant || "Pliny", ror_id: me.profile?.ror ?? null, logo_url: null }}
           items={[]} currentId="" onNavigate={() => {}} signedIn
-          crumbs={userCrumbs(me)}
+          crumbs={crumbs}
         />
       )}
       <Sidebar me={me} currentPath={location.pathname} roleSwitcher={<RoleSwitcher me={me} />} />
