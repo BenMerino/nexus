@@ -263,14 +263,16 @@ em {
 /* ═══ MAIN AREA ═══ */
 .main {
   overflow-y: auto; overflow-x: hidden;
-  /* No reserved scrollbar gutter: content is now full-width (left-anchored, no
-     centered .view), so a stable gutter only pushed the right edge inward and
-     made it stop short of the full-width header. The scrollbar overlays the
-     far-right --chrome-inset instead. */
+  /* Scrollbar never renders: it takes zero layout width, so content stays
+     full-width (its right edge reaches the header) AND nothing reflows when the
+     page grows tall enough to scroll (projects loading in). Scrolling still
+     works via wheel/trackpad. Cross-browser: Firefox + WebKit below. */
+  scrollbar-width: none;
   /* transparent so the body's silver gradient mesh shows through behind the
      glass content surfaces (was var(--bg), which hid the mesh). */
   background: transparent;
 }
+.main::-webkit-scrollbar { display: none; }
 /* Full-bleed variant for views that want to occupy the whole main area
  * with their own internal layout (graph explorer). No scroll, no padding,
  * and propagate height: 100% down to the immediate child so the explorer
@@ -307,13 +309,18 @@ em {
 .view-sub { margin-top: 10px; color: var(--fg-muted); font-size: var(--text-body); max-width: 640px; line-height: var(--leading-body); }
 .view-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
 
-/* ═══ TAGS ═══ */
-.tag {
+/* ═══ TAGS ═══
+   A Tag is a crisp boxed chip, NOT the feathered floating MetaChip surface
+   (whose radial-ellipse ::before is suppressed for `.tag` in meta-chip.css).
+   Scoped to `.meta-chip.tag` so the box wins over MetaChip's transparent
+   background regardless of CSS-file bundle order. Token-driven glass fill +
+   hairline so it reads as a real box on any surface. */
+.meta-chip.tag, .tag {
   display: inline-flex; align-items: center;
   padding: 4px 9px; border-radius: var(--radius-pill);
   font-size: var(--text-micro); font-weight: var(--weight-label); letter-spacing: 0.08em; line-height: 1;
-  background: rgba(255,255,255,0.06); color: var(--fg-muted);
-  border: var(--border-w) solid transparent;
+  background: var(--glass-2); color: var(--fg-muted);
+  border: var(--border-w) solid var(--border-glass);
 }
 .tag.mono { font-family: var(--font-mono); font-size: var(--text-micro); }
 .tag-muted { color: var(--fg-dim); }
@@ -469,8 +476,17 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
    IS the materialize. Never add filter/transform here. */
 @keyframes reveal-in {
   from { opacity: 0; }
+  to   { opacity: 1; }
 }
+/* CROSS-BROWSER HARD RULE: hide the child in a BASE rule, from first paint.
+   NEVER rely on `animation-fill-mode: both` to hold the pre-delay `from` state
+   — WebKit (Safari) does not reliably honor it under an animation-delay, so the
+   card paints at full opacity for a frame, then snaps to 0 when the animation
+   binds → the "pieces of cards before the choreography" flash. Base opacity:0
+   kills the race in every engine: hidden before ANY animation runs; the
+   keyframe fades to 1 and `forwards` (in `both`) holds it visible after. */
 .reveal-group > * {
+  opacity: 0;
   animation: reveal-in var(--motion-reveal) var(--ease-out) both;
   /* Phase offset + per-sibling stagger; children past the 8th share the
      last slot via the --reveal-i fallback. */
@@ -487,8 +503,10 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 
 @media (prefers-reduced-motion: reduce) {
   .skel { animation-duration: 3.2s; }
-  /* Reveals collapse entirely: everything appears in place, no motion. */
-  .reveal-group > *, .public-header, .sidebar { animation: none; }
+  /* Reveals collapse entirely: everything appears IN PLACE, no motion. Reset
+     opacity to 1 — with the animation off, the base opacity:0 would otherwise
+     leave the cards permanently invisible. */
+  .reveal-group > *, .public-header, .sidebar { animation: none; opacity: 1; }
 }
 
 /* ═══ GRAPH EXPLORER ═══ */

@@ -14,6 +14,13 @@
     isolation: isolate;
 }
 
+/* When the chip is a Tag (ui-kit adds `.tag`), the crisp box + tone fill come
+ * from `.tag` in shared.css — the feathered floating surface below must NOT
+ * also draw, or its radial-ellipse mask bleeds out around the box (reads as a
+ * soft ellipse behind the tag). Suppress the ::before so `.tag` is the sole
+ * surface; a bare MetaChip (floating metadata) keeps the feather. */
+.meta-chip.tag::before { content: none; }
+
 .meta-chip::before {
     content: '';
     position: absolute;
