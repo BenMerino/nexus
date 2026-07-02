@@ -23,6 +23,8 @@ struct U {
   c: vec4f,   // cornerRadius, bezelRadius, slabThickness, glowX (0..1)
   top: vec4f, // sky top color (rgb 0..1), a = HDR ceiling
   hor: vec4f, // sky horizon color (rgb 0..1), a = glow intensity
+  d: vec4f,   // gridSpacing, gridOpacity, gridHalfWidth, domeHeight (device px)
+  e: vec4f,   // Beer–Lambert absorption k (rgb, device-px⁻¹), frost radius (px)
 };
 @group(0) @binding(0) var<uniform> u: U;
 ${SKY_WGSL}
@@ -31,19 +33,50 @@ fn sky(p: vec2f) -> vec3f {
   return skyColor(p / u.a.xy, u.top.rgb, u.hor, u.c.w, u.top.w);
 }
 
+// Reference grid, lab-only: coverage of a hairline grid at p (0..1).
+fn gridA(p: vec2f) -> f32 {
+  let g = abs(fract(p / u.d.x + vec2f(0.5)) - vec2f(0.5)) * u.d.x;
+  let m = min(g.x, g.y);
+  return (1.0 - smoothstep(u.d.z - 0.5, u.d.z + 0.5, m)) * u.d.y;
+}
+
+// The scene the glass refracts = the engine sky WITH the printed grid, so
+// grid lines physically bend through the bezel like everything else.
+fn bg(p: vec2f) -> vec3f {
+  return mix(sky(p), vec3f(1.0), gridA(p));
+}
+
 // Signed distance to the element's rounded-rect footprint (device px).
 fn sdRR(p: vec2f) -> f32 {
   let q = abs(p - u.b.xy) - u.b.zw + vec2f(u.c.x);
   return length(max(q, vec2f(0.0))) + min(max(q.x, q.y), 0.0) - u.c.x;
 }
 
-// The element's physical form: a flat-topped slab whose rim is a quarter-
-// circle of radius = bezel. h is height ABOVE the flat back face's top.
+// The element's physical form: a slab whose rim is a quarter-circle of
+// radius = bezel, plus an optional dome — a gentle parabolic rise toward the
+// center (u.d.w px) that turns the flat top into a weak lens, so the interior
+// refracts too. h is height ABOVE the flat back face's top.
 fn height(p: vec2f) -> f32 {
   let e = -sdRR(p);                       // distance in from the edge
   if (e <= 0.0) { return 0.0; }
   let x = min(e / u.c.y, 1.0);
-  return u.c.y * sqrt(max(0.0, 1.0 - (1.0 - x) * (1.0 - x)));
+  let rim = u.c.y * sqrt(max(0.0, 1.0 - (1.0 - x) * (1.0 - x)));
+  let d = min(e / min(u.b.z, u.b.w), 1.0);
+  return rim + u.d.w * (1.0 - (1.0 - d) * (1.0 - d));
+}
+
+// Frosted sampling: roughness scatters the exit ray in a cone, so average the
+// background over a vogel disk of radius u.e.w, rotated per-pixel so
+// undersampling reads as noise rather than ghost images.
+fn frosted(q: vec2f, seed: vec2f) -> vec3f {
+  let rot = fract(sin(dot(seed, vec2f(12.9898, 78.233))) * 43758.5453) * 6.2832;
+  var acc = vec3f(0.0);
+  for (var i = 0u; i < 8u; i++) {
+    let a = 2.3999632 * f32(i) + rot;
+    let r = u.e.w * sqrt((f32(i) + 0.5) / 8.0);
+    acc += bg(q + vec2f(cos(a), sin(a)) * r);
+  }
+  return acc / 8.0;
 }
 
 @vertex
@@ -55,9 +88,12 @@ fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
 @fragment
 fn fs(@builtin(position) frag: vec4f) -> @location(0) vec4f {
   let p = frag.xy;
-  // Outside the slab: fully transparent — the LIVE background engine behind
-  // this canvas is the one and only background.
-  if (sdRR(p) >= 0.0) { return vec4f(0.0); }
+  // Outside the slab: only the reference grid, premultiplied over transparency
+  // — the LIVE background engine behind this canvas stays the one background.
+  if (sdRR(p) >= 0.0) {
+    let ga = gridA(p);
+    return vec4f(vec3f(ga), ga);
+  }
 
   // Surface normal from the form's height field (central differences).
   let eps = 1.0;
@@ -79,14 +115,15 @@ fn fs(@builtin(position) frag: vec4f) -> @location(0) vec4f {
   if (all(t2 == vec3f(0.0))) { t2 = reflect(t1, vec3f(0.0, 0.0, 1.0)); }
   q += t2.xy * (u.a.z / max(abs(t2.z), 1e-4));
 
-  var col = sky(q);
-  // Beer–Lambert absorption over the internal path (faint cool glass tint).
-  col *= exp(-vec3f(0.0035, 0.0028, 0.0018) * path);
+  var col = bg(q);
+  if (u.e.w > 0.25) { col = frosted(q, p); }
+  // Beer–Lambert absorption over the internal path (tint = uniform k).
+  col *= exp(-u.e.rgb * path);
   // Schlick-Fresnel: reflectance rises at grazing incidence on the bezel.
   let f0 = pow((ior - 1.0) / (ior + 1.0), 2.0);
   let f = f0 + (1.0 - f0) * pow(1.0 - max(dot(-I, n), 0.0), 5.0);
   let r = reflect(I, n);
-  col = mix(col, sky(p + r.xy * 200.0), f);
+  col = mix(col, bg(p + r.xy * 200.0), f);
   return vec4f(col, 1.0);
 }
 `;

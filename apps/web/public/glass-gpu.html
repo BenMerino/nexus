@@ -42,6 +42,19 @@
       place-items: center; color: var(--fg-muted);
       font-family: var(--font-mono); font-size: var(--text-detail);
     }
+    /* Parameter panel — lab-only control surface (built by lg/gpu-glass-panel.ts). */
+    .gpu-panel {
+      position: fixed; left: 16px; top: 16px; z-index: 4; width: 236px;
+      padding: 14px 16px; border-radius: var(--radius-card);
+      background: var(--glass-bg); border: var(--border-w) solid var(--border-soft);
+      font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-muted);
+    }
+    .gpu-panel-title { color: var(--fg); letter-spacing: 0.08em; text-transform: uppercase; }
+    .gpu-panel-sec { color: var(--fg-dim); margin: 10px 0 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .gpu-panel-row { display: grid; grid-template-columns: 78px 1fr 34px; gap: 8px; align-items: center; margin: 3px 0; }
+    .gpu-panel-row input[type="range"] { width: 100%; margin: 0; accent-color: var(--accent); }
+    .gpu-panel-row input[type="color"] { width: 100%; height: 22px; padding: 0; border: none; background: none; cursor: pointer; }
+    .gpu-panel-val { text-align: right; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
   </style>
 </head>
 <body>
@@ -54,15 +67,19 @@
        Drag me — the optics follow the form wherever it sits.</p>
   </div>
   <div class="gpu-fallback" id="gpu-fallback">WebGPU unavailable — this demo has no fallback by design (physics or nothing).</div>
+  <div class="gpu-panel" id="gpu-panel"></div>
   <div class="gpu-note">glass-gpu — ray-traced refraction from the element's form (Snell · TIR · Beer–Lambert · Fresnel)</div>
   <script type="module">
     import { mountGpuGlass } from "/lg/gpu-glass.ts";
-    const ok = await mountGpuGlass(
+    import { mountGlassPanel } from "/lg/gpu-glass-panel.ts";
+    const glass = await mountGpuGlass(
       document.getElementById("gpu-glass"),
       document.getElementById("gpu-card-body"),
     );
-    if (!ok) {
-      for (const id of ["gpu-glass", "gpu-card-body"])
+    if (glass) {
+      mountGlassPanel(document.getElementById("gpu-panel"), glass);
+    } else {
+      for (const id of ["gpu-glass", "gpu-card-body", "gpu-panel"])
         document.getElementById(id).style.display = "none";
       document.getElementById("gpu-fallback").style.display = "grid";
     }

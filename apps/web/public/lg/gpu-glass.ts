@@ -9,16 +9,12 @@ import { skyFor } from "../sky/sky-palette";
 import { getSkyMode, forcedAltitude } from "../sky/sky-mode";
 import { displayHeadroom } from "../sky/sky-gpu";
 import { GLASS_SHADER } from "./gpu-glass-shader";
-
-const IOR = 1.5;          // crown glass
-const THICK = 24;         // slab thickness (CSS px)
-const GAP = 48;           // slab → background distance (CSS px)
-const BEZEL = 20;         // rim quarter-circle radius (CSS px)
-const EL_W = 480, EL_H = 320;
+import { defaultGlassParams, absorption } from "./gpu-glass-params";
+import type { GlassControl } from "./gpu-glass-params";
 
 export async function mountGpuGlass(
   canvas: HTMLCanvasElement, follower?: HTMLElement,
-): Promise<boolean> {
+): Promise<GlassControl | false> {
   if (!navigator.gpu) return false;
   let device: GPUDevice;
   try {
@@ -50,16 +46,17 @@ export async function mountGpuGlass(
     fragment: { module: mod, entryPoint: "fs", targets: [{ format }] },
     primitive: { topology: "triangle-list" },
   });
-  const ubuf = device.createBuffer({ size: 80, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+  const ubuf = device.createBuffer({ size: 112, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
   const bind = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [{ binding: 0, resource: { buffer: ubuf } }],
   });
 
-  // Corner radius from OUR token (--radius-card) — platform geometry.
+  // Corner radius defaults to OUR token (--radius-card) — platform geometry.
   const radiusCss = parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue("--radius-card"),
   ) || 18;
+  const P = defaultGlassParams(radiusCss);
 
   let cx = innerWidth / 2, cy = innerHeight / 2;   // element center (CSS px)
 
@@ -75,12 +72,16 @@ export async function mountGpuGlass(
     const glowHDR = 1.0 + gold * (ceil - 1.0);
     const c = (v: number[]) => v.map((x) => x / 255);
     const [tr, tg, tb] = c(sky.top), [hr, hg, hb] = c(sky.hor);
+    const k = absorption(P.tint, P.tintStrength);        // CSS-px⁻¹ → /dpr below
+    const lim = Math.min(P.w, P.h) / 2;                  // keep SDF radii valid
     device.queue.writeBuffer(ubuf, 0, new Float32Array([
-      canvas.width, canvas.height, GAP * dpr, IOR,
-      cx * dpr, cy * dpr, (EL_W / 2) * dpr, (EL_H / 2) * dpr,
-      radiusCss * dpr, BEZEL * dpr, THICK * dpr, 0.5,   // c.w = glowX
+      canvas.width, canvas.height, P.gap * dpr, P.ior,
+      cx * dpr, cy * dpr, (P.w / 2) * dpr, (P.h / 2) * dpr,
+      Math.min(P.radius, lim) * dpr, Math.min(P.bezel, lim) * dpr, P.thick * dpr, 0.5,
       tr, tg, tb, ceil,                                  // top.a = HDR ceiling
       hr, hg, hb, glowHDR,                               // hor.a = glow intensity
+      24 * dpr, 0.22, 0.5 * dpr, P.dome * dpr,           // grid …, d.w = dome
+      k[0] / dpr, k[1] / dpr, k[2] / dpr, P.frost * 32 * dpr,
     ]));
     const cmd = device.createCommandEncoder();
     const pass = cmd.beginRenderPass({
@@ -97,12 +98,13 @@ export async function mountGpuGlass(
     if (follower) {
       follower.style.left = `${cx}px`;
       follower.style.top = `${cy}px`;
+      follower.style.width = `${Math.max(P.w - 48, 48)}px`;
     }
   };
 
   // ── Drag: the element is just a uniform — move the center, re-run the pass.
   const inside = (x: number, y: number) =>
-    Math.abs(x - cx) <= EL_W / 2 && Math.abs(y - cy) <= EL_H / 2;
+    Math.abs(x - cx) <= P.w / 2 && Math.abs(y - cy) <= P.h / 2;
   let grab: { dx: number; dy: number } | null = null;
   canvas.addEventListener("pointerdown", (e) => {
     if (!inside(e.clientX, e.clientY)) return;
@@ -124,5 +126,5 @@ export async function mountGpuGlass(
   draw();
   window.addEventListener("resize", draw);
   window.addEventListener("nexus:sky-mode", draw);
-  return true;
+  return { params: P, set: (patch) => { Object.assign(P, patch); draw(); } };
 }
