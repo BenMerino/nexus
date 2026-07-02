@@ -1,80 +1,81 @@
-// Injects the kube liquid-glass SVG filter (ported from ObaidQatan/liquid-glass-
-// component-library KubeFilter.tsx) once per page, in NORMALIZED mode so one
-// filter serves every surface. lg-glass.css applies `filter: url(#lg-kube)` to
-// each glass surface under :root[data-lg-liquid].
+// PER-ELEMENT kube liquid-glass filters (the upstream library's real approach:
+// ObaidQatan/liquid-glass-component-library generates a size-matched filter per
+// component). The old port stretched ONE normalized 256px texture over every
+// surface — geometrically wrong for anything non-square (ghost edges on bars/
+// chips) — and refracted EVERY glass element (severe Safari cost; its SVG
+// filters are CPU-rasterized per frame).
 //
-// LIQUID GLASS defaults (as specified): profile convex-circle, bezel 9,
-// refraction 90, thickness 120, light angle -150, specular 10, blur 10, sat 100,
-// transparency 20 (transparency/sat/blur handled by the CSS layer).
-//
-// Refraction = feDisplacementMap on the element's OWN content (SourceGraphic).
-// The displacement map itself renders in every browser; the visible bend is the
-// library's real behavior.
+// This engine instead:
+//  · watches the liquid surfaces (LIQUID_HOSTS — keep in sync with the ::before
+//    overlay selector lists in dna-bridge.css / app-chrome.css),
+//  · measures each element's box + real border-radius,
+//  · builds a filter with textures generated AT that geometry (bucketed +
+//    cached, so identical cards share one filter; capped render resolution),
+//  · assigns it via the host's `--_kube` custom property — the overlay CSS
+//    reads `filter: var(--_kube, none)`, so unassigned/small surfaces
+//    gracefully keep plain frost.
+//  · SIZE GATE: nothing smaller than a real card refracts (chips/pills stay
+//    frosted) — small geometry is where lens artifacts live.
 
 import { generateDisplacementTexture } from "./kube/displacementTexture";
 import { generateSpecularTexture } from "./kube/specularTexture";
 
-const ID = "lg-kube";
-// Normalized unit-square texture resolution (matches the library's normalized path).
-const RES = 256;
+const LIQUID_HOSTS = [
+  ".public-header", ".sidebar", ".card", ".panel", ".kpi", ".stat",
+  ".surface", ".glass-surface", ".profile-hero", ".profile-panel",
+].join(",");
 
-function inject(): void {
-  if (document.getElementById(`${ID}-svg`)) return;
+const MIN_W = 120, MIN_H = 56;   // size gate — below this: frost only
+const MAX_TEX = 384;             // cap texture render resolution (px, long side)
+const BUCKET = 48;               // geometry bucket (px) — nearby sizes share a filter
+const BEZEL = 18;                // lens rim width in element px
+const ns = "http://www.w3.org/2000/svg";
 
-  const disp = generateDisplacementTexture({
-    width: RES, height: RES, bezel: (9 / 100) * RES, // bezel as fraction of dim
-    profile: "convex-circle", thickness: 120, samples: 128, borderRadius: 24,
-  });
-  const spec = generateSpecularTexture({
-    width: RES, height: RES, bezel: (9 / 100) * RES,
-    profile: "convex-circle", lightAngle: -150, shininess: 40, borderRadius: 24,
-  });
-  if (!disp || !spec) return;
+let defsSvg: SVGSVGElement | null = null;
+const filterCache = new Map<string, string>(); // bucket key -> filter id
 
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(ns, "svg");
-  svg.id = `${ID}-svg`;
-  svg.setAttribute("width", "0");
-  svg.setAttribute("height", "0");
-  svg.setAttribute("aria-hidden", "true");
-  Object.assign(svg.style, { position: "fixed", width: "0", height: "0", pointerEvents: "none" });
+function defsRoot(): SVGSVGElement {
+  if (defsSvg && defsSvg.isConnected) return defsSvg;
+  defsSvg = document.createElementNS(ns, "svg");
+  defsSvg.setAttribute("width", "0"); defsSvg.setAttribute("height", "0");
+  defsSvg.setAttribute("aria-hidden", "true");
+  Object.assign(defsSvg.style, { position: "fixed", width: "0", height: "0", pointerEvents: "none" });
+  document.body.appendChild(defsSvg);
+  return defsSvg;
+}
 
-  // USER-SPACE units, not objectBoundingBox. In bbox units the feImage stretches
-  // to a 1×1 unit square and the displacement map samples nearly flat → no visible
-  // bend (measured: 0.27% pixel change). userSpaceOnUse + a pixel-sized feImage +
-  // a pixel scale gives a real, size-independent-enough refraction.
-  //
-  // Region = EXACTLY the element box (0..1 bbox). It was oversized (-20%..120%)
-  // "so the bezel isn't clipped", but the feImage stretches to the REGION — so
-  // oversizing floated the texture's bezel ring + specular highlight ~20%
-  // OUTSIDE the element: every surface showed a ghost doubled edge near (not
-  // on) its corners. With region = box, the bezel and specular hug the true
-  // element edges where they belong.
-  const filter = document.createElementNS(ns, "filter");
-  filter.id = ID;
-  // linearRGB (the SVG spec default) — NOT sRGB. sRGB forces the filter chain's
-  // internal blur/displacement/blend math into the same coarse, non-perceptual
-  // 8-bit-per-channel space that banded the CSS sheen gradient (fixed separately
-  // in lg-glass.css). Safari's SVG filter engine is still largely software-
-  // rasterized and visibly more sensitive to that precision loss than Chrome's
-  // GPU-accelerated one — this is the actual remaining Safari-only banding
-  // source (downstream of the gradient, inside the refraction filter itself).
-  filter.setAttribute("color-interpolation-filters", "linearRGB");
-  filter.setAttribute("filterUnits", "objectBoundingBox");
-  filter.setAttribute("primitiveUnits", "userSpaceOnUse");
-  filter.setAttribute("x", "0");
-  filter.setAttribute("y", "0");
-  filter.setAttribute("width", "1");
-  filter.setAttribute("height", "1");
+// One filter per geometry bucket: textures rendered at (possibly downscaled)
+// element proportions; feImage 100% stretches them back — geometry preserved.
+function ensureFilter(w: number, h: number, r: number): string | null {
+  const key = `${w}x${h}r${r}`;
+  const hit = filterCache.get(key);
+  if (hit) return hit;
 
-  // feImage sized in px to the texture resolution; preserveAspectRatio none lets
-  // the browser scale the RES×RES map across each surface it's applied to.
-  const feImg = (href: string, result: string) => {
+  const s = Math.min(1, MAX_TEX / Math.max(w, h));
+  const bez = Math.min(BEZEL, w * 0.25, h * 0.25) * s;
+  const opt = { width: w * s, height: h * s, bezel: bez, profile: "convex-circle" as const,
+    borderRadius: r * s };
+  const disp = generateDisplacementTexture({ ...opt, thickness: 120, samples: 128 });
+  const spec = generateSpecularTexture({ ...opt, lightAngle: -150, shininess: 40 });
+  if (!disp || !spec) return null;
+
+  const id = `lgk-${filterCache.size}-${w}x${h}`;
+  const f = document.createElementNS(ns, "filter");
+  f.id = id;
+  // linearRGB (spec default): sRGB filter math quantizes visibly in Safari's
+  // software SVG pipeline. Region = exactly the element box so the bezel and
+  // specular rim sit ON the edges (an oversized region floats them outside —
+  // that was the ghost-edge artifact).
+  f.setAttribute("color-interpolation-filters", "linearRGB");
+  f.setAttribute("filterUnits", "objectBoundingBox");
+  f.setAttribute("primitiveUnits", "userSpaceOnUse");
+  f.setAttribute("x", "0"); f.setAttribute("y", "0");
+  f.setAttribute("width", "1"); f.setAttribute("height", "1");
+
+  const img = (href: string, result: string) => {
     const e = document.createElementNS(ns, "feImage");
     e.setAttribute("href", href);
     e.setAttribute("x", "0"); e.setAttribute("y", "0");
-    // 100% → the feImage fills the whole filter region regardless of card size, so
-    // the bezel gradient reaches every edge (a fixed px size only refracted a corner).
     e.setAttribute("width", "100%"); e.setAttribute("height", "100%");
     e.setAttribute("preserveAspectRatio", "none");
     e.setAttribute("result", result);
@@ -82,39 +83,60 @@ function inject(): void {
   };
   const blur = document.createElementNS(ns, "feGaussianBlur");
   blur.setAttribute("in", "SourceGraphic");
-  blur.setAttribute("stdDeviation", "2"); // px, gentle pre-blur before displacement
+  blur.setAttribute("stdDeviation", "2");
   blur.setAttribute("result", "blurred");
-
-  const dispMap = document.createElementNS(ns, "feDisplacementMap");
-  dispMap.setAttribute("in", "blurred");
-  dispMap.setAttribute("in2", "displacementMap");
-  // px of max refraction. 80 sampled far past the element's painted bounds
-  // (the ::before capture clips at the border box), smearing ghost edges into
-  // the bezel zone on small/narrow surfaces — 32 keeps a visible lens bend
-  // while staying within what the overlay actually has pixels for.
-  dispMap.setAttribute("scale", "32");
-  dispMap.setAttribute("xChannelSelector", "R");
-  dispMap.setAttribute("yChannelSelector", "G");
-  dispMap.setAttribute("result", "refracted");
-
-  const specTrans = document.createElementNS(ns, "feComponentTransfer");
-  specTrans.setAttribute("in", "specularMap");
-  specTrans.setAttribute("result", "specularAlpha");
-  const funcA = document.createElementNS(ns, "feFuncA");
-  funcA.setAttribute("type", "linear");
-  funcA.setAttribute("slope", String(10 / 10)); // specular 10 → opacity 1.0
-  specTrans.appendChild(funcA);
-
+  const dm = document.createElementNS(ns, "feDisplacementMap");
+  dm.setAttribute("in", "blurred"); dm.setAttribute("in2", "disp");
+  dm.setAttribute("scale", "32"); // px of max bend — stays inside the capture
+  dm.setAttribute("xChannelSelector", "R"); dm.setAttribute("yChannelSelector", "G");
+  dm.setAttribute("result", "refracted");
   const blend = document.createElementNS(ns, "feBlend");
-  blend.setAttribute("in", "specularAlpha");
-  blend.setAttribute("in2", "refracted");
+  blend.setAttribute("in", "spec"); blend.setAttribute("in2", "refracted");
   blend.setAttribute("mode", "screen");
 
-  filter.append(feImg(disp.url, "displacementMap"), feImg(spec.url, "specularMap"),
-    blur, dispMap, specTrans, blend);
-  svg.appendChild(filter);
-  document.body.appendChild(svg);
+  f.append(img(disp.url, "disp"), img(spec, "spec"), blur, dm, blend);
+  defsRoot().appendChild(f);
+  filterCache.set(key, id);
+  return id;
 }
 
-if (document.body) inject();
-else addEventListener("DOMContentLoaded", inject, { once: true });
+const bucket = (v: number) => Math.max(BUCKET, Math.round(v / BUCKET) * BUCKET);
+
+function assign(el: HTMLElement): void {
+  const { width, height } = el.getBoundingClientRect();
+  if (width < MIN_W || height < MIN_H) { el.style.removeProperty("--_kube"); return; }
+  const r = Math.round(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0);
+  const id = ensureFilter(bucket(width), bucket(height), r);
+  if (id) el.style.setProperty("--_kube", `url(#${id})`);
+}
+
+const seen = new WeakSet<Element>();
+const ro = new ResizeObserver((entries) => {
+  for (const e of entries) {
+    if (!(e.target as HTMLElement).isConnected) { ro.unobserve(e.target); continue; }
+    assign(e.target as HTMLElement);
+  }
+});
+
+let scanQueued = false;
+function scan(): void {
+  scanQueued = false;
+  document.querySelectorAll<HTMLElement>(LIQUID_HOSTS).forEach((el) => {
+    if (seen.has(el)) return;
+    seen.add(el);
+    ro.observe(el);  // fires immediately with the initial size → assign()
+  });
+}
+function queueScan(): void {
+  if (scanQueued) return;
+  scanQueued = true;
+  requestAnimationFrame(scan);
+}
+
+function boot(): void {
+  scan();
+  // React mounts surfaces long after load — rescan on DOM changes (rAF-coalesced).
+  new MutationObserver(queueScan).observe(document.body, { childList: true, subtree: true });
+}
+if (document.body) boot();
+else addEventListener("DOMContentLoaded", boot, { once: true });

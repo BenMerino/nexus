@@ -279,9 +279,9 @@
 /* ── LIQUID GLASS — the chrome shells refract too ────────────────────────────
    Header + sidebar use the SAME cross-browser overlay recipe as the content
    surfaces (see dna-bridge.css): a ::before that captures the backdrop via
-   backdrop-filter, then refracts it with filter: url(#lg-kube). NOT
-   backdrop-filter: url() (Chromium-only, flaky — WebKit 245510). So NO glass
-   element is left out, and it works in Chrome/Safari/Firefox. Chrome glass is
+   backdrop-filter, then refracts it with the element's own size-matched filter
+   (--_kube, assigned per element by lg/kube-filter.ts). NOT
+   backdrop-filter: url() (Chromium-only, flaky — WebKit 245510). Chrome glass is
    N9-owned (defined here), so its liquid override lives here too. The overlay sits
    at z-index -1 (isolation:isolate traps it in the shell) so nav + header items
    stay sharp above it. */
@@ -307,7 +307,9 @@
      always sample a frosted capture. */
   backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
   -webkit-backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
-  filter: url(#lg-kube);
+  /* Per-element size-matched filter, assigned by lg/kube-filter.ts — a shared
+     normalized texture can't align to a 20:1 bar (ghost edges at the ends). */
+  filter: var(--_kube, none);
 }
 
 /* ONE shell shape on every page, public and private (N9): the sidebar spans

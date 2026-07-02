@@ -315,19 +315,26 @@ body > #dna-mount, body > main, body > div {
   border-radius: var(--radius-card);
   box-shadow: inset 0 1px 0 var(--lg-highlight-top), inset 0 -1px 0 var(--lg-highlight-bottom);
 }
-/* ═══ LIQUID GLASS — same ONE-GLASS surface set, refracting the real backdrop ═══
-   When data-lg-liquid is on, every glass surface listed above gets the kube
-   refraction that bends the actual page behind it — the library's true liquid mode.
+/* ═══ LIQUID GLASS — SCOPED surface set, refracting the real backdrop ═══════════
+   When data-lg-liquid is on, the MAJOR glass surfaces get the kube refraction
+   that bends the actual page behind them. Deliberately NOT the full ONE-GLASS
+   list: refraction on every chip/pop/row was the Safari performance killer
+   (each overlay = a backdrop capture + CPU-rasterized SVG filter, re-run per
+   scroll frame) and small geometry is where lens artifacts live. Only card-
+   scale surfaces refract; everything else keeps the frosted base glass.
+   KEEP IN SYNC with LIQUID_HOSTS in lg/kube-filter.ts (the per-element filter
+   engine) and the header/sidebar overlay in app-chrome.css.
 
    TECHNIQUE (cross-browser): NOT backdrop-filter: url() — that's Chromium-only and
    flaky (WebKit bug 245510; Firefox unsupported), and an invalid url() in the
    shorthand can drop the whole backdrop-filter (losing the blur too). Instead the
    working recipe (samasante/liquid-glass): a ::before overlay that CAPTURES the
    backdrop into its own layer via backdrop-filter (blur+sat, the base glass look),
-   then displaces THAT layer with filter: url(#lg-kube). filter on the overlay warps
-   only the captured backdrop copy, never the card's own box/text (those live on the
-   element, above the z-0 overlay). Works in Chrome, Safari, Firefox.
-   Same selector list as the base glass rule — the SINGLE source, no drift. */
+   then displaces THAT layer with a PER-ELEMENT filter — lg/kube-filter.ts
+   measures each surface and assigns a size-matched filter via the host's
+   --_kube property (one shared normalized texture can't align to arbitrary
+   aspect/radius; that mismatch was the ghost-edge artifact). Unassigned or
+   too-small surfaces resolve var(--_kube, none) → frost only, no refraction. */
 /* NOTE the [data-lg][data-lg-liquid] double-attr: the base glass rule in
    lg-glass.css (:root[data-lg] .kpi{backdrop-filter:blur}) is (0,3,0) and loads
    AFTER this file, so a plain :root[data-lg-liquid] .kpi (also 0,3,0) LOSES the tie
@@ -335,19 +342,10 @@ body > #dna-mount, body > main, body > div {
    frosted flat layer, and refraction is invisible. Stacking both attrs → (0,4,0)
    wins outright, so the host's backdrop-filter really goes to none and the overlay
    can sample the RAW page behind the card. (Verified via browser probe.) */
-:root[data-lg][data-lg-liquid] .card, :root[data-lg][data-lg-liquid] .panel, :root[data-lg][data-lg-liquid] .kpi,
-:root[data-lg][data-lg-liquid] .tenant-rail, :root[data-lg][data-lg-liquid] .stat,
-:root[data-lg][data-lg-liquid] .gc-community, :root[data-lg][data-lg-liquid] .omni-pop,
-:root[data-lg][data-lg-liquid] .sidebar-search-results, :root[data-lg][data-lg-liquid] .tweaks-panel,
+:root[data-lg][data-lg-liquid] .card, :root[data-lg][data-lg-liquid] .panel,
+:root[data-lg][data-lg-liquid] .kpi, :root[data-lg][data-lg-liquid] .stat,
 :root[data-lg][data-lg-liquid] .surface, :root[data-lg][data-lg-liquid] .glass-surface,
-:root[data-lg][data-lg-liquid] .profile-hero, :root[data-lg][data-lg-liquid] .profile-panel,
-:root[data-lg][data-lg-liquid] .profile-stat, :root[data-lg][data-lg-liquid] .paper-card,
-:root[data-lg][data-lg-liquid] .hover-card, :root[data-lg][data-lg-liquid] .node-detail-pane,
-:root[data-lg][data-lg-liquid] .graph-filters, :root[data-lg][data-lg-liquid] .graph-canvas,
-:root[data-lg][data-lg-liquid] .detail-panel, :root[data-lg][data-lg-liquid] #graph-container,
-:root[data-lg][data-lg-liquid] .source, :root[data-lg][data-lg-liquid] .normalized,
-:root[data-lg][data-lg-liquid] .profile-card, :root[data-lg][data-lg-liquid] .project-card,
-:root[data-lg][data-lg-liquid] .tm-card {
+:root[data-lg][data-lg-liquid] .profile-hero, :root[data-lg][data-lg-liquid] .profile-panel {
   /* the element hosts the overlay + stacks its real content above it; the element
      itself no longer carries a backdrop-filter (the ::before owns the glass now). */
   position: relative;
@@ -356,18 +354,9 @@ body > #dna-mount, body > main, body > div {
   -webkit-backdrop-filter: none;
 }
 :root[data-lg-liquid] .card::before, :root[data-lg-liquid] .panel::before,
-:root[data-lg-liquid] .kpi::before, :root[data-lg-liquid] .tenant-rail::before,
-:root[data-lg-liquid] .stat::before, :root[data-lg-liquid] .gc-community::before,
-:root[data-lg-liquid] .omni-pop::before, :root[data-lg-liquid] .sidebar-search-results::before,
-:root[data-lg-liquid] .tweaks-panel::before, :root[data-lg-liquid] .surface::before,
-:root[data-lg-liquid] .glass-surface::before, :root[data-lg-liquid] .profile-hero::before,
-:root[data-lg-liquid] .profile-panel::before, :root[data-lg-liquid] .profile-stat::before,
-:root[data-lg-liquid] .paper-card::before, :root[data-lg-liquid] .hover-card::before,
-:root[data-lg-liquid] .node-detail-pane::before, :root[data-lg-liquid] .graph-filters::before,
-:root[data-lg-liquid] .graph-canvas::before, :root[data-lg-liquid] .detail-panel::before,
-:root[data-lg-liquid] #graph-container::before, :root[data-lg-liquid] .source::before,
-:root[data-lg-liquid] .normalized::before, :root[data-lg-liquid] .profile-card::before,
-:root[data-lg-liquid] .project-card::before, :root[data-lg-liquid] .tm-card::before {
+:root[data-lg-liquid] .kpi::before, :root[data-lg-liquid] .stat::before,
+:root[data-lg-liquid] .surface::before, :root[data-lg-liquid] .glass-surface::before,
+:root[data-lg-liquid] .profile-hero::before, :root[data-lg-liquid] .profile-panel::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -380,9 +369,11 @@ body > #dna-mount, body > main, body > div {
   /* capture the backdrop into this layer (the base glass blur+sat)… */
   backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
   -webkit-backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
-  /* …then refract that captured backdrop. filter (not backdrop-filter) works in
-     every browser and only warps this overlay layer, never the card's content. */
-  filter: url(#lg-kube);
+  /* …then refract that captured backdrop with the element's OWN size-matched
+     filter (assigned by lg/kube-filter.ts; none until assigned). filter (not
+     backdrop-filter) works in every browser and only warps this overlay layer,
+     never the card's content. */
+  filter: var(--_kube, none);
 }
 /* A surface nested inside a nexus card steps to rung 2 (and drops the re-blur).
    .chart-surface joins this set: the chart's PLOT AREA is a rung-2 glass panel
