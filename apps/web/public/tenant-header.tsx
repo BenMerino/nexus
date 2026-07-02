@@ -6,11 +6,16 @@ import { BaseAction } from '../ui/primitives';
 interface TenantLike { name: string; ror_id: string | null; logo_url: string | null; }
 export interface PublicNavItem { id: string; label: string; }
 
-/** A trailing breadcrumb segment: a name plus an optional identifier sub
- *  (label + id, linking out to the canonical registry). The tenant is crumb 0
- *  and rendered separately; these are what the authed shell appends (the
- *  signed-in academic by ORCID, then their faculty/department). */
-export interface Crumb { name: string; sub?: { label: string; id: string; href: string } | null; }
+/** A sub-line beneath a crumb name: a plain profile fact (faculty) or a linked
+ *  identifier (label + id linking out to the canonical registry). */
+export interface CrumbSub { label?: string; text: string; href?: string }
+
+/** A trailing breadcrumb segment: a name plus zero or more sub-lines stacked
+ *  under it. The tenant is crumb 0 (rendered separately); the authed shell
+ *  appends one Author crumb whose subs are its ORCID and faculty — both
+ *  author-profile facts, not peer entities (per DGA_DESIGN: faculty is an
+ *  Author field, only Institution→Author are governed entities). */
+export interface Crumb { name: string; subs?: CrumbSub[] }
 
 const ROR_HOST = 'https://ror.org/';
 function rorHref(raw: string): string { return raw.startsWith('http') ? raw : `${ROR_HOST}${raw}`; }
@@ -99,11 +104,14 @@ export function TenantPublicHeader({
               <span className="public-crumb-sep" aria-hidden="true">›</span>
               <span className="public-crumb">
                 <span className="public-tenant-name">{c.name}</span>
-                {c.sub ? (
-                  <span className="public-tenant-sub">
-                    {c.sub.label} <a href={c.sub.href} target="_blank" rel="noopener noreferrer">{c.sub.id}</a>
+                {(c.subs ?? []).map((s, j) => (
+                  <span className="public-tenant-sub" key={j}>
+                    {s.label ? `${s.label} ` : null}
+                    {s.href
+                      ? <a href={s.href} target="_blank" rel="noopener noreferrer">{s.text}</a>
+                      : s.text}
                   </span>
-                ) : null}
+                ))}
               </span>
             </React.Fragment>
           ))}
