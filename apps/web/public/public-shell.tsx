@@ -47,7 +47,12 @@ export function PublicShell({
   yearRange, lastUpdated, children,
 }: PublicShellProps) {
   return (
-    <div className="app">
+    /* app-headered pins the fixed-chrome layout from the FIRST paint. Without
+       it the layout hangs on `:has(> .public-header)` — false until the tenant
+       fetch resolves and the header mounts, so the pre-fetch skeleton painted
+       in grid mode (sidebar column + .public-main's fixed-sidebar padding =
+       double offset) and snapped ~280px left when the header landed. */
+    <div className="app app-headered">
       {/* Header is now a breadcrumb only — no search slot. Sidebar carries the
           omnibox as its top row, same placement as the authed SidebarSearch. */}
       {tenant && (
