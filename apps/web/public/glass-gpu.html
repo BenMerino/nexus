@@ -5,18 +5,34 @@
   <title>Glass GPU — physical refraction</title>
   <link rel="stylesheet" href="/shared.css">
   <style>
-    /* Glass GPU — OUR system's physically-based glass demo. One WebGPU pass
-       (lg/gpu-glass.ts) renders the real dark-sky palette AND a glass slab
-       whose refraction is ray-traced from its geometry: Snell at entry and
-       exit, total internal reflection, Beer–Lambert absorption, Fresnel rim.
-       No SVG filters, no displacement textures, no backdrop-filter — the
-       optics are computed from the element's form. Corner radius comes from
-       --radius-card, so the shape speaks the platform's geometry.
+    /* Glass GPU — OUR system's physically-based glass demo. The page's live
+       #sky-bg engine is the ONE background; the WebGPU canvas above it is
+       transparent except the glass slab, whose refraction is ray-traced from
+       its geometry (lg/gpu-glass.ts): Snell entry/exit, total internal
+       reflection, Beer–Lambert absorption, Fresnel rim. No SVG filters, no
+       displacement textures, no backdrop-filter. Corner radius comes from
+       --radius-card. Drag the slab — it's a shader uniform.
        Page-specific styles only (N9). */
     /* width/height 100% is REQUIRED: inset alone doesn't stretch a replaced
        element (canvas keeps its intrinsic device-px size — 2× the viewport on
        retina, anchored top-left, pushing the slab off-center). */
     .gpu-stage { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 2; display: block; }
+    /* Card content — real DOM text riding the slab (the mount keeps left/top
+       at the slab's center; pointer-events:none so drags pass to the canvas). */
+    .gpu-card-body {
+      position: fixed; z-index: 3; width: 432px;
+      transform: translate(-50%, -50%);
+      pointer-events: none; color: var(--fg);
+    }
+    .gpu-card-body h3 {
+      margin: 0 0 var(--space-2);
+      font-family: var(--font-display); font-size: var(--text-h3);
+      font-weight: var(--weight-display); letter-spacing: var(--tracking-h);
+    }
+    .gpu-card-body p {
+      margin: 0; font-size: var(--text-detail); color: var(--fg-muted);
+      line-height: var(--leading-body);
+    }
     .gpu-note {
       position: fixed; left: 16px; bottom: 12px; z-index: 3;
       font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim);
@@ -30,13 +46,24 @@
 </head>
 <body>
   <canvas class="gpu-stage" id="gpu-glass"></canvas>
+  <div class="gpu-card-body" id="gpu-card-body">
+    <h3>Physical glass</h3>
+    <p>This card is a ray-traced slab: light enters through the curved bezel,
+       bends by Snell's law, travels the glass, exits, and lands on the sky
+       behind it. The rim brightness is Fresnel; the tint is absorption.
+       Drag me — the optics follow the form wherever it sits.</p>
+  </div>
   <div class="gpu-fallback" id="gpu-fallback">WebGPU unavailable — this demo has no fallback by design (physics or nothing).</div>
   <div class="gpu-note">glass-gpu — ray-traced refraction from the element's form (Snell · TIR · Beer–Lambert · Fresnel)</div>
   <script type="module">
     import { mountGpuGlass } from "/lg/gpu-glass.ts";
-    const ok = await mountGpuGlass(document.getElementById("gpu-glass"));
+    const ok = await mountGpuGlass(
+      document.getElementById("gpu-glass"),
+      document.getElementById("gpu-card-body"),
+    );
     if (!ok) {
-      document.getElementById("gpu-glass").style.display = "none";
+      for (const id of ["gpu-glass", "gpu-card-body"])
+        document.getElementById(id).style.display = "none";
       document.getElementById("gpu-fallback").style.display = "grid";
     }
   </script>

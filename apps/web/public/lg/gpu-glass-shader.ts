@@ -9,19 +9,26 @@
 //   Beer–Lambert absorption over the internal path length; Schlick-Fresnel
 //   mixes in the reflected environment. No textures, no displacement maps —
 //   the optics follow from the geometry.
+// There is NO background pass here: the canvas is TRANSPARENT outside the
+// slab, so the page's already-running #sky-bg engine shows through untouched.
+// SKY_WGSL (exported by that engine — its own function, not a re-derivation)
+// is evaluated ONLY for the refracted/reflected samples inside the glass, so
+// the bent image agrees with the live engine behind the canvas.
+import { SKY_WGSL } from "../sky/sky-gpu";
+
 export const GLASS_SHADER = /* wgsl */`
 struct U {
   a: vec4f,   // res.x, res.y, backgroundGap, ior
   b: vec4f,   // center.x, center.y, halfW, halfH   (device px)
-  c: vec4f,   // cornerRadius, bezelRadius, slabThickness, unused
-  top: vec4f, // sky top color (rgb 0..1)
-  hor: vec4f, // sky horizon color (rgb 0..1)
+  c: vec4f,   // cornerRadius, bezelRadius, slabThickness, glowX (0..1)
+  top: vec4f, // sky top color (rgb 0..1), a = HDR ceiling
+  hor: vec4f, // sky horizon color (rgb 0..1), a = glow intensity
 };
 @group(0) @binding(0) var<uniform> u: U;
+${SKY_WGSL}
 
 fn sky(p: vec2f) -> vec3f {
-  let v = clamp((p.y / u.a.y - 0.35) / 0.65, 0.0, 1.0);
-  return mix(u.top.rgb, u.hor.rgb, v);
+  return skyColor(p / u.a.xy, u.top.rgb, u.hor, u.c.w, u.top.w);
 }
 
 // Signed distance to the element's rounded-rect footprint (device px).
@@ -48,7 +55,9 @@ fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
 @fragment
 fn fs(@builtin(position) frag: vec4f) -> @location(0) vec4f {
   let p = frag.xy;
-  if (sdRR(p) >= 0.0) { return vec4f(sky(p), 1.0); }
+  // Outside the slab: fully transparent — the LIVE background engine behind
+  // this canvas is the one and only background.
+  if (sdRR(p) >= 0.0) { return vec4f(0.0); }
 
   // Surface normal from the form's height field (central differences).
   let eps = 1.0;

@@ -7,6 +7,31 @@
 
 type RGB = [number, number, number];
 
+// THE sky color function — exported so other GPU passes (the glass demo,
+// lg/gpu-glass-shader.ts) render the exact same engine background instead of
+// re-deriving an inferior gradient. Single WGSL source; consumers interpolate
+// it into their own shaders.
+export const SKY_WGSL = /* wgsl */`
+fn skyColor(uv: vec2f, topc: vec3f, horc: vec4f, glowX: f32, ceil_: f32) -> vec3f {
+  let v = clamp((uv.y - 0.35) / 0.65, 0., 1.);
+  var col = mix(topc, horc.rgb, v);
+
+  let d = vec2f((uv.x - glowX) / 0.6, (uv.y - 1.0) / 0.42);
+  let g = clamp(1.0 - length(d), 0., 1.);
+  col = col + horc.rgb * (g * g) * horc.a;
+
+  // Hue-preserving rolloff for the over-range (HDR) part only. Values in [0,1]
+  // pass through untouched; above 1.0 we knee luminance toward the ceiling,
+  // scaling the whole RGB vector so the warm glow keeps its hue.
+  let lum = dot(col, vec3f(0.2126, 0.7152, 0.0722));
+  if (lum > 1.0 && ceil_ > 1.0) {
+    let over = lum - 1.0;
+    let knee = 1.0 + (ceil_ - 1.0) * (over / (over + (ceil_ - 1.0)));
+    col = col * (knee / lum);
+  }
+  return col;
+}`;
+
 const SHADER = /* wgsl */`
 struct U {
   topc : vec4f,    // sky-top color (rgb), a unused
@@ -16,6 +41,7 @@ struct U {
   ceil : f32,      // display headroom ceiling (1.0 SDR, >1 HDR)
 };
 @group(0) @binding(0) var<uniform> u : U;
+${SKY_WGSL}
 
 @vertex
 fn vs(@builtin(vertex_index) i : u32) -> @builtin(position) vec4f {
@@ -25,29 +51,13 @@ fn vs(@builtin(vertex_index) i : u32) -> @builtin(position) vec4f {
 
 @fragment
 fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
-  let uv = frag.xy / u.res;                 // 0..1, y down
-  let v = clamp((uv.y - 0.35) / 0.65, 0., 1.);
-  var col = mix(u.topc.rgb, u.horc.rgb, v);
-
-  let d = vec2f((uv.x - u.glowX) / 0.6, (uv.y - 1.0) / 0.42);
-  let g = clamp(1.0 - length(d), 0., 1.);
-  col = col + u.horc.rgb * (g * g) * u.horc.a;
-
-  // Hue-preserving rolloff for the over-range (HDR) part only. Values in [0,1]
-  // pass through untouched; above 1.0 we knee luminance toward the ceiling,
-  // scaling the whole RGB vector so the warm glow keeps its hue.
-  let lum = dot(col, vec3f(0.2126, 0.7152, 0.0722));
-  if (lum > 1.0 && u.ceil > 1.0) {
-    let over = lum - 1.0;
-    let knee = 1.0 + (u.ceil - 1.0) * (over / (over + (u.ceil - 1.0)));
-    col = col * (knee / lum);
-  }
-  return vec4f(col, 1.0);
+  return vec4f(skyColor(frag.xy / u.res, u.topc.rgb, u.horc, u.glowX, u.ceil), 1.0);
 }
 `;
 
 // SDR → 1.0 (no headroom); HDR → conservative ceiling. No exact-nits API today.
-const displayHeadroom = () =>
+// Exported for consumers matching the engine HDR behavior (lg/gpu-glass.ts).
+export const displayHeadroom = () =>
   (window.matchMedia && matchMedia("(dynamic-range: high)").matches) ? 2.0 : 1.0;
 
 export interface SkyGPU {
