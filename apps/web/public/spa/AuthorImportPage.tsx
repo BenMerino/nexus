@@ -14,12 +14,6 @@ import { useLegacyMounts } from './legacy-mount';
 // id (#author-search, #suggestions, #status, #results) and the inline
 // onclick="searchAuthor()" are preserved verbatim so author-import.js binds.
 const BODY = `
-  <header class="view-head">
-    <div>
-      <h1 class="view-title">Author import</h1>
-    </div>
-  </header>
-
   <div class="card">
     <label class="form-label">Author name</label>
     <div class="flex gap-8">

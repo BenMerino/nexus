@@ -21,9 +21,6 @@ import '../claustro.css';
 
 const BODY = `
   <header class="view-head">
-    <div>
-      <h1 class="view-title">Projects</h1>
-    </div>
     <div class="view-meta">
       <span class="tag mono" id="tag-count">0 PROJECTS</span>
       <span class="tag mono tag-muted" id="tag-amount">$0</span>

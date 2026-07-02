@@ -14,9 +14,6 @@ import { useLegacyMounts } from './legacy-mount';
 
 const BODY = `
   <header class="view-head">
-    <div>
-      <h1 class="view-title">Submit DOI</h1>
-    </div>
     <div class="view-meta">
       <span class="tag mono">CROSSREF · OPENALEX · S2 · DATACITE</span>
     </div>

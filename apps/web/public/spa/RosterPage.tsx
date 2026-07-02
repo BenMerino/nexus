@@ -41,12 +41,6 @@ const styles = `
 
 const BODY = `
       <div class="view">
-        <header class="view-head">
-          <div>
-            <h1 class="view-title">Roster</h1>
-          </div>
-        </header>
-
         <div class="card" id="overview-card" style="display:none;">
           <div class="roster-toolbar">
             <button class="tool-btn" id="tool-import">Import roster</button>

@@ -53,7 +53,6 @@ function App() {
   return (
     <div className="view">
       <header className="view-head">
-        <div><h1 className="view-title">Papers</h1></div>
         {total != null && <div className="view-meta"><span className="mono muted">{total.toLocaleString()} indexed</span></div>}
       </header>
       <section className="card">

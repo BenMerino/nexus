@@ -59,7 +59,6 @@ function App() {
   const t = data?.totals;
   return (
     <div className="view">
-      <header className="view-head"><div><h1 className="view-title">Faculties</h1></div></header>
       <div className="stat-row" style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         {data
           ? (<>

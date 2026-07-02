@@ -61,7 +61,6 @@ function App() {
   return (
     <div className="view">
       <header className="view-head">
-        <div><h1 className="view-title">Journals</h1></div>
         {data && <div className="view-meta"><span className="mono muted">{data.length.toLocaleString()} venues</span></div>}
       </header>
       <section className="card">

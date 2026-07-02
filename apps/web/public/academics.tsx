@@ -52,7 +52,6 @@ function App() {
   return (
     <div className="view">
       <header className="view-head">
-        <div><h1 className="view-title">Academics</h1></div>
         <input className="sidebar-search-input" style={{ maxWidth: 280 }}
           placeholder="Search researchers…" value={q} onChange={e => setQ(e.target.value)} />
       </header>

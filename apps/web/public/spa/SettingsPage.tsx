@@ -33,12 +33,6 @@ const styles = `
 // preserved verbatim so the mounted modules and their window.* handlers wire up
 // identically to settings.html).
 const BODY = `
-  <header class="view-head">
-    <div>
-      <h1 class="view-title">Settings</h1>
-    </div>
-  </header>
-
   <div class="card" id="branding-card" style="display:none;">
     <h3 id="branding-title" style="font-family: var(--font-display); font-weight: var(--weight-body); font-size: var(--text-h2); margin-bottom: 18px;">University branding</h3>
     <div class="branding-grid">

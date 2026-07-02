@@ -43,12 +43,6 @@ export const ADMIN_STYLES = `
 // the runtime-generated openTenant/createNewTenant/saveTenant/addUser/etc.) is
 // preserved verbatim so the legacy admin-*.js modules bind against them.
 export const ADMIN_BODY = `
-  <header class="view-head">
-    <div>
-      <h1 class="view-title">Console</h1>
-    </div>
-  </header>
-
   <div id="no-access" style="display:none;" class="card"><p>Superadmin access required.</p></div>
 
   <div id="tenant-overview" style="display:none;">

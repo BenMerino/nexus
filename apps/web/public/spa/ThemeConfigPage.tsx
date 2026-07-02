@@ -65,7 +65,6 @@ export function ThemeConfigPage() {
   if (!isSuper) {
     return (
       <div className="page">
-        <h1>Theme palette</h1>
         <div className="status error">Superadmin access required.</div>
       </div>
     );
@@ -73,7 +72,6 @@ export function ThemeConfigPage() {
 
   return (
     <div className="page">
-      <h1>Theme palette</h1>
       <p style={{ color: 'var(--fg-muted)', marginBottom: 16 }}>
         Core surface colors for each mode. Users see light or dark to match their system setting.
         The toggle below is a preview; Save persists the palette for everyone.
