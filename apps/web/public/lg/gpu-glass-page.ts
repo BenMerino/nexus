@@ -14,6 +14,7 @@ import { attachSurface, detachSurface, drawSurface } from "./gpu-glass-element";
 import type { Surface, Frame } from "./gpu-glass-element";
 import { createSceneRenderer } from "./gpu-scene-render";
 import { buildSceneFromDOM, captureAuthorColor } from "./gpu-scene-dom";
+import { captureTextStyles } from "./gpu-scene-text-dom";
 import { bootGlassDevice } from "./gpu-glass-device";
 
 const dprNow = () => Math.min(window.devicePixelRatio || 1, 2);
@@ -41,6 +42,7 @@ export async function mountGpuGlassPage(): Promise<(() => void) | false> {
     for (const el of document.querySelectorAll<HTMLElement>(GLASS_HOSTS)) {
       if (surfaces.has(el)) continue;
       captureAuthorColor(el);      // read the fill BEFORE the CSS zeroes it
+      captureTextStyles(el);       // read text color/size BEFORE it's zeroed
       const s = attachSurface(sh, el);
       if (!s) continue;
       surfaces.set(el, s);

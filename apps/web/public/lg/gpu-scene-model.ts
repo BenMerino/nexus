@@ -12,8 +12,25 @@ export type RectNode = {
   color: [number, number, number, number];       // 0..1 rgba (fill)
 };
 
-// Future: | TextNode | ChartNode — same page-coord contract.
-export type SceneNode = RectNode;
+// A run of text on one baseline. Laid out to glyph quads by gpu-scene-text.ts.
+export type TextNode = {
+  kind: "text";
+  text: string;
+  x: number; y: number;          // page px; y = TOP of the line box
+  size: number;                  // font px
+  family: "sans" | "mono";
+  color: [number, number, number, number];
+};
+
+export type ChartNode = {
+  kind: "poly";                  // a filled/stroked polyline (chart series)
+  pts: number[];                 // flat x0,y0,x1,y1,… page px
+  color: [number, number, number, number];
+  width: number;                 // stroke px (0 = filled area to baselineY)
+  baselineY: number;             // page px, for area fills
+};
+
+export type SceneNode = RectNode | TextNode | ChartNode;
 
 export type Scene = {
   nodes: SceneNode[];
@@ -46,4 +63,34 @@ export function rectCount(scene: Scene): number {
   let n = 0;
   for (const node of scene.nodes) if (node.kind === "rect") n++;
   return n;
+}
+
+function packColor(c: [number, number, number, number]): number {
+  const u = new Uint32Array(1);
+  u[0] = (Math.round(c[3] * 255) << 24 | Math.round(c[2] * 255) << 16
+    | Math.round(c[1] * 255) << 8 | Math.round(c[0] * 255)) >>> 0;
+  return new Float32Array(u.buffer)[0];
+}
+
+export function polySegCount(scene: Scene): number {
+  let n = 0;
+  for (const node of scene.nodes)
+    if (node.kind === "poly") n += Math.max(0, node.pts.length / 2 - 1);
+  return n;
+}
+
+// Expand each polyline into per-segment instances: 8 floats — (x0,y0,x1,y1)
+// page px, (halfWidth, packedColor, _, _). One segment per adjacent point pair.
+export function packPolys(scene: Scene, dpr: number): Float32Array {
+  const polys = scene.nodes.filter((n): n is ChartNode => n.kind === "poly");
+  const out: number[] = [];
+  for (const p of polys) {
+    const col = packColor(p.color);
+    const hw = Math.max(p.width, 1) * 0.5 * dpr;
+    for (let i = 0; i + 3 < p.pts.length; i += 2) {
+      out.push(p.pts[i] * dpr, p.pts[i + 1] * dpr, p.pts[i + 2] * dpr, p.pts[i + 3] * dpr,
+        hw, col, 0, 0);
+    }
+  }
+  return new Float32Array(out);
 }

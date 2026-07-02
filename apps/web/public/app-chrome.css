@@ -470,6 +470,21 @@
   isolation: isolate;   /* trap the z:-1 layer under this host's content */
 }
 [data-glass="gpu"] [data-gpu-glass]::before { display: none; }
+/* GPU scene owns the CONTENT visuals: card text/marks are RE-DRAWN into the
+   scene texture (gpu-scene-*), so hide the DOM paint while keeping the nodes
+   for layout, hit-testing and a11y. transparent (not display:none) preserves
+   box geometry the scene reads each frame. Chart canvases/SVG likewise hidden
+   — series re-emitted as GPU geometry. Fixed CHROME (header/sidebar) is
+   EXEMPT: it's the glass itself, its text/icons ride on top as sharp DOM
+   (like a toolbar over refracted content), so it keeps its normal paint. */
+[data-glass="gpu"] [data-gpu-glass]:not(.public-header):not(.sidebar) * {
+  color: transparent !important;
+  text-shadow: none !important;
+}
+[data-glass="gpu"] [data-gpu-glass]:not(.public-header):not(.sidebar) svg,
+[data-glass="gpu"] [data-gpu-glass]:not(.public-header):not(.sidebar) canvas:not(.gpu-glass-layer) {
+  visibility: hidden !important;
+}
 /* width/height 100% is REQUIRED: inset alone doesn't stretch a replaced
    element — a <canvas> keeps its intrinsic backing-store size (300×150, or
    whatever gpu-glass-element.ts last set in device px) and the UA scales
