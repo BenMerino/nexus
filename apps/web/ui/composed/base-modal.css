@@ -1,0 +1,48 @@
+.base-modal-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    padding: var(--space-4);
+}
+.base-modal-backdrop {
+    position: absolute; inset: 0;
+    background-color: color-mix(in srgb, var(--bg-main) 55%, transparent);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+.base-modal-panel {
+    position: relative;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-section); /* `section` role — = 2xl (36px), no visual change */
+    /* Concentric-nesting publication (same contract BaseBox emits for
+     * radius+pad boxes): descendants deriving their corner read
+     * parent radius − pad − border. Must mirror border-radius above. */
+    --_nest-r: var(--radius-section);
+    box-shadow: var(--shadow-2xl);
+    width: 100%;
+    max-height: 80vh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+.base-modal-panel--sm { max-width: 24rem; }
+.base-modal-panel--md { max-width: 32rem; }
+.base-modal-panel--lg { max-width: 48rem; }
+.base-modal-panel--xl { max-width: 64rem; }
+.base-modal-header {
+    display: flex; align-items: center; gap: var(--space-3);
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--border-main);
+}
+.base-modal-body {
+    padding: var(--space-6);
+    overflow: auto;
+    flex: 1 1 auto;
+    /* Must mirror the padding above — see --_nest-r on the panel. */
+    --_nest-pad: var(--space-6);
+}
+.base-modal-footer {
+    padding: var(--space-4) var(--space-6);
+    background-color: var(--bg-elevated);
+    display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3);
+    border-top: 1px solid var(--border-main);
+}

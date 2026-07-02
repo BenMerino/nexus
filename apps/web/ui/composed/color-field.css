@@ -1,0 +1,39 @@
+/* ── ColorField ──────────────────────────────────────── */
+
+/* The swatch is a leading affordance INSIDE the InputFrame, following the
+ * control cascade, inset UNIFORMLY by --swatch-inset on top, bottom AND left
+ * (the frame's larger --_ctl-px left padding is cancelled by a negative inline
+ * margin down to --swatch-inset, so the gap is identical on all three sides).
+ *
+ * A CONCENTRIC corner chain, three levels deep — each nests by (corner − inset
+ * − border), the .nest-row mechanic:
+ *   frame   = --_ctl-radius
+ *   swatch  = frame  − inset − border   → --swatch-corner   (outer, bordered)
+ *   fill    = swatch − inset − border   → --swatch-fill-corner (inner colour)
+ * The bordered outer box + inset inner colour is the DOUBLE border: a hairline
+ * frame around the colour, the colour floating --space-0-5 inside it, both
+ * corners curving parallel to the frame by construction. */
+.color-field__swatch {
+    --swatch-inset: var(--space-1);
+    --swatch-fill-inset: var(--space-0-5);
+    --swatch-size: calc(var(--_ctl-h) - 2 * var(--swatch-inset));
+    --swatch-corner: max(0px, calc(var(--_ctl-radius) - var(--swatch-inset) - var(--border-width-hairline)));
+    --swatch-fill-corner: max(0px, calc(var(--swatch-corner) - var(--swatch-fill-inset) - var(--border-width-hairline)));
+    inline-size: var(--swatch-size);
+    block-size: var(--swatch-size);
+    margin-inline-start: calc(-1 * (var(--_ctl-px) - var(--swatch-inset)));
+    padding: 0;
+    border: var(--border-width-hairline) solid var(--border-main);
+    border-radius: var(--swatch-corner);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.color-field__swatch::-webkit-color-swatch-wrapper { padding: var(--swatch-fill-inset); }
+.color-field__swatch::-webkit-color-swatch { border: none; border-radius: var(--swatch-fill-corner); }
+.color-field__swatch:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
+
+/* Chrome (border, radius, bg, font) all come from InputFrame — the hex input
+ * carries NO font override, so its value reads the same Inter control font as
+ * every other input/control (was monospace — a whole different font from the
+ * rest of the system). */

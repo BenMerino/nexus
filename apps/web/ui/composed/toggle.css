@@ -1,0 +1,38 @@
+/* ── Toggle ──────────────────────────────────────────── */
+
+/* Everything DERIVES from the track + one inset (--toggle-pad), so the knob is
+ * inset UNIFORMLY by construction — the gap is --toggle-pad on all four sides,
+ * never a hardcoded knob size that mismatches the content box (the old
+ * independent track 22px / knob 16px left 3px vertical vs 2px horizontal).
+ *   knob size  = track-height − 2·pad     → fills the content box
+ *   knob travel = track-width − track-height → left edge to right edge exactly
+ *   knob corner = track-radius − pad        → concentric, parallel to the track
+ *                 (the .nest-row / --seg-corner mechanic). */
+.toggle {
+    --toggle-pad: var(--space-0-5);
+    --toggle-h: 1.375rem;
+    --toggle-w: 2.5rem;
+    --knob-size: calc(var(--toggle-h) - 2 * var(--toggle-pad));
+    --knob-travel: calc(var(--toggle-w) - var(--toggle-h));
+    --knob-corner: max(0px, calc(var(--radius-pill) - var(--toggle-pad)));
+    position: relative; display: inline-flex; align-items: center;
+    flex-shrink: 0; cursor: pointer;
+    width: var(--toggle-w); height: var(--toggle-h);
+    border-radius: var(--radius-pill);
+    border: none; padding: var(--toggle-pad);
+    transition: background-color var(--motion-fast);
+}
+.toggle--sm { --toggle-h: 1.125rem; --toggle-w: 2rem; }
+.toggle--on { background-color: var(--primary); }
+.toggle--off { background-color: var(--border-main); }
+.toggle--disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
+
+.toggle__knob {
+    width: var(--knob-size); height: var(--knob-size);
+    border-radius: var(--knob-corner);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--motion-fast);
+}
+.toggle--on .toggle__knob { transform: translateX(var(--knob-travel)); }
+.toggle--off .toggle__knob { transform: translateX(0); }

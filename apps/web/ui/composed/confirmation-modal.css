@@ -1,0 +1,5 @@
+/* ── ConfirmationModal — icon chips only; modal shell comes from BaseModal ── */
+
+.confirm-icon--warning { padding: var(--space-3); border-radius: var(--radius-lg); background-color: rgba(245,158,11,0.1); }
+.confirm-icon--danger  { padding: var(--space-3); border-radius: var(--radius-lg); background-color: rgba(239,68,68,0.1); }
+.confirm-icon--info    { padding: var(--space-3); border-radius: var(--radius-lg); background-color: rgba(59,130,246,0.1); }

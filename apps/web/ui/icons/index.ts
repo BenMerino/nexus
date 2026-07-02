@@ -23,8 +23,17 @@ export {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Loader2,
   Search,
+  X,
+  Copy,
+  Info,
+  HelpCircle,
+  AlertCircle,
+  AlertTriangle,
+  CloudOff,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 // Type surface mirroring Zincro's icon-factory. lucide components are

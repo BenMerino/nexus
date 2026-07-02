@@ -5,6 +5,7 @@ import { SegmentedControl } from '../ui/composed/SegmentedControl';
 import { GraphProviders } from '../ui/graph-engine-providers';
 import { PrimitivesSection } from './dna-sections';
 import { ComposedSection } from './dna-composed';
+import { ComposedFormsSection } from './dna-composed-forms';
 import { ConcentricSection, GlassSection } from './dna-sections-corners';
 import { TypographySection } from './dna-typography';
 import { SkyScrub } from './dna-sky-scrub';
@@ -14,7 +15,7 @@ import { SkyScrub } from './dna-sky-scrub';
  * so this page is also the visual proof the contract resolves. Wrapped in
  * GraphProviders for the single DNA/accent control point. */
 
-type Tab = 'typography' | 'primitives' | 'composed' | 'concentric' | 'glass';
+type Tab = 'typography' | 'primitives' | 'composed' | 'forms' | 'concentric' | 'glass';
 
 function Gallery() {
   const [tab, setTab] = useState<Tab>('typography');
@@ -34,6 +35,7 @@ function Gallery() {
           { value: 'typography', label: 'Typography' },
           { value: 'primitives', label: 'Primitives' },
           { value: 'composed', label: 'Composed' },
+          { value: 'forms', label: 'Forms' },
           { value: 'concentric', label: 'Concentric' },
           { value: 'glass', label: 'Glass' },
         ]}
@@ -43,6 +45,7 @@ function Gallery() {
       {tab === 'typography' ? <TypographySection />
         : tab === 'primitives' ? <PrimitivesSection />
         : tab === 'composed' ? <ComposedSection />
+        : tab === 'forms' ? <ComposedFormsSection />
         : tab === 'concentric' ? <ConcentricSection />
         : <GlassSection />}
     </BaseBox>
