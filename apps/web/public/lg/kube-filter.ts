@@ -42,8 +42,14 @@ function inject(): void {
   // USER-SPACE units, not objectBoundingBox. In bbox units the feImage stretches
   // to a 1×1 unit square and the displacement map samples nearly flat → no visible
   // bend (measured: 0.27% pixel change). userSpaceOnUse + a pixel-sized feImage +
-  // a pixel scale gives a real, size-independent-enough refraction. The region is
-  // oversized (-20%..120%) so the bezel gradient at the card edges isn't clipped.
+  // a pixel scale gives a real, size-independent-enough refraction.
+  //
+  // Region = EXACTLY the element box (0..1 bbox). It was oversized (-20%..120%)
+  // "so the bezel isn't clipped", but the feImage stretches to the REGION — so
+  // oversizing floated the texture's bezel ring + specular highlight ~20%
+  // OUTSIDE the element: every surface showed a ghost doubled edge near (not
+  // on) its corners. With region = box, the bezel and specular hug the true
+  // element edges where they belong.
   const filter = document.createElementNS(ns, "filter");
   filter.id = ID;
   // linearRGB (the SVG spec default) — NOT sRGB. sRGB forces the filter chain's
@@ -56,10 +62,10 @@ function inject(): void {
   filter.setAttribute("color-interpolation-filters", "linearRGB");
   filter.setAttribute("filterUnits", "objectBoundingBox");
   filter.setAttribute("primitiveUnits", "userSpaceOnUse");
-  filter.setAttribute("x", "-0.2");
-  filter.setAttribute("y", "-0.2");
-  filter.setAttribute("width", "1.4");
-  filter.setAttribute("height", "1.4");
+  filter.setAttribute("x", "0");
+  filter.setAttribute("y", "0");
+  filter.setAttribute("width", "1");
+  filter.setAttribute("height", "1");
 
   // feImage sized in px to the texture resolution; preserveAspectRatio none lets
   // the browser scale the RES×RES map across each surface it's applied to.
@@ -82,7 +88,11 @@ function inject(): void {
   const dispMap = document.createElementNS(ns, "feDisplacementMap");
   dispMap.setAttribute("in", "blurred");
   dispMap.setAttribute("in2", "displacementMap");
-  dispMap.setAttribute("scale", "80"); // px of max refraction (was 0.09 bbox ≈ 0)
+  // px of max refraction. 80 sampled far past the element's painted bounds
+  // (the ::before capture clips at the border box), smearing ghost edges into
+  // the bezel zone on small/narrow surfaces — 32 keeps a visible lens bend
+  // while staying within what the overlay actually has pixels for.
+  dispMap.setAttribute("scale", "32");
   dispMap.setAttribute("xChannelSelector", "R");
   dispMap.setAttribute("yChannelSelector", "G");
   dispMap.setAttribute("result", "refracted");
