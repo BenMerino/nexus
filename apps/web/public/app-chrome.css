@@ -78,16 +78,10 @@
    the authed SidebarSearch fills (shell-sidebar.tsx). Shared across every
    public page's sidebar (tenant, author — N9), so it lives here, not in a
    page's own <style>. ──────────────────────────────────────────────────── */
-.sidebar .omni { position: relative; width: 100%; padding: 12px 14px 6px; }
-/* Nested · rung 2 — the fill + drop-blur come from the tonal-stacking
-   mechanism (`:root .sidebar .omni-input` in dna-bridge.css), not here.
-   This rule owns only layout + the glass rim. */
-.omni-input {
-  width: 100%; padding: 10px 14px; font-size: var(--text-detail); color: var(--fg);
-  border: var(--border-w) solid var(--border-glass); box-shadow: var(--shadow-sm);
-}
-.omni-input::placeholder { color: var(--fg-dim); }
-.omni-input:focus { outline: none; border-color: var(--accent); }
+/* The omnibox input now composes the bare SearchField (same as the authed
+   SidebarSearch) inside a .sidebar-search wrapper — the old .omni / .omni-input
+   skin is gone. Only the grouped results panel styling (.omni-pop + rows) below
+   remains, shared by TenantSearch's dropdown. */
 .omni-pop {
   position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40;
   border: var(--border-w) solid var(--border); box-shadow: var(--shadow-sm);
@@ -207,8 +201,17 @@
    #sidebar-mount — display:contents erases its BOX but not its DOM node, so
    :has(> …) never matches there. The class is the reliable signal; :has stays
    for pages that don't carry the class. */
+/* !important is REQUIRED, not lazy: `.app { display:grid }` (the OLD grid shell,
+   sidebar-as-grid-column) is defined LATER in this file at equal specificity
+   (0,1,0), so this block override lost the source-order tie — leaving the
+   fixed-chrome pages (.app-headered) wrongly in GRID mode. As a grid item the
+   content column (.public-app in the `1fr` track) resolves to min-content
+   during the mount transient → the whole content chain (public-content →
+   tenant-layout → chart-grid) collapses to 0 width and every card crushes to
+   its 48px min-content: the "cut card". The fixed-chrome shell is block (the
+   sidebar is position:fixed, content clears it via padding), never a grid. */
 .app:has(> .public-header), .app-headered {
-  display: block; height: 100vh;
+  display: block !important; height: 100vh;
 }
 .app > .public-app { height: 100%; min-height: 0; }
 .app:has(> .public-header) > .public-app { height: 100vh; }

@@ -52,12 +52,7 @@
     .panel-tag { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); border: var(--border-w) solid var(--border); padding: 3px 8px; letter-spacing: 0.06em; white-space: nowrap; flex: none; }
     /* 2-col chart grid: .tall spans two rows (contributors hero), .full both cols. */
     .chart-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--chrome-inset); min-width: 0; align-items: start; }
-    /* The contributors hero is a variable-height ranking list ABOVE the fold. It
-       must NOT inherit .panel's content-visibility:auto + fixed 420px intrinsic
-       size — that contains the panel to 420px and clips (perfectly cuts) the
-       list where it exceeds the estimate. It's on-screen at load anyway, so
-       skipping its render buys nothing; render it normally, sized by content. */
-    .chart-grid .tall { grid-row: span 2; content-visibility: visible; contain-intrinsic-size: auto; }
+    .chart-grid .tall { grid-row: span 2; }
     .chart-grid .full { grid-column: 1 / -1; }
     @media (max-width: 760px) { .chart-grid { grid-template-columns: 1fr; } .chart-grid .tall { grid-row: auto; } }
     /* Two-column shell: org scheme pinned left, Overview/Authors content right.
