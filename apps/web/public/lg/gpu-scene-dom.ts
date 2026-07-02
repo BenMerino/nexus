@@ -38,6 +38,15 @@ export function buildSceneFromDOM(scrollY: number): Scene {
       ?? [1, 1, 1, 0.06];
     nodes.push({ kind: "rect", x: b.left, y: b.top + scrollY, w: b.width, h: b.height,
       r: cornerRadius(el), color });
+    // Chart canvases: blit the already-GPU-rendered pixels into the scene so
+    // they refract too (not our own glass layer canvases).
+    for (const cv of el.querySelectorAll<HTMLCanvasElement>("canvas")) {
+      if (cv.classList.contains("gpu-glass-layer")) continue;
+      const cb = cv.getBoundingClientRect();
+      if (cb.width < 4 || cb.height < 4) continue;
+      nodes.push({ kind: "image", source: cv,
+        x: cb.left, y: cb.top + scrollY, w: cb.width, h: cb.height });
+    }
     // Harvest this surface's text runs into text nodes (page coords).
     for (const t of harvestText(el, scrollY)) nodes.push(t);
     contentHeight = Math.max(contentHeight, b.bottom + scrollY);

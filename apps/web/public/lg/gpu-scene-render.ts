@@ -9,6 +9,8 @@ import { layoutText, glyphCount } from "./gpu-scene-text";
 import { buildGlyphAtlas, uploadAtlas } from "./gpu-glyph-atlas";
 import type { Atlas } from "./gpu-glyph-atlas";
 import { buildScenePipes, FORMAT } from "./gpu-scene-pipelines";
+import { createImagePass } from "./gpu-scene-image";
+import type { ImageNode } from "./gpu-scene-model";
 
 export type SkyFrame = { top: number[]; hor: number[]; ceil: number; glow: number };
 export type SceneRenderer = {
@@ -22,6 +24,7 @@ const MAX_RECTS = 512, MAX_SEGS = 8192, MAX_GLYPHS = 16384;
 
 export function createSceneRenderer(device: GPUDevice, w: number, h: number): SceneRenderer {
   const pipes = buildScenePipes(device);
+  const imagePass = createImagePass(device);
   const atlas: Atlas = buildGlyphAtlas();
   const atlasTex = uploadAtlas(device, atlas);
   const samp = device.createSampler({ magFilter: "linear", minFilter: "linear" });
@@ -65,6 +68,11 @@ export function createSceneRenderer(device: GPUDevice, w: number, h: number): Sc
         sky.top[0], sky.top[1], sky.top[2], sky.ceil,
         sky.hor[0], sky.hor[1], sky.hor[2], sky.glow,
       ]));
+      // Blit chart canvases to their textures BEFORE the pass (queue copies
+      // must land before the pass samples them).
+      const images = scene.nodes.filter((n): n is ImageNode => n.kind === "image");
+      // scrollY here is DEVICE px; image node y is CSS px, so pass CSS scroll.
+      if (images.length) imagePass.upload(images, scrollY / dpr, r.width, r.height, dpr);
       const enc = device.createCommandEncoder();
       const pass = enc.beginRenderPass({ colorAttachments: [{
         view: r.texture.createView(),
@@ -72,6 +80,8 @@ export function createSceneRenderer(device: GPUDevice, w: number, h: number): Sc
       pass.setPipeline(pipes.sky); pass.setBindGroup(0, skyBind); pass.draw(3);
       if (nR > 0) { pass.setPipeline(pipes.rect); pass.setBindGroup(0, rectBind); pass.draw(6, nR); }
       if (nP > 0) { pass.setPipeline(pipes.poly); pass.setBindGroup(0, polyBind); pass.draw(6, nP); }
+      // Chart canvases drawn BEFORE text so labels sit on top of the chart.
+      if (images.length) imagePass.draw(pass, images);
       if (nG > 0) { pass.setPipeline(pipes.text); pass.setBindGroup(0, textBind); pass.draw(6, nG); }
       pass.end();
       device.queue.submit([enc.finish()]);

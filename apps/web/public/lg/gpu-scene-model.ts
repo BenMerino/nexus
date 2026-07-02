@@ -30,7 +30,16 @@ export type ChartNode = {
   baselineY: number;             // page px, for area fills
 };
 
-export type SceneNode = RectNode | TextNode | ChartNode;
+// A live <canvas>/<img> blitted into the scene (chart geometry canvases): the
+// source is already GPU-rendered, so this is a cheap texture copy, NOT a DOM
+// screenshot. Refracts like everything else.
+export type ImageNode = {
+  kind: "image";
+  source: CanvasImageSource;     // the element to copyExternalImageToTexture
+  x: number; y: number; w: number; h: number;   // page px
+};
+
+export type SceneNode = RectNode | TextNode | ChartNode | ImageNode;
 
 export type Scene = {
   nodes: SceneNode[];

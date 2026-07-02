@@ -481,10 +481,14 @@
   color: transparent !important;
   text-shadow: none !important;
 }
-[data-glass="gpu"] [data-gpu-glass]:not(.public-header):not(.sidebar) svg,
-[data-glass="gpu"] [data-gpu-glass]:not(.public-header):not(.sidebar) canvas:not(.gpu-glass-layer) {
+[data-glass="gpu"] [data-gpu-glass]:not(.public-header):not(.sidebar) svg {
   visibility: hidden !important;
 }
+/* Chart canvases ride on top as their own (already-GPU) render — like the
+   chrome text — so they stay sharp and 60fps. They don't refract through
+   glass yet (blitting a live GPU canvas into the scene per frame is the
+   remaining slice); charts rarely sit under glass, so this is the honest
+   interim. Kept visible (NOT hidden) so they render normally. */
 /* width/height 100% is REQUIRED: inset alone doesn't stretch a replaced
    element — a <canvas> keeps its intrinsic backing-store size (300×150, or
    whatever gpu-glass-element.ts last set in device px) and the UA scales
