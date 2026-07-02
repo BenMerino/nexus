@@ -13,6 +13,7 @@ import { InfoPopover } from '../ui/composed/InfoPopover';
 import { Dropdown } from '../ui/composed/Dropdown';
 import { FilterMenu } from '../ui/composed/FilterMenu';
 import { DatePicker } from '../ui/composed/DatePicker';
+import { TimePicker } from '../ui/composed/TimePicker';
 import { TablePagination } from '../ui/composed/TablePagination';
 import { BaseModal } from '../ui/composed/BaseModal';
 import { ConfirmationModal } from '../ui/composed/ConfirmationModal';
@@ -33,6 +34,7 @@ export function ComposedFormsSection() {
   const [num, setNum] = useState('12');
   const [color, setColor] = useState('#f59e0b');
   const [date, setDate] = useState('');
+  const [time, setTime] = useState('09:30');
   const [page, setPage] = useState(1);
   const [filt, setFilt] = useState<string[]>(['crossref']);
   const [modal, setModal] = useState(false);
@@ -57,9 +59,12 @@ export function ComposedFormsSection() {
           <ColorField label="Accent" value={color} onChange={setColor} />
         </div>
       </Row>
-      <Row title="DatePicker">
+      <Row title="DatePicker / TimePicker">
         <div style={{ width: 220 }}>
           <DatePicker value={date} onChange={setDate} />
+        </div>
+        <div style={{ width: 160 }}>
+          <TimePicker value={time} onChange={setTime} />
         </div>
       </Row>
       <Row title="Dropdown (compound)">

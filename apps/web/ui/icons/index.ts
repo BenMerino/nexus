@@ -20,6 +20,7 @@ export {
   CalendarDays,
   Calendar,
   Check,
+  Clock,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
