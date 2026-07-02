@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Glass GPU — physical refraction</title>
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    /* Glass GPU — OUR system's physically-based glass demo. One WebGPU pass
+       (lg/gpu-glass.ts) renders the real dark-sky palette AND a glass slab
+       whose refraction is ray-traced from its geometry: Snell at entry and
+       exit, total internal reflection, Beer–Lambert absorption, Fresnel rim.
+       No SVG filters, no displacement textures, no backdrop-filter — the
+       optics are computed from the element's form. Corner radius comes from
+       --radius-card, so the shape speaks the platform's geometry.
+       Page-specific styles only (N9). */
+    .gpu-stage { position: fixed; inset: 0; z-index: 2; display: block; }
+    .gpu-note {
+      position: fixed; left: 16px; bottom: 12px; z-index: 3;
+      font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim);
+    }
+    .gpu-fallback {
+      position: fixed; inset: 0; z-index: 2; display: none;
+      place-items: center; color: var(--fg-muted);
+      font-family: var(--font-mono); font-size: var(--text-detail);
+    }
+  </style>
+</head>
+<body>
+  <canvas class="gpu-stage" id="gpu-glass"></canvas>
+  <div class="gpu-fallback" id="gpu-fallback">WebGPU unavailable — this demo has no fallback by design (physics or nothing).</div>
+  <div class="gpu-note">glass-gpu — ray-traced refraction from the element's form (Snell · TIR · Beer–Lambert · Fresnel)</div>
+  <script type="module">
+    import { mountGpuGlass } from "/lg/gpu-glass.ts";
+    const ok = await mountGpuGlass(document.getElementById("gpu-glass"));
+    if (!ok) {
+      document.getElementById("gpu-glass").style.display = "none";
+      document.getElementById("gpu-fallback").style.display = "grid";
+    }
+  </script>
+</body>
+</html>
