@@ -478,6 +478,22 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+/* PHASED MOUNT (phase-mount.tsx) — the choreography as a real sequence: each
+   phase's elements are mounted into the DOM by JS only when their phase fires,
+   so they are COMPLETE, real elements on arrival (never pre-rendered then
+   hidden/clipped). The fade here runs from a GENUINE mount with NO
+   animation-delay — the delay is the JS mount timing, not CSS — so there is no
+   pre-delay window for WebKit to mispaint, and no base opacity:0 hack. Opacity
+   only (never filter/transform — clips the glass ::before, see below). */
+@keyframes phase-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+/* display:contents so the wrapper adds NO box — its children keep their place
+   in the parent grid/flex/flow exactly as if the wrapper weren't there. The
+   fade runs on the children (freshly mounted → clean, no pre-hide race). */
+.phase-in { display: contents; }
+.phase-in > * { animation: phase-in var(--motion-reveal) var(--ease-out) both; }
 /* CROSS-BROWSER HARD RULE: hide the child in a BASE rule, from first paint.
    NEVER rely on `animation-fill-mode: both` to hold the pre-delay `from` state
    — WebKit (Safari) does not reliably honor it under an animation-delay, so the
