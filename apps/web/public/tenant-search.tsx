@@ -62,9 +62,12 @@ export function TenantSearch({ slug, onSelectUnit }: { slug: string; onSelectUni
       panelClassName="omni-pop"
       panelStyle={{ width: '100%' }}
       trigger={({ ref }) => (
-        <div className="omni" ref={ref as React.Ref<HTMLDivElement>}>
+        /* Same wrapper + bare SearchField as the authed SidebarSearch — the
+           input wears InputFrame's DNA default, no call-site skin. (The grouped
+           .omni-pop results below stay; only the INPUT is unified.) */
+        <div className="sidebar-search" ref={ref as React.Ref<HTMLDivElement>}>
           <SearchField value={q} onChange={(v) => { setQ(v); setOpen(true); }}
-            placeholder={ES.searchBox.placeholder} className="omni-input" />
+            placeholder={ES.searchBox.placeholder} />
         </div>
       )}
     >

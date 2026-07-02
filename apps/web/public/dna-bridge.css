@@ -271,15 +271,6 @@ body > #dna-mount, body > main, body > div {
 .surface .surface .surface .surface,
 .glass-surface .glass-surface .glass-surface .glass-surface { background-color: var(--glass-3); }
 
-/* The sidebar is ONE unified glass surface (app-chrome.css) and its inner
-   controls carry NO surface of their own — the sidebar glass is their
-   backdrop. The omnibox input is therefore fully transparent (no nested
-   rung-2 fill, no own blur); it reads as a bare field on the sidebar glass.
-   (:root prefix to win the cascade.) */
-:root .sidebar .omni-input {
-  background-color: transparent;
-  backdrop-filter: none; -webkit-backdrop-filter: none;
-}
 
 /* nexus's hand-written card surfaces adopt the glass recipe + ladder. They were
    opaque var(--bg-card); now they're glass rung 1, and their nested sections
