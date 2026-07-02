@@ -15,6 +15,7 @@ import { Sidebar } from "../shell-sidebar";
 import { RoleSwitcher } from "../shell-tweaks";
 import { TenantPublicHeader } from "../tenant-header";
 import { useCurrentUser } from "../shell-helpers";
+import { userCrumbs } from "./auth-crumbs";
 import { loadThemeTokens } from "./load-theme-tokens";
 
 export function AuthLayout() {
@@ -52,6 +53,7 @@ export function AuthLayout() {
         <TenantPublicHeader
           tenant={{ name: me.tenant || "Pliny", ror_id: me.profile?.ror ?? null, logo_url: null }}
           items={[]} currentId="" onNavigate={() => {}} signedIn
+          crumbs={userCrumbs(me)}
         />
       )}
       <Sidebar me={me} currentPath={location.pathname} roleSwitcher={<RoleSwitcher me={me} />} />

@@ -71,7 +71,7 @@
 /* Segments are layout groups within the one bar — no glass of their own.
    Both shrink to content; the breadcrumb sits left, sign-in/theme sits right. */
 .public-header-seg { display: flex; align-items: center; }
-.public-header-left  { flex: none; }
+.public-header-left  { flex: 1 1 auto; min-width: 0; }
 .public-header-right { flex: none; gap: 14px; }
 
 /* ── Omnibox: input + grouped results popover — sidebar top row, same slot
@@ -104,11 +104,20 @@
 .omni-sub { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--fg-dim); flex: none; }
 .omni-empty { padding: 12px 13px; font-family: var(--font-mono); font-size: var(--text-label); color: var(--fg-dim); }
 
-/* Breadcrumb: plain tenant identity, no product brand (that moved to the
-   sidebar's tenant-chip — one brand, not a duplicate in both chrome pieces). */
-.public-breadcrumb { display: flex; align-items: baseline; gap: 10px; flex: none; }
-.public-tenant-name { font-family: var(--font-display); font-size: var(--text-h3); line-height: var(--leading-display); letter-spacing: 0.005em; }
-.public-tenant-sub { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); }
+/* Breadcrumb: a navigation trail, no product brand (that moved to the sidebar's
+   tenant-chip). Public pages show one crumb (the tenant); the authed shell
+   appends the signed-in academic (ORCID) and their faculty/department. The trail
+   scrolls horizontally rather than wrapping when it outgrows the bar. */
+.public-breadcrumb { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.public-breadcrumb::-webkit-scrollbar { display: none; }
+/* Each crumb is a vertical stack: the name on top, its identifier (ROR/ORCID)
+   as a sub beneath it. Crumbs (and the separator) align on the name row. */
+.public-crumb { display: flex; flex-direction: column; gap: 1px; flex: none; }
+/* Centered across the full crumb stack (name + sub), not pinned to the name row
+   — the row's align-items:center does it, so no align-self override here. */
+.public-crumb-sep { font-family: var(--font-display); font-size: var(--text-h3); line-height: var(--leading-display); color: var(--fg-dim); flex: none; }
+.public-tenant-name { font-family: var(--font-display); font-size: var(--text-h3); line-height: var(--leading-display); letter-spacing: 0.005em; white-space: nowrap; }
+.public-tenant-sub { display: block; font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--fg-dim); white-space: nowrap; }
 .public-tenant-sub a { color: var(--fg-dim); }
 .public-tenant-sub a:hover { color: var(--accent); }
 
@@ -435,5 +444,7 @@
 @media (max-width: 700px) {
   :root { --chrome-inset: 10px; }
   .public-header-right { display: none; }
+  /* Keep the trail readable in the narrow bar: names only, drop the ORCID/ROR subs. */
+  .public-tenant-sub { display: none; }
 }
 

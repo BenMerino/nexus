@@ -6,6 +6,12 @@ import { BaseAction } from '../ui/primitives';
 interface TenantLike { name: string; ror_id: string | null; logo_url: string | null; }
 export interface PublicNavItem { id: string; label: string; }
 
+/** A trailing breadcrumb segment: a name plus an optional identifier sub
+ *  (label + id, linking out to the canonical registry). The tenant is crumb 0
+ *  and rendered separately; these are what the authed shell appends (the
+ *  signed-in academic by ORCID, then their faculty/department). */
+export interface Crumb { name: string; sub?: { label: string; id: string; href: string } | null; }
+
 const ROR_HOST = 'https://ror.org/';
 function rorHref(raw: string): string { return raw.startsWith('http') ? raw : `${ROR_HOST}${raw}`; }
 function rorId(raw: string): string { const m = raw.match(/([^/]+)$/); return m ? m[1] : raw; }
@@ -38,7 +44,7 @@ function ThemeButton() {
 }
 
 export function TenantPublicHeader({
-  tenant, items, currentId, onNavigate, yearRange, lastUpdated, signedIn,
+  tenant, items, currentId, onNavigate, yearRange, lastUpdated, signedIn, crumbs,
 }: {
   tenant: TenantLike;
   items: PublicNavItem[];
@@ -49,6 +55,9 @@ export function TenantPublicHeader({
   /** True on the authed app shell (AuthLayout) — hides "sign in", the user is
    *  already in. Defaults to false (public pages always show it). */
   signedIn?: boolean;
+  /** Trailing breadcrumb segments after the tenant (authed shell only). Public
+   *  pages omit it → the trail is tenant-only, exactly as before. */
+  crumbs?: Crumb[];
 }) {
 
   // The header is fixed chrome; content is inset BELOW its real height. Publish
@@ -73,16 +82,32 @@ export function TenantPublicHeader({
     <header className="public-header" ref={ref}>
       {/* The header is now a breadcrumb, not the brand — product identity
           (mark + "Research Intelligence") lives in the sidebar's tenant-chip.
-          Starts from the tenant itself; ROR trails as plain metadata. */}
+          Crumb 0 is always the tenant (name + ROR); the authed shell appends
+          the signed-in academic (ORCID) and their faculty via `crumbs`. */}
       <div className="public-header-seg public-header-left">
-        <div className="public-breadcrumb">
-          <span className="public-tenant-name">{tenant.name}</span>
-          {tenant.ror_id ? (
-            <span className="public-tenant-sub">
-              ROR <a href={rorHref(tenant.ror_id)} target="_blank" rel="noopener noreferrer">{rorId(tenant.ror_id)}</a>
-            </span>
-          ) : null}
-        </div>
+        <nav className="public-breadcrumb" aria-label="Breadcrumb">
+          <span className="public-crumb">
+            <span className="public-tenant-name">{tenant.name}</span>
+            {tenant.ror_id ? (
+              <span className="public-tenant-sub">
+                ROR <a href={rorHref(tenant.ror_id)} target="_blank" rel="noopener noreferrer">{rorId(tenant.ror_id)}</a>
+              </span>
+            ) : null}
+          </span>
+          {(crumbs ?? []).map((c, i) => (
+            <React.Fragment key={i}>
+              <span className="public-crumb-sep" aria-hidden="true">›</span>
+              <span className="public-crumb">
+                <span className="public-tenant-name">{c.name}</span>
+                {c.sub ? (
+                  <span className="public-tenant-sub">
+                    {c.sub.label} <a href={c.sub.href} target="_blank" rel="noopener noreferrer">{c.sub.id}</a>
+                  </span>
+                ) : null}
+              </span>
+            </React.Fragment>
+          ))}
+        </nav>
       </div>
       <div className="public-header-seg public-header-right">
         {!signedIn && <a href="/login.html" className="public-signin">{ES.signIn}</a>}
