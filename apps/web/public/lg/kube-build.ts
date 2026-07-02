@@ -12,9 +12,13 @@ export function buildKubeFilter(
 ): SVGElement {
   const f = document.createElementNS(ns, "filter");
   f.id = id;
-  // linearRGB (spec default): sRGB filter math quantizes visibly in Safari's
-  // software SVG pipeline.
-  f.setAttribute("color-interpolation-filters", "linearRGB");
+  // sRGB — REQUIRED, not a style choice (verified via telemetry probes): the
+  // displacement texture encodes neutral as sRGB gray 128 (= channel 0.5).
+  // Under linearRGB interpolation that gray reads as 0.216, so every pixel
+  // gets a constant (0.216−0.5)×scale ≈ −9px shift — the bezel's variation is
+  // drowned out (no visible bend) and the whole refracted backdrop copy sits
+  // ~9px off its true position behind every surface: the ghost-edge artifact.
+  f.setAttribute("color-interpolation-filters", "sRGB");
   f.setAttribute("filterUnits", "objectBoundingBox");
   f.setAttribute("primitiveUnits", "userSpaceOnUse");
   f.setAttribute("x", "0"); f.setAttribute("y", "0");
