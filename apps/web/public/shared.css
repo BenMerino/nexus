@@ -456,8 +456,14 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
    SummaryCards.Skeleton): shells stagger in before data; when data lands
    the loaded grid swaps in with identical geometry and NO animation, so
    cards never re-enter with their data. */
+/* Glass materialize: opacity + a small blur that resolves to sharp — the
+   surface reads as coming INTO FOCUS, like glass settling. blur() is a filter,
+   NOT a transform, so it neither displaces the ::before backdrop capture nor
+   skews a chart's getBoundingClientRect (the two hazards that ban transforms
+   here). Keep it filter/opacity-only. */
 @keyframes reveal-in {
-  from { opacity: 0; }
+  from { opacity: 0; filter: blur(6px); }
+  to   { opacity: 1; filter: blur(0); }
 }
 .reveal-group > * {
   animation: reveal-in var(--motion-reveal) var(--ease-out) both;

@@ -45,11 +45,14 @@ export function DashboardLoading() {
         </div>
       </header>
 
-      <div className="stat-row">
+      {/* reveal-group: the shared load choreography (same as the public tenant
+          page) — skeleton cards stagger + focus in after the chrome. When data
+          lands, the real grid swaps in with identical geometry and no re-entry. */}
+      <div className="stat-row reveal-group">
         {stats.map((s, i) => <StatSkeleton key={i} label={s.label} sub={s.sub} />)}
       </div>
 
-      <div className="dash-grid">
+      <div className="dash-grid reveal-group">
         {isPersonal ? <PersonalCards /> : <InstitutionalCards />}
       </div>
     </div>
