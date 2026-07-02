@@ -25,7 +25,6 @@ import { RosterPage } from "./spa/RosterPage";
 import { SettingsPage } from "./spa/SettingsPage";
 import { AdminPage } from "./spa/AdminPage";
 import { AuthorImportPage } from "./spa/AuthorImportPage";
-import { GlassGpuMode } from "./spa/GlassGpuMode";
 
 function App() {
   return (
@@ -38,9 +37,6 @@ function App() {
         {/* Authenticated routes — cookie gate + sidebar + header + theme. */}
         <Route element={<AuthLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          {/* Same dashboard, chrome rendered by the ray-traced GPU glass
-              engine (lg/gpu-glass-page.ts) instead of CSS glass. */}
-          <Route path="/dashboard-gpu" element={<><GlassGpuMode /><DashboardPage /></>} />
           <Route path="/faculties" element={<FacultiesPage />} />
           <Route path="/academics" element={<AcademicsPage />} />
           <Route path="/papers" element={<PapersPage />} />
