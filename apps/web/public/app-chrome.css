@@ -295,9 +295,11 @@
 :root[data-lg-liquid] .sidebar::before {
   content: "";
   position: absolute;
-  inset: 0;
+  /* Padded capture — the bezel bends pixels from BEYOND the bar's edge; must
+     match PAD in lg/kube-filter.ts + the clip-path below (see dna-bridge.css). */
+  inset: -24px;
   z-index: -1;
-  border-radius: inherit;
+  border-radius: 0;
   pointer-events: none;
   /* Frost via the --lg-* knobs — the SAME formula as the card overlays in
      dna-bridge.css, NOT blur(var(--glass-blur)): liquid mode zeroes
@@ -310,10 +312,9 @@
   /* Per-element size-matched filter, assigned by lg/kube-filter.ts — a shared
      normalized texture can't align to a 20:1 bar (ghost edges at the ends). */
   filter: var(--_kube, none);
-  /* Re-clip the filter output to the rounded shape — border-radius clips the
-     capture but NOT filter results, which otherwise ghost into the square
-     corner zones (see the matching rule in dna-bridge.css). */
-  clip-path: inset(0 round var(--radius-card));
+  /* Crop the padded, refracted result back to the bar's rounded shape —
+     filters run before clip-path, after border-radius (see dna-bridge.css). */
+  clip-path: inset(24px round var(--radius-card));
 }
 
 /* ONE shell shape on every page, public and private (N9): the sidebar spans

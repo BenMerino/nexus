@@ -359,12 +359,19 @@ body > #dna-mount, body > main, body > div {
 :root[data-lg-liquid] .profile-hero::before, :root[data-lg-liquid] .profile-panel::before {
   content: "";
   position: absolute;
-  inset: 0;
+  /* PADDED CAPTURE: the overlay extends 24px past the card on every side so
+     the lens bezel has real backdrop pixels BEYOND the edge to bend inward —
+     with an exact-size capture the rim had nothing to sample and smeared the
+     boundary. MUST match PAD in lg/kube-filter.ts (texture placement) and the
+     clip-path below (crops the result back to the card shape). */
+  inset: -24px;
   /* z-index -1 sits the overlay BEHIND the card's content; isolation:isolate on the
      host traps it inside the card (it can't fall behind the page). Content keeps its
      natural stacking above it — no per-child z-index needed. */
   z-index: -1;
-  border-radius: inherit;
+  /* NO rounding on the capture — the padded region must keep its corner pixels
+     for the bezel to sample; the final shape comes from clip-path below. */
+  border-radius: 0;
   pointer-events: none;
   /* capture the backdrop into this layer (the base glass blur+sat)… */
   backdrop-filter: blur(calc(var(--lg-blur) * 0.8px)) saturate(calc(var(--lg-saturation) * 2%));
@@ -374,12 +381,11 @@ body > #dna-mount, body > main, body > div {
      backdrop-filter) works in every browser and only warps this overlay layer,
      never the card's content. */
   filter: var(--_kube, none);
-  /* border-radius clips the CAPTURE but NOT the filter output — displaced/
-     blurred/specular pixels spill back into the square corner zones as ghost
-     edges (confirmed: artifacts survive both bend-only and spec-only debug
-     modes, die with the filter off). clip-path runs AFTER filters in the
-     paint pipeline, so it re-clips the refracted result to the rounded shape. */
-  clip-path: inset(0 round var(--radius-card));
+  /* clip-path runs AFTER filters in the paint pipeline: crops the padded,
+     refracted result back to the card's rounded shape (border-radius alone
+     clips the capture but never the filter output — that spill was the
+     corner ghost-edge artifact). 24px = the capture padding above. */
+  clip-path: inset(24px round var(--radius-card));
 }
 /* A surface nested inside a nexus card steps to rung 2 (and drops the re-blur).
    .chart-surface joins this set: the chart's PLOT AREA is a rung-2 glass panel

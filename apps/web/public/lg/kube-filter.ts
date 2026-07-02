@@ -19,6 +19,7 @@
 
 import { generateDisplacementTexture } from "./kube/displacementTexture";
 import { generateSpecularTexture } from "./kube/specularTexture";
+import { buildKubeFilter } from "./kube-build";
 import "./kube-debug"; // console harness: window.__kubeDebug (list/outline/mode/showMap)
 
 const LIQUID_HOSTS = [
@@ -27,6 +28,11 @@ const LIQUID_HOSTS = [
 ].join(",");
 
 const MIN_W = 120, MIN_H = 56;   // size gate — below this: frost only
+// Capture padding: the overlay extends PAD px past the card on every side so
+// the bezel has real backdrop pixels beyond the edge to bend inward. MUST
+// match the overlay's `inset: -24px` + `clip-path: inset(24px …)` in
+// dna-bridge.css and app-chrome.css.
+const PAD = 24;
 const MAX_TEX = 384;             // cap texture render resolution (px, long side)
 // Geometry bucket (px). 8 keeps texture stretch ≤4px/axis (a 48 bucket offset
 // the bezel/specular rim up to 24px from the real edge — visible ghosting);
@@ -49,8 +55,14 @@ function defsRoot(): SVGSVGElement {
   return defsSvg;
 }
 
-// One filter per geometry bucket: textures rendered at (possibly downscaled)
-// element proportions; feImage 100% stretches them back — geometry preserved.
+// One filter per geometry bucket. The OVERLAY the filter runs on is PAD px
+// bigger than the card on every side (CSS inset: -PAD), so the capture holds
+// real backdrop pixels BEYOND the card edge — a lens bezel pulls from outside
+// the shape; with an exact-size capture the rim had nothing to sample and
+// smeared the boundary (the residual edge artifact). The textures are placed
+// at exact px (PAD, PAD, card w×h) inside that padded region, the padding
+// ring is neutral-gray (no displacement), and CSS clip-path crops the result
+// back to the card shape.
 function ensureFilter(w: number, h: number, r: number): string | null {
   const key = `${w}x${h}r${r}`;
   const hit = filterCache.get(key);
@@ -61,46 +73,11 @@ function ensureFilter(w: number, h: number, r: number): string | null {
   const opt = { width: w * s, height: h * s, bezel: bez, profile: "convex-circle" as const,
     borderRadius: r * s };
   const disp = generateDisplacementTexture({ ...opt, thickness: 120, samples: 128 });
-  const spec = generateSpecularTexture({ ...opt, lightAngle: -150, shininess: 40 });
+  const spec = generateSpecularTexture({ ...opt, lightAngle: -150, shininess: 40, opacity: 0.6 });
   if (!disp || !spec) return null;
 
   const id = `lgk-${filterCache.size}-${w}x${h}`;
-  const f = document.createElementNS(ns, "filter");
-  f.id = id;
-  // linearRGB (spec default): sRGB filter math quantizes visibly in Safari's
-  // software SVG pipeline. Region = exactly the element box so the bezel and
-  // specular rim sit ON the edges (an oversized region floats them outside —
-  // that was the ghost-edge artifact).
-  f.setAttribute("color-interpolation-filters", "linearRGB");
-  f.setAttribute("filterUnits", "objectBoundingBox");
-  f.setAttribute("primitiveUnits", "userSpaceOnUse");
-  f.setAttribute("x", "0"); f.setAttribute("y", "0");
-  f.setAttribute("width", "1"); f.setAttribute("height", "1");
-
-  const img = (href: string, result: string) => {
-    const e = document.createElementNS(ns, "feImage");
-    e.setAttribute("href", href);
-    e.setAttribute("x", "0"); e.setAttribute("y", "0");
-    e.setAttribute("width", "100%"); e.setAttribute("height", "100%");
-    e.setAttribute("preserveAspectRatio", "none");
-    e.setAttribute("result", result);
-    return e;
-  };
-  const blur = document.createElementNS(ns, "feGaussianBlur");
-  blur.setAttribute("in", "SourceGraphic");
-  blur.setAttribute("stdDeviation", "2");
-  blur.setAttribute("result", "blurred");
-  const dm = document.createElementNS(ns, "feDisplacementMap");
-  dm.setAttribute("in", "blurred"); dm.setAttribute("in2", "disp");
-  dm.setAttribute("scale", "32"); // px of max bend — stays inside the capture
-  dm.setAttribute("xChannelSelector", "R"); dm.setAttribute("yChannelSelector", "G");
-  dm.setAttribute("result", "refracted");
-  const blend = document.createElementNS(ns, "feBlend");
-  blend.setAttribute("in", "spec"); blend.setAttribute("in2", "refracted");
-  blend.setAttribute("mode", "screen");
-
-  f.append(img(disp.url, "disp"), img(spec, "spec"), blur, dm, blend);
-  defsRoot().appendChild(f);
+  defsRoot().appendChild(buildKubeFilter(id, w, h, PAD, disp.url, spec));
   filterCache.set(key, id);
   return id;
 }
