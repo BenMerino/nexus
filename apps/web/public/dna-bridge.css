@@ -271,6 +271,17 @@ body > #dna-mount, body > main, body > div {
 .surface .surface .surface .surface,
 .glass-surface .glass-surface .glass-surface .glass-surface { background-color: var(--glass-3); }
 
+/* The sidebar search input is nested inside the sidebar's rung-1 glass, so it
+   steps to rung 2 like any nested surface: a --glass-2 TINT, no re-blur (the
+   sidebar already frosts the page behind it). InputFrame's default fill is the
+   opaque --bg-card — override it here for both the public (TenantSearch) and
+   authed (SidebarSearch) omnibox, which render the same .search-field in the
+   sidebar. :root raises specificity to win over `.input-frame { background }`. */
+:root .sidebar .search-field.input-frame {
+  background-color: var(--glass-2);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+
 
 /* nexus's hand-written card surfaces adopt the glass recipe + ladder. They were
    opaque var(--bg-card); now they're glass rung 1, and their nested sections
