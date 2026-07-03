@@ -10,7 +10,7 @@ import { perfMark } from './perf-marks';
  *   - ScopedChart:    authenticated GET /api/architect/charts?kind= (orcid-scoped)
  * Both render an atom directive via DirectiveChart (uniform-drop toggle). */
 
-function ComposedView({ directive, failed, pending, minHeight, hideTitle }: { directive: GraphDirective | null; failed: boolean; pending?: boolean; minHeight: number; hideTitle?: boolean }) {
+function ComposedView({ directive, failed, pending, minHeight, hideTitle, fixed }: { directive: GraphDirective | null; failed: boolean; pending?: boolean; minHeight: number; hideTitle?: boolean; fixed?: boolean }) {
   // hideTitle: the chart sits inside a host card that renders its own heading +
   // border, so suppress the engine's in-chart title AND its redundant plot frame
   // (keep the directive's title for the host/key). Engine honors both flags
@@ -23,11 +23,15 @@ function ComposedView({ directive, failed, pending, minHeight, hideTitle }: { di
   // glass (tint, concentric corner, kube filter geometry) is already correct
   // BEFORE the directive lands, and the chart mounts into the same element —
   // no node swap, so no tint pop and no filter re-bucket at data arrival.
-  // FIXED height (not min): the box is its reserved size from first paint and
-  // the chart fills it — it never grows the card when the directive lands, so
-  // there is no load-time reflow (the source of the resize jerk). Charts are
-  // container-responsive, so a fixed height is the correct reservation.
-  return <div className="chart-surface" style={{ height: minHeight }}>{seed ? <DirectiveChart seed={seed} /> : null}</div>;
+  //
+  // `fixed` (opt-in) locks the surface to an EXACT height so it can't grow the
+  // card when the directive lands (the tenant overview reserves precise sizes
+  // for a no-reflow load). Default is min-height (grow-to-fit) — the correct
+  // behavior everywhere else (dashboard etc.), where the passed height is a
+  // FLOOR, not the chart's true size. A bare min-height passed as a fixed
+  // height clips the chart (that regressed dashboard's Citation velocity).
+  const sizing = fixed ? { height: minHeight } : { minHeight };
+  return <div className="chart-surface" style={sizing}>{seed ? <DirectiveChart seed={seed} /> : null}</div>;
 }
 
 function useComposed(doFetch: () => Promise<Response>, deps: unknown[]) {
@@ -106,9 +110,9 @@ export function BatchedCharts({ kinds, tenantId, unit, minHeight = 400, heightFo
         // never grows it (no load-time reflow → nothing to animate). Falls back
         // to the batch minHeight when no per-kind height is given.
         const kh = heightFor ? heightFor(kind) : minHeight;
-        // Every BatchedCharts chart is card-wrapped (wrap=ChartPanel or .card),
-        // which renders its own heading → suppress the engine's in-chart title.
-        const body = <ComposedView directive={ok ? d : null} failed={failed} pending={!map && !failed} minHeight={isMap ? 0 : kh} hideTitle />;
+        // fixed height ONLY when the caller gave a per-kind reserved size
+        // (heightFor) — i.e. the tenant overview. Otherwise grow-to-fit.
+        const body = <ComposedView directive={ok ? d : null} failed={failed} pending={!map && !failed} minHeight={isMap ? 0 : kh} hideTitle fixed={!!heightFor && !isMap} />;
         // `wrap` lets the caller frame each kind (e.g. a .panel) while keeping
         // the single batch fetch; `bare` skips the default .card; else .card.
         if (wrap) return <React.Fragment key={kind}>{wrap(kind, body)}</React.Fragment>;
