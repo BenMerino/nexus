@@ -27,6 +27,10 @@ export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   height?: number | string;
   /** Corner radius role; defaults to the small skeleton radius. */
   radius?: 'sm' | 'card' | 'pill' | 'control';
+  /** Which glass depth rung this skeleton stands in for — its shimmer rests on
+   *  that tonal fill so it reads as the surface that will replace it. Defaults
+   *  to rung 2 (skeletons sit inside rung-1 chrome, ghosting nested content). */
+  rung?: 0 | 1 | 2 | 3;
   /** The element to render as (ghost mode wraps your real markup). */
   as?: React.ElementType;
   children?: React.ReactNode;
@@ -38,7 +42,7 @@ const RADIUS: Record<NonNullable<SkeletonProps['radius']>, string> = {
 };
 
 export function Skeleton({
-  block, fill, width, height, radius, as, className, style, children, ...rest
+  block, fill, width, height, radius, rung, as, className, style, children, ...rest
 }: SkeletonProps) {
   const Tag = (as ?? 'div') as React.ElementType;
   const isBox = block || fill;
@@ -55,6 +59,7 @@ export function Skeleton({
     <Tag
       className={`${cls}${className ? ` ${className}` : ''}`}
       style={composed}
+      data-rung={rung}
       aria-hidden="true"
       {...rest}
     >

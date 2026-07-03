@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { BaseText } from '../primitives/BaseText.js';
 import { GlassTag } from './GlassTag.js';
-export { cs, seriesColor, seriesColorFor, getSeriesPalette } from './svg-color-schemes.js';
+export { cs, seriesColor, seriesColorFor, getSeriesPalette, vibranceColor, isSingleTokenScheme } from './svg-color-schemes.js';
 
 /* ── Shared SVG Parts ────────────────────────────────────────
  * Tooltip + weight helpers. Axis/threshold/crosshair primitives

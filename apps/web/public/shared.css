@@ -436,8 +436,15 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+/* The shimmer is the glass tonal ladder, not flat grey: a skeleton reads as the
+   glass rung it stands in for. --_skel-rung is the resting fill (a glass tonal
+   rung), --_skel-sheen the lighter sweep. Default is RUNG-2 — skeletons sit
+   INSIDE .panel/.card chrome (rung-1) and stand in for its nested content, which
+   is rung-2 glass in the loaded state. Opt to another rung with data-rung. */
 .skel {
-  background: linear-gradient(90deg, var(--bg-inset) 0%, var(--border-soft) 50%, var(--bg-inset) 100%);
+  --_skel-rung: var(--glass-2);
+  --_skel-sheen: var(--tonal-3);
+  background: linear-gradient(90deg, var(--_skel-rung) 0%, var(--_skel-sheen) 50%, var(--_skel-rung) 100%);
   background-size: 200% 100%;
   animation: skel-shimmer 1.6s linear infinite;
   border-radius: var(--radius-sm);
@@ -445,8 +452,26 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
   user-select: none;
   pointer-events: none;
 }
+/* Rung selector — a skeleton declares which glass rung it stands in for so its
+   resting tone matches the surface that will replace it (tonal ladder in
+   dna-bridge.css). The sheen is always one rung brighter for the sweep. */
+.skel[data-rung="0"], .skel-fill[data-rung="0"] { --_skel-rung: var(--glass-0); --_skel-sheen: var(--tonal-1); }
+.skel[data-rung="1"], .skel-fill[data-rung="1"] { --_skel-rung: var(--glass-1); --_skel-sheen: var(--tonal-2); }
+.skel[data-rung="2"], .skel-fill[data-rung="2"] { --_skel-rung: var(--glass-2); --_skel-sheen: var(--tonal-3); }
+.skel[data-rung="3"], .skel-fill[data-rung="3"] { --_skel-rung: var(--glass-3); --_skel-sheen: var(--tonal-3); }
 .skel * { color: transparent !important; visibility: hidden; }
-.skel-fill { position: absolute; inset: 0; border-radius: var(--radius-card); }
+/* Fill: absolute-fills a positioned parent (SVG/canvas plot areas). Shares the
+   glass-ladder shimmer so plot placeholders read as the rung-2 nested surface
+   they stand in for — same knobs as .skel above. */
+.skel-fill {
+  position: absolute; inset: 0; border-radius: var(--radius-card);
+  --_skel-rung: var(--glass-2);
+  --_skel-sheen: var(--tonal-3);
+  background: linear-gradient(90deg, var(--_skel-rung) 0%, var(--_skel-sheen) 50%, var(--_skel-rung) 100%);
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.6s linear infinite;
+  pointer-events: none;
+}
 /* ═══ ENTRANCE REVEAL ═══
    Phased load choreography (glass materialize). Phase 1 is the chrome
    (app-chrome.css: sidebar + header slide/scale in once per real page load —
@@ -502,7 +527,7 @@ table.data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .reveal-group > :nth-child(8) { --reveal-i: 7; }
 
 @media (prefers-reduced-motion: reduce) {
-  .skel { animation-duration: 3.2s; }
+  .skel, .skel-fill { animation-duration: 3.2s; }
   /* Reveals collapse entirely: everything appears IN PLACE, no motion. Reset
      opacity to 1 — with the animation off, the base opacity:0 would otherwise
      leave the cards permanently invisible. */

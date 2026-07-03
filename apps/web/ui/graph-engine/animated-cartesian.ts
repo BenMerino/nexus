@@ -7,7 +7,7 @@
  * `primitives` is `barPrimitives` in `animated-cartesian-primitives.ts`.
  */
 
-import { cs } from './svg-parts.js';
+import { cs, vibranceColor } from './svg-parts.js';
 import type { CartesianLayout } from './chart-primitives-cartesian.js';
 import type { AnimatedFamily } from './animated-family.js';
 import type { DatumStatus } from '../../architect/fold-atoms.js';
@@ -56,6 +56,11 @@ export const animatedBar: AnimatedFamily<BarState> = {
          *  animation identity, reviving `barLerp`'s bucket matching. */
         const data = chart.data as any[];
         const baseY = layout.yR[1];
+        /* Value-vibrance domain: normalize each bar's value against the
+         *  chart's y-domain so the tallest bar reaches full token vibrance
+         *  and shorter bars fade toward a muted same-hue. No-op for
+         *  series/identity schemes (vibranceColor returns the flat color). */
+        const vSpan = (layout.yDom.max - layout.yDom.min) || 1;
         const statuses = resolveStatuses(
             data.map((d) => (d.__status as DatumStatus) ?? (d.status as DatumStatus) ?? 'observed'),
             chart.statusOverrides,
@@ -66,13 +71,14 @@ export const animatedBar: AnimatedFamily<BarState> = {
             const pos = layout.positionAt(i);
             const value = d.value ?? 0;
             const topY = layout.yS(value);
+            const t = (value - layout.yDom.min) / vSpan;
             const iso = typeof d.__startISO === 'string' ? d.__startISO : '';
             bars.push({
                 x: pos.x,
                 y: topY,
                 w: Math.max(0, pos.width),
                 h: Math.max(0, baseY - topY),
-                color: c.primary,
+                color: vibranceColor(c, t),
                 /* `__startISO` rides the hit payload so a click can resolve the
                  *  bucket's calendar period (ChartRender → periodKeyFor); the
                  *  `label` stays formatted for tooltip/breadcrumb display. */
