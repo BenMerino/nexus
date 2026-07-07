@@ -1,5 +1,6 @@
 const { sql } = require("./sql");
 const crypto = require("crypto");
+const { hashPassword } = require("./passwords");
 
 // The roster CSVs arrive as Latin-1 bytes that were mis-decoded as UTF-8
 // (e.g. "DiseÃ±o" instead of "Diseño"). Re-interpret the mojibake back to UTF-8.
@@ -107,7 +108,7 @@ async function importRoster(rows, tenantId) {
       const tempPassword = crypto.randomBytes(9).toString("base64url");
       await sql`
         INSERT INTO users (username, password, full_name, role, tenant_id, active, department, faculty, profile_category, orcid)
-        VALUES (${candidate}, ${tempPassword}, ${r.fullName}, 'academic', ${tenantId}, TRUE, ${r.department}, ${r.faculty}, ${r.profileCategory}, ${r.orcid})`;
+        VALUES (${candidate}, ${await hashPassword(tempPassword)}, ${r.fullName}, 'academic', ${tenantId}, TRUE, ${r.department}, ${r.faculty}, ${r.profileCategory}, ${r.orcid})`;
       result.created++;
       result.credentials.push({ username: candidate, password: tempPassword, fullName: r.fullName });
     } catch (err) {

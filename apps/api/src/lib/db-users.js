@@ -1,4 +1,5 @@
 const { sql } = require("./sql");
+const { hashPassword } = require("./passwords");
 
 async function getUserByUsername(username) {
   const r = await sql`SELECT * FROM users WHERE username = ${username} AND active = TRUE`;
@@ -20,9 +21,10 @@ async function listUsers(tenantId) {
 }
 
 async function createUser(username, password, fullName, email, role, tenantId, position, faculty, titles, orcid, department, profileCategory) {
+  const hashed = await hashPassword(password);
   const r = await sql`
     INSERT INTO users (username, password, full_name, email, role, tenant_id, position, faculty, titles, orcid, department, profile_category)
-    VALUES (${username}, ${password}, ${fullName}, ${email}, ${role}, ${tenantId}, ${position}, ${faculty}, ${titles}, ${orcid || null}, ${department || null}, ${profileCategory || null})
+    VALUES (${username}, ${hashed}, ${fullName}, ${email}, ${role}, ${tenantId}, ${position}, ${faculty}, ${titles}, ${orcid || null}, ${department || null}, ${profileCategory || null})
     RETURNING id`;
   return r.rows[0].id;
 }

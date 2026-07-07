@@ -2,6 +2,7 @@ const { ensureSchema, getAllRecords } = require("../src/lib/db");
 const { getUser, requireRole, makeSessionCookie } = require("../src/lib/auth");
 const { getUserByUsername, getUserById, listTenants, listSubtenants, listUsers, createUser, updateUser, updateTenant } = require("../src/lib/db-users");
 const { seedUsers } = require("../src/lib/seed-users");
+const { verifyPassword } = require("../src/lib/passwords");
 const { buildProfile, computeHIndex, countPapersByOrcid, countPapersByRor, researcherNameByOrcid } = require("../src/lib/auth-helpers");
 const { getScope } = require("../src/lib/scope");
 const { handleRosterAction } = require("./roster-actions");
@@ -56,7 +57,7 @@ module.exports = async function handler(req, res) {
     const { user, pass } = req.body;
     if (!user || !pass) return res.status(400).json({ error: "Username and password required" });
     const dbUser = await getUserByUsername(user);
-    if (!dbUser || dbUser.password !== pass) return res.status(401).json({ error: "Invalid credentials" });
+    if (!dbUser || !(await verifyPassword(pass, dbUser.password))) return res.status(401).json({ error: "Invalid credentials" });
     res.setHeader("Set-Cookie", makeSessionCookie(dbUser));
     return res.json({ ok: true, user: dbUser.username, role: dbUser.role });
   }
