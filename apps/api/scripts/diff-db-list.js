@@ -1,7 +1,6 @@
 // Diff gate for the db-list personal-scope-filter migration (tags author-filter
 // → authorship). The transformation is identical to db.js getAllRecords (already
-// verified — see HANDOFF-tags-migration.md "db.js personal-scope filter"), applied
-// to the paginated variants. Verifies the personal paper-id SET matches OLD, for
+// verified), applied to the paginated variants. Verifies the personal paper-id SET matches OLD, for
 // a real ORCID, and (leak guard) a no-match ORCID returns 0. READ-ONLY.
 //
 //   railway ssh --service Nexus "cd /app/apps/api && node scripts/diff-db-list.js"

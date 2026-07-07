@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Nexus arch-audit — enforces invariants N1–N5 on STAGED files at commit time.
-# Canon: .claude/rules/hard-rules.md. Run standalone: `bash scripts/arch-audit.sh`.
+# Run standalone: `bash scripts/arch-audit.sh`.
 #
 # Hard (block commit): N2 dead-tree edits, N4 data-layer leaks, N5 file size,
 #                       N3-type (hardcoded font-size/weight/family) + N3-gen (type

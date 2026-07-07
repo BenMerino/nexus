@@ -1,6 +1,6 @@
 # DGA Design — Nexus domains, governors, events, refs
 
-The canonical domain model for Nexus's Deterministic Governor Architecture. **Domain-first**: bounded contexts derived from the CRIS mission, then tables mapped under them (schema is malleable). Produced by a multi-lens decomposition → adversarial stress-test → iterative reasoning against the one-writer invariant, verified against the live `apps/api` tree. Doctrine: [.claude/rules/governor-patterns.md](../.claude/rules/governor-patterns.md).
+The canonical domain model for Nexus's Deterministic Governor Architecture. **Domain-first**: bounded contexts derived from the CRIS mission, then tables mapped under them (schema is malleable). Verified against the live `apps/api` tree.
 
 **The decision rule, applied throughout:** a **Governor** exists only for an aggregate that *something writes independently of the papers it appears on*. Entities with real identity + their own lifecycle (claim/merge/admin-edit) are governed; write-once-at-ingest connections are **edges** owned by the entity they hang off; pure reads are Resolvers/Composers; cross-aggregate orchestration is a Workflow; outbound effects are a Dispatcher. The **actor** (user) and the **scope boundary** (tenant) are **substrate**, not domains.
 
@@ -75,7 +75,7 @@ The university that *owns* a Nexus tenant is not just the `withTenant` scope bou
 `publication.upserted/deleted`, `author.upserted/merged/claimed`, `venue.upserted/indexationUpdated`, `institution.provisioned/policyChanged`, `project.created/updated/approved`, `ingestion.completed`, `roster.imported`. One owner per channel.
 
 ## Entity refs (`<kind>:<id>`, for audit + conversation-bindings)
-`publication:<id>`, `author:<orcid>`, `venue:<issnL>`, `institution:<ror>`, `project:<id>`; child/edge: `concept:<pubId>:<conceptId>`, `citationYear:<pubId>:<year>`, `authorship:<pubId>:<orcid>`. Grammar canon: [id-taxonomy](../.claude/rules/id-taxonomy.md).
+`publication:<id>`, `author:<orcid>`, `venue:<issnL>`, `institution:<ror>`, `project:<id>`; child/edge: `concept:<pubId>:<conceptId>`, `citationYear:<pubId>:<year>`, `authorship:<pubId>:<orcid>`.
 
 ## Conversation entity-kinds (AI surface, when chat lands)
 `publication`, `author`, `venue`, `project`, `institution` register `verifyAccess` + `readSummary`.

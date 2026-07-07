@@ -13,7 +13,6 @@ No test suite.
 
 ## Where to look
 
-- **[CLAUDE.md](CLAUDE.md)** — orientation for Claude Code: commands, architecture overview, project rules.
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — cross-cutting invariants: data model, scope + role model, auth flow, bundle map.
 - **[lib/README.md](lib/README.md)** — data pipeline conventions.
 

@@ -3,7 +3,7 @@
 // tag stream did, but sourced from the entity/edge tables — so the unchanged
 // buildGraph assembly reproduces identical nodes/edges by construction.
 //
-// Category mapping (see docs/HANDOFF-tags-migration.md):
+// Category mapping (tags → entity/edge migration):
 //   author       → authorship + authors            (ext_id = bare orcid)
 //   journal /     → published_in + venues           (ext_id = canonical issn_l,
 //   non-journal      venue_type drives the category; repository venues are

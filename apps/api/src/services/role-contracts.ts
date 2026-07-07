@@ -1,8 +1,8 @@
 /* ── DGA Role Contracts ────────────────────────────────────────
  * The 6 roles of the Deterministic Governor Architecture and what
  * each may do. Port of Zincro's role-contracts. DOCS-ONLY at runtime:
- * not enforced by code — upheld by review against this table and
- * .claude/rules/governor-patterns.md. The map is exported so a future
+ * not enforced by code — upheld by review against this table.
+ * The map is exported so a future
  * reflection/admin view can render it, and so the role vocabulary has
  * one canonical source.
  * ──────────────────────────────────────────────────────────── */

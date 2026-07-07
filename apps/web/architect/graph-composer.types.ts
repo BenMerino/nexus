@@ -166,7 +166,7 @@ export interface GraphDirective extends ReplayableDirective<GraphQuery>, GraphDi
     /** Optional KPI headline rendered ABOVE the chart: a large figure with an
      *  uppercase caption and an optional rising/flat/falling trend chip. Off by
      *  default. Two governed sources, split on the authoritative-vs-cosmetic
-     *  line (ANTI_PATTERNS §1):
+     *  line:
      *   • `reduce` — a COSMETIC reduction of the plotted series (mean/sum/
      *     slope/…). The engine derives the figure from the chart's own
      *     `__buckets` in `resolveAtomicDirective`, so it recomputes on

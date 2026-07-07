@@ -5,7 +5,7 @@
 -- WHAT to WHICH entity, WHEN — the deterministic write trail behind the DGA.
 --
 -- entity_id is the DGA entity-ref string ("<kind>:<id>", e.g. publication:1247,
--- author:0000-0002-...) per .claude/rules/id-taxonomy.md — text, not an FK, so
+-- author:0000-0002-...) — text, not an FK, so
 -- one table spans every aggregate.
 --
 -- tenant_id present for tenant-scoped queries and so this table joins the RLS
