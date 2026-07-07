@@ -8,12 +8,8 @@ dist/
 .vercel
 .env*.local
 .DS_Store
-.claude/
-CLAUDE.md
-docs/HANDOFF-*.md
-docs/PHILOSOPHY.md
-docs/HEURISTICS.md
-docs/ANTI_PATTERNS.md
+.claude/*
+!.claude/rules/
 Nexus.zip
 nexus.zip
 
